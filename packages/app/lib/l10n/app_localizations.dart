@@ -1309,8 +1309,14 @@ abstract class AppLocalizations {
   /// No description provided for @offlineRareNote.
   ///
   /// In en, this message translates to:
-  /// **'Element stones, duel stones and growth potions drop while idle only with Gatherer\'s Touch on'**
-  String get offlineRareNote;
+  /// **'Element stones, duel stones and growth potions drop while idle only with Gatherer\'s Touch on · a day = {hours} idle hours'**
+  String offlineRareNote(int hours);
+
+  /// No description provided for @offlineRareDaily.
+  ///
+  /// In en, this message translates to:
+  /// **'~{count}/day'**
+  String offlineRareDaily(String count);
 
   /// No description provided for @offlineXpLabel.
   ///

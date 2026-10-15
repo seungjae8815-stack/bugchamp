@@ -116,6 +116,9 @@ class _BuffWaitState extends State<_BuffWait> with WidgetsBindingObserver {
     final left = ((total - ms) / 1000).ceil();
     final mm = left ~/ 60;
     final ss = (left % 60).toString().padLeft(2, '0');
+    // 그림(buff_wait_bg 765×870)의 빛나는 원 = 가로 50% · 세로 46.6% · 지름 가로의 39%. 진행 원을 그 위에 얹는다.
+    const imgAspect = 765 / 870;
+    const glowX = 0.503, glowY = 0.466, glowD = 0.39;
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, _) {
@@ -125,128 +128,159 @@ class _BuffWaitState extends State<_BuffWait> with WidgetsBindingObserver {
         color: Colors.transparent,
         child: SafeArea(
           child: Center(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 18),
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(18),
-                child: Stack(
-                  children: [
-                    // 배경 그림(없으면 숲색 그라데이션).
-                    Positioned.fill(
-                      child: gameImage(
-                        'assets/images/buffs/buff_wait_bg.webp',
-                        width: double.infinity,
-                        height: double.infinity,
-                        fit: BoxFit.cover,
-                        fallback: const DecoratedBox(
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              begin: Alignment.topCenter,
-                              end: Alignment.bottomCenter,
-                              colors: [Color(0xFF243B1E), Color(0xFF101A0C)],
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 18, 16, 14),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            l.buffWaitTitle(widget.buffName),
-                            textAlign: TextAlign.center,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 17,
-                              fontWeight: FontWeight.w900,
-                              shadows: [Shadow(blurRadius: 6)],
-                            ),
-                          ),
-                          const SizedBox(height: 18),
-                          // 가운데 = 버프 아이콘 + 진행 원.
-                          SizedBox(
-                            width: 150,
-                            height: 150,
+                child: ColoredBox(
+                  color: const Color(0xFF16220F),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      LayoutBuilder(
+                        builder: (ctx, c) {
+                          final w = c.maxWidth;
+                          final h = w / imgAspect;
+                          final d = w * glowD;
+                          return SizedBox(
+                            width: w,
+                            height: h,
                             child: Stack(
-                              alignment: Alignment.center,
                               children: [
-                                SizedBox(
-                                  width: 150,
-                                  height: 150,
-                                  child: CircularProgressIndicator(
-                                    value: total == 0 ? 1 : ms / total,
-                                    strokeWidth: 8,
-                                    backgroundColor: const Color(0x55000000),
-                                    color: const Color(0xFFEBA52F),
-                                  ),
-                                ),
-                                widget.icon,
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          Text(
-                            '$mm:$ss',
-                            style: const TextStyle(
-                              color: Color(0xFFEBA52F),
-                              fontSize: 26,
-                              fontWeight: FontWeight.w900,
-                              shadows: [Shadow(blurRadius: 6)],
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            l.buffWaitHint,
-                            textAlign: TextAlign.center,
-                            style: const TextStyle(
-                              color: Color(0xDDFFFFFF),
-                              fontSize: 12,
-                              height: 1.35,
-                              shadows: [Shadow(blurRadius: 4)],
-                            ),
-                          ),
-                          const SizedBox(height: 14),
-                          SizedBox(
-                            width: double.infinity,
-                            height: 46,
-                            child: FilledButton(
-                              onPressed: () => _close(BuffWaitResult.jelly),
-                              style: FilledButton.styleFrom(
-                                backgroundColor: const Color(0xFF1E6091),
-                              ),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  jellyIcon(size: 18),
-                                  const SizedBox(width: 6),
-                                  Text(
-                                    l.buffWaitJelly(widget.jellyCost),
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.w900,
+                                Positioned.fill(
+                                  child: gameImage(
+                                    'assets/images/buffs/buff_wait_bg.webp',
+                                    width: w,
+                                    height: h,
+                                    fit: BoxFit.cover,
+                                    fallback: const DecoratedBox(
+                                      decoration: BoxDecoration(
+                                        gradient: LinearGradient(
+                                          begin: Alignment.topCenter,
+                                          end: Alignment.bottomCenter,
+                                          colors: [
+                                            Color(0xFF243B1E),
+                                            Color(0xFF101A0C),
+                                          ],
+                                        ),
+                                      ),
                                     ),
                                   ),
-                                ],
+                                ),
+                                Positioned(
+                                  left: 0,
+                                  right: 0,
+                                  top: 14,
+                                  child: Text(
+                                    l.buffWaitTitle(widget.buffName),
+                                    textAlign: TextAlign.center,
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.w900,
+                                      shadows: [
+                                        Shadow(blurRadius: 8),
+                                        Shadow(blurRadius: 3),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                                // 빛나는 원 위 = 진행 원 + 버프 아이콘.
+                                Positioned(
+                                  left: w * glowX - d / 2,
+                                  top: h * glowY - d / 2,
+                                  width: d,
+                                  height: d,
+                                  child: Stack(
+                                    alignment: Alignment.center,
+                                    children: [
+                                      SizedBox.expand(
+                                        child: CircularProgressIndicator(
+                                          value: total == 0 ? 1 : ms / total,
+                                          strokeWidth: 8,
+                                          backgroundColor: const Color(
+                                            0x66000000,
+                                          ),
+                                          color: const Color(0xFFEBA52F),
+                                        ),
+                                      ),
+                                      SizedBox(
+                                        width: d * 0.7,
+                                        height: d * 0.7,
+                                        child: FittedBox(child: widget.icon),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 10, 16, 8),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              '$mm:$ss',
+                              style: const TextStyle(
+                                color: Color(0xFFEBA52F),
+                                fontSize: 26,
+                                fontWeight: FontWeight.w900,
                               ),
                             ),
-                          ),
-                          if (widget.passCard != null) ...[
-                            const SizedBox(height: 10),
-                            widget.passCard!,
-                          ],
-                          const SizedBox(height: 6),
-                          TextButton(
-                            onPressed: () => _close(BuffWaitResult.cancel),
-                            style: TextButton.styleFrom(
-                              foregroundColor: const Color(0xCCFFFFFF),
+                            const SizedBox(height: 2),
+                            Text(
+                              l.buffWaitHint,
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(
+                                color: Color(0xDDFFFFFF),
+                                fontSize: 12,
+                                height: 1.35,
+                              ),
                             ),
-                            child: Text(l.actionCancel),
-                          ),
-                        ],
+                            const SizedBox(height: 12),
+                            SizedBox(
+                              width: double.infinity,
+                              height: 46,
+                              child: FilledButton(
+                                onPressed: () => _close(BuffWaitResult.jelly),
+                                style: FilledButton.styleFrom(
+                                  backgroundColor: const Color(0xFF1E6091),
+                                ),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    jellyIcon(size: 18),
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      l.buffWaitJelly(widget.jellyCost),
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.w900,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            if (widget.passCard != null) ...[
+                              const SizedBox(height: 10),
+                              widget.passCard!,
+                            ],
+                            const SizedBox(height: 4),
+                            TextButton(
+                              onPressed: () => _close(BuffWaitResult.cancel),
+                              style: TextButton.styleFrom(
+                                foregroundColor: const Color(0xCCFFFFFF),
+                              ),
+                              child: Text(l.actionCancel),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),

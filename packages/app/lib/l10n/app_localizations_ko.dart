@@ -678,8 +678,14 @@ class AppLocalizationsKo extends AppLocalizations {
   String get offlineRareBuffOnly => '버프 켤 때만';
 
   @override
-  String get offlineRareNote =>
-      '속성석·결투석·성장물약은 방치 중 \'채집가의 손길\' 버프가 켜져 있을 때만 나와요';
+  String offlineRareNote(int hours) {
+    return '속성석·결투석·성장물약은 방치 중 \'채집가의 손길\' 버프가 켜져 있을 때만 나와요 · 하루 = 방치 $hours시간 기준';
+  }
+
+  @override
+  String offlineRareDaily(String count) {
+    return '하루 약 $count개';
+  }
 
   @override
   String get offlineXpLabel => '경험치';

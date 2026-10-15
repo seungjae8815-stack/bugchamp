@@ -793,7 +793,12 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
       if (r.potions > 0) l.offlineRarePotion(r.potions),
     ];
     // 버프 없이 / 버프 있을 때 두 칸 표(2026-10-15 사장님 확정) — 버프 비교가 없으면 예전 목록.
-    final table = offlineRewardTable(l, r);
+    // 하루 예상 기준 = 이 유저의 방치 상한(곤충학자 패스면 16시간 — 2026-10-15 사장님 지적).
+    final save = ref.read(saveControllerProvider).value;
+    final dayHours = save != null && save.passActive(_clock.now().toUtc())
+        ? (_data.iapConfig?.passOfflineCapHours ?? kOfflineDayHours)
+        : kOfflineDayHours;
+    final table = offlineRewardTable(l, r, dayHours: dayHours);
     return showGameDialog<void>(
       context,
       title: l.offlineTitle,

@@ -14,7 +14,12 @@ import '../../ui/labels.dart';
 /// 실제로 받은 칸을 밝게, 다른 칸을 흐리게 칠한다. 둘 다 없으면 null — 예전 목록을 그대로 쓴다.
 ///
 /// 재료 몫은 합계 기댓값뿐이라 받은 재료 비율로 나눠 보여 준다(화석은 시간 비례라 버프와 무관 — 나누지 않는다).
-Widget? offlineRewardTable(AppLocalizations l, OfflineReport r) {
+/// [dayHours] = 이 유저의 방치 보상 상한(기본 8시간, 곤충학자 패스면 16시간) — 희귀 드롭 "하루 약 N개"의 기준.
+Widget? offlineRewardTable(
+  AppLocalizations l,
+  OfflineReport r, {
+  int dayHours = kOfflineDayHours,
+}) {
   final bonus = r.buffBonus;
   final missed = r.buffMissed;
   if (bonus == null && missed == null) return null;
@@ -22,6 +27,16 @@ Widget? offlineRewardTable(AppLocalizations l, OfflineReport r) {
   // 실제 값에 더하거나 뺄 몫 — 켜 둔 사람은 −더 받은 몫, 없던 사람은 +놓친 몫.
   final g = hadBuff ? bonus : missed!;
   final sign = hadBuff ? -1.0 : 1.0;
+
+  // 희귀 드롭 하루 예상(2026-10-15 사장님) — 채집가의 손길을 켜 둔 기대값(받은 몫 + 놓친 몫)을
+  // 이번 방치 시간당으로 나눠 **방치 하루(오프라인 상한 8시간)** 로 늘린다.
+  final hours = r.accrued.inSeconds / 3600;
+  double perDay(double Function(OfflineGain g) f) {
+    if (hours <= 0) return 0;
+    final full =
+        (bonus == null ? 0.0 : f(bonus)) + (missed == null ? 0.0 : f(missed));
+    return full / hours * dayHours;
+  }
 
   final rows = <_Row>[];
   void add(
@@ -31,11 +46,22 @@ Widget? offlineRewardTable(AppLocalizations l, OfflineReport r) {
     double delta, {
     bool exact = false,
     bool always = false,
+    double daily = 0,
   }) {
     final other = got + sign * delta;
     // 희귀 드롭(속성석·결투석·성장물약)은 0 이어도 줄을 남긴다(2026-10-15 사장님 — "버프 없으면 0"이 보여야 한다).
     if (!always && got <= 0 && other < 0.5) return;
-    rows.add(_Row(icon, name, got, other < 0 ? 0 : other, exact, rare: always));
+    rows.add(
+      _Row(
+        icon,
+        name,
+        got,
+        other < 0 ? 0 : other,
+        exact,
+        rare: always,
+        daily: daily,
+      ),
+    );
   }
 
   add(
@@ -102,6 +128,7 @@ Widget? offlineRewardTable(AppLocalizations l, OfflineReport r) {
     r.fairyStones.toDouble(),
     g.fairyStones,
     always: true,
+    daily: perDay((x) => x.fairyStones),
   );
   add(
     gameIcon('stone_element', size: 22, fallback: Icons.hexagon_rounded),
@@ -109,6 +136,7 @@ Widget? offlineRewardTable(AppLocalizations l, OfflineReport r) {
     r.duelStones.toDouble(),
     g.duelStones,
     always: true,
+    daily: perDay((x) => x.duelStones),
   );
   add(
     gameIcon('potion', size: 22, fallback: Icons.science_rounded),
@@ -116,6 +144,7 @@ Widget? offlineRewardTable(AppLocalizations l, OfflineReport r) {
     r.potions.toDouble(),
     g.potions,
     always: true,
+    daily: perDay((x) => x.potions),
   );
 
   const got = Color(0xFFEBA52F);
@@ -249,21 +278,30 @@ Widget? offlineRewardTable(AppLocalizations l, OfflineReport r) {
                   !hadBuff,
                 ),
               const SizedBox(width: 8),
-              cell(
-                fmt(
-                  hadBuff ? row.got : row.other,
-                  approx: !hadBuff,
-                  exact: false,
+              // 희귀 드롭의 버프 칸 = 하루 예상. 버프를 켠 사람은 실제로 받은 수를 앞에 붙인다.
+              if (row.rare)
+                cell(
+                  hadBuff
+                      ? '+${row.got.round()} · ${l.offlineRareDaily(_dayStr(row.daily))}'
+                      : l.offlineRareDaily(_dayStr(row.daily)),
+                  hadBuff,
+                )
+              else
+                cell(
+                  fmt(
+                    hadBuff ? row.got : row.other,
+                    approx: !hadBuff,
+                    exact: false,
+                  ),
+                  hadBuff,
                 ),
-                hadBuff,
-              ),
             ],
           ),
         ),
       if (rows.any((r) => r.rare)) ...[
         const SizedBox(height: 6),
         Text(
-          l.offlineRareNote,
+          l.offlineRareNote(dayHours),
           textAlign: TextAlign.center,
           style: const TextStyle(
             color: Color(0xB3FFFFFF),
@@ -276,6 +314,12 @@ Widget? offlineRewardTable(AppLocalizations l, OfflineReport r) {
   );
 }
 
+/// 희귀 드롭 하루 예상의 기본 기준 시간 = 방치 보상 상한(8시간, 패스 없이).
+const kOfflineDayHours = 8;
+
+String _dayStr(double v) =>
+    v >= 10 ? '${v.round()}' : v.toStringAsFixed(v >= 1 ? 1 : 2);
+
 class _Row {
   const _Row(
     this.icon,
@@ -284,6 +328,7 @@ class _Row {
     this.other,
     this.exact, {
     this.rare = false,
+    this.daily = 0,
   });
   final Widget icon;
   final String name;
@@ -295,4 +340,7 @@ class _Row {
 
   /// 희귀 드롭(속성석·결투석·성장물약) — 버프 없이 칸은 ✕.
   final bool rare;
+
+  /// 희귀 드롭 — 채집가의 손길을 켜 둔 방치 하루(상한 시간) 기대 개수.
+  final double daily;
 }

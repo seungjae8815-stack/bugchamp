@@ -702,8 +702,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get offlineRareBuffOnly => 'Buff only';
 
   @override
-  String get offlineRareNote =>
-      'Element stones, duel stones and growth potions drop while idle only with Gatherer\'s Touch on';
+  String offlineRareNote(int hours) {
+    return 'Element stones, duel stones and growth potions drop while idle only with Gatherer\'s Touch on · a day = $hours idle hours';
+  }
+
+  @override
+  String offlineRareDaily(String count) {
+    return '~$count/day';
+  }
 
   @override
   String get offlineXpLabel => 'XP';

@@ -50,10 +50,12 @@ void main() {
     expect(find.text(l.offlineApprox('+10')), findsOneWidget);
     // 희귀 드롭의 버프 없이 칸은 ✕ 버프 켤 때만, 1 보다 작은 기대값은 소수 한 자리.
     expect(find.text('✕ ${l.offlineRareBuffOnly}'), findsNWidgets(3));
-    expect(find.text(l.offlineRareNote), findsOneWidget);
+    expect(find.text(l.offlineRareNote(8)), findsOneWidget);
     // 받지 못한 속성석도 줄이 생긴다(왼쪽 0).
     expect(find.text(l.offlineRowFairyStone), findsOneWidget);
-    expect(find.text(l.offlineApprox('+0.3')), findsOneWidget);
+    // 희귀 드롭 = 방치 하루(8시간) 예상 — 2시간에 속성석 1 · 물약 0.3 → 4.0 · 1.2.
+    expect(find.text(l.offlineRareDaily('4.0')), findsOneWidget);
+    expect(find.text(l.offlineRareDaily('1.2')), findsOneWidget);
     expect(t.takeException(), isNull);
   });
 

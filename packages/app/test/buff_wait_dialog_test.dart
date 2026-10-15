@@ -53,6 +53,7 @@ void main() {
   testWidgets('취소를 누르면 cancel', (t) async {
     final r = await run(t, (l) async {
       await t.pump(const Duration(seconds: 10));
+      await t.ensureVisible(find.text(l.actionCancel));
       await t.tap(find.text(l.actionCancel));
     });
     expect(r, BuffWaitResult.cancel);
@@ -60,6 +61,7 @@ void main() {
 
   testWidgets('젤리로 바로 켜기를 누르면 jelly', (t) async {
     final r = await run(t, (l) async {
+      await t.ensureVisible(find.text(l.buffWaitJelly(5)));
       await t.tap(find.text(l.buffWaitJelly(5)));
     });
     expect(r, BuffWaitResult.jelly);

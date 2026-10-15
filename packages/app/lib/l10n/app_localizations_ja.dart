@@ -676,7 +676,14 @@ class AppLocalizationsJa extends AppLocalizations {
   String get offlineRareBuffOnly => 'バフ時のみ';
 
   @override
-  String get offlineRareNote => '属性石・決闘石・成長ポーションは、放置中「採集の手」バフが有効なときだけ出ます';
+  String offlineRareNote(int hours) {
+    return '属性石・決闘石・成長ポーションは、放置中「採集の手」バフが有効なときだけ出ます · 1日 = 放置$hours時間';
+  }
+
+  @override
+  String offlineRareDaily(String count) {
+    return '1日 約$count個';
+  }
 
   @override
   String get offlineXpLabel => '経験値';
