@@ -4,7 +4,7 @@ publish_to: 'none'
 # 빌드번호는 **매 빌드 +1 하는 단조 증가 숫자**다(날짜처럼 생겼을 뿐).
 # 하루에 두 번 빌드해도 겹치면 안 된다 — 1.0.4 와 1.0.5 가 둘 다 20260808 이라
 # 그대로 올렸으면 두 스토어 모두 거부했다. 출시 리듬은 docs/release_cadence.md.
-version: 1.0.21+20260948
+version: 1.0.21+20260949
 resolution: workspace
 
 environment:
@@ -83,8 +83,9 @@ flutter_launcher_icons:
   remove_alpha_ios: true          # App Store 아이콘은 알파(투명) 금지 → 배경색으로 평탄화
   background_color_ios: "#0E1608"
   image_path: "assets/icon/app_icon.png"
-  adaptive_icon_background: "#0E1608"
-  adaptive_icon_foreground: "assets/icon/app_icon.png"
+  # 2026-10-15 새 아이콘(장수풍뎅이 vs 사슴벌레): 그림 전체를 배경에 두고 앞면은 비운다 — 런처가 가운데 66% 를 동그랗게 잘라도 두 곤충이 다 보이게
+  adaptive_icon_background: "assets/icon/app_icon_adaptive_bg.png"
+  adaptive_icon_foreground: "assets/icon/app_icon_adaptive_fg.png"
   min_sdk_android: 21
 
 flutter:
