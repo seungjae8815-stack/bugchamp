@@ -1,60 +1,64 @@
 ========================================
- Bug Champ — Store Listing (English)
+ Bug Champ - Store Listing (English)
+ 2026-10-15 full rewrite (based on 1.0.21) - Google Play + App Store
 ========================================
+* Why: the old text described the pre-1.0.14 battle (stances, energy, element order, manual mind games)
+  and said "ads are opt-in rewarded ads". The game now has NO ads, physics "bug sumo" duels and a 3-bug team league.
+* App Store rules (past 1.1 rejection): no emoji; never use "sex", "breed", "breeding", "mate" (use "a pair", "raise", "hatch").
+  Applies to subtitle, keywords and promo text too. Everything below is ASCII only, so it is safe for App Store Connect.
 
-[App Store — App Name] (max 30 chars) ★ CONFIRMED unique on App Store
-Bug Champ: Idle Insect RPG
+[App Name] (max 30 chars - keep the current names; renaming can reset search ranking)
+  Google Play: Bug Champ: Idle Beetle Battle
+  App Store:   Bug Champ: Idle Insect RPG
 
 [App Store Subtitle] (max 30 chars)
-Collect, raise & battle bugs
+Beetle sumo duels & idle bugs
 
-[Google Play — Short description] (max 80 chars)
-Idle bug collector & battler. Win with elements and team order, not luck.
+[Google Play - Short description] (max 80 chars)
+Collect beetles, train them, push rivals out of the ring. Idle bug sumo, no ads.
 
-[App Store — Promotional text] (max 170 chars)
-Every bug is unique. Build the perfect team, master the five-element clashes, and raise champions. Even while you're away, your bugs keep hunting.
+[App Store - Promotional text] (max 170 chars)
+No ads, just bugs. Collect 20 species like rhino beetles and giant stag beetles, raise one-of-a-kind champions, and push, flip and pin rivals in real bug sumo duels.
 
-[App Store — Keywords] (max 100 chars, comma-separated)
-idle,bug,insect,collect,battle,hatch,creature,beetle,afk,rpg,strategy,monster,team
+[App Store - Keywords] (max 100 chars, comma-separated, no spaces; skip words already in name/subtitle)
+beetle,stag,rhino,insect,sumo,collect,hatch,pvp,league,afk,clicker,rpg,creature,arena
 
-[Full description] (App Store & Google Play)
---- App Store SAFE VERSION (ASCII only — no special chars that ASC rejects) ---
-Collect, raise, and battle your very own bugs!
+[Full description] (Google Play and App Store - ASCII only)
+Collect, raise and battle your very own bugs!
 
-Rhino beetles, stag beetles, mantises, longhorns... gather a wild variety of insects and build the ultimate team in this idle battler. Your bugs keep foraging even when the game is closed.
+Rhino beetles, stag beetles, mantises, longhorns, giant hornets...
+Catch bugs in forests and valleys, raise them, and send them into the ring. No ads, ever.
 
-- Idle collecting -
-Bugs auto-explore habitats and take on stage bosses. Rewards pile up for up to 8 hours while you're away.
+- BUG SUMO DUELS -
+Bugs clash for real on a round wooden arena.
+* Win by pushing your rival out, flipping it over, or knocking it out
+* Each bug fights its own way: Ram charges, Grip clamps and shoves, Throw hurls
+* In a pinch, mash the screen to hold on - the Tap Counter can turn a match around
+* 3-bug winner-stays matches: the winner faces the next rival with the HP it has left
+* Climb a weekly league from Bronze to Diamond
 
-- Every bug is one of a kind -
-No two bugs are the same - not even two rhino beetles.
-* Element (Wood, Fire, Earth, Metal, Water)
-* Size - rolled on a normal distribution; bigger is stronger
-* Potential 1-5 stars - sets the enhancement cap
-* Temperament - its behavior in battle
-* Male or female - a pair is needed for an egg
+- NO TWO BUGS ARE ALIKE -
+Even two giant stag beetles are never the same.
+* Grade (Common to Legendary), size (heavier bugs are harder to push), element, temperament, male or female
+* Very rare color variants: Rainbow and Albino
+* Spend training points across 10 stats to build attackers, tanks or team leaders
+* A male and female pair gives you an egg to hatch in the incubator, and bloodline traits carry on to the young
 
-- Battles that reward thinking -
-This isn't a plain stat race.
-* Three stances - Attack / Defend / Heal (Attack > Heal > Defend > Attack)
-* Energy management - no infinite defending or healing
-* Elemental clash deals 1.5x damage
-* Team order IS the strategy - when a front bug empowers the one behind, the whole team grows stronger
-* Each battlefield favors a different element
-In manual battles you read your opponent move by move - pure mind games.
+- IDLE HUNTING AND BOSSES -
+* Your bugs roam the hunting grounds on their own, gathering materials and new friends
+* Up to 8 hours of rewards even while the app is closed
+* 4 difficulties x 11 bosses, then the endless Abyss with weekly rankings
+* Fairy companions and 12 skills to shape your own play style
 
-- Raise stronger champions -
-Match two fully grown bugs to get an egg, then raise it in the incubator. A child inherits its parents' size and potential, with a rare chance of a mutation. Crafting great bugs is the heart of the game.
+- FILL YOUR BUG BOOK -
+Record the biggest size, best grade and color variants for all 20 species, and collect all 44 bosses.
 
-- Battle other players -
-Face other players' defense teams asynchronously. Earn trophies, climb from Bronze to Diamond, and compete for rank each season.
+- PERFECT FOR YOU IF YOU -
+* kept rhino or stag beetles as a kid
+* want an idle game that keeps growing while you are away
+* want to win with how you raise and combine your bugs, not with luck
 
-- Great for you if you... -
-* love insects
-* want an idle game with real depth of progression
-* want to win by team-building and order, not luck
-
-- Notes -
-* Most content is playable offline (ranking & PvP need a connection)
-* Ads are opt-in rewarded ads only - never forced
-* Paid items focus on convenience and cosmetics; stats are never sold directly
+- NOTES -
+* No ads
+* Paid items focus on saving time and cosmetics. Duel stats are never sold directly
+* Rankings and duels need an internet connection
