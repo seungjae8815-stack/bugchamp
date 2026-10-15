@@ -628,6 +628,38 @@ class AppLocalizationsJa extends AppLocalizations {
   String get offlineGoldLabel => 'ゴールド';
 
   @override
+  String get offlineColNoBuffGot => 'バフなしで獲得';
+
+  @override
+  String get offlineColBuffWould => 'バフがあれば';
+
+  @override
+  String get offlineColNoBuffWould => 'バフがなければ';
+
+  @override
+  String get offlineColBuffGot => 'バフで獲得';
+
+  @override
+  String offlineApprox(String value) {
+    return '約$value';
+  }
+
+  @override
+  String get offlineRowEggs => '虫の卵';
+
+  @override
+  String get offlineRowMaterials => '素材';
+
+  @override
+  String get offlineRowFairyStone => '属性石';
+
+  @override
+  String get offlineRowDuelStone => '決闘石';
+
+  @override
+  String get offlineRowPotion => '成長ポーション';
+
+  @override
   String get offlineXpLabel => '経験値';
 
   @override
@@ -7064,6 +7096,20 @@ class AppLocalizationsJa extends AppLocalizations {
   String skillSweepConfirm(String jelly) {
     return '今日の無料掃討は使い切りました。ゼリー$jelly個で掃討しますか？';
   }
+
+  @override
+  String get bugGradeLabel => '等級';
+
+  @override
+  String get bugRarityLabel => '希少度';
+
+  @override
+  String get bugGradeHelp =>
+      'この虫1匹の等級です(一般・高級・希少・英雄・伝説)。同じ種のエッセンスで上げられ、高いほど決闘の能力値とペット効果が大きくなります。';
+
+  @override
+  String get bugRarityHelp =>
+      'この種がどれだけ珍しいかです。種ごとに決まっていて変わりません。珍しい種ほど出にくく孵化・ペアリングに時間がかかりますが、ペットパッシブが大きく、エッセンスに変えると多くもらえます。';
 
   @override
   String igSpeciesRarity(String grade) {

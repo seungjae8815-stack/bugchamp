@@ -19,6 +19,7 @@ import 'package:core_save/core_save.dart';
 import '../../l10n/app_localizations.dart';
 import '../../ui/ad_gate.dart';
 import '../../ui/art.dart';
+import '../../ui/grade_rarity_rows.dart';
 import '../../ui/jelly_confirm.dart';
 import '../../ui/format.dart';
 import '../../ui/game_dialog.dart';
@@ -3065,28 +3066,27 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
                     ),
                   ),
                   const SizedBox(height: 3),
+                  // 등급 · 희귀도 두 줄(느낌표로 설명, 2026-10-15 사장님) — 내 곤충·상대 곤충 같은 모양.
+                  // 상대 곤충 등급은 서버가 실어 준 포텐셜(옛 서버면 없어서 희귀도만).
+                  if (sp != null && individualGradeOn(data)) ...[
+                    GradeRarityRows(
+                      grade: switch (bug?.potential ?? d.potential) {
+                        final p when p > 0 =>
+                          Grade.values[(p - 1).clamp(
+                            0,
+                            Grade.values.length - 1,
+                          )],
+                        _ => null,
+                      },
+                      rarity: sp.grade,
+                    ),
+                    const SizedBox(height: 4),
+                  ],
                   Wrap(
                     spacing: 4,
                     runSpacing: 3,
                     children: [
-                      // 내 곤충이면 개체 등급(켜졌을 때) + 종 희귀도 작게.
-                      if (sp != null &&
-                          bug != null &&
-                          individualGradeOn(data)) ...[
-                        _chip(
-                          gradeLabel(l, bug.individualGrade),
-                          gradeColor(bug.individualGrade),
-                        ),
-                        _chip(
-                          l.igSpeciesRarity(gradeLabel(l, sp.grade)),
-                          gradeColor(sp.grade).withValues(alpha: 0.75),
-                        ),
-                      ] else if (sp != null && individualGradeOn(data))
-                        _chip(
-                          l.igSpeciesRarity(gradeLabel(l, sp.grade)),
-                          gradeColor(sp.grade),
-                        )
-                      else if (sp != null)
+                      if (sp != null && !individualGradeOn(data))
                         _chip(gradeLabel(l, sp.grade), gradeColor(sp.grade)),
                       _chip(
                         elementLabel(l, d.element),
@@ -3148,11 +3148,13 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
         // 실제 결투 값과 맞지 않았다(2026-10-09 점검).
         if (bug != null && sp != null) ..._trainPointRows(l, data, bug, sp),
         if (bug != null) ...[
-          _statRow(
-            individualGradeOn(data) ? l.igGradeLabel : l.bugInfoPotential,
-            potentialText(l, bug.potential, individualGradeOn(data)),
-            color: potentialColor(bug.potential, individualGradeOn(data)),
-          ),
+          // 개체 등급이 켜지면 등급은 위 "등급 · 희귀도" 줄에 있다(2026-10-15) — 두 번 적지 않는다.
+          if (!individualGradeOn(data))
+            _statRow(
+              l.bugInfoPotential,
+              potentialText(l, bug.potential, false),
+              color: potentialColor(bug.potential, false),
+            ),
           _statRow('Lv', '${bug.level}'),
         ],
       ],

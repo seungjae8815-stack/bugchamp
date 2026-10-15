@@ -35,6 +35,7 @@ class DuelBug {
     this.auraRole,
     this.aura = 0,
     this.auraApplied = false,
+    this.potential = 0,
   });
 
   final String id;
@@ -89,6 +90,10 @@ class DuelBug {
   /// 팀 오라가 이미 능력치에 입혀졌나 — 직렬화된 팀(제안·세션)을 다시 읽어 또 입히지 않게.
   final bool auraApplied;
 
+  /// 개체 등급(포텐셜 1~5, 0 = 모름) — **표시 전용**(2026-10-15 사장님: 상대 곤충 창에 등급·희귀도). 판정에는 안 쓴다.
+  /// 옛 서버·옛 행은 키가 없어 0 이다(화면은 종 희귀도만 보여 준다).
+  final int potential;
+
   /// 오라 역할·크기를 붙인다(능력치는 그대로 — 입히는 것은 [applyTeamAura]).
   DuelBug withAura(DuelRole? role, double value) => _copy(
     auraRole: role,
@@ -128,6 +133,7 @@ class DuelBug {
     auraRole: clearAuraRole ? null : (auraRole ?? this.auraRole),
     aura: aura ?? this.aura,
     auraApplied: auraApplied ?? this.auraApplied,
+    potential: potential,
   );
 
   /// 훈련소 보너스를 입힌다(공격·방어 배율, 회피·치명·회복력 가산). 값은 호출자가
@@ -167,6 +173,7 @@ class DuelBug {
     auraRole: auraRole,
     aura: aura,
     auraApplied: auraApplied,
+    potential: potential,
   );
 
   /// 한 판 안에서만 쓰는 전투 수치로 바꾼다(전력 압축·게이지 보너스, 엔진 내부용).
@@ -184,6 +191,7 @@ class DuelBug {
     required double sizeMm,
     required Specialty specialty,
     double sizeStatMult = 1,
+    int potential = 0,
   }) => DuelBug(
     id: b.id,
     name: b.name,
@@ -197,6 +205,7 @@ class DuelBug {
     def: b.def,
     spd: b.spd,
     sizeStatMult: sizeStatMult,
+    potential: potential,
   );
 
   DuelBug copyWith({
@@ -226,6 +235,7 @@ class DuelBug {
     auraRole: auraRole,
     aura: aura,
     auraApplied: auraApplied,
+    potential: potential,
   );
 
   /// 몸 반경.
@@ -322,6 +332,7 @@ class DuelBug {
     if (auraRole != null) 'ar': auraRole!.key,
     if (auraRole != null && aura > 0) 'av': aura,
     if (auraApplied) 'aa': 1,
+    if (potential > 0) 'pt': potential,
   };
 
   factory DuelBug.fromJson(Map<String, dynamic> j) => DuelBug(
@@ -349,6 +360,7 @@ class DuelBug {
     ),
     aura: (j['av'] as num?)?.toDouble() ?? 0,
     auraApplied: j['aa'] == 1 || j['aa'] == true,
+    potential: (j['pt'] as num?)?.toInt() ?? 0,
   );
 }
 

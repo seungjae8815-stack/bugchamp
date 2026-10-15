@@ -63,6 +63,17 @@ void main() {
     final off = first(pet);
     final on = first(petGradeOn);
     expect(on.atk, lessThan(off.atk), reason: '켜면 일반 등급은 전설 기준보다 약하다');
+    // 개체 등급(포텐셜)은 표시용으로 실어 보낸다 — 상대 곤충 창의 "등급"(2026-10-15). 팀 오라·JSON 왕복 뒤에도 남는다.
+    final team = actions
+        .validateDuelTeam(
+          s,
+          ['x', 'y', 'z'],
+          speciesById: cfg.speciesById,
+          petConfig: petGradeOn,
+        )
+        .team;
+    expect(team.map((b) => b.potential), [1, 5, 5]);
+    expect(team.map((b) => DuelBug.fromJson(b.toJson()).potential), [1, 5, 5]);
   });
 
   IndividualBug adult(String id, String sp, {double size = 60}) =>

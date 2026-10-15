@@ -653,6 +653,38 @@ class AppLocalizationsEn extends AppLocalizations {
   String get offlineGoldLabel => 'Gold';
 
   @override
+  String get offlineColNoBuffGot => 'Got without buffs';
+
+  @override
+  String get offlineColBuffWould => 'With buffs';
+
+  @override
+  String get offlineColNoBuffWould => 'Without buffs';
+
+  @override
+  String get offlineColBuffGot => 'Got with buffs';
+
+  @override
+  String offlineApprox(String value) {
+    return '~$value';
+  }
+
+  @override
+  String get offlineRowEggs => 'Bug eggs';
+
+  @override
+  String get offlineRowMaterials => 'Materials';
+
+  @override
+  String get offlineRowFairyStone => 'Element stone';
+
+  @override
+  String get offlineRowDuelStone => 'Duel stone';
+
+  @override
+  String get offlineRowPotion => 'Growth potion';
+
+  @override
   String get offlineXpLabel => 'XP';
 
   @override
@@ -7223,6 +7255,20 @@ class AppLocalizationsEn extends AppLocalizations {
   String skillSweepConfirm(String jelly) {
     return 'Today\'s free sweeps are used up. Sweep for $jelly jelly?';
   }
+
+  @override
+  String get bugGradeLabel => 'Grade';
+
+  @override
+  String get bugRarityLabel => 'Rarity';
+
+  @override
+  String get bugGradeHelp =>
+      'This bug\'s own grade (Common to Legendary). Raise it with essence of the same species. Higher grades mean stronger duel stats and pet bonuses.';
+
+  @override
+  String get bugRarityHelp =>
+      'How rare this species is. It is fixed per species and never changes. Rarer species drop less often and take longer to hatch and pair, but have bigger pet passives and give more essence.';
 
   @override
   String igSpeciesRarity(String grade) {

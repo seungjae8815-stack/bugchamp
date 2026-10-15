@@ -2747,6 +2747,8 @@ class GameActions {
                   // 크기는 결투에서 무게로만(2026-10-08 사장님 확정) — 스탯에 구워진 사이즈 배율을 알려 주면
                   // 엔진이 `sizeStatExp` 로 덜어낸다. 방치 런·도감은 그대로. 앱 `duelBugFor` 와 같은 값.
                   sizeStatMult: bug.statMultiplier(sp),
+                  // 개체 등급 — 화면 표시 전용(상대 곤충 창, 2026-10-15). 판정에는 안 쓴다.
+                  potential: bug.potential,
                 ).withTraining(
                   evade: t.evade,
                   crit: t.crit,

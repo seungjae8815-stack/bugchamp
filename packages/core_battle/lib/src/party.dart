@@ -98,6 +98,7 @@ DuelBug buildDuelBug({
   speciesId: species.id,
   sizeMm: bug.sizeMm,
   specialty: species.specialty,
+  potential: bug.potential,
 );
 
 /// 내 팀(A)에서 이번 전투 중 KO 된 파이터 id들.

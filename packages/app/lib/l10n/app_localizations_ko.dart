@@ -630,6 +630,38 @@ class AppLocalizationsKo extends AppLocalizations {
   String get offlineGoldLabel => '골드';
 
   @override
+  String get offlineColNoBuffGot => '버프 없이 받음';
+
+  @override
+  String get offlineColBuffWould => '버프 있었다면';
+
+  @override
+  String get offlineColNoBuffWould => '버프 없었다면';
+
+  @override
+  String get offlineColBuffGot => '버프 있어서 받음';
+
+  @override
+  String offlineApprox(String value) {
+    return '약 $value';
+  }
+
+  @override
+  String get offlineRowEggs => '곤충 알';
+
+  @override
+  String get offlineRowMaterials => '재료';
+
+  @override
+  String get offlineRowFairyStone => '속성석';
+
+  @override
+  String get offlineRowDuelStone => '결투석';
+
+  @override
+  String get offlineRowPotion => '성장물약';
+
+  @override
   String get offlineXpLabel => '경험치';
 
   @override
@@ -7075,6 +7107,20 @@ class AppLocalizationsKo extends AppLocalizations {
   String skillSweepConfirm(String jelly) {
     return '오늘 무료 소탕을 다 썼어요. 젤리 $jelly개로 소탕할까요?';
   }
+
+  @override
+  String get bugGradeLabel => '등급';
+
+  @override
+  String get bugRarityLabel => '희귀도';
+
+  @override
+  String get bugGradeHelp =>
+      '이 곤충 한 마리의 등급이에요(일반·고급·희귀·영웅·전설). 같은 종 정수로 올릴 수 있고, 높을수록 결투 능력치와 펫 효과가 커져요.';
+
+  @override
+  String get bugRarityHelp =>
+      '이 종이 얼마나 드문지예요. 종마다 정해져 있어 바뀌지 않아요. 드문 종일수록 잘 안 나오고 부화·짝짓기가 오래 걸리지만, 펫 패시브가 크고 정수로 바꿀 때 더 많이 받아요.';
 
   @override
   String igSpeciesRarity(String grade) {

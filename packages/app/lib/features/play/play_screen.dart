@@ -14,6 +14,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
 
 import 'pet_attackers.dart';
+import 'offline_reward_table.dart';
+import '../shop/craft_screen.dart' show StoreProductCard;
+import '../../domain/store_iap_service.dart' show storePricesProvider;
 import '../character/fairy_panel.dart' show openFairyWindow;
 import '../../ui/toast.dart';
 import '../../app_version.dart';
@@ -788,6 +791,8 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
       if (r.duelStones > 0) l.offlineRareDuelStone(r.duelStones),
       if (r.potions > 0) l.offlineRarePotion(r.potions),
     ];
+    // 버프 없이 / 버프 있을 때 두 칸 표(2026-10-15 사장님 확정) — 버프 비교가 없으면 예전 목록.
+    final table = offlineRewardTable(l, r);
     return showGameDialog<void>(
       context,
       title: l.offlineTitle,
@@ -797,13 +802,16 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          gameRewardList(
-            context,
-            gold: r.gold,
-            xp: r.xp,
-            materials: r.materials,
-          ),
-          if (r.bugs > 0) ...[
+          if (table != null)
+            table
+          else
+            gameRewardList(
+              context,
+              gold: r.gold,
+              xp: r.xp,
+              materials: r.materials,
+            ),
+          if (table == null && r.bugs > 0) ...[
             const SizedBox(height: 8),
             Text(
               l.offlineBugs(r.bugs),
@@ -830,7 +838,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
             ),
           ],
           // 방치 정예 희귀 드롭(2026-10-14) — 속성석·결투석·성장물약.
-          if (rare.isNotEmpty) ...[
+          if (table == null && rare.isNotEmpty) ...[
             const SizedBox(height: 6),
             Text(
               l.offlineRareLine(rare.join(' · ')),
@@ -842,21 +850,6 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
               ),
             ),
           ],
-          // 버프로 더 받은 몫 · 놓친 몫(2026-10-14 사장님 확정). 재료·곤충·희귀 드롭은 기댓값("약").
-          if (r.buffBonus != null)
-            _offlineGainBox(
-              l,
-              l.offlineBuffBonusTitle,
-              r.buffBonus!,
-              const Color(0xFF81C784),
-            ),
-          if (r.buffMissed != null)
-            _offlineGainBox(
-              l,
-              l.offlineBuffMissedTitle,
-              r.buffMissed!,
-              const Color(0xFFFFB74D),
-            ),
         ],
       ),
       actions: [
@@ -868,63 +861,6 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
           }),
         gameDialogButton(l.actionClose, () => Navigator.pop(context)),
       ],
-    );
-  }
-
-  /// 복귀 팝업의 "버프 덕분에 더 받았어요 / 켜져 있었다면 더 받았을 거예요" 상자.
-  Widget _offlineGainBox(
-    AppLocalizations l,
-    String title,
-    OfflineGain g,
-    Color color,
-  ) {
-    final items = <String>[
-      if (g.gold > 0) l.offlineGainGold(formatCompact(g.gold)),
-      if (g.xp > 0) l.offlineGainXp(formatCompact(g.xp)),
-      if (g.materials >= 0.5)
-        l.offlineGainMaterials(formatCompact(g.materials.round())),
-      if (g.bugs >= 0.5)
-        g.rareBugs >= 0.5
-            ? l.offlineGainBugsRare(g.bugs.round(), g.rareBugs.round())
-            : l.offlineGainBugs(g.bugs.round()),
-      if (g.fairyStones >= 0.5) l.offlineGainFairyStones(g.fairyStones.round()),
-      if (g.duelStones >= 0.5) l.offlineGainDuelStones(g.duelStones.round()),
-      if (g.potions >= 0.5) l.offlineGainPotions(g.potions.round()),
-    ];
-    return Container(
-      width: double.infinity,
-      margin: const EdgeInsets.only(top: 10),
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: color.withValues(alpha: 0.6)),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            title,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: color,
-              fontSize: 12.5,
-              fontWeight: FontWeight.w900,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            items.join(' · '),
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 12,
-              height: 1.35,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-        ],
-      ),
     );
   }
 
@@ -9100,6 +9036,8 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     if (!mounted) return;
     showModalBottomSheet<void>(
       context: context,
+      // 상품 카드가 맨 위에 들어가 키가 커졌다 — 작은 화면에서도 넘치지 않게 스크롤(2026-10-15).
+      isScrollControlled: true,
       backgroundColor: const Color(0xF2141F0E),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
@@ -9109,42 +9047,58 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
           builder: (ctx, r, _) {
             final save = r.watch(saveControllerProvider).requireValue;
             final now = _clock.now().toUtc();
-            return Padding(
-              padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    l.buffSheetTitle,
-                    style: const TextStyle(
-                      color: _onScene,
-                      fontWeight: FontWeight.w900,
-                      fontSize: 16,
+            return SingleChildScrollView(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      l.buffSheetTitle,
+                      style: const TextStyle(
+                        color: _onScene,
+                        fontWeight: FontWeight.w900,
+                        fontSize: 16,
+                      ),
                     ),
-                  ),
-                  // 버프는 꺼 둔 동안에도 돈다(2026-10-14) — 방치 정산이 만료 시각까지 입힌다.
-                  const SizedBox(height: 4),
-                  Text(
-                    l.buffSheetOfflineNote,
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: _onScene.withValues(alpha: 0.75),
-                      fontWeight: FontWeight.w700,
-                      fontSize: 12,
+                    // 버프는 꺼 둔 동안에도 돈다(2026-10-14) — 방치 정산이 만료 시각까지 입힌다.
+                    const SizedBox(height: 4),
+                    Text(
+                      l.buffSheetOfflineNote,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: _onScene.withValues(alpha: 0.75),
+                        fontWeight: FontWeight.w700,
+                        fontSize: 12,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 12),
-                  for (final k in BuffKind.values)
-                    _buffSheetRow(
-                      l,
-                      r,
-                      k,
-                      save.buffRemaining(k, now),
-                      minutes,
-                      freeAt,
-                    ),
-                ],
+                    const SizedBox(height: 12),
+                    // 무한 버프 패스를 맨 위에(2026-10-15 사장님 — 결제 유도). 산 사람도 남은 기간·연장이 보인다.
+                    if (_data.iapConfig?.byId('buff_pass')
+                        case final pass?) ...[
+                      StoreProductCard(
+                        product: pass,
+                        save: save,
+                        now: now,
+                        locale: Localizations.localeOf(ctx).languageCode,
+                        storePrice: r
+                            .watch(storePricesProvider)
+                            .value?[pass.id],
+                      ),
+                      const SizedBox(height: 12),
+                    ],
+                    for (final k in BuffKind.values)
+                      _buffSheetRow(
+                        l,
+                        r,
+                        k,
+                        save.buffRemaining(k, now),
+                        minutes,
+                        freeAt,
+                      ),
+                  ],
+                ),
               ),
             );
           },

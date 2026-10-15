@@ -1222,6 +1222,66 @@ abstract class AppLocalizations {
   /// **'Gold'**
   String get offlineGoldLabel;
 
+  /// No description provided for @offlineColNoBuffGot.
+  ///
+  /// In en, this message translates to:
+  /// **'Got without buffs'**
+  String get offlineColNoBuffGot;
+
+  /// No description provided for @offlineColBuffWould.
+  ///
+  /// In en, this message translates to:
+  /// **'With buffs'**
+  String get offlineColBuffWould;
+
+  /// No description provided for @offlineColNoBuffWould.
+  ///
+  /// In en, this message translates to:
+  /// **'Without buffs'**
+  String get offlineColNoBuffWould;
+
+  /// No description provided for @offlineColBuffGot.
+  ///
+  /// In en, this message translates to:
+  /// **'Got with buffs'**
+  String get offlineColBuffGot;
+
+  /// No description provided for @offlineApprox.
+  ///
+  /// In en, this message translates to:
+  /// **'~{value}'**
+  String offlineApprox(String value);
+
+  /// No description provided for @offlineRowEggs.
+  ///
+  /// In en, this message translates to:
+  /// **'Bug eggs'**
+  String get offlineRowEggs;
+
+  /// No description provided for @offlineRowMaterials.
+  ///
+  /// In en, this message translates to:
+  /// **'Materials'**
+  String get offlineRowMaterials;
+
+  /// No description provided for @offlineRowFairyStone.
+  ///
+  /// In en, this message translates to:
+  /// **'Element stone'**
+  String get offlineRowFairyStone;
+
+  /// No description provided for @offlineRowDuelStone.
+  ///
+  /// In en, this message translates to:
+  /// **'Duel stone'**
+  String get offlineRowDuelStone;
+
+  /// No description provided for @offlineRowPotion.
+  ///
+  /// In en, this message translates to:
+  /// **'Growth potion'**
+  String get offlineRowPotion;
+
   /// No description provided for @offlineXpLabel.
   ///
   /// In en, this message translates to:
@@ -11954,6 +12014,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Today\'s free sweeps are used up. Sweep for {jelly} jelly?'**
   String skillSweepConfirm(String jelly);
+
+  /// No description provided for @bugGradeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Grade'**
+  String get bugGradeLabel;
+
+  /// No description provided for @bugRarityLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Rarity'**
+  String get bugRarityLabel;
+
+  /// No description provided for @bugGradeHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'This bug\'s own grade (Common to Legendary). Raise it with essence of the same species. Higher grades mean stronger duel stats and pet bonuses.'**
+  String get bugGradeHelp;
+
+  /// No description provided for @bugRarityHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'How rare this species is. It is fixed per species and never changes. Rarer species drop less often and take longer to hatch and pair, but have bigger pet passives and give more essence.'**
+  String get bugRarityHelp;
 
   /// No description provided for @igSpeciesRarity.
   ///

@@ -1,5 +1,5 @@
 import 'package:core_battle/core_battle.dart';
-import 'package:core_models/core_models.dart' show IndividualBug;
+import 'package:core_models/core_models.dart' show Grade, IndividualBug;
 import 'package:flutter/material.dart' hide Element;
 
 import '../../data/game_data.dart';
@@ -9,6 +9,7 @@ import '../../ui/art.dart';
 import '../../ui/bug_grade.dart';
 import '../../ui/format.dart';
 import '../../ui/game_dialog.dart';
+import '../../ui/grade_rarity_rows.dart';
 import '../../ui/labels.dart';
 import '../../ui/skins.dart';
 
@@ -35,18 +36,22 @@ Future<bool?> showDuelBugInfo(
   String name = d.name;
   Color? gradeC;
   String? grade;
+  // 개체 등급이 켜졌으면 칩 대신 "등급 · 희귀도" 두 줄(2026-10-15 사장님 — 상대 곤충도).
+  Widget? gradeRows;
   try {
     final sp = data?.species(d.speciesId);
     if (sp != null) {
       name = sp.name.resolve(locale);
       final on = individualGradeOn(data!);
-      if (on && bug != null) {
-        grade = gradeLabel(l, bug.individualGrade);
-        gradeC = gradeColor(bug.individualGrade);
-      } else if (on) {
-        // 남의 곤충(서버 결투 정보에 포텐셜이 없다) — 개체 등급처럼 읽히지 않게 "종 희귀도"로 적는다.
-        grade = l.igSpeciesRarity(gradeLabel(l, sp.grade));
-        gradeC = gradeColor(sp.grade);
+      if (on) {
+        // 내 곤충은 저장 곤충에서, 남의 곤충은 서버가 실어 준 포텐셜에서(옛 서버면 0 → 희귀도만).
+        final p = bug?.potential ?? d.potential;
+        gradeRows = GradeRarityRows(
+          grade: p > 0
+              ? Grade.values[(p - 1).clamp(0, Grade.values.length - 1)]
+              : null,
+          rarity: sp.grade,
+        );
       } else {
         grade = gradeLabel(l, sp.grade);
         gradeC = gradeColor(sp.grade);
@@ -93,6 +98,8 @@ Future<bool?> showDuelBugInfo(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        if (gradeRows != null)
+          Padding(padding: const EdgeInsets.only(bottom: 6), child: gradeRows),
         if (grade != null || variant)
           Padding(
             padding: const EdgeInsets.only(bottom: 6),

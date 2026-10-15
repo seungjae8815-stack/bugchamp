@@ -14,6 +14,7 @@ import '../../domain/save_controller.dart';
 import 'package:core_save/core_save.dart';
 import '../../l10n/app_localizations.dart';
 import '../../ui/art.dart';
+import '../../ui/grade_rarity_rows.dart';
 import '../../ui/concept_card.dart';
 import '../../ui/format.dart';
 import '../../ui/game_dialog.dart';
@@ -3905,50 +3906,38 @@ class StorageScreen extends ConsumerWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
+                            // 머리말(2026-10-15 사장님): "장수하늘소 알 Lv.1" → 등급 → 희귀도(느낌표로 설명).
                             Text(
-                              species.name.resolve(locale),
+                              bugTitleLine(
+                                l,
+                                species,
+                                effStage,
+                                bug.level,
+                                locale,
+                              ),
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontWeight: FontWeight.w900,
                                 fontSize: 16,
                               ),
                             ),
-                            const SizedBox(height: 2),
-                            Row(
-                              children: [
-                                Text(
-                                  gradeLabel(l, shownGrade),
-                                  style: TextStyle(
-                                    color: _gradeBright(shownGrade),
-                                    fontWeight: FontWeight.w800,
-                                    fontSize: 12,
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                Text(
-                                  '${stageLabel(l, effStage, species)}'
-                                  '${effStage == LifeStage.adult ? ' Lv.${bug.level}' : ''}',
-                                  style: const TextStyle(
-                                    color: Color(0xCCFFFFFF),
-                                    fontSize: 12,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 2),
+                            const SizedBox(height: 3),
                             if (gradeOn)
-                              Text(
-                                l.igSpeciesRarity(gradeLabel(l, species.grade)),
-                                style: TextStyle(
-                                  color: gradeColor(
-                                    species.grade,
-                                  ).withValues(alpha: 0.9),
-                                  fontSize: 10.5,
-                                  fontWeight: FontWeight.w700,
-                                ),
+                              GradeRarityRows(
+                                grade: bug.individualGrade,
+                                rarity: species.grade,
                               )
-                            else
+                            else ...[
+                              Text(
+                                gradeLabel(l, shownGrade),
+                                style: TextStyle(
+                                  color: _gradeBright(shownGrade),
+                                  fontWeight: FontWeight.w800,
+                                  fontSize: 12,
+                                ),
+                              ),
                               _potentialMark(ctx, data, bug.potential, 13),
+                            ],
                             // 결투 전투력(성충만) — 홈의 캐릭터 전투력과 헷갈리지 않게 이름을 붙인다.
                             if (effStage == LifeStage.adult &&
                                 r.watch(duelPowerByBugProvider)[bug.id] !=

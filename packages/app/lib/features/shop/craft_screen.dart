@@ -98,7 +98,7 @@ class _StoreSection extends ConsumerWidget {
         var j = devMode ? i - 1 : i;
         if (starter != null) {
           if (j == 0) {
-            return _ProductCard(
+            return StoreProductCard(
               product: starter,
               save: save,
               now: now,
@@ -120,7 +120,7 @@ class _StoreSection extends ConsumerWidget {
         if (j == 1) return const _ExchangeCard();
         final idx = j - 2;
         if (idx == products.length) return _restoreRow(context, ref, l);
-        return _ProductCard(
+        return StoreProductCard(
           product: products[idx],
           save: save,
           now: now,
@@ -179,8 +179,10 @@ class _StoreSection extends ConsumerWidget {
 }
 
 /// 상품 1개 카드 — 이름·설명·지급 내용·가격·구매 버튼.
-class _ProductCard extends ConsumerWidget {
-  const _ProductCard({
+/// 상점 밖(버프 창 맨 위의 무한 버프 패스, 2026-10-15)에서도 같은 카드를 쓴다 — 구매 막기·가격·결과 안내가 한 곳.
+class StoreProductCard extends ConsumerWidget {
+  const StoreProductCard({
+    super.key,
     required this.product,
     required this.save,
     required this.now,
