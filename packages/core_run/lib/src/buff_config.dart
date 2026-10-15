@@ -52,6 +52,7 @@ class BuffConfig {
     this.freeDaily = 12,
     this.jellyActivate = 2,
     this.freeCooldownSeconds = 0,
+    this.freeWaitSeconds = 0,
   });
 
   /// 광고 1회 시청으로 부여되는 지속시간(초).
@@ -83,6 +84,10 @@ class BuffConfig {
   /// 결제는 시간만 절약한다(§2.6).
   final int freeCooldownSeconds;
 
+  /// **무료로** 켤 때 기다리는 시간(초, 2026-10-15 사장님 확정 60초) — 예전 "광고 보고 켜기"의 자리.
+  /// 화면을 떠나면 취소되고 무료 횟수도 쓰지 않는다. 젤리·무한 버프 패스는 기다리지 않는다. 0 = 바로 켬(구버전 동작).
+  final int freeWaitSeconds;
+
   BuffSpec? spec(BuffKind kind) => specs[kind];
 
   /// 모든 버프가 켜졌을 때의 희귀 드롭 배율 — 서버 업로드 허용치가 쓴다(가장 운 좋은 정상 유저).
@@ -98,6 +103,7 @@ class BuffConfig {
       adJelly: (json['adJelly'] as num?)?.toInt() ?? 0,
       freeDaily: (json['freeDaily'] as num?)?.toInt() ?? 12,
       freeCooldownSeconds: (json['freeCooldownSeconds'] as num?)?.toInt() ?? 0,
+      freeWaitSeconds: (json['freeWaitSeconds'] as num?)?.toInt() ?? 0,
       jellyActivate: (json['jellyActivate'] as num?)?.toInt() ?? 2,
       specs: {for (final s in list) s.kind: s},
     );

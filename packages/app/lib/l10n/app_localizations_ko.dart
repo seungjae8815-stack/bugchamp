@@ -662,6 +662,26 @@ class AppLocalizationsKo extends AppLocalizations {
   String get offlineRowPotion => '성장물약';
 
   @override
+  String buffWaitTitle(String name) {
+    return '$name 활성화 중…';
+  }
+
+  @override
+  String get buffWaitHint => '끝까지 기다리면 무료로 켜져요.\n화면을 닫거나 앱을 내리면 취소돼요.';
+
+  @override
+  String buffWaitJelly(int cost) {
+    return '젤리 $cost개로 바로 켜기';
+  }
+
+  @override
+  String get offlineRareBuffOnly => '버프 켤 때만';
+
+  @override
+  String get offlineRareNote =>
+      '속성석·결투석·성장물약은 방치 중 \'채집가의 손길\' 버프가 켜져 있을 때만 나와요';
+
+  @override
   String get offlineXpLabel => '경험치';
 
   @override

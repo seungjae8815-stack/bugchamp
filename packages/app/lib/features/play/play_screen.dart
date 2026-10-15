@@ -15,6 +15,7 @@ import 'package:uuid/uuid.dart';
 
 import 'pet_attackers.dart';
 import 'offline_reward_table.dart';
+import 'buff_wait_dialog.dart';
 import '../shop/craft_screen.dart' show StoreProductCard;
 import '../../domain/store_iap_service.dart' show storePricesProvider;
 import '../character/fairy_panel.dart' show openFairyWindow;
@@ -9135,6 +9136,48 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
         ? Duration.zero
         : cd - now.difference(last);
     if (used < free && coolLeft <= Duration.zero) {
+      // 무료로 켤 때는 대기 화면(2026-10-15 사장님 확정 60초) — 예전 광고 시청의 자리.
+      // 끝까지 기다려야 무료 횟수를 쓴다. "젤리로 바로 켜기"면 무료 횟수를 남기고 젤리로.
+      final wait = cfg?.freeWaitSeconds ?? 0;
+      if (wait > 0) {
+        if (!mounted) return false;
+        final pass = _data.iapConfig?.byId('buff_pass');
+        final res = await showBuffWait(
+          context,
+          icon: _buffIconCircle(kind, 96),
+          buffName: buffLabel(l, kind),
+          seconds: wait,
+          jellyCost: cost,
+          passCard: pass == null
+              ? null
+              : Consumer(
+                  builder: (ctx, r, _) => StoreProductCard(
+                    product: pass,
+                    save: r.watch(saveControllerProvider).requireValue,
+                    now: ref.read(clockProvider).now().toUtc(),
+                    locale: Localizations.localeOf(ctx).languageCode,
+                    storePrice: r.watch(storePricesProvider).value?[pass.id],
+                  ),
+                ),
+        );
+        if (res == BuffWaitResult.cancel) return false;
+        // 대기 중에 패스를 샀으면 그대로 켜진다(무료 횟수 안 씀).
+        if (ref
+            .read(saveControllerProvider)
+            .requireValue
+            .buffPassActive(ref.read(clockProvider).now().toUtc())) {
+          return true;
+        }
+        if (res == BuffWaitResult.jelly) {
+          if (!await ref
+              .read(saveControllerProvider.notifier)
+              .trySpendJelly(cost)) {
+            if (mounted) showCenterToast(context, l.notEnoughJelly);
+            return false;
+          }
+          return true;
+        }
+      }
       await prefs.setString('buff_free_v1', '$today|${used + 1}');
       freeAt[kind] = now; // 시트가 이 맵을 그대로 보므로 제자리 갱신
       await _saveBuffFreeAt(freeAt);

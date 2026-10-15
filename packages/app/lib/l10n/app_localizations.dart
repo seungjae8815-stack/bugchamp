@@ -1282,6 +1282,36 @@ abstract class AppLocalizations {
   /// **'Growth potion'**
   String get offlineRowPotion;
 
+  /// No description provided for @buffWaitTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Activating {name}…'**
+  String buffWaitTitle(String name);
+
+  /// No description provided for @buffWaitHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Wait until the end to turn it on for free.\nClosing this or leaving the app cancels it.'**
+  String get buffWaitHint;
+
+  /// No description provided for @buffWaitJelly.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn on now for {cost} jelly'**
+  String buffWaitJelly(int cost);
+
+  /// No description provided for @offlineRareBuffOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Buff only'**
+  String get offlineRareBuffOnly;
+
+  /// No description provided for @offlineRareNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Element stones, duel stones and growth potions drop while idle only with Gatherer\'s Touch on'**
+  String get offlineRareNote;
+
   /// No description provided for @offlineXpLabel.
   ///
   /// In en, this message translates to:

@@ -34,7 +34,13 @@ void main() {
       xp: 64,
       accrued: Duration(hours: 2),
       materials: {MaterialKind.chitin: 5},
-      buffMissed: OfflineGain(gold: 169, xp: 45, materials: 5, fairyStones: 1),
+      buffMissed: OfflineGain(
+        gold: 169,
+        xp: 45,
+        materials: 5,
+        fairyStones: 1,
+        potions: 0.3,
+      ),
     );
     await pump(t, offlineRewardTable(l, r)!);
     expect(find.text(l.offlineColNoBuffGot), findsOneWidget);
@@ -42,8 +48,12 @@ void main() {
     expect(find.text('+242'), findsOneWidget);
     expect(find.text(l.offlineApprox('+411')), findsOneWidget);
     expect(find.text(l.offlineApprox('+10')), findsOneWidget);
+    // 희귀 드롭의 버프 없이 칸은 ✕ 버프 켤 때만, 1 보다 작은 기대값은 소수 한 자리.
+    expect(find.text('✕ ${l.offlineRareBuffOnly}'), findsNWidgets(3));
+    expect(find.text(l.offlineRareNote), findsOneWidget);
     // 받지 못한 속성석도 줄이 생긴다(왼쪽 0).
     expect(find.text(l.offlineRowFairyStone), findsOneWidget);
+    expect(find.text(l.offlineApprox('+0.3')), findsOneWidget);
     expect(t.takeException(), isNull);
   });
 

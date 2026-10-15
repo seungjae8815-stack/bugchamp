@@ -660,6 +660,25 @@ class AppLocalizationsJa extends AppLocalizations {
   String get offlineRowPotion => '成長ポーション';
 
   @override
+  String buffWaitTitle(String name) {
+    return '$name 発動中…';
+  }
+
+  @override
+  String get buffWaitHint => '最後まで待つと無料で発動します。\n画面を閉じたりアプリを離れるとキャンセルされます。';
+
+  @override
+  String buffWaitJelly(int cost) {
+    return 'ゼリー$cost個ですぐ発動';
+  }
+
+  @override
+  String get offlineRareBuffOnly => 'バフ時のみ';
+
+  @override
+  String get offlineRareNote => '属性石・決闘石・成長ポーションは、放置中「採集の手」バフが有効なときだけ出ます';
+
+  @override
   String get offlineXpLabel => '経験値';
 
   @override

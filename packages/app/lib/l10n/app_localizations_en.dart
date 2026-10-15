@@ -685,6 +685,27 @@ class AppLocalizationsEn extends AppLocalizations {
   String get offlineRowPotion => 'Growth potion';
 
   @override
+  String buffWaitTitle(String name) {
+    return 'Activating $name…';
+  }
+
+  @override
+  String get buffWaitHint =>
+      'Wait until the end to turn it on for free.\nClosing this or leaving the app cancels it.';
+
+  @override
+  String buffWaitJelly(int cost) {
+    return 'Turn on now for $cost jelly';
+  }
+
+  @override
+  String get offlineRareBuffOnly => 'Buff only';
+
+  @override
+  String get offlineRareNote =>
+      'Element stones, duel stones and growth potions drop while idle only with Gatherer\'s Touch on';
+
+  @override
   String get offlineXpLabel => 'XP';
 
   @override

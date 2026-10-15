@@ -35,7 +35,7 @@ Widget? offlineRewardTable(AppLocalizations l, OfflineReport r) {
     final other = got + sign * delta;
     // 희귀 드롭(속성석·결투석·성장물약)은 0 이어도 줄을 남긴다(2026-10-15 사장님 — "버프 없으면 0"이 보여야 한다).
     if (!always && got <= 0 && other < 0.5) return;
-    rows.add(_Row(icon, name, got, other < 0 ? 0 : other, exact));
+    rows.add(_Row(icon, name, got, other < 0 ? 0 : other, exact, rare: always));
   }
 
   add(
@@ -124,10 +124,33 @@ Widget? offlineRewardTable(AppLocalizations l, OfflineReport r) {
   final leftTitle = hadBuff ? l.offlineColNoBuffWould : l.offlineColNoBuffGot;
   final rightTitle = hadBuff ? l.offlineColBuffGot : l.offlineColBuffWould;
 
+  // 계산한 값(약)이 1 보다 작으면 소수 한 자리 — 짧게 비웠을 때 "약 +0"만 보이면 버프를 켤 이유가 안 보인다(2026-10-15).
   String fmt(double v, {required bool approx, required bool exact}) {
-    final n = formatCompact(v.round());
+    final small = approx && !exact && v >= 0.005 && v < 0.95;
+    // 0.1 아래는 둘째 자리까지("약 +0.0"이 보였다 — 2026-10-15 에뮬).
+    final n = small
+        ? v.toStringAsFixed(v < 0.095 ? 2 : 1)
+        : formatCompact(v.round());
     return approx && !exact ? l.offlineApprox('+$n') : '+$n';
   }
+
+  // 희귀 드롭의 "버프 없이" 칸 = ✕ 버프 켤 때만(방치 희귀 드롭은 채집가의 손길이 켜진 동안만, 2026-10-15 사장님).
+  Widget rareOff() => Expanded(
+    flex: 3,
+    child: FittedBox(
+      fit: BoxFit.scaleDown,
+      alignment: Alignment.centerRight,
+      child: Text(
+        '✕ ${l.offlineRareBuffOnly}',
+        maxLines: 1,
+        style: const TextStyle(
+          color: Color(0xFFE57373),
+          fontSize: 12.5,
+          fontWeight: FontWeight.w800,
+        ),
+      ),
+    ),
+  );
 
   // 머리말은 한 줄 — 칸이 좁으면 글자를 줄인다("버프 있어서 받음"이 두 줄로 꺾였다, 2026-10-15 실기).
   Widget head(String t, bool on) => Expanded(
@@ -214,14 +237,17 @@ Widget? offlineRewardTable(AppLocalizations l, OfflineReport r) {
                 ),
               ),
               // 왼쪽 = 버프 없이, 오른쪽 = 버프 있을 때. 계산한 값(받지 않은 칸)은 기댓값이라 "약".
-              cell(
-                fmt(
-                  hadBuff ? row.other : row.got,
-                  approx: hadBuff,
-                  exact: row.exact,
+              if (row.rare)
+                rareOff()
+              else
+                cell(
+                  fmt(
+                    hadBuff ? row.other : row.got,
+                    approx: hadBuff,
+                    exact: row.exact,
+                  ),
+                  !hadBuff,
                 ),
-                !hadBuff,
-              ),
               const SizedBox(width: 8),
               cell(
                 fmt(
@@ -234,12 +260,31 @@ Widget? offlineRewardTable(AppLocalizations l, OfflineReport r) {
             ],
           ),
         ),
+      if (rows.any((r) => r.rare)) ...[
+        const SizedBox(height: 6),
+        Text(
+          l.offlineRareNote,
+          textAlign: TextAlign.center,
+          style: const TextStyle(
+            color: Color(0xB3FFFFFF),
+            fontSize: 11,
+            height: 1.35,
+          ),
+        ),
+      ],
     ],
   );
 }
 
 class _Row {
-  const _Row(this.icon, this.name, this.got, this.other, this.exact);
+  const _Row(
+    this.icon,
+    this.name,
+    this.got,
+    this.other,
+    this.exact, {
+    this.rare = false,
+  });
   final Widget icon;
   final String name;
   final double got;
@@ -247,4 +292,7 @@ class _Row {
 
   /// 버프를 켠 사람의 "버프 없었다면" 골드·경험치는 정확한 값이라 "약"을 붙이지 않는다.
   final bool exact;
+
+  /// 희귀 드롭(속성석·결투석·성장물약) — 버프 없이 칸은 ✕.
+  final bool rare;
 }
