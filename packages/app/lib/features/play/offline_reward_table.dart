@@ -199,17 +199,20 @@ Widget? offlineRewardTable(
     ),
   );
 
+  // 칸이 좁으면 말줄임 대신 글자를 줄인다("하루 약 4.0개"가 잘렸다, 2026-10-15 실기).
   Widget cell(String t, bool on) => Expanded(
     flex: 3,
-    child: Text(
-      t,
-      textAlign: TextAlign.right,
-      maxLines: 1,
-      overflow: TextOverflow.ellipsis,
-      style: TextStyle(
-        color: on ? got : dim,
-        fontSize: on ? 14 : 13,
-        fontWeight: on ? FontWeight.w900 : FontWeight.w700,
+    child: FittedBox(
+      fit: BoxFit.scaleDown,
+      alignment: Alignment.centerRight,
+      child: Text(
+        t,
+        maxLines: 1,
+        style: TextStyle(
+          color: on ? got : dim,
+          fontSize: on ? 14 : 13,
+          fontWeight: on ? FontWeight.w900 : FontWeight.w700,
+        ),
       ),
     ),
   );
