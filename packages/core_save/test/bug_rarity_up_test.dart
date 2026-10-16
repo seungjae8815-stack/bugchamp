@@ -81,6 +81,22 @@ void main() {
     expect(rarityUp(s, 't', pet, byId).error, 'no_fodder');
   });
 
+  test('재료가 아닌 것(2026-10-16) — 등급 올린 · 옛 합성 · 뽑기·결제 출신 · 패시브 재굴림 · 이색', () {
+    final s = save([
+      bug('t'),
+      bug('pot').copyWith(potential: 2),
+      bug('su').copyWith(potential: 2, synthUps: 1),
+      bug('gc').copyWith(fromGacha: true),
+      bug('pr').copyWith(passiveRoll: 80),
+      bug('var').copyWith(variant: BugVariant.rainbow),
+      bug('ok'),
+    ]);
+    expect(
+      [for (final b in rarityUpFodder(s, s.bugs.first, pet, byId)) b.id],
+      ['ok'],
+    );
+  });
+
   test('전설은 더 못 올린다 · 알은 못 올린다', () {
     final s = save([
       bug('l', r: Grade.legendary),
@@ -164,5 +180,75 @@ void main() {
       ),
       isFalse,
     );
+  });
+
+  test('자동 올리기 — 아끼는 곤충부터 · 올린 곤충이 다시 재료로 이어진다 · 서버 검사도 같은 이음을 센다', () {
+    // 키운 곤충 t + 일반 15마리 → t 고급(3) · 나머지 12마리로 고급 3마리 · t 희귀(고급 3) = 5번, 재료 15.
+    final s = save([
+      bug('t', level: 5),
+      for (var i = 0; i < 15; i++) bug('w$i'),
+    ]);
+    final r = autoRarityUp(s, pet, byId);
+    expect(r.isOk, isTrue);
+    expect(r.extra['ups'], 5);
+    expect(r.extra['fodder'], 15);
+    expect(r.save!.bugs.map((b) => b.id), ['t']);
+    expect(r.save!.bugs.single.rarity, Grade.rare);
+    expect(r.extra['bugs'], {'t': 'rare'});
+    // 서버: 15마리가 모두 저장본의 일반으로 사라져도 일반 → 희귀를 인정한다(아래 단계 4마리 = 재료 하나).
+    final gone = [
+      for (var i = 0; i < 15; i++)
+        (id: 'w$i', speciesId: 'stag_saw', rarity: Grade.common),
+    ];
+    final used = <String>{};
+    expect(
+      rarityUpAllowed(
+        from: Grade.common,
+        to: Grade.rare,
+        speciesId: 'stag_saw',
+        gone: gone,
+        cfg: pet.bugRarity,
+        used: used,
+      ),
+      isTrue,
+    );
+    expect(used.length, 15);
+    // 14마리면 모자란다(재료를 늘려 주지 않는다).
+    expect(
+      rarityUpAllowed(
+        from: Grade.common,
+        to: Grade.rare,
+        speciesId: 'stag_saw',
+        gone: [
+          for (var i = 0; i < 14; i++)
+            (id: 'w$i', speciesId: 'stag_saw', rarity: Grade.common),
+        ],
+        cfg: pet.bugRarity,
+      ),
+      isFalse,
+    );
+    // 올릴 게 없으면 none.
+    expect(autoRarityUp(save([bug('x')]), pet, byId).error, 'none');
+  });
+
+  test('올릴 수 있음 표시(rarityUpReadyIds) = rarityUp 이 성공하는 곤충과 같다', () {
+    final s = save([
+      bug('t', level: 5), // 키운 곤충 — 재료는 아니지만 올릴 수는 있다
+      bug('a'),
+      bug('b'),
+      bug('c'),
+      bug('u', r: Grade.uncommon), // 고급 재료 없음
+      bug('e', stage: LifeStage.egg), // 알은 못 올림
+    ]);
+    final ready = rarityUpReadyIds(s, pet, byId);
+    for (final b in s.bugs) {
+      expect(
+        ready.contains(b.id),
+        rarityUp(s, b.id, pet, byId).isOk,
+        reason: b.id,
+      );
+    }
+    // a·b·c 는 재료가 둘뿐(t 는 키운 곤충이라 재료가 아니다).
+    expect(ready, {'t'});
   });
 }

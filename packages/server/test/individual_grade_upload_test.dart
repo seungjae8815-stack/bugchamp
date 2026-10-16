@@ -289,6 +289,119 @@ void main() {
       expect(r.essence['stag_dorcus'] ?? 0, lessThan(3));
     });
 
+    test('희귀도 올리기 — 저장본에 알이던 곤충(마지막 업로드 뒤 부화)도 재료로 센다', () {
+      IndividualBug c(String id, {LifeStage stage = LifeStage.adult}) =>
+          bug(id, pot: 1, stage: stage).copyWith(rarity: Grade.common);
+      final s = stored([
+        c('t'),
+        c('a', stage: LifeStage.egg),
+        c('b', stage: LifeStage.egg),
+        c('c', stage: LifeStage.egg),
+      ]);
+      // 앱: 알 3마리 부화 → 바로 재료로.
+      final client = stored([c('t').copyWith(rarity: Grade.uncommon)]).toJson();
+      final out = on.mergeSave(s, client).save!;
+      expect(out.bugs.single.rarity, Grade.uncommon);
+    });
+
+    test('희귀도 자동 올리기 — 업로드 사이에 올린 곤충을 바로 재료로 써도 인정한다(이어 올리기)', () {
+      IndividualBug c(String id, {int lv = 1}) =>
+          bug(id, pot: 1).copyWith(rarity: Grade.common, level: lv);
+      final s = stored([c('t', lv: 5), for (var i = 0; i < 15; i++) c('w$i')]);
+      final up = autoRarityUp(s, on.config.pet, {
+        for (final x in on.config.speciesList) x.id: x,
+      });
+      expect(up.isOk, isTrue);
+      expect(up.save!.bugs.single.rarity, Grade.rare);
+      final out = on.mergeSave(s, up.save!.toJson()).save!;
+      expect(out.bugs.single.rarity, Grade.rare);
+    });
+
+    test('새 곤충의 뽑기 출신 gc — 쓴 젤리 ÷ 뽑기 가격 개 + 결제 알(iap-) 업로드당 4개까지', () {
+      final cost = on.config.pet.gachaJellyCost;
+      expect(cost, greaterThan(0));
+      final s = stored([
+        // 서버가 먼저 지급한 결제 알(저장본에 있음)은 그대로.
+        bug('iap-old-0', pot: 4, gc: true, stage: LifeStage.egg),
+      ]).copyWith(materials: {MaterialKind.jelly: cost * 3});
+      final client = s.copyWith(
+        materials: {MaterialKind.jelly: cost}, // 2번 뽑을 만큼 썼다
+        bugs: [
+          bug('iap-old-0', pot: 4, gc: true, stage: LifeStage.egg),
+          for (var i = 0; i < 4; i++)
+            bug('g$i', pot: 3, gc: true, stage: LifeStage.egg),
+          for (var i = 0; i < 6; i++)
+            bug('iap-x-$i', pot: 4, gc: true, stage: LifeStage.egg),
+        ],
+      );
+      final out = on.mergeSave(s, client.toJson()).save!;
+      bool gc(String id) => out.bugs.firstWhere((b) => b.id == id).fromGacha;
+      expect(gc('iap-old-0'), isTrue);
+      expect(
+        [for (var i = 0; i < 4; i++) gc('g$i')].where((x) => x).length,
+        2 + GameActions.kGachaSlackPerUpload,
+      );
+      expect(
+        [for (var i = 0; i < 6; i++) gc('iap-x-$i')].where((x) => x).length,
+        GameActions.kNewIapEggsPerUpload,
+      );
+      // 젤리를 안 썼으면 새 곤충의 gc 는 여유분만 남기고 지운다.
+      final free = stored([]).copyWith(
+        bugs: [
+          for (var i = 0; i < 3; i++)
+            bug('f$i', pot: 3, gc: true, stage: LifeStage.egg),
+        ],
+      );
+      expect(
+        on
+            .mergeSave(stored([]), free.toJson())
+            .save!
+            .bugs
+            .where((b) => b.fromGacha)
+            .length,
+        GameActions.kGachaSlackPerUpload,
+      );
+      // 10회 뽑기와 같은 구간에 젤리를 벌어(선물 2배 등) 순감소가 9번 값뿐이어도 10마리 모두 남는다(2026-10-17 점검).
+      final s10 = stored(
+        [],
+      ).copyWith(materials: {MaterialKind.jelly: cost * 10});
+      final c10 = s10.copyWith(
+        materials: {MaterialKind.jelly: 5}, // 10번(전부) 썼고 같은 구간에 젤리 5를 받았다
+        bugs: [
+          for (var i = 0; i < 10; i++)
+            bug('t$i', pot: 3, gc: true, stage: LifeStage.egg),
+        ],
+      );
+      expect(
+        on
+            .mergeSave(s10, c10.toJson())
+            .save!
+            .bugs
+            .where((b) => b.fromGacha)
+            .length,
+        10,
+      );
+    });
+
+    test('놓친 굴리기 횟수(lru)는 놓친 횟수를 넘지 못한다 · 새 곤충엔 붙지 않고 롤도 지운다', () {
+      const full = [100, 100, 100, 100, 100, 100, 100, 100];
+      // 새 곤충(켜진 뒤 생김)에 lru + 만점 롤.
+      final fresh = stored([
+        bug('n', pot: 1).copyWith(legacyRollUps: 1, rolls: full),
+      ]);
+      final n = on.mergeSave(stored([]), fresh.toJson()).save!.bugs.single;
+      expect(n.legacyRollUps, 0);
+      expect(n.rolls, isNull);
+      // 옛 곤충(3성 · 놓친 2번)에 lru 9 → 2.
+      final s = stored([bug('o', pot: 3, ng: false)]);
+      final j = stored([
+        bug('o', pot: 3, ng: false).copyWith(legacyRollUps: 9, rolls: full),
+      ]).toJson();
+      final o = on.mergeSave(s, j).save!.bugs.single;
+      expect(o.legacyRollUps, 2);
+      expect(o.rolls, full);
+    });
+
     test('놓친 능력치 굴리기 횟수(lru, 1.0.22)는 줄지 않는다 — 0 으로 고쳐 무료 굴리기를 되살리지 못한다', () {
       final s = stored([
         bug('o', pot: 5, su: 4, ng: false).copyWith(legacyRollUps: 3),

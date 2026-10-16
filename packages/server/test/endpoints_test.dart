@@ -528,6 +528,33 @@ void main() {
       expect(team[1].containsKey('variant'), isFalse);
     });
 
+    test(
+      '옛 /battle/manual/step 에 다른 종류 세션(결투 제안) id 를 넣으면 404(no_session)',
+      () async {
+        final h = handler(
+          save: me3,
+          defenders: foeDefenders,
+          otherSaves: {'foe-1': foeSave.toJson()},
+          rpc: leagueRpc,
+        );
+        final res = await post(h, '/duel/offer', {}, token: makeToken());
+        expect(res.statusCode, 200);
+        final body =
+            jsonDecode(await res.readAsString()) as Map<String, dynamic>;
+        final offerId = body['offerId'];
+        expect(offerId, isNotNull);
+        final step = await post(h, '/battle/manual/step', {
+          'sessionId': offerId,
+          'stance': 'attack',
+        }, token: makeToken());
+        expect(step.statusCode, 404);
+        expect(
+          (jsonDecode(await step.readAsString()) as Map)['error'],
+          'no_session',
+        );
+      },
+    );
+
     test('/duel/start 응답의 상대에도 이색·스킨이 실린다', () async {
       final h = handler(
         save: me3,

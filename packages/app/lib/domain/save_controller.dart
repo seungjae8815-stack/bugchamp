@@ -2316,9 +2316,17 @@ class SaveController extends AsyncNotifier<SaveGame> {
 
   /// 부상 회복. [viaJelly] 면 남은 시간 비례 젤리를 소비해 즉시 회복,
   /// 아니면 회복 시각이 지났을 때만 정리. 성공 시 true.
-  Future<bool> healInjury(String bugId, {bool viaJelly = false}) async {
+  Future<bool> healInjury(String bugId, {bool viaJelly = false}) async =>
+      await healInjuryResult(bugId, viaJelly: viaJelly) == null;
+
+  /// [healInjury] 와 같고 실패 이유를 돌려준다(null = 성공) — 화면이 "젤리 부족"만 띄우지 않게(1.0.22 출시 점검).
+  /// 'no_jelly' · 'network'(대회 부상은 서버가 지운다) · 'not_injured' · 'not_ready' · 서버 코드.
+  Future<String?> healInjuryResult(
+    String bugId, {
+    bool viaJelly = false,
+  }) async {
     final cfg = ref.read(gameDataProvider).requireValue.petConfig;
-    if (cfg == null) return false;
+    if (cfg == null) return 'off';
     final now = ref.read(clockProvider).now().toUtc();
     final s = state.requireValue;
     // 대회 부상은 서버 소유(`eventFatigue`) — 로컬로 지우면 다음 업로드에 되살아나고 젤리만
@@ -2327,35 +2335,35 @@ class SaveController extends AsyncNotifier<SaveGame> {
     if (viaJelly && server.available && s.eventOnFatigue(bugId, now)) {
       return withServerSaveLock(() async {
         if (!await flushSaveBeforeServerAction(server, () => latestSave)) {
-          return false;
+          return 'network';
         }
         final r = await server.eventDuelHeal(bugId);
         final json = r.save;
-        if (!r.isOk || json == null) return false;
+        if (!r.isOk || json == null) return r.error ?? 'network';
         await adoptServerSave(json);
-        return true;
+        return null;
       });
     }
     final until = s.injured[bugId];
-    if (until == null) return false;
+    if (until == null) return 'not_injured';
     final injured = Map<String, DateTime>.from(s.injured)..remove(bugId);
     if (viaJelly) {
       if (!now.isBefore(until)) {
         // 이미 회복 완료 → 젤리 없이 정리.
         await _commit(s.copyWith(injured: injured));
-        return true;
+        return null;
       }
       final cost = cfg.injuryJelly(until.difference(now));
       final have = s.materials[MaterialKind.jelly] ?? 0;
-      if (have < cost) return false;
+      if (have < cost) return 'no_jelly';
       final mats = Map<MaterialKind, int>.from(s.materials)
         ..[MaterialKind.jelly] = have - cost;
       await _commit(s.copyWith(injured: injured, materials: mats));
-      return true;
+      return null;
     }
-    if (now.isBefore(until)) return false; // 아직 회복 안 됨
+    if (now.isBefore(until)) return 'not_ready'; // 아직 회복 안 됨
     await _commit(s.copyWith(injured: injured));
-    return true;
+    return null;
   }
 
   /// 서버 권위 모드면 [call] 로 서버에 처리를 맡기고 결과를 채택한다.
@@ -2717,6 +2725,32 @@ class SaveController extends AsyncNotifier<SaveGame> {
           ),
         );
       }
+    }
+    await _commit(s.copyWith(bugs: bugs));
+  }
+
+  /// (개발) 희귀도 올리기 미리 보기(2026-10-17 사장님 요청) — 첫 종의 **같은 희귀도(일반)** 성충 4마리를 넣는다.
+  /// 칸에 초록 ↑ · 보기 줄 ◆↑N 이 바로 뜨게(재료 규칙 `rarityUpFodder` — 포텐셜 1 · 투자 안 함).
+  /// 희귀도는 id 롤이라 원하는 값이 나올 때까지 id 를 새로 뽑는다(개발 전용 — 결정론 대상 아님).
+  Future<void> devRarityUpKit() async {
+    final data = ref.read(gameDataProvider).requireValue;
+    final pet = data.petConfig;
+    if (pet == null) return;
+    final rng = math.Random();
+    final sp = data.allSpecies.first;
+    final s = state.requireValue;
+    final bugs = List<IndividualBug>.from(s.bugs);
+    var added = 0;
+    for (var tries = 0; added < 4 && tries < 500; tries++) {
+      final b = IndividualBug.roll(
+        id: _devUuid.v4(),
+        species: sp,
+        rng: rng,
+        potential: 1,
+      );
+      if (pet.rarityOf(b, sp) != Grade.common) continue;
+      bugs.add(b);
+      added++;
     }
     await _commit(s.copyWith(bugs: bugs));
   }
@@ -3265,6 +3299,41 @@ class SaveController extends AsyncNotifier<SaveGame> {
     return true;
   }
 
+  /// 수련을 골드가 되는 만큼(티어 상한까지) 한 번에 올린다 — 올린 레벨 수(0 = 못 올림).
+  /// 출시 전 점검(2026-10-16): 1레벨씩만 올라 다 키우려면 곤충 하나에 80번 가까이 눌러야 했다. 규칙은 [trainBug] 과 같다.
+  Future<int> trainBugMax(String bugId) async {
+    final cfg = ref.read(gameDataProvider).requireValue.petConfig;
+    if (cfg == null) return 0;
+    final now = ref.read(clockProvider).now().toUtc();
+    final s = state.requireValue;
+    final idx = s.bugs.indexWhere((b) => b.id == bugId);
+    if (idx < 0) return 0;
+    var bug = s.bugs[idx];
+    if (effectiveStage(bug.stage, bug.stageSince, now, cfg) !=
+            LifeStage.adult ||
+        bug.breakthroughEndsAt != null) {
+      return 0;
+    }
+    final cap = cfg.levelCap(bug.breakthroughTier);
+    var gold = s.gold;
+    var n = 0;
+    while (bug.level < cap) {
+      final cost = cfg.trainCost(bug.level);
+      if (gold < cost) break;
+      gold -= cost;
+      bug = bug.copyWith(level: bug.level + 1);
+      n++;
+    }
+    if (n == 0) return 0;
+    final bugs = List<IndividualBug>.from(s.bugs)..[idx] = bug;
+    await _commit(s.copyWith(gold: gold, bugs: bugs));
+    final t = ref.read(clockProvider).now().toUtc();
+    for (var i = 0; i < n; i++) {
+      GuildWarTally.add('bugLevel', t);
+    }
+    return n;
+  }
+
   /// 돌파 재료 종류는 §2.7 의 시스템 규칙이라 `game_rules.dart` 한 곳에 있다
   /// — 앱·서버·비용 표시가 각자 목록을 들면 조용히 어긋난다.
   static const _breakMats = kBreakthroughMaterials;
@@ -3395,18 +3464,50 @@ class SaveController extends AsyncNotifier<SaveGame> {
   ///
   /// 실패 사유를 돌려준다 — "안 된다"만 뜨면 유저는 버그로 읽는다.
   Future<({IndividualBug? bug, String? error})> gachaDraw() async {
+    final r = await gachaDrawMany(1);
+    return (bug: r.bugs.isEmpty ? null : r.bugs.first, error: r.error);
+  }
+
+  /// 알 뽑기 [count] 번을 한 번에(1.0.22 — 10회 뽑기). 가격·확률·천장은 한 번씩 뽑는 것과 똑같다
+  /// (할인 없음 — 젤리 경제 그대로). 한 번씩 이어서 굴려 천장 카운터가 중간에 되감기는 것도 같다.
+  /// 채집함 빈칸·젤리가 [count] 번 모두에 모자라면 하나도 뽑지 않는다(반쯤 뽑히면 헷갈린다). 저장은 한 번.
+  Future<({List<IndividualBug> bugs, String? error})> gachaDrawMany(
+    int count,
+  ) async {
     final data = ref.read(gameDataProvider).requireValue;
     final cfg = data.petConfig;
-    if (cfg == null || cfg.gachaJellyCost <= 0) {
-      return (bug: null, error: 'off');
+    if (cfg == null || cfg.gachaJellyCost <= 0 || count <= 0) {
+      return (bugs: const <IndividualBug>[], error: 'off');
     }
-    final s = state.requireValue;
-    if (s.storageFull) return (bug: null, error: 'storage_full');
-    if (s.materialCount(MaterialKind.jelly) < cfg.gachaJellyCost) {
-      return (bug: null, error: 'no_jelly');
+    var s = state.requireValue;
+    if (s.storageCapacity - s.bugs.length < count) {
+      return (bugs: const <IndividualBug>[], error: 'storage_full');
+    }
+    if (s.materialCount(MaterialKind.jelly) < cfg.gachaJellyCost * count) {
+      return (bugs: const <IndividualBug>[], error: 'no_jelly');
     }
     final now = ref.read(clockProvider).now().toUtc();
     final rng = math.Random();
+    final got = <IndividualBug>[];
+    for (var n = 0; n < count; n++) {
+      final one = _gachaOne(s, data, cfg, rng, now);
+      if (one == null) break;
+      s = one.s;
+      got.add(one.bug);
+    }
+    if (got.isEmpty) return (bugs: const <IndividualBug>[], error: 'off');
+    await _commit(s);
+    return (bugs: got, error: null);
+  }
+
+  /// 뽑기 한 번 — 젤리 차감·알 추가·천장 카운터까지 반영한 세이브. 뽑을 수 없으면 null.
+  ({SaveGame s, IndividualBug bug})? _gachaOne(
+    SaveGame s,
+    GameData data,
+    PetConfig cfg,
+    math.Random rng,
+    DateTime now,
+  ) {
     final pityDue =
         cfg.gachaEpicPity > 0 && s.gachaPity >= cfg.gachaEpicPity - 1;
 
@@ -3429,7 +3530,7 @@ class SaveController extends AsyncNotifier<SaveGame> {
           if (e.key.index >= cfg.gachaPityGrade.index) e.key: e.value,
       };
     }
-    if (weights.isEmpty) return (bug: null, error: 'off');
+    if (weights.isEmpty) return null;
     final total = weights.values.fold<double>(0, (a, b) => a + b);
     var pick = rng.nextDouble() * total;
     var grade = weights.keys.last;
@@ -3447,7 +3548,7 @@ class SaveController extends AsyncNotifier<SaveGame> {
       for (final sp in data.allSpecies)
         if ((rarityOn || sp.grade == grade) && sp.availableAt(now)) sp,
     ];
-    if (pool.isEmpty) return (bug: null, error: 'off');
+    if (pool.isEmpty) return null;
     final sp = pool[rng.nextInt(pool.length)];
     final bug =
         IndividualBug.roll(
@@ -3489,8 +3590,8 @@ class SaveController extends AsyncNotifier<SaveGame> {
     final mats = Map<MaterialKind, int>.from(s.materials);
     mats[MaterialKind.jelly] =
         (mats[MaterialKind.jelly] ?? 0) - cfg.gachaJellyCost;
-    await _commit(
-      s.copyWith(
+    return (
+      s: s.copyWith(
         materials: mats,
         bugs: [...s.bugs, bug],
         // ⚠️ **보장 등급이 나왔을 때만** 되감는다. 영웅에서 초기화하면
@@ -3507,8 +3608,8 @@ class SaveController extends AsyncNotifier<SaveGame> {
             ? s.gachaLegendPity
             : (bug.potential >= kPotentialMax ? 0 : s.gachaLegendPity + 1),
       ),
+      bug: bug,
     );
-    return (bug: bug, error: null);
   }
 
   /// 부화 완료된 알을 수령 → 유충으로. 미완료/없음이면 false.
@@ -3961,7 +4062,14 @@ class SaveController extends AsyncNotifier<SaveGame> {
       return (candidate: null, error: 'no_item');
     }
     // 늘 더 좋은 값이 나오므로 이미 최대면 막는다(2026-10-16). 비용은 그 줄을 다듬은 횟수만큼 오른다.
-    if (polishMaxed(items, target, index, maxMult: _maxMult(s))) {
+    if (polishMaxed(
+      items,
+      target,
+      index,
+      maxMult: _maxMult(s),
+      // 같은 종류로 다듬을 때만 최대로 막는다(다른 종류로 바꾸는 다듬기는 늘 된다 — 출시 전 점검).
+      kind: kind,
+    )) {
       return (candidate: null, error: 'maxed');
     }
     final cost = forge.polishCost(
@@ -4396,6 +4504,10 @@ class SaveController extends AsyncNotifier<SaveGame> {
 
   Future<FairyOp> fairyLevelUp(String id) =>
       _fairyOp((f, cfg, _) => levelUpFairy(f, cfg, id));
+
+  /// 가루가 닿는 데까지 한 번에(1.0.22).
+  Future<FairyOp> fairyLevelUpMax(String id) =>
+      _fairyOp((f, cfg, _) => levelUpFairyMax(f, cfg, id));
 
   Future<FairyOp> fairySetCompanion(String? id) =>
       _fairyOp((f, _, _) => setFairyCompanion(f, id));
@@ -5224,6 +5336,16 @@ class SaveController extends AsyncNotifier<SaveGame> {
     return r;
   }
 
+  /// 희귀도 자동 올리기(1.0.22) — 규칙은 core_save `autoRarityUp`(화면 미리보기와 같은 함수).
+  Future<GradeOp> autoRarityUpBugs() async {
+    final data = ref.read(gameDataProvider).requireValue;
+    final pet = data.petConfig;
+    if (pet == null) return const GradeOp.fail('off');
+    final r = autoRarityUp(state.requireValue, pet, data.speciesById);
+    if (r.isOk) await _commit(r.save!);
+    return r;
+  }
+
   Future<GradeOp> gradeUpBug(String id, {int potions = 0}) async {
     final data = ref.read(gameDataProvider).requireValue;
     if (!_gradeCfg.enabled) return const GradeOp.fail('off');
@@ -5255,6 +5377,31 @@ class SaveController extends AsyncNotifier<SaveGame> {
     );
     if (r.isOk) await _commit(r.save!);
     return r;
+  }
+
+  /// 놓친 능력치 굴리기를 남은 횟수만큼 한 번에(출시 전 점검 — 곤충마다 최대 4번 창을 다시 열었다).
+  /// 매번 물약 [potionsEach] 개(모자라면 있는 만큼). extra: `before`(처음 롤) · `after`(마지막 롤) · `rolls`(굴린 횟수).
+  Future<GradeOp> legacyRollAllBug(String id, {int potionsEach = 0}) async {
+    if (!_gradeCfg.enabled) return const GradeOp.fail('off');
+    var s = state.requireValue;
+    final rng = math.Random();
+    List<int>? before;
+    List<int>? after;
+    var n = 0;
+    while (true) {
+      final b = s.bugs.where((x) => x.id == id).firstOrNull;
+      if (b == null || legacyRollsLeft(b) <= 0) break;
+      final p = math.min(potionsEach, s.growthPotions);
+      final r = legacyRollUp(s, id, _gradeCfg, rng, potions: p);
+      if (!r.isOk) break;
+      before ??= (r.extra['before'] as List).cast<int>();
+      after = (r.extra['after'] as List).cast<int>();
+      s = r.save!;
+      n++;
+    }
+    if (n == 0) return const GradeOp.fail('none_left');
+    await _commit(s);
+    return GradeOp.ok(s, extra: {'before': before, 'after': after, 'rolls': n});
   }
 
   /// 성장물약 [n] 개를 젤리로 산다(하루 상한).

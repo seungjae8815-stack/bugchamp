@@ -190,7 +190,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String seasonTrophyReset(int from, int to) {
-    return 'トロフィー $from → $to';
+    return '星 $from → $to';
   }
 
   @override
@@ -244,7 +244,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String accountDeleteBody(String word) {
-    return '虫・通貨・トロフィー・交配の記録がすべて消え、元に戻せません。\n\n確認のため、下に «$word» と入力してください。';
+    return '虫・通貨・決闘・ペアリングの記録がすべて消え、元に戻せません。\n\n確認のため、下に «$word» と入力してください。';
   }
 
   @override
@@ -423,7 +423,7 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get breedingTitle => '交配';
+  String get breedingTitle => 'ペアリング';
 
   @override
   String breedingSlotsLabel(int used, int cap) {
@@ -431,7 +431,7 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get breedingNew => '新しい交配';
+  String get breedingNew => '新しいペアリング';
 
   @override
   String get breedingPickMother => '母虫を選ぶ（♀ 成虫）';
@@ -440,7 +440,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get breedingPickFather => '父虫を選ぶ（♂・同じ種類）';
 
   @override
-  String get breedingNoFemales => '交配できる母虫（♀ 成虫）がいません';
+  String get breedingNoFemales => 'ペアリングできる母虫（♀ 成虫）がいません';
 
   @override
   String get breedingNoMate => '同じ種類の父虫（♂ 成虫）がいません';
@@ -793,7 +793,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get upBossDamage => '闘志';
 
   @override
-  String get upMaxHp => '根性';
+  String get upMaxHp => '体力';
 
   @override
   String get upDefense => '打たれ強さ';
@@ -1099,7 +1099,8 @@ class AppLocalizationsJa extends AppLocalizations {
   String get speciesPassiveTitle => '種族固有能力';
 
   @override
-  String get speciesPassiveHint => 'この虫をペットとして装備すると付きます。同じ種を複数装備すると重なります。';
+  String get speciesPassiveHint =>
+      'この虫をペットとして装備すると付きます。同じ種類のパッシブを複数装備すると重なります。';
 
   @override
   String get storageFilterLabel => '受け取る等級';
@@ -1561,7 +1562,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get traitTitle => '血統特性';
 
   @override
-  String get traitHint => '交配で生まれた虫だけが持てます。両親が同じ特性なら必ず受け継ぎます。';
+  String get traitHint => 'ペアリングで生まれた虫だけが持てます。両親が同じ特性なら必ず受け継ぎます。';
 
   @override
   String get breedInheritTitle => '受け継ぐもの';
@@ -1997,6 +1998,9 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get trainMaxed => '最大レベル';
+
+  @override
+  String get trainFailed => '今は修練できません — レベル上限・突破中か確認してください';
 
   @override
   String get trainSnack => '修練完了！レベル +1';
@@ -2837,7 +2841,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String pvpTicketJellyBtn(int cost) {
-    return 'ゼリー$costで満タン';
+    return 'ゼリー$costでチャージ';
   }
 
   @override
@@ -2849,13 +2853,13 @@ class AppLocalizationsJa extends AppLocalizations {
   String get pvpTicketFilled => 'チケットを満タンにしました';
 
   @override
-  String get pvpTicketAlreadyFull => 'チケットはすでに満タンです';
+  String get pvpTicketAlreadyFull => 'チケットは満タンです — 無料チャージ回数は使っていません';
 
   @override
   String get pvpTicketChargeFailed => 'チケットを補充できませんでした。しばらくしてからお試しください';
 
   @override
-  String get pvpTicketWhy => 'チケットはトロフィーランキングを「回数」ではなく「戦力」で決めるための仕組みです。';
+  String get pvpTicketWhy => 'チケットは決闘ランキングを「回数」ではなく「戦力」で決めるための仕組みです。';
 
   @override
   String adDailyLimit(int limit) {
@@ -3645,7 +3649,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String polishStacks(String n, String max, String floor) {
-    return '磨き $n/$max・今は最大の$floor%・次は必ずもっと高く';
+    return '磨いた回数 $n回（費用は$max回目から同じ）・今は最大の$floor%・次は必ずもっと高く';
   }
 
   @override
@@ -3719,7 +3723,7 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get forgeTranscendWarn => '⚠️ 装備中と金床の上の装備がすべて消えます(星・丹精を含む)。';
+  String get forgeTranscendWarn => '⚠️ 装備中と金床の上の装備がすべて消えます(星・磨いたオプションを含む)。';
 
   @override
   String get forgeTranscendAction => '工房超越';
@@ -3792,7 +3796,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String forgeStarCarryBody(String stars, String exp) {
-    return '同じ等級の装備なので、今の装備の星★$starsと集めた星素材$exp個(強化中ならその時間も)を新しい装備がそのまま引き継ぎます。丹精(磨き)はオプションに付くものなので新しい装備のままです。\n\n替えますか？';
+    return '同じ等級の装備なので、今の装備の星★$starsと集めた星素材$exp個(強化中ならその時間も)を新しい装備がそのまま引き継ぎます。磨いた回数（磨き費用の段階）はオプションに付くものなので新しい装備のままです。\n\n替えますか？';
   }
 
   @override
@@ -3824,7 +3828,7 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get forgeRerollHint => '等級と部位はそのまま · 磨きボタンでオプションを変えます';
+  String get forgeRerollHint => '等級と部位はそのまま · 磨きボタンでオプションをより良くします';
 
   @override
   String forgeRushOn(int s) {
@@ -4191,7 +4195,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String duelTrophy(String delta) {
-    return 'トロフィー $delta';
+    return '星 $delta';
   }
 
   @override
@@ -4526,7 +4530,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get duelMiss => 'ミス！';
 
   @override
-  String get breedingConfirm => '交配';
+  String get breedingConfirm => 'ペアリング';
 
   @override
   String breedingTimeInfo(String t) {
@@ -5654,7 +5658,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get guildWarBreedHint =>
-      '交配の受け取り・孵化の受け取り・合成でポイントを獲得。ゼリーで即完了したものはカウントされません。';
+      'ペアリングの受け取り・孵化の受け取り・合成でポイントを獲得。ゼリーで即完了したものはカウントされません。';
 
   @override
   String get guildWarForgeHint => '鍛冶でポイント — 高い等級ほど大きく増えます。';
@@ -5780,7 +5784,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String guideElementBody(String mult) {
-    return '虫にはそれぞれ五行属性が一つあります。決闘で相剋の相手にぶつかるとダメージが$mult倍になります。赤い矢印が勝つ向きです。';
+    return '虫にはそれぞれ五行属性が一つあります。決闘で相剋の相手にぶつかるとダメージが$mult倍になります。赤い矢印が勝つ向きです。土俵にも五行があり、土俵と同じ五行の虫は体力・攻撃・防御が上がり、土俵が勝つ五行の虫は下がります（決闘は相手を選ぶとき、大会はウェーブごとに決まります）。';
   }
 
   @override
@@ -5847,11 +5851,11 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get guideTraitTitle => '血統特性（交配のみ）';
+  String get guideTraitTitle => '血統特性（ペアリングのみ）';
 
   @override
   String get guideTraitBody =>
-      '交配で生まれた虫だけが持てます。野生の虫にはありません。ペット装着時と決闘の両方で効果があります。';
+      'ペアリングで生まれた虫だけが持てます。野生の虫にはありません。ペット装着時と決闘の両方で効果があります。';
 
   @override
   String guideTraitEffect(String atk, String hp) {
@@ -5859,11 +5863,11 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get guideBreedTitle => '交配と遺伝';
+  String get guideBreedTitle => 'ペアリングと遺伝';
 
   @override
   String guideBreedBody(String el, String tm, String tr) {
-    return '同じ種のオス・メスの成虫を交配させると卵が手に入ります。子は親の五行（$el）と気質（$tm）を高い確率で、親の特性（$tr）を受け継ぎます。両親の五行・気質・特性が同じなら子も必ず同じになるので、好みの系統を代々つないでいけます。';
+    return '同じ種のオス・メスの成虫をペアリングさせると卵が手に入ります。子は親の五行（$el）と気質（$tm）を高い確率で、親の特性（$tr）を受け継ぎます。両親の五行・気質・特性が同じなら子も必ず同じになるので、好みの系統を代々つないでいけます。';
   }
 
   @override
@@ -5878,7 +5882,7 @@ class AppLocalizationsJa extends AppLocalizations {
     String pet,
     String duel,
   ) {
-    return 'ごくまれに色の違う虫（レインボー・アルビノ）が出ます。確率は野生 $wild・交配 $breed・親が色違いなら $parent・卵ガチャ $gacha。ペット装着で能力値 +$pet、決闘では +$duelです。';
+    return 'ごくまれに色の違う虫（レインボー・アルビノ）が出ます。確率は野生 $wild・ペアリング $breed・親が色違いなら $parent・卵ガチャ $gacha。ペット装着で能力値 +$pet、決闘では +$duelです。';
   }
 
   @override
@@ -5886,7 +5890,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get guideLifeBody =>
-      '卵 → 幼虫 → さなぎ → 成虫の順に育ちます。卵は孵化器に入れると幼虫になり、幼虫からは時間が経つと自然に成虫になります。修練・交配・決闘は成虫だけができます。カマキリ・バッタの仲間・タガメはさなぎにならず脱皮で育ちます(卵 → 若虫 → 脱皮中 → 成虫)。';
+      '卵 → 幼虫 → さなぎ → 成虫の順に育ちます。卵は孵化器に入れると幼虫になり、幼虫からは時間が経つと自然に成虫になります。修練・ペアリング・決闘は成虫だけができます。カマキリ・バッタの仲間・タガメはさなぎにならず脱皮で育ちます(卵 → 若虫 → 脱皮中 → 成虫)。';
 
   @override
   String get guideDuelTitle => '決闘';
@@ -5937,7 +5941,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get fairyEquippedTag => '装着中';
 
   @override
-  String get fairyMergeEquipped => '装着中の妖精は合成できません';
+  String get fairyMergeEquipped => '同行中の妖精は合成できません';
 
   @override
   String get fairyAutoMergeDone => '合成結果';
@@ -6152,7 +6156,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String eggOddsPity(String n, String grade) {
-    return '$n回目は$grade以上確定';
+    return '$n回目は$grade等級以上確定';
   }
 
   @override
@@ -6253,7 +6257,7 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get breedingExpandTitle => '交配スロットの拡張';
+  String get breedingExpandTitle => 'ペアリングスロットの拡張';
 
   @override
   String get incubatorExpandTitle => '孵化器の拡張';
@@ -6264,7 +6268,7 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get breedingInstantTitle => '交配を即完了';
+  String get breedingInstantTitle => 'ペアリングを即完了';
 
   @override
   String breedingInstantConfirm(int jelly) {
@@ -6695,7 +6699,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String trainPtHowPotential(String pts) {
-    return 'ポテンシャル +1★ → +$pts (合成・交配)';
+    return 'ポテンシャル +1★ → +$pts (合成・ペアリング)';
   }
 
   @override
@@ -6922,7 +6926,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get duelStoneCurrent => '現在';
 
   @override
-  String get duelStoneHint => '五行・気質を好きな値に変えます(血統特性はそのまま)。変えた値は交配でも継承されます。';
+  String get duelStoneHint => '五行・気質を好きな値に変えます(血統特性はそのまま)。変えた値はペアリングでも継承されます。';
 
   @override
   String get duelStonePickElement => '変える五行を選んでください';
@@ -7043,7 +7047,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String guideTrainStoneBody(String el, String tm) {
-    return '決闘石 — 五行石は五行を、気質石は気質を好きな値に変えます（血統特性はそのまま、変えた値は交配でも継承）。精鋭・ボス・深淵で手に入るほか、ゼリーでも買えます（五行石 $el · 気質石 $tm）。';
+    return '決闘石 — 五行石は五行を、気質石は気質を好きな値に変えます（血統特性はそのまま、変えた値はペアリングでも継承）。精鋭・ボス・深淵で手に入るほか、ゼリーでも買えます（五行石 $el · 気質石 $tm）。';
   }
 
   @override
@@ -7061,7 +7065,7 @@ class AppLocalizationsJa extends AppLocalizations {
     String floor,
     String floorMax,
   ) {
-    return '磨き: オプション1行を振り直し、以前の値と新しい値のどちらを残すか選びます。費用は化石(等級1段ごとに$fossil個)かゼリー$jelly個、種類を指定すると×$mult。磨くたびにその行の丹精がたまり、出せる最低値が$floorずつ上がります(最大$floorMax)。';
+    return '磨き: オプション1行を振り直します。新しい値は必ず今より高くなります（種類が変わったら以前の値を残すこともできます）。費用は化石(等級1段ごとに$fossil個)かゼリー$jelly個、種類を指定すると×$mult。同じ行を磨くたびに費用が×$floorずつ上がります（$floorMax回目からは同じ）。すでに最大の行は磨けません。';
   }
 
   @override
@@ -7079,7 +7083,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get guideHuntDefenseBody =>
-      'モンスターの攻撃は狩り場ごとに決まっています。根性(体力)・打たれ強さ(防御)・回復力を上げると受けるダメージがそのまま減り、同じ狩り場で強くなるほど痛くなくなります。ボスで詰まったら、その狩り場で強化して再挑戦しましょう。';
+      'モンスターの攻撃は狩り場ごとに決まっています。体力・打たれ強さ(防御)・回復力を上げると受けるダメージがそのまま減り、同じ狩り場で強くなるほど痛くなくなります。ボスで詰まったら、その狩り場で強化して再挑戦しましょう。';
 
   @override
   String guideMissionRewardBody(String minutes, String times) {
@@ -7131,11 +7135,11 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get bugGradeHelp =>
-      'この虫1匹の等級です(一般・高級・希少・英雄・伝説)。同じ種のエッセンスで上げられ、高いほど決闘の能力値とペット効果が大きくなります。';
+      'この虫1匹の等級です(一般・上級・レア・英雄・伝説)。同じ種のエッセンスで上げられ、高いほど決闘の能力値とペット効果が大きくなります。';
 
   @override
   String get bugRarityHelp =>
-      '虫ごとに決まる希少度です。同じ種でも一般から伝説まで出ます。珍しいほど孵化・ペアリングに時間がかかりますが、ペット効果・ペットパッシブ・対戦の能力が高く、エッセンスに変えると多くもらえます。';
+      '虫ごとに決まる希少度です。同じ種でも一般から伝説まで出ます。珍しいほど孵化・ペアリングに時間がかかりますが、ペット効果・ペットパッシブ・決闘の能力が高く、エッセンスに変えると多くもらえます。\n\n希少度は宝石(◆)の色、個体等級は名札で表示します — 名前は同じでも別のものです。';
 
   @override
   String igSpeciesRarity(String grade) {
@@ -7249,7 +7253,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get igNoEssence => 'エッセンスが足りません';
 
   @override
-  String get igGradeFailed => 'できません';
+  String get igGradeFailed => '今はできません — 少し後でもう一度お試しください';
 
   @override
   String get igVaultTitle => 'エッセンス保管庫';
@@ -7303,16 +7307,16 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get igPotionDailyLimit => '今日はもう買えません';
+  String get igPotionDailyLimit => '今日の購入上限に達しました — 明日また買えます';
 
   @override
   String gachaPityLeftGrade(int n, String grade) {
-    return '$n回以内に$grade以上確定';
+    return '$n回以内に$grade等級以上確定';
   }
 
   @override
   String gachaDescGrade(String grade) {
-    return '$grade等級以上確定 · 色違い確率10倍';
+    return '$grade等級以上確定 · 希少度上級以上 · 色違い確率10倍';
   }
 
   @override
@@ -7390,7 +7394,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String guideDuelLeague(int min, int up, int down, int reward, int full) {
-    return 'リーグでは毎週同じリーグ同士で星（勝利ポイント）を競います。その週に決闘した人数が$min人以上なら上位$up%昇格・下位$down%降格、$min人未満なら昇格はありません。順位ゼリーは$reward人以上から人数の半分までが受け取り、$full人に満たないと人数に応じて減ります。$reward人未満のリーグは精算時に下のリーグへ合流し、1週休むと1段階下がります。';
+    return 'リーグでは毎週同じリーグ同士で星を競います(勝てばもらえ、負けても減りません)。その週に決闘した人数が$min人以上なら上位$up%昇格・下位$down%降格、$min人未満なら昇格はありません。順位ゼリーは$reward人以上から人数の半分までが受け取り、$full人に満たないと人数に応じて減ります。$reward人未満のリーグは精算時に下のリーグへ合流し、1週休むと1段階下がります。';
   }
 
   @override
@@ -7472,7 +7476,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get guildWarBreedHintGrade =>
-      '交配の受け取り・孵化の受け取り・等級上げでポイントを獲得。ゼリーで即完了したものはカウントされません。';
+      'ペアリングの受け取り・孵化の受け取り・等級上げでポイントを獲得。ゼリーで即完了したものはカウントされません。';
 
   @override
   String get whatsNew20Grade => '虫ごとに等級(一般〜伝説)がつきました。同じ種の虫をエッセンスに変えて等級を上げましょう';
@@ -7533,11 +7537,11 @@ class AppLocalizationsJa extends AppLocalizations {
   String get rarityFilterButton => '受け取る希少度';
 
   @override
-  String get rarityFilterAll => 'すべての種';
+  String get rarityFilterAll => 'すべての虫';
 
   @override
   String rarityFilterAtLeast(String grade) {
-    return '$grade種以上';
+    return '希少度$grade以上';
   }
 
   @override
@@ -7706,11 +7710,11 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get whatsNew21Grade =>
-      '野生・交配の卵はすべて一般等級です。エッセンスで等級を上げて育てましょう（コストを4・4・5・6に引き下げ）';
+      '野生・ペアリングの卵はすべて一般等級です。エッセンスで等級を上げて育てましょう（コストを4・4・5・6に引き下げ）';
 
   @override
   String get whatsNew21Passive =>
-      'ペットパッシブが個体等級・種の希少度に合わせて大きくなります — アップデート前の虫はほとんど下がるため、虫ごとに無料再抽選5回をお渡しします';
+      'ペットパッシブが個体等級・希少度に応じて大きくなります — アップデート前の虫はほとんど下がったため、虫ごとに無料リロール5回をお渡しします';
 
   @override
   String get whatsNew21Egg =>
@@ -7747,7 +7751,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String passiveRerollFreeHint(String n) {
-    return 'アップデート前からいる虫は無料で$n回再抽選できます。';
+    return '1.0.21より前からいる虫はパッシブの大きさを無料で$n回再抽選できます。';
   }
 
   @override
@@ -7774,12 +7778,12 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String rarityUpConfirm(int n, String grade, String next) {
-    return '同じ種・$gradeの虫$n匹を素材にして$nextに上げます。\n素材の虫はいなくなります（育てた虫・装備中・ロックした虫は使いません）。';
+    return '同じ種・希少度$gradeの虫$n匹を素材にして希少度$nextに上げます。\n素材の虫はいなくなります（育てた虫・等級を上げた虫・ガチャ産・装備中・ロック中の虫は使いません）。';
   }
 
   @override
   String rarityUpNeed(int need, String grade, int have) {
-    return '同じ種の$gradeの虫が$need匹必要です（今$have匹・育てた虫・装備中・ロックした虫は素材になりません）';
+    return '同じ種・希少度$gradeの虫が$need匹必要です（今$have匹・育てた虫・等級を上げた虫・ガチャ産・装備中・ロック中の虫は素材になりません）';
   }
 
   @override
@@ -7794,16 +7798,29 @@ class AppLocalizationsJa extends AppLocalizations {
   String get rarityUpGo => '上げる';
 
   @override
-  String arenaEffectLine(String arena, String up, String weak, String down) {
-    return '$arenaの土俵・$arenaの虫 +$up%・$weakの虫 −$down%';
+  String arenaName(String arena) {
+    return '$arenaの土俵';
   }
+
+  @override
+  String arenaBugUp(String el, String pct) {
+    return '$elの虫 +$pct%';
+  }
+
+  @override
+  String arenaBugDown(String el, String pct) {
+    return '$elの虫 −$pct%';
+  }
+
+  @override
+  String get arenaStatsNote => '（体力・攻撃・防御）';
 
   @override
   String get igLegacyRoll => '取り逃した能力ロール';
 
   @override
   String igLegacyRollDesc(int n) {
-    return 'アップデート前に育てたため等級アップで振れなかった分です・残り$n回（無料）';
+    return '旧ルールで等級が上がったため能力品質を振れなかった分です — 無料で$n回振れます（良い方だけ残ります）';
   }
 
   @override
@@ -7811,4 +7828,273 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get polishMaxed => 'この行はすでに最大です';
+
+  @override
+  String get rarityUpFodderHead => '素材になる虫';
+
+  @override
+  String polishJellyConfirm(int jelly) {
+    return 'ゼリー$jelly個でこの行を磨きますか？新しい値は必ず今より高くなります。';
+  }
+
+  @override
+  String get polishApplied => 'オプションが良くなりました！';
+
+  @override
+  String get polishChanged => 'その間に装備が変わったため新しい値を反映できませんでした（費用は支払い済みです）';
+
+  @override
+  String get igNoPotion => '成長薬が足りません';
+
+  @override
+  String get igLegacyRollNone => '無料ロールは残っていません';
+
+  @override
+  String get passiveRerollNoFree => '無料リロールを使い切りました';
+
+  @override
+  String get passiveRerollPending => '前のリロール結果を先に選んでください';
+
+  @override
+  String passiveRerollRange(String min, String max) {
+    return '種類はそのまま・大きさを$min〜$maxの間で振り直します';
+  }
+
+  @override
+  String passiveRerollMaxNow(String max) {
+    return '今の等級・希少度での最大 $max';
+  }
+
+  @override
+  String igLegacyRollAllPotions(int n, String total) {
+    return '「$n回まとめて」は薬を合計$total個使います';
+  }
+
+  @override
+  String get duelOfferExpired => '対戦相手が変わりました — もう一度バトル開始を押してください';
+
+  @override
+  String get duelTeamInvalid => '出場する虫を選び直してください（成虫のみ・3匹）';
+
+  @override
+  String get trainAlreadyDone => 'すでに終わっています';
+
+  @override
+  String get trainMaxAction => '最大';
+
+  @override
+  String trainMaxSnack(int n) {
+    return '修練 +$nレベル！';
+  }
+
+  @override
+  String igLegacyRollAll(int n) {
+    return '$n回まとめて';
+  }
+
+  @override
+  String get breedingExpandedSnack => 'ペアリング枠を増やしました';
+
+  @override
+  String get maxShort => '最大';
+
+  @override
+  String get whatsNew22Rarity =>
+      '希少度が虫ごとに決まります — 同じ種でも一般〜伝説が出ます。持っていた虫も希少度とパッシブの種類が新しく決まりました';
+
+  @override
+  String get whatsNew22RarityUp =>
+      '希少度アップ: 同じ種・同じ希少度の虫3匹で1段階上げます。採集箱では宝石(◆)が希少度、緑の矢印が「上げられる」印で、まとめて自動で上げることもできます';
+
+  @override
+  String get whatsNew22Arena =>
+      '土俵に五行が付きました — 同じ五行の虫 +10%、土俵が勝つ五行の虫 −10%（決闘は相手を選ぶとき、大会はウェーブごとに決まります）';
+
+  @override
+  String get whatsNew22LegacyRoll =>
+      'アップデート前から高い等級だった虫は、取り逃した能力ロールを無料で受け取れます（虫の詳細 → 等級）';
+
+  @override
+  String get whatsNew22Polish => '装備の磨きは必ず良い値になります（磨くほど費用が上がります）';
+
+  @override
+  String get whatsNew22Convenience =>
+      '決闘チケットの無料チャージは満タンまで · 訓練配分の＋/－は長押しで連続 · 修練に「最大」ボタン · はみ出す文字と案内文を整理';
+
+  @override
+  String get whatsNew22Power =>
+      '種ごとの決闘倍率を均等に合わせ直したため、戦闘力の数字がほとんど上がります（勝率の計算はそのまま）';
+
+  @override
+  String get igLegacyRollDone => '能力品質が上がりました';
+
+  @override
+  String igLegacyPotionHint(String n) {
+    return '成長薬1個ごとに振った後すべての能力 +$n点（100まで） — 値は下がりません';
+  }
+
+  @override
+  String get fairyErrBoxMax => '妖精ボックスはすでに最大です';
+
+  @override
+  String get fairyErrNestBusy => '巣にはすでに卵があります';
+
+  @override
+  String get fairyErrNoEgg => '妖精の卵がありません';
+
+  @override
+  String get fairyErrNoStone => 'その属性石がありません';
+
+  @override
+  String get fairyErrNestEmpty => '巣は空です';
+
+  @override
+  String get fairyErrNotReady => 'まだ孵化していません';
+
+  @override
+  String get fairyErrAlreadyReady => 'すでに孵化しました — 受け取ってください';
+
+  @override
+  String get fairyErrNoAccel => '加速器がありません';
+
+  @override
+  String get fairyErrNoFairy => '妖精が見つかりません — 画面を開き直してください';
+
+  @override
+  String get fairyErrCompanion => '同行中の妖精は合成・分解できません';
+
+  @override
+  String get fairyErrMismatch => '同じ種類・同じ等級の妖精同士でのみ合成できます';
+
+  @override
+  String get fairyErrMaxGrade => 'すでに最高等級です';
+
+  @override
+  String get fairyErrMaxLevel => 'すでに最高レベルです';
+
+  @override
+  String get fairyErrRerollPending => '先に前回の再抽選の結果を選んでください';
+
+  @override
+  String get skillErrAlreadyOwned => 'すでに解放したスキルです';
+
+  @override
+  String get skillErrNotOwned => '先にスキルを解放してください';
+
+  @override
+  String get skillErrMaxLevel => 'すでに最高レベルです';
+
+  @override
+  String get skillErrNotReady => 'まだ修練が終わっていません';
+
+  @override
+  String get skillErrMaxGrade => '最高等級はこれ以上上げられません';
+
+  @override
+  String get skillErrNoFree => '今日の無料ガチャはもう使いました';
+
+  @override
+  String get injuryHealNotInjured => 'すでに回復しています';
+
+  @override
+  String get injuryHealNetwork => '大会のケガはサーバーに接続中のみ回復できます。しばらくしてからお試しください';
+
+  @override
+  String injuryHealAll(Object n) {
+    return 'すべて回復・ゼリー$n';
+  }
+
+  @override
+  String get injuryHealAllLabel => 'すべて回復';
+
+  @override
+  String injuryHealAllConfirm(Object count, Object n) {
+    return '虫$count匹をゼリー$n個ですべて今すぐ回復しますか？';
+  }
+
+  @override
+  String injuryHealAllDone(Object count) {
+    return '$count匹を回復しました';
+  }
+
+  @override
+  String fairyLevelUpMax(Object lv) {
+    return 'Lv.$lvまで';
+  }
+
+  @override
+  String fairyLevelUpMaxDone(Object lv) {
+    return 'Lv.$lvまで上げました';
+  }
+
+  @override
+  String gachaDrawMany(Object count, Object n) {
+    return '$count回引く・ゼリー$n';
+  }
+
+  @override
+  String gachaDrawManyTitle(Object count) {
+    return '$count回引く';
+  }
+
+  @override
+  String gachaDrawManyConfirm(String n, String count) {
+    return 'ゼリー$n個で卵を$count個まとめて引きますか？\n確率・天井は1回ずつ引くときと同じです。';
+  }
+
+  @override
+  String gachaStorageNeed(Object count, Object free) {
+    return '採集箱の空きが$count枠必要です(今$free枠)';
+  }
+
+  @override
+  String get rarityAutoTitle => '希少度の自動アップ';
+
+  @override
+  String rarityAutoBody(String ups, String fodder) {
+    return '同じ種・同じ希少度の虫を集めて希少度を上げます。\nアップ$ups回・素材として消える虫$fodder匹';
+  }
+
+  @override
+  String get rarityAutoSafe =>
+      '育てた・ロックした・装備中・等級を上げた・ガチャ出身の虫は素材にしません。大事な虫から上げます。';
+
+  @override
+  String get rarityAutoRun => '自動で上げる';
+
+  @override
+  String get rarityAutoShowList => '上げられる虫を見る';
+
+  @override
+  String rarityAutoDone(Object ups) {
+    return '希少度を$ups回上げました';
+  }
+
+  @override
+  String get rarityAutoNone => '今、希少度を上げられる虫はいません';
+
+  @override
+  String get storageViewRarity => '希少度';
+
+  @override
+  String storageViewRarityAtLeast(Object grade) {
+    return '◆$grade以上';
+  }
+
+  @override
+  String get storageViewRarityUp => '希少度アップ可能';
+
+  @override
+  String incubatorAutoPlace(Object n) {
+    return '良い卵から入れる($n)';
+  }
+
+  @override
+  String incubatorAutoPlaced(Object n) {
+    return '卵を$n個孵化器に入れました';
+  }
+
+  @override
+  String get whatsNew22Convenience2 =>
+      '卵10回ガチャ · 回復室「すべて回復」 · 孵化器「良い卵から入れる」 · 妖精のレベルを一気に上げる · 狩りの強化「根性」を「体力」に改名';
 }

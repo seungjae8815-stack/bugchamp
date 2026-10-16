@@ -190,7 +190,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String seasonTrophyReset(int from, int to) {
-    return 'Trophies $from → $to';
+    return 'Stars $from → $to';
   }
 
   @override
@@ -245,7 +245,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String accountDeleteBody(String word) {
-    return 'All bugs, currency, trophies and breeding records will be gone for good.\n\nType «$word» below to confirm.';
+    return 'All bugs, currency, duel records and pairing records will be gone for good.\n\nType «$word» below to confirm.';
   }
 
   @override
@@ -819,7 +819,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get upBossDamage => 'Fighting Spirit';
 
   @override
-  String get upMaxHp => 'Grit';
+  String get upMaxHp => 'Vitality';
 
   @override
   String get upDefense => 'Toughness';
@@ -1140,7 +1140,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get speciesPassiveHint =>
-      'Applies while this bug is equipped as a pet. Equipping several of the same species stacks it.';
+      'Applies while this bug is equipped as a pet. Equipping several bugs with the same passive type stacks it.';
 
   @override
   String get storageFilterLabel => 'Keep';
@@ -2059,6 +2059,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get trainMaxed => 'Max level';
 
   @override
+  String get trainFailed =>
+      'Can\'t train right now — check the level cap or an ongoing breakthrough';
+
+  @override
   String get trainSnack => 'Trained! Level +1';
 
   @override
@@ -2937,7 +2941,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get pvpTicketFilled => 'Tickets filled up';
 
   @override
-  String get pvpTicketAlreadyFull => 'Tickets are already full';
+  String get pvpTicketAlreadyFull =>
+      'Tickets are full — no free refill was used';
 
   @override
   String get pvpTicketChargeFailed =>
@@ -2945,7 +2950,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get pvpTicketWhy =>
-      'Tickets keep the trophy ranking about strength, not how many matches you grind.';
+      'Tickets keep the duel ranking about strength, not how many matches you grind.';
 
   @override
   String adDailyLimit(int limit) {
@@ -3741,7 +3746,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String polishStacks(String n, String max, String floor) {
-    return 'Polished $n/$max · now $floor% of max · the next value is always higher';
+    return 'Refined $n× (cost stops rising at $max) · now $floor% of max · the next value is always higher';
   }
 
   @override
@@ -3818,7 +3823,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get forgeTranscendWarn =>
-      '⚠️ All equipped and anvil gear disappears (including stars and care).';
+      '⚠️ All equipped and anvil gear disappears (including stars and refined options).';
 
   @override
   String get forgeTranscendAction => 'Transcend';
@@ -3891,7 +3896,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String forgeStarCarryBody(String stars, String exp) {
-    return 'Same grade, so the new gear keeps your current gear\'s ★$stars stars and $exp star materials (and any upgrade in progress). Care (polish) belongs to the options, so the new gear keeps its own.\n\nSwap?';
+    return 'Same grade, so the new gear keeps your current gear\'s ★$stars stars and $exp star materials (and any upgrade in progress). Refine counts (cost steps) belong to the options, so the new gear keeps its own.\n\nSwap?';
   }
 
   @override
@@ -3924,7 +3929,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get forgeRerollHint =>
-      'Grade and slot stay · use Refine to change an option';
+      'Grade and slot stay · use Refine to improve an option';
 
   @override
   String forgeRushOn(int s) {
@@ -4298,7 +4303,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String duelTrophy(String delta) {
-    return 'Trophies $delta';
+    return 'Stars $delta';
   }
 
   @override
@@ -5916,7 +5921,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String guideElementBody(String mult) {
-    return 'Each bug has one element. In duels, when a bug clashes with an element it restrains, it deals ${mult}x damage. The red arrows show who beats whom.';
+    return 'Each bug has one element. In duels, when a bug clashes with an element it restrains, it deals ${mult}x damage. The red arrows show who beats whom. Arenas have an element too: bugs matching it gain HP/ATK/DEF and bugs the arena beats lose some (duels: set when picking an opponent; event: every wave).';
   }
 
   @override
@@ -6075,7 +6080,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get fairyEquippedTag => 'Equipped';
 
   @override
-  String get fairyMergeEquipped => 'An equipped fairy can\'t be merged';
+  String get fairyMergeEquipped => 'Your companion fairy can\'t be merged';
 
   @override
   String get fairyAutoMergeDone => 'Merge results';
@@ -6296,7 +6301,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String eggOddsPity(String n, String grade) {
-    return 'Every ${n}th draw guarantees $grade or higher';
+    return 'Within $n draws: $grade grade or higher guaranteed';
   }
 
   @override
@@ -7222,7 +7227,7 @@ class AppLocalizationsEn extends AppLocalizations {
     String floor,
     String floorMax,
   ) {
-    return 'Refining: reroll one option line and keep the old or new value. Costs $fossil fossils per grade step or $jelly jelly; picking a type costs ×$mult. Each refine adds care to that line, raising the lowest possible roll by $floor (up to $floorMax).';
+    return 'Refining: reroll one option line. The new value is always higher (if the type changes you may keep the old one). Costs $fossil fossils per grade step or $jelly jelly; picking a type costs ×$mult. Each refine on the same line costs ×$floor more (stops rising at the ${floorMax}th). Lines already at max can\'t be refined.';
   }
 
   @override
@@ -7240,7 +7245,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get guideHuntDefenseBody =>
-      'Monster attacks are fixed per zone. Raising Grit (HP), Toughness (defense) and Recovery directly cuts the damage you take, and the stronger you get in a zone the less it hurts. Stuck on a boss? Upgrade more in that zone and try again.';
+      'Monster attacks are fixed per zone. Raising Vitality (HP), Toughness (defense) and Recovery directly cuts the damage you take, and the stronger you get in a zone the less it hurts. Stuck on a boss? Upgrade more in that zone and try again.';
 
   @override
   String guideMissionRewardBody(String minutes, String times) {
@@ -7296,7 +7301,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get bugRarityHelp =>
-      'How rare this bug is. It is rolled for each bug, so the same species can be anything from Common to Legendary. Rarer bugs take longer to hatch and pair, but give stronger pet effects, bigger passives, better duel stats and more essence.';
+      'How rare this bug is. It is rolled for each bug, so the same species can be anything from Common to Legendary. Rarer bugs take longer to hatch and pair, but give stronger pet effects, bigger passives, better duel stats and more essence.\n\nRarity is shown as a gem (◆) color and bug grade as a name tag — same names, different things.';
 
   @override
   String igSpeciesRarity(String grade) {
@@ -7412,7 +7417,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get igNoEssence => 'Not enough essence';
 
   @override
-  String get igGradeFailed => 'Can\'t do that';
+  String get igGradeFailed =>
+      'Can\'t do that right now — please try again shortly';
 
   @override
   String get igVaultTitle => 'Essence vault';
@@ -7467,16 +7473,17 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get igPotionDailyLimit => 'Daily limit reached';
+  String get igPotionDailyLimit =>
+      'Today\'s purchase limit reached — buy again tomorrow';
 
   @override
   String gachaPityLeftGrade(int n, String grade) {
-    return 'Within $n draws: $grade or better guaranteed';
+    return 'Within $n draws: $grade grade or better guaranteed';
   }
 
   @override
   String gachaDescGrade(String grade) {
-    return '$grade grade or better guaranteed · 10× variant chance';
+    return '$grade grade or better guaranteed · Uncommon+ rarity · 10× variant chance';
   }
 
   @override
@@ -7556,7 +7563,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String guideDuelLeague(int min, int up, int down, int reward, int full) {
-    return 'Each week you compete with your own league for stars (win points). If $min+ players battled that week, the top $up% promote and the bottom $down% demote; with fewer than $min, nobody promotes. Rank jelly starts at $reward+ players and goes to the top half of players, reduced in proportion until there are $full. Leagues with fewer than $reward players merge into the league below at settlement, and skipping a week drops you one league.';
+    return 'Each week you compete with your own league for stars (earned by winning, never lost). If $min+ players battled that week, the top $up% promote and the bottom $down% demote; with fewer than $min, nobody promotes. Rank jelly starts at $reward+ players and goes to the top half of players, reduced in proportion until there are $full. Leagues with fewer than $reward players merge into the league below at settlement, and skipping a week drops you one league.';
   }
 
   @override
@@ -7708,11 +7715,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get rarityFilterButton => 'Rarity filter';
 
   @override
-  String get rarityFilterAll => 'All species';
+  String get rarityFilterAll => 'All bugs';
 
   @override
   String rarityFilterAtLeast(String grade) {
-    return '$grade+ species';
+    return '$grade+ rarity';
   }
 
   @override
@@ -7888,7 +7895,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get whatsNew21Passive =>
-      'Pet passives now grow with grade and species rarity — most older bugs dropped, so each gets 5 free rerolls';
+      'Pet passives now grow with grade and rarity — most older bugs dropped, so each gets 5 free rerolls';
 
   @override
   String get whatsNew21Egg =>
@@ -7929,7 +7936,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String passiveRerollFreeHint(String n) {
-    return 'Bugs from before the update get $n free rerolls.';
+    return 'Bugs from before 1.0.21 get $n free passive-size rerolls.';
   }
 
   @override
@@ -7958,12 +7965,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String rarityUpConfirm(int n, String grade, String next) {
-    return 'Uses $n $grade bugs of the same species to raise this bug to $next.\nThe material bugs disappear (trained, equipped and locked bugs are never used).';
+    return 'Uses $n bugs of the same species with $grade rarity to raise this bug to $next rarity.\nThe material bugs disappear (trained, graded-up, gacha, equipped and locked bugs are never used).';
   }
 
   @override
   String rarityUpNeed(int need, String grade, int have) {
-    return 'Needs $need $grade bugs of the same species (you have $have · trained, equipped and locked bugs don\'t count)';
+    return 'Needs $need bugs of the same species with $grade rarity (you have $have · trained, graded-up, gacha, equipped and locked bugs don\'t count)';
   }
 
   @override
@@ -7978,16 +7985,29 @@ class AppLocalizationsEn extends AppLocalizations {
   String get rarityUpGo => 'Raise';
 
   @override
-  String arenaEffectLine(String arena, String up, String weak, String down) {
-    return '$arena arena · $arena bugs +$up% · $weak bugs −$down%';
+  String arenaName(String arena) {
+    return '$arena arena';
   }
+
+  @override
+  String arenaBugUp(String el, String pct) {
+    return '$el bugs +$pct%';
+  }
+
+  @override
+  String arenaBugDown(String el, String pct) {
+    return '$el bugs −$pct%';
+  }
+
+  @override
+  String get arenaStatsNote => '(HP/ATK/DEF)';
 
   @override
   String get igLegacyRoll => 'Missed stat rolls';
 
   @override
   String igLegacyRollDesc(int n) {
-    return 'Rolls this bug missed by growing before the update · $n left (free)';
+    return 'Rolls this bug missed because its grade rose under the old rules — $n free rolls left (only better values stay)';
   }
 
   @override
@@ -7995,4 +8015,280 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get polishMaxed => 'This line is already at max';
+
+  @override
+  String get rarityUpFodderHead => 'Material bugs';
+
+  @override
+  String polishJellyConfirm(int jelly) {
+    return 'Refine this line for $jelly jelly? The new value is always higher.';
+  }
+
+  @override
+  String get polishApplied => 'The option got better!';
+
+  @override
+  String get polishChanged =>
+      'The gear changed meanwhile, so the new value wasn\'t applied (the cost was already paid)';
+
+  @override
+  String get igNoPotion => 'Not enough growth potions';
+
+  @override
+  String get igLegacyRollNone => 'No free rolls left';
+
+  @override
+  String get passiveRerollNoFree => 'No free rerolls left';
+
+  @override
+  String get passiveRerollPending => 'Pick the previous reroll result first';
+
+  @override
+  String passiveRerollRange(String min, String max) {
+    return 'Same kind · size rerolls between $min and $max';
+  }
+
+  @override
+  String passiveRerollMaxNow(String max) {
+    return 'Max at current grade & rarity: $max';
+  }
+
+  @override
+  String igLegacyRollAllPotions(int n, String total) {
+    return '\"Roll all $n\" uses $total potions in total';
+  }
+
+  @override
+  String get duelOfferExpired =>
+      'The opponents changed — tap Start Battle again';
+
+  @override
+  String get duelTeamInvalid => 'Pick your team again (adults only, 3 bugs)';
+
+  @override
+  String get trainAlreadyDone => 'Already finished';
+
+  @override
+  String get trainMaxAction => 'Max';
+
+  @override
+  String trainMaxSnack(int n) {
+    return 'Trained +$n levels!';
+  }
+
+  @override
+  String igLegacyRollAll(int n) {
+    return 'All $n';
+  }
+
+  @override
+  String get breedingExpandedSnack => 'Pairing slot added';
+
+  @override
+  String get maxShort => 'MAX';
+
+  @override
+  String get whatsNew22Rarity =>
+      'Rarity is now rolled per bug — the same species can be Common to Legendary. Your existing bugs got a new rarity and passive type too';
+
+  @override
+  String get whatsNew22RarityUp =>
+      'Raise rarity: use 3 bugs of the same species and rarity to raise one step. In storage the gem (◆) shows rarity, a green arrow means it can go up, and you can raise them all at once';
+
+  @override
+  String get whatsNew22Arena =>
+      'Arenas now have an element — matching bugs +10%, bugs the arena beats −10% (duels: shown when picking an opponent; event: changes every wave)';
+
+  @override
+  String get whatsNew22LegacyRoll =>
+      'Bugs that were high grade before the update get their missed stat rolls for free (bug details → grade)';
+
+  @override
+  String get whatsNew22Polish =>
+      'Gear refining now always gives a better value (the cost rises each time)';
+
+  @override
+  String get whatsNew22Convenience =>
+      'Free ticket refills stop at full · hold ＋/－ when editing training · Max button for leveling · text overflow and messages fixed';
+
+  @override
+  String get whatsNew22Power =>
+      'Duel species multipliers were rebalanced evenly, so most power numbers go up (win odds math is unchanged)';
+
+  @override
+  String get igLegacyRollDone => 'Stat quality improved';
+
+  @override
+  String igLegacyPotionHint(String n) {
+    return 'Each potion adds +$n to every stat after the roll (up to 100) — values never go down';
+  }
+
+  @override
+  String get fairyErrBoxMax => 'The fairy box is already at its maximum size';
+
+  @override
+  String get fairyErrNestBusy => 'There\'s already an egg in the nest';
+
+  @override
+  String get fairyErrNoEgg => 'You have no fairy eggs';
+
+  @override
+  String get fairyErrNoStone => 'You don\'t have that element stone';
+
+  @override
+  String get fairyErrNestEmpty => 'The nest is empty';
+
+  @override
+  String get fairyErrNotReady => 'It hasn\'t hatched yet';
+
+  @override
+  String get fairyErrAlreadyReady => 'It has already hatched — tap Collect';
+
+  @override
+  String get fairyErrNoAccel => 'You have no accelerators';
+
+  @override
+  String get fairyErrNoFairy => 'Fairy not found — please reopen this screen';
+
+  @override
+  String get fairyErrCompanion =>
+      'Your companion fairy can\'t be merged or released';
+
+  @override
+  String get fairyErrMismatch =>
+      'Only fairies of the same kind and grade can be merged';
+
+  @override
+  String get fairyErrMaxGrade => 'Already at the highest grade';
+
+  @override
+  String get fairyErrMaxLevel => 'Already at max level';
+
+  @override
+  String get fairyErrRerollPending =>
+      'Pick the result of your last reroll first';
+
+  @override
+  String get skillErrAlreadyOwned => 'You\'ve already unlocked this skill';
+
+  @override
+  String get skillErrNotOwned => 'Unlock this skill first';
+
+  @override
+  String get skillErrMaxLevel => 'Already at max level';
+
+  @override
+  String get skillErrNotReady => 'Training isn\'t finished yet';
+
+  @override
+  String get skillErrMaxGrade => 'The highest grade can\'t go any higher';
+
+  @override
+  String get skillErrNoFree => 'You\'ve already used today\'s free draw';
+
+  @override
+  String get injuryHealNotInjured => 'Already recovered';
+
+  @override
+  String get injuryHealNetwork =>
+      'Contest injuries can only be healed while connected to the server. Please try again shortly';
+
+  @override
+  String injuryHealAll(Object n) {
+    return 'Heal all · $n jelly';
+  }
+
+  @override
+  String get injuryHealAllLabel => 'Heal all';
+
+  @override
+  String injuryHealAllConfirm(Object count, Object n) {
+    return 'Heal all $count bugs now for $n jelly?';
+  }
+
+  @override
+  String injuryHealAllDone(Object count) {
+    return 'Healed $count bugs';
+  }
+
+  @override
+  String fairyLevelUpMax(Object lv) {
+    return 'To Lv.$lv';
+  }
+
+  @override
+  String fairyLevelUpMaxDone(Object lv) {
+    return 'Now Lv.$lv';
+  }
+
+  @override
+  String gachaDrawMany(Object count, Object n) {
+    return 'Draw $count · $n jelly';
+  }
+
+  @override
+  String gachaDrawManyTitle(Object count) {
+    return 'Draw $count';
+  }
+
+  @override
+  String gachaDrawManyConfirm(String n, String count) {
+    return 'Spend $n jelly to draw $count eggs at once?\nRates and pity are the same as drawing one at a time.';
+  }
+
+  @override
+  String gachaStorageNeed(Object count, Object free) {
+    return 'You need $count free storage slots (you have $free)';
+  }
+
+  @override
+  String get rarityAutoTitle => 'Auto rarity up';
+
+  @override
+  String rarityAutoBody(String ups, String fodder) {
+    return 'Gathers bugs of the same species and rarity to raise rarity.\nRarity ups: $ups · bugs used as material: $fodder';
+  }
+
+  @override
+  String get rarityAutoSafe =>
+      'Trained, locked, equipped, graded-up and gacha bugs are never used as material. Your most valued bugs go up first.';
+
+  @override
+  String get rarityAutoRun => 'Raise now';
+
+  @override
+  String get rarityAutoShowList => 'Show eligible bugs';
+
+  @override
+  String rarityAutoDone(Object ups) {
+    return 'Rarity raised: $ups';
+  }
+
+  @override
+  String get rarityAutoNone => 'No bugs can have their rarity raised right now';
+
+  @override
+  String get storageViewRarity => 'Rarity';
+
+  @override
+  String storageViewRarityAtLeast(Object grade) {
+    return '◆$grade+';
+  }
+
+  @override
+  String get storageViewRarityUp => 'Rarity up ready';
+
+  @override
+  String incubatorAutoPlace(Object n) {
+    return 'Place best eggs ($n)';
+  }
+
+  @override
+  String incubatorAutoPlaced(Object n) {
+    return 'Eggs placed in the incubator: $n';
+  }
+
+  @override
+  String get whatsNew22Convenience2 =>
+      'Draw 10 eggs at once · Heal all in the recovery room · Place best eggs in the incubator · Level fairies up in one go · Hunting upgrade Grit renamed to Vitality';
 }

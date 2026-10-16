@@ -377,8 +377,7 @@ class ForgeConfig {
       rerollJelly: (json['rerollJelly'] as num?)?.toInt() ?? 15,
       polishFossilPerTier: (json['polishFossilPerTier'] as num?)?.toInt() ?? 20,
       polishKindMult: (json['polishKindMult'] as num?)?.toInt() ?? 3,
-      polishCostGrowth:
-          (json['polishCostGrowth'] as num?)?.toDouble() ?? 1.0,
+      polishCostGrowth: (json['polishCostGrowth'] as num?)?.toDouble() ?? 1.0,
       transcendMax: (json['transcendMax'] as num?)?.toInt() ?? 5,
       transcendStep: (json['transcendStep'] as num?)?.toDouble() ?? 0.15,
       transcendFossilBase:
@@ -471,9 +470,12 @@ EquipItem rerollOptionAt({
 /// 다듬기(2026-10-10 장비 v2, 옛 재굴림 대체) — 줄 [index] 의 **새 후보**를 굴린다. 고르는 건 호출부다.
 ///
 /// - [kind] 를 주면 그 종류로(다른 줄에 이미 있는 종류면 null), 안 주면 다른 줄과 겹치지 않게 무작위.
+///   무작위인데 지금 줄이 이미 최대면 지금 종류는 빼고 굴린다(같은 값만 나와 비용만 오르지 않게).
 /// - 정성 +1(상한 `polishMaxStacks`) — 굴림 바닥 = 정성 × `polishFloorPerStack`(등급 범위 대비).
 /// - [kept] = 정성만 오른 지금 장비(이전 값 유지를 고르면 이것), [candidate] = 새 값(고르면 [applyPolish]).
 /// 정성은 **어느 쪽을 골라도 오른다** — 투자한 만큼 다음 굴림이 좋아진다.
+/// 같은 종류면 새 값은 **지금 값 + 0.1 이상**(최대 이하)이다 — 0.1 단위 반올림 때문에 초월 배율로 최대가
+/// 0.1 단위가 아니면(치명 확률 3 × 1.15 = 3.45) 늘 같은 값으로 반올림됐다(2026-10-16 출시 전 검토).
 ({EquipItem kept, ItemOption candidate})? polishOptionAt({
   double maxMult = 1,
   required math.Random rng,
@@ -487,33 +489,51 @@ EquipItem rerollOptionAt({
     for (var i = 0; i < item.options.length; i++)
       if (i != index) item.options[i].kind,
   };
+  final curOpt = item.options[index];
+  final curMaxed = _polishAtCap(items, item, index, maxMult);
   final pool = items.optionPool
       .where(
-        (r) => !others.contains(r.kind) && (kind == null || r.kind == kind),
+        (r) =>
+            !others.contains(r.kind) &&
+            (kind == null || r.kind == kind) &&
+            // 같은 종류로 다듬어도 오를 데가 없으면 그 종류는 후보가 아니다.
+            !(r.kind == curOpt.kind && curMaxed),
       )
       .toList(growable: false);
   if (pool.isEmpty) return null;
   final r = pool[rng.nextInt(pool.length)];
-  final polish = math.min(
-    item.options[index].polish + 1,
-    items.polishMaxStacks,
-  );
+  final polish = math.min(curOpt.polish + 1, items.polishMaxStacks);
   // **늘 지금보다 좋게**(2026-10-16 사장님 확정) — 지금 값의 범위 안 위치(0~1)와 최대 사이에서 굴린다.
   // 종류가 바뀌어도 "범위 안 위치"로 견준다. 예전엔 바닥(정성)만 올라 높은 값 뒤에 낮은 값이 나왔다.
   final at = polishPositionOf(items, item, index, maxMult: maxMult);
   final hi = r.maxAt(item.tier) * maxMult;
   final roll = at + (1 - at) * (0.05 + 0.95 * rng.nextDouble());
   final v = r.min + roll.clamp(0.0, 1.0) * (hi - r.min);
+  final cap = math.max(polishCapOf(r, item.tier, maxMult), _round1(r.min));
+  var value = math.min(_round1(v), cap);
+  if (r.kind == curOpt.kind) {
+    value = math.min(math.max(value, _round1(curOpt.value + 0.1)), cap);
+  }
   final cur = [...item.options];
   cur[index] = cur[index].copyWith(polish: polish);
   return (
     kept: item.copyWith(options: cur),
-    candidate: ItemOption(
-      kind: r.kind,
-      value: (v * 10).roundToDouble() / 10,
-      polish: polish,
-    ),
+    candidate: ItemOption(kind: r.kind, value: value, polish: polish),
   );
+}
+
+double _round1(double v) => (v * 10).roundToDouble() / 10;
+
+/// 다듬기로 닿을 수 있는 가장 큰 값 — 그 등급 최대 × [maxMult] 를 0.1 단위로 **내린** 값
+/// (3 × 1.15 = 3.45 → 3.4). 다듬기 값은 0.1 단위라 이보다 크게는 못 간다.
+double polishCapOf(ItemOptionRange r, int tier, double maxMult) =>
+    (r.maxAt(tier) * maxMult * 10 + 1e-6).floorToDouble() / 10;
+
+bool _polishAtCap(ItemConfig items, EquipItem item, int index, double maxMult) {
+  final o = item.options[index];
+  final r = items.optionPool.where((x) => x.kind == o.kind).firstOrNull;
+  if (r == null) return true;
+  return o.value >= polishCapOf(r, item.tier, maxMult) - 1e-9;
 }
 
 /// 줄 [index] 의 지금 값이 그 종류 범위(최소 ~ 그 등급 최대 × [maxMult]) 안에서 어디쯤인지(0~1).
@@ -531,13 +551,34 @@ double polishPositionOf(
   return ((o.value - r.min) / (hi - r.min)).clamp(0.0, 1.0);
 }
 
-/// 더 다듬을 수 없나(이미 최대 — 소수 첫째 자리 반올림이라 99.5% 이상이면 끝).
+/// 이 다듬기가 더 나아질 수 없나 — [kind] 는 [polishOptionAt] 에 넘길 값 그대로(null = 무작위).
+///
+/// - 지정 종류가 지금 종류와 **다르면** 막지 않는다(종류를 바꾸는 다듬기 — 최소 = 최대인 줄도 바꿀 수 있다).
+/// - 지정 종류가 지금 종류와 같으면 지금 값이 0.1 단위로 내린 최대([polishCapOf]) 이상일 때 최대.
+/// - 무작위는 다른 종류가 나올 수 있으니 막지 않는다 — 다른 줄과 겹치지 않는 후보가 지금 종류뿐일 때만 위처럼 검사.
 bool polishMaxed(
   ItemConfig items,
   EquipItem item,
   int index, {
   double maxMult = 1,
-}) => polishPositionOf(items, item, index, maxMult: maxMult) >= 0.995;
+  ItemOptionKind? kind,
+}) {
+  if (index < 0 || index >= item.options.length) return true;
+  final curKind = item.options[index].kind;
+  if (kind != null) {
+    if (kind != curKind) return false;
+    return _polishAtCap(items, item, index, maxMult);
+  }
+  final others = {
+    for (var i = 0; i < item.options.length; i++)
+      if (i != index) item.options[i].kind,
+  };
+  final otherKindPossible = items.optionPool.any(
+    (r) => !others.contains(r.kind) && r.kind != curKind,
+  );
+  if (otherKindPossible) return false;
+  return _polishAtCap(items, item, index, maxMult);
+}
 
 /// 다듬기 결과에서 **새 값**을 고른다.
 EquipItem applyPolish(EquipItem item, int index, ItemOption candidate) {

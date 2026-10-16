@@ -1792,6 +1792,18 @@ class GameActions {
         rarity: config.pet.bugRarity,
         newRarityAllowance: ryAllowance,
         fodderUsed: fodderUsed,
+        // 줄어든 젤리 ÷ 뽑기 가격 + 여유 [kGachaSlackPerUpload] — 같은 업로드 구간에 젤리를 벌면(선물 2배·미션)
+        // 순감소가 줄어 10회 뽑기의 마지막 알 표식이 벗겨졌다(2026-10-17 출시 전 점검). 정상 앱은 뽑기가 아니면
+        // `gc` 를 붙이지 않으므로 여유(패스 20·선물·미션 젤리가 겹쳐도 60 까지)는 조작 앱에만 의미가 있다(id 를 골라 만드는 조작은 원래 못 막는다).
+        newGachaAllowance: config.pet.gachaJellyCost <= 0
+            ? 0
+            : max(
+                        0,
+                        stored.materialCount(MaterialKind.jelly) -
+                            client.materialCount(MaterialKind.jelly),
+                      ) ~/
+                      config.pet.gachaJellyCost +
+                  kGachaSlackPerUpload,
       ),
     );
     // 무엇을 되돌렸나 — 운영 요약에 싣는다(2026-10-13, 사유만으로는 정상 유저인지 알 수 없었다).
@@ -1905,6 +1917,11 @@ class GameActions {
   ///  - 옛 합성 단계(`ls`)는 한 번 적히면 고정, 처음 적힐 때는 저장본 합성 단계를 넘지 못한다.
   static const kNewRarityPerUpload = 2;
   static const kNewRaritySecondsEach = 600;
+  // 새 결제 알(id `iap-`)의 뽑기 출신 표식 — 업로드당 넉넉히(스킨 덤 알은 한 번에 1개).
+  static const kNewIapEggsPerUpload = 4;
+
+  /// 새 곤충 뽑기 표식 `gc` 허용치의 업로드당 여유([_enforceGrade]).
+  static const kGachaSlackPerUpload = 2;
 
   static SaveGame guardGradeBugFields(
     SaveGame stored,
@@ -1913,6 +1930,8 @@ class GameActions {
     int newRarityAllowance = kNewRarityPerUpload,
     // 희귀도 올리기 재료로 인정한 곤충 id 를 넣어 준다(호출자가 정수 허용치에서 뺀다).
     Set<String>? fodderUsed,
+    // 새 id 에 붙일 수 있는 뽑기 출신 표식 수(결제 알 `iap-` 제외) — null 이면 검사하지 않는다.
+    int? newGachaAllowance,
   }) {
     final old = {for (final b in stored.bugs) b.id: b};
     var changed = false;
@@ -1922,13 +1941,42 @@ class GameActions {
     final gone = [
       if (rarity.enabled)
         for (final b in stored.bugs)
-          if (!nowIds.contains(b.id) && b.stage != LifeStage.egg)
+          // 저장본에 **알**이던 곤충도 재료로 센다(정수 허용치의 `asSeen` 과 같은 이유) — 마지막 업로드 뒤 부화해
+          // 바로 재료로 쓴 알 3마리를 안 세면 서버가 희귀도를 되돌리고 재료만 잃었다(2026-10-16 출시 전 검토).
+          if (!nowIds.contains(b.id))
             (id: b.id, speciesId: b.speciesId, rarity: rarity.ownRarityOf(b)),
     ];
+    var gachaLeft = newGachaAllowance;
+    var iapLeft = kNewIapEggsPerUpload;
     final bugs = <IndividualBug>[];
-    for (final b in client.bugs) {
+    for (var b in client.bugs) {
       final o = old[b.id];
       if (o == null) {
+        // 새 곤충의 뽑기 출신 표식 `gc`(1.0.22 — 희귀도가 뽑기 표, 전설 17%로 굴려진다) — 근거만큼만.
+        // 결제 알(id `iap-`)은 업로드당 [kNewIapEggsPerUpload] 개, 나머지는 이번에 쓴 젤리 ÷ 뽑기 가격 개.
+        // 넘는 것은 표식을 지운다(= 야생 표). 서버가 먼저 지급해 저장본에 있는 결제 알은 `o != null` 이라 여기 안 온다.
+        // ⚠️ 뽑기 출신처럼 보이게 id 를 골라 만드는 조작 앱은 못 막는다(포텐셜 위조와 같은 수준).
+        if (b.fromGacha && gachaLeft != null) {
+          final iap = b.id.startsWith('iap-');
+          final ok = iap ? iapLeft > 0 : gachaLeft > 0;
+          if (ok) {
+            if (iap) {
+              iapLeft--;
+            } else {
+              gachaLeft--;
+            }
+          } else {
+            changed = true;
+            b = IndividualBug.fromJson(b.toJson()..remove('gc'));
+          }
+        }
+        // 새 곤충의 놓친 굴리기 횟수 — 놓친 굴리기가 없는 곤충(켜진 뒤 생김)엔 붙을 수 없다.
+        if (b.legacyRollUps > legacyMissedRolls(b)) {
+          changed = true;
+          final j = b.toJson()..remove('lru');
+          final keep = legacyMissedRolls(b);
+          b = IndividualBug.fromJson({...j, if (keep > 0) 'lru': keep});
+        }
         // 새 곤충의 희귀도 칸 `ry`(1.0.22) — 정해서 주는 곳은 희귀 천장뿐이고 값은 id 로 정해진다
         // ([BugRarityConfig.pityRarityOf]). 그 id 로 나올 수 없는 값·뽑기 출신·허용치를 넘는 것은 지운다(= id 롤).
         // 안 막으면 `ry: legendary` 한 줄로 전설을 무한히 만든다(세이브 검토 2026-10-16).
@@ -1981,7 +2029,11 @@ class GameActions {
       // 무료 패시브 재굴림 사용 횟수는 줄지 않는다(2026-10-14) — 0 으로 고쳐 올려 무료 5번을 다시 받지 못하게.
       final pfu = max(b.passiveFreeUsed, o.passiveFreeUsed);
       // 놓친 능력치 굴리기 사용 횟수도 줄지 않는다(1.0.22) — 0 으로 고쳐 무료 굴리기를 다시 받지 못하게. 구버전이 떨궈도 되돌린다.
-      final lru = max(b.legacyRollUps, o.legacyRollUps);
+      // 놓친 횟수(저장본 기준)를 넘지 못한다 — 새 곤충에 붙여 롤 정리를 피하던 길(2026-10-16).
+      final lru = min(
+        max(b.legacyRollUps, o.legacyRollUps),
+        legacyMissedRolls(o),
+      );
       int? ls;
       if (ng) {
         ls = null;
@@ -5225,7 +5277,8 @@ class GameActions {
     if (cur.tickets <= 0) return const ActionResult.fail('no_ticket');
 
     final bug = save.bugs.firstWhere((b) => b.id == bugId);
-    final grade = speciesById[bug.speciesId]!.grade;
+    // 부상 시간은 곤충 희귀도(1.0.22 — 결투 부상과 같은 `rarityOf`). 종 grade 는 꺼졌을 때의 옛 값.
+    final grade = petConfig.rarityOf(bug, speciesById[bug.speciesId]!);
     final until = t.add(Duration(seconds: petConfig.injuryDuration(grade)));
     final injured = Map<String, DateTime>.from(save.injured)..[bugId] = until;
     final eventInjured = save.prunedEventFatigue(t)..[bugId] = until;
@@ -5504,7 +5557,11 @@ class GameActions {
         score > prevBest;
     final bugId = '${session['bugId']}';
     final bug = save.bugs.where((b) => b.id == bugId).firstOrNull;
-    final grade = speciesById[bug?.speciesId]?.grade;
+    final sp = speciesById[bug?.speciesId];
+    // 부상 시간은 곤충 희귀도(1.0.22 — 시작할 때 건 부상과 같은 `rarityOf`).
+    final grade = bug == null || sp == null
+        ? null
+        : petConfig.rarityOf(bug, sp);
     final t = now().toUtc();
     final injured = Map<String, DateTime>.from(save.injured);
     final eventInjured = save.prunedEventFatigue(t);

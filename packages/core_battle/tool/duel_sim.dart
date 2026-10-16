@@ -275,6 +275,7 @@ void main(List<String> args) {
         teamA: team(k, 0),
         teamB: team(1, i ~/ 3),
         params: p,
+        arena: p.arenaOn ? duelArenaOf(5000 + i * 7919) : null,
       );
       if (m.winner(p) == 0) w++;
     }

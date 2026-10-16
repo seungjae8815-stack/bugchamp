@@ -1179,6 +1179,8 @@ double duelCarryHp(double endPct, DuelBug bug, DuelParams p) =>
 /// [launchesA] 를 주면 그 판의 게이지 값을 쓴다(없으면 자동값).
 /// [clutchScores] 는 A(플레이어) 위기에 경기 전체에서 순서대로 넣을 탭 점수 — 다 떨어지면
 /// 그 위기에서 멈추고 [DuelMatch.pending] 을 채워 돌려준다. null 이면 A 도 자동 점수.
+/// [arena] 는 경기장 오행(1.0.22) — **부르는 쪽이 정해 넘긴다**(null = 효과 없음). seed 로 자동으로 입히지 않는다 —
+/// 경기장을 보여 주지 않는 경기(길드전 등)에 안 보이는 ±10% 가 붙었다(2026-10-16 출시 전 검토).
 DuelMatch simulateDuel({
   required int seed,
   required List<DuelBug> teamA,
@@ -1186,6 +1188,7 @@ DuelMatch simulateDuel({
   required DuelParams params,
   List<double>? launchesA,
   List<double>? clutchScores,
+  Element? arena,
 }) {
   final bouts = <DuelBout>[];
   var used = 0;
@@ -1197,7 +1200,7 @@ DuelMatch simulateDuel({
       a: teamA[st.ia],
       b: teamB[st.ib],
       params: params,
-      arena: params.arenaOn ? duelArenaOf(seed) : null,
+      arena: arena,
       hpA: st.hpA,
       hpB: st.hpB,
       launchA: launchesA != null && i < launchesA.length ? launchesA[i] : null,

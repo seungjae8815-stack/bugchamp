@@ -439,11 +439,14 @@ void _auraTables(
   double match(List<DuelBug> a, List<DuelBug> b) {
     // 자리(A/B)를 번갈아.
     final flip = (seed & 1) == 1;
+    final sd = seed++;
     final m = simulateDuel(
-      seed: seed++,
+      seed: sd,
       teamA: flip ? b : a,
       teamB: flip ? a : b,
       params: p,
+      // 리그 결투처럼 경기장 오행을 입힌다(엔진은 이제 자동으로 입히지 않는다).
+      arena: p.arenaOn ? duelArenaOf(sd) : null,
     );
     final w = m.winner(p);
     if (w == null) return 0.5;
@@ -723,6 +726,7 @@ void _teamFit(
       teamA: flip ? b : a,
       teamB: flip ? a : b,
       params: p,
+      arena: p.arenaOn ? duelArenaOf(seed) : null,
     );
     final w = r.winner(p);
     if (w == null) return 0.5;

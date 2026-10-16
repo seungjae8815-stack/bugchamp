@@ -337,6 +337,13 @@ String upgradeLabel(AppLocalizations l, UpgradeKind k) => switch (k) {
 String passiveText(AppLocalizations l, SpeciesPassive p) {
   final kind = UpgradeKind.fromKeyOrNull(p.statKey);
   if (kind == null) return '';
+  return '${upgradeLabel(l, kind)} ${passiveValueText(p)}';
+}
+
+/// 패시브 **크기만**("+4.5%" · 확률 종류는 "%p") — 재굴림 범위 안내가 같은 모양을 쓴다.
+String passiveValueText(SpeciesPassive p) {
+  final kind = UpgradeKind.fromKeyOrNull(p.statKey);
+  if (kind == null) return '';
   final pct = (p.value * 100);
   final num = pct == pct.roundToDouble()
       ? pct.toStringAsFixed(0)
@@ -344,7 +351,7 @@ String passiveText(AppLocalizations l, SpeciesPassive p) {
   final unit = (kind == UpgradeKind.crit || kind == UpgradeKind.evade)
       ? '%p'
       : '%';
-  return '${upgradeLabel(l, kind)} +$num$unit';
+  return '+$num$unit';
 }
 
 /// 패시브 **종류만**(크기 없이) — 알(크기는 부화 뒤 공개)·도감의 옛 곤충 안내.
@@ -408,4 +415,12 @@ String cardGlyph(String kind) => switch (kind) {
   'ironhide' => '⛓️',
   'lastStand' => '🩸',
   _ => '🃏',
+};
+
+/// 부상 즉시 회복 실패 안내(`SaveController.healInjuryResult` 코드) — 예전엔 무엇이든 "젤리 부족"이었다(1.0.22 출시 점검).
+String injuryHealErrorText(AppLocalizations l, String? e) => switch (e) {
+  'no_jelly' => l.notEnoughJelly,
+  'not_injured' => l.injuryHealNotInjured,
+  'network' || 'store_unavailable' => l.injuryHealNetwork,
+  _ => l.guildErrGeneric,
 };

@@ -301,6 +301,20 @@ String _err(AppLocalizations l, String? e) => switch (e) {
   'not_enough_dust' => l.fairyErrDust,
   'reroll_cap' => l.fairyRerollCap,
   'network' => l.fairyRerollNetwork,
+  'box_max' => l.fairyErrBoxMax,
+  'nest_busy' => l.fairyErrNestBusy,
+  'no_egg' => l.fairyErrNoEgg,
+  'no_stone' => l.fairyErrNoStone,
+  'nest_empty' => l.fairyErrNestEmpty,
+  'not_ready' => l.fairyErrNotReady,
+  'already_ready' => l.fairyErrAlreadyReady,
+  'no_accel' => l.fairyErrNoAccel,
+  'no_fairy' => l.fairyErrNoFairy,
+  'companion' => l.fairyErrCompanion,
+  'mismatch' => l.fairyErrMismatch,
+  'max_grade' => l.fairyErrMaxGrade,
+  'max_level' => l.fairyErrMaxLevel,
+  'reroll_pending' => l.fairyErrRerollPending,
   _ => l.fairyErrGeneric,
 };
 
@@ -1186,6 +1200,14 @@ class _FairyDetailState extends ConsumerState<_FairyDetailDialog> {
     final maxLv = f.level >= cfg.maxLevelOf(f.grade);
     final cost = cfg.levelCost(f.grade, f.level);
     final ctrl = ref.read(saveControllerProvider.notifier);
+    // 가루로 닿는 최대 레벨과 드는 가루(같은 함수로 미리 계산 — 화면과 실제가 갈리지 않게).
+    final maxOp = maxLv ? null : levelUpFairyMax(fs, cfg, f.id);
+    final (int, int)? maxTo = maxOp != null && maxOp.isOk
+        ? (
+            maxOp.state!.fairyById(f.id)!.level,
+            (maxOp.extra['dust'] as int?) ?? 0,
+          )
+        : null;
 
     Future<void> run(Future<FairyOp> Function() op) async {
       setState(() => _busy = true);
@@ -1280,6 +1302,35 @@ class _FairyDetailState extends ConsumerState<_FairyDetailDialog> {
                         ],
                       ),
               ),
+              // 최대(1.0.22) — 가루가 닿는 레벨이 2 이상 위일 때만(한 레벨이면 위 버튼과 같다).
+              if (!maxLv && maxTo != null && maxTo.$1 >= f.level + 2)
+                FilledButton.tonal(
+                  onPressed: _busy
+                      ? null
+                      : () async {
+                          setState(() => _busy = true);
+                          final r = await ctrl.fairyLevelUpMax(f.id);
+                          if (!mounted) return;
+                          setState(() => _busy = false);
+                          showCenterToast(
+                            this.context,
+                            r.isOk
+                                ? l.fairyLevelUpMaxDone(
+                                    '${f.level + ((r.extra['levels'] as int?) ?? 0)}',
+                                  )
+                                : _err(l, r.error),
+                          );
+                        },
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(l.fairyLevelUpMax('${maxTo.$1}')),
+                      const SizedBox(width: 4),
+                      fairyDustImage(size: 14),
+                      Text('${maxTo.$2}'),
+                    ],
+                  ),
+                ),
               OutlinedButton(
                 onPressed: f.grade.next == null || _busy
                     ? null

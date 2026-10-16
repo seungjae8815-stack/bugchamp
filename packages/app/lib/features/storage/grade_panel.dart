@@ -582,9 +582,11 @@ Future<void> _openGradeUp(
   if (!ctx.mounted) return;
   if (!res.isOk) {
     showCenterToast(ctx, switch (res.error) {
-      'no_essence' => l.igNoEssence,
+      'no_essence' =>
+        need > have ? l.igNeedMoreEssence('${need - have}') : l.igNoEssence,
       'egg' => l.igGradeUpEgg,
       'max' => l.igGradeUpMax,
+      'no_potion' || 'potion_count' => l.igNoPotion,
       _ => l.igGradeFailed,
     });
     return;
@@ -632,7 +634,7 @@ Future<void> _openLegacyRoll(
       ? save.growthPotions
       : cfg.potionMaxPerUse;
   var potions = 0;
-  final go = await showGameDialog<bool>(
+  final go = await showGameDialog<String>(
     ctx,
     title: l.igLegacyRoll,
     icon: Icons.casino_rounded,
@@ -679,29 +681,56 @@ Future<void> _openLegacyRoll(
             ],
           ),
           Text(
-            l.igPotionHint('${cfg.potionRollBonus}'),
+            l.igLegacyPotionHint('${cfg.potionRollBonus}'),
             textAlign: TextAlign.center,
             style: const TextStyle(color: Color(0x99FFFFFF), fontSize: 11),
           ),
+          // 「N번 모두」는 매번 같은 수의 물약을 쓴다 — 총량을 미리 보여 준다(2026-10-17 출시 전 점검).
+          if (potions > 0 && legacyRollsLeft(bug) > 1)
+            Text(
+              l.igLegacyRollAllPotions(
+                legacyRollsLeft(bug),
+                '${(potions * legacyRollsLeft(bug)).clamp(0, save.growthPotions)}',
+              ),
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: Color(0xFFFFE08A),
+                fontSize: 11,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
         ],
       ),
     ),
     actions: [
       gameDialogButton(
         l.actionCancel,
-        () => Navigator.pop(ctx, false),
+        () => Navigator.pop(ctx),
         primary: false,
       ),
-      gameDialogButton(l.igLegacyRollGo, () => Navigator.pop(ctx, true)),
+      // 남은 횟수가 2번 이상이면 한 번에(고른 물약 수를 매번 — 모자라면 있는 만큼, 출시 전 점검).
+      if (legacyRollsLeft(bug) > 1)
+        gameDialogButton(
+          l.igLegacyRollAll(legacyRollsLeft(bug)),
+          () => Navigator.pop(ctx, 'all'),
+          primary: false,
+        ),
+      gameDialogButton(l.igLegacyRollGo, () => Navigator.pop(ctx, 'one')),
     ],
   );
-  if (go != true || !ctx.mounted) return;
-  final res = await r
-      .read(saveControllerProvider.notifier)
-      .legacyRollBug(bugId, potions: potions);
+  if ((go != 'one' && go != 'all') || !ctx.mounted) return;
+  final ctrl = r.read(saveControllerProvider.notifier);
+  final res = go == 'all'
+      ? await ctrl.legacyRollAllBug(bugId, potionsEach: potions)
+      : await ctrl.legacyRollBug(bugId, potions: potions);
   if (!ctx.mounted) return;
   if (!res.isOk) {
-    showCenterToast(ctx, l.igGradeFailed);
+    showCenterToast(ctx, switch (res.error) {
+      'none_left' => l.igLegacyRollNone,
+      'no_potion' || 'potion_count' => l.igNoPotion,
+      'egg' => l.igGradeUpEgg,
+      _ => l.igGradeFailed,
+    });
     return;
   }
   AudioService.instance.sfxLevelUp();
@@ -711,6 +740,8 @@ Future<void> _openLegacyRoll(
     bug.individualGrade,
     (res.extra['before'] as List?)?.cast<int>() ?? const [],
     (res.extra['after'] as List?)?.cast<int>() ?? const [],
+    null,
+    l.igLegacyRollDone,
   );
 }
 
@@ -731,6 +762,8 @@ Future<void> _showGradeUpResult(
   List<int> before,
   List<int> after, [
   String? passiveLine,
+  // 등급이 바뀌지 않는 굴리기(놓친 능력치 굴리기)는 다른 제목 — "이제 영웅!"이 뜨면 등급이 오른 줄 안다(출시 전 점검).
+  String? title,
 ]) {
   var improved = 0;
   final rows = <Widget>[];
@@ -783,7 +816,7 @@ Future<void> _showGradeUpResult(
   }
   return showGameDialog<void>(
     ctx,
-    title: l.igGradeUpDone(gradeLabel(l, to)),
+    title: title ?? l.igGradeUpDone(gradeLabel(l, to)),
     icon: Icons.auto_awesome_rounded,
     content: Column(
       mainAxisSize: MainAxisSize.min,

@@ -279,7 +279,21 @@ class _PolishBodyState extends ConsumerState<_PolishBody> {
             const SizedBox(width: 8),
             Expanded(
               child: FilledButton(
-                onPressed: _busy ? null : () => _roll(payJelly: true),
+                onPressed: _busy
+                    ? null
+                    : () async {
+                        // 젤리를 쓰는 버튼은 확인부터(출시 전 점검 — 다듬을수록 ×1.5 로 비싸진다).
+                        if (!await confirmJellySpend(
+                          context,
+                          title: l.polishTitle,
+                          body: l.polishJellyConfirm(cost.jelly),
+                          jelly: cost.jelly,
+                          actionLabel: l.polishTitle,
+                        )) {
+                          return;
+                        }
+                        await _roll(payJelly: true);
+                      },
                 child: jellyPrice(cost: cost.jelly, fontSize: 13, size: 16),
               ),
             ),
@@ -331,6 +345,15 @@ class _PolishBodyState extends ConsumerState<_PolishBody> {
           payJelly: payJelly,
         );
     if (!mounted) return;
+    // 다듬기 v3 — 새 값은 늘 더 높다. 종류가 그대로면 고를 것 없이 바로 얹는다(출시 전 점검 — 매번 고르기를 거쳤다).
+    final cand = r.candidate;
+    final curKind = _currentKind();
+    if (cand != null && curKind != null && cand.kind == curKind) {
+      setState(() => _busy = false);
+      await _take(cand);
+      if (mounted) showCenterToast(context, l.polishApplied);
+      return;
+    }
     setState(() {
       _busy = false;
       _candidate = r.candidate;
@@ -351,6 +374,17 @@ class _PolishBodyState extends ConsumerState<_PolishBody> {
     }
   }
 
+  /// 지금 다듬는 줄의 종류(장비가 그 사이 바뀌었으면 null).
+  ItemOptionKind? _currentKind() {
+    final s = ref.read(saveControllerProvider).value;
+    if (s == null) return null;
+    final item = widget.equipped
+        ? (widget.slot == null ? null : s.equippedItems[widget.slot])
+        : (s.forgeStack.isEmpty ? null : s.forgeStack.last);
+    if (item == null || widget.index >= item.options.length) return null;
+    return item.options[widget.index].kind;
+  }
+
   Future<void> _take(ItemOption cand) async {
     setState(() => _busy = true);
     final ok = await ref
@@ -364,7 +398,7 @@ class _PolishBodyState extends ConsumerState<_PolishBody> {
     if (!mounted) return;
     // 그 사이 장비가 바뀌어 새 값을 못 얹었으면 말해 준다(조용히 사라진 것처럼 보이지 않게).
     if (!ok) {
-      showCenterToast(context, AppLocalizations.of(context).polishFailed);
+      showCenterToast(context, AppLocalizations.of(context).polishChanged);
     }
     setState(() {
       _busy = false;

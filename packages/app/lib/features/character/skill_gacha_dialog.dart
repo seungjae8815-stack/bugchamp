@@ -165,10 +165,12 @@ class _SkillGachaDialogState extends ConsumerState<SkillGachaDialog> {
       if (r.error == null) _last = r.draws;
     });
     if (r.error != null) {
-      showCenterToast(
-        context,
-        r.error == 'not_enough_jelly' ? l.notEnoughJelly : r.error!,
-      );
+      showCenterToast(context, switch (r.error) {
+        'not_enough_jelly' => l.notEnoughJelly,
+        'no_free' => l.skillErrNoFree,
+        // 매핑 안 된 코드를 원문으로 띄우지 않는다.
+        _ => l.guildErrGeneric,
+      });
       return;
     }
     AudioService.instance.sfxReward();

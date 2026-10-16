@@ -8226,6 +8226,10 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                         await ctrl.devGradeKit();
                         toast('정수·물약 넣음');
                       }),
+                      _devBtn('희귀도 올리기 재료(같은 종·일반 4마리)', () async {
+                        await ctrl.devRarityUpKit();
+                        toast('같은 종·일반 희귀도 4마리 넣음 — 채집함에서 초록 ↑ 확인');
+                      }),
                       // 부화 공개 연출 미리보기(2026-10-14) — 가진 곤충으로 연출만 띄운다(세이브는 그대로).
                       _devBtn('부화 연출 1마리', () => _devHatchReveal(1)),
                       _devBtn(

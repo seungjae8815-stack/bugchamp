@@ -68,4 +68,23 @@ void main() {
     // 저장 키 lru.
     expect(rolled.bugs.single.toJson()['lru'], 1);
   });
+
+  test('롤 정리 — 놓친 굴리기가 없는 곤충에 lru 를 붙여도 롤은 지운다(새 곤충 만점 롤 구멍)', () {
+    const full = [100, 100, 100, 100, 100, 100, 100, 100];
+    final forged = SaveGame.initial(createdAt: t0).copyWith(
+      bugs: [
+        bug(ng: true, su: 0, pot: 1, lru: 1).copyWith(rolls: full),
+        // 옛 곤충이라도 1성(놓친 굴리기 0)이면 같다.
+        bug(pot: 1, su: 0, lru: 1).copyWith(rolls: full),
+      ],
+    );
+    for (final b in sanitizeGradeRolls(forged).bugs) {
+      expect(b.rolls, isNull);
+    }
+    // 놓친 굴리기가 있는 옛 곤충은 남긴다.
+    final ok = SaveGame.initial(
+      createdAt: t0,
+    ).copyWith(bugs: [bug(pot: 3, su: 0, lru: 1).copyWith(rolls: full)]);
+    expect(sanitizeGradeRolls(ok).bugs.single.rolls, full);
+  });
 }

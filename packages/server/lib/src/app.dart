@@ -2048,11 +2048,13 @@ Handler buildHandler({
         if (row['user_id']?.toString() != user.id) {
           return _json({'error': 'forbidden'}, status: 403);
         }
-        var session = BattleSession.fromJson(
-          sessionId,
-          user.id,
-          row['data'] as Map<String, dynamic>,
-        );
+        // 옛 수동 전투 세션만(`kind` 없음) — 결투 제안·경기장 줄(`duelOffer`·`duelArena`)·결투·대회 세션 id 를
+        // 넣으면 옛 전투로 읽혀 깨졌다(2026-10-16 출시 전 검토). 다른 kind 는 없는 세션으로 본다.
+        final data = row['data'];
+        if (data is! Map<String, dynamic> || data['kind'] != null) {
+          return _json({'error': 'no_session'}, status: 404);
+        }
+        var session = BattleSession.fromJson(sessionId, user.id, data);
         // 끝난 세션을 다시 돌려 보상을 두 번 받지 못하게.
         if (session.finished) {
           return _json({'error': 'already_finished'}, status: 409);

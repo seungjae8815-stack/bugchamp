@@ -6,7 +6,7 @@ import 'package:app/ui/whats_new.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-/// "업데이트 내용" 창(1.0.18 도입 · 1.0.21 내용) — 기기당 판마다 한 번 · 방치 보상 뒤 · 순위 앞.
+/// "업데이트 내용" 창(1.0.18 도입 · 1.0.22 내용) — 기기당 판마다 한 번 · 방치 보상 뒤 · 순위 앞.
 void main() {
   group('막 시작한 세이브에는 띄우지 않는다', () {
     final now = DateTime.utc(2026, 10, 9, 12);
@@ -73,25 +73,23 @@ void main() {
       ),
     );
 
-    testWidgets('1.0.21 8줄 — 일반 알·패시브 무료 재굴림·알 펫 금지·팀 오라·수련 비용·치기·장비·뱃지', (
+    testWidgets('1.0.22 8줄 — 곤충 희귀도·희귀도 올리기·경기장 오행·놓친 굴리기·다듬기·편의성 둘·전투력', (
       tester,
     ) async {
       await tester.pumpWidget(host(const Locale('ko'), 300));
-      expect(kWhatsNewVersion, '1.0.21');
-      expect(find.textContaining('모두 일반 등급'), findsOneWidget);
-      expect(find.textContaining('무료 재굴림 5번'), findsOneWidget);
-      expect(find.textContaining('펫으로 장착할 수 없어요'), findsOneWidget);
-      expect(find.textContaining('다시 찍기 1회 무료'), findsOneWidget);
-      expect(find.textContaining('수련 비용'), findsOneWidget);
-      expect(find.textContaining('치기 주특기'), findsOneWidget);
-      expect(find.textContaining('스킬 쿨타임 감소'), findsOneWidget);
-      expect(find.textContaining('금·은·동'), findsOneWidget);
-      // 2026-10-15 추가 — 버프 방치 적용 · 보너스 곱/치명 피해 표시 1/10(불리해 보이는 변경은 숨기지 않는다).
-      expect(find.textContaining('꺼 둔 동안에도'), findsOneWidget);
-      expect(find.textContaining('표시만 1/10'), findsOneWidget);
+      expect(kWhatsNewVersion, '1.0.22');
+      // 업데이트 전 곤충의 희귀도·패시브를 새로 굴린 것은 숨기지 않는다(사장님 확정 C안 — 공지만).
+      expect(find.textContaining('새로 정해졌어요'), findsOneWidget);
+      expect(find.textContaining('3마리로 한 단계'), findsOneWidget);
+      expect(find.textContaining('경기장에 오행'), findsOneWidget);
+      expect(find.textContaining('놓친 능력치 굴리기'), findsOneWidget);
+      expect(find.textContaining('늘 더 좋은 값'), findsOneWidget);
+      expect(find.textContaining('가득 찰 때까지만'), findsOneWidget);
+      expect(find.textContaining('전투력 숫자'), findsOneWidget);
+      expect(find.textContaining('알 10회 뽑기'), findsOneWidget);
       expect(
         whatsNewItems(lookupAppLocalizations(const Locale('ko'))),
-        hasLength(10),
+        hasLength(8),
       );
       expect(tester.takeException(), isNull);
     });

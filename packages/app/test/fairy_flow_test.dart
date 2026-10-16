@@ -303,7 +303,7 @@ void main() {
       // 동행 요정은 합성 창 대신 이유를 알린다.
       await tester.tap(find.text('합성').last);
       await tester.pump();
-      expect(find.text('착용 중인 요정은 합성할 수 없어요'), findsOneWidget);
+      expect(find.text('동행 중인 요정은 합성할 수 없어요'), findsOneWidget);
       await tester.pump(const Duration(seconds: 3));
       expect(tester.takeException(), isNull);
       await tester.tap(find.text('닫기').last);

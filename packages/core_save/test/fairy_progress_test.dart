@@ -537,6 +537,34 @@ void main() {
       );
     });
 
+    test('최대 레벨업 = 한 레벨씩 누른 것과 같다 · 가루가 닿는 데까지만', () {
+      final max = cfg.maxLevelOf(FairyGrade.common);
+      // 가루 = 3레벨 올릴 만큼.
+      var dust = 0;
+      for (var lv = 1; lv < 4; lv++) {
+        dust += cfg.levelCost(FairyGrade.common, lv);
+      }
+      final s = withFairies([f(1)]).copyWith(dust: dust + 1);
+      final op = levelUpFairyMax(s, cfg, 'f1');
+      expect(op.isOk, isTrue);
+      expect(op.extra['levels'], 3);
+      expect(op.extra['dust'], dust);
+      expect(op.state!.fairyById('f1')!.level, 4);
+      expect(op.state!.dust, 1);
+      // 가루가 넉넉하면 상한에서 멈춘다.
+      final rich = levelUpFairyMax(
+        withFairies([f(1)]).copyWith(dust: 1 << 30),
+        cfg,
+        'f1',
+      );
+      expect(rich.state!.fairyById('f1')!.level, max);
+      // 한 레벨도 못 올리면 그 이유.
+      expect(
+        levelUpFairyMax(withFairies([f(1)]), cfg, 'f1').error,
+        'not_enough_dust',
+      );
+    });
+
     test('레벨이 오르면 기본·부가 능력치가 함께 오른다', () {
       final a = cfg.statBonus(f(1));
       final b = cfg.statBonus(f(1, lv: 10));

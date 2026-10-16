@@ -188,6 +188,11 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen> {
   String? _bugId;
   Timer? _tick;
 
+  /// 곤충 고르기 줄 — 채집함에서 곤충을 눌러 들어오면 그 곤충 칸으로 옮긴다(2026-10-17 사장님 요청:
+  /// 정렬이 높은 등급 순이라 맨 앞만 보여 어떤 곤충을 키우는지 몰랐다).
+  final _chipScroll = ScrollController();
+  bool _scrolledToInitial = false;
+
   /// 다시 찍기 편집 중인 새 배분(null = 편집 안 함).
   Map<TrainSlot, int>? _draft;
 
@@ -207,6 +212,7 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen> {
   @override
   void dispose() {
     _tick?.cancel();
+    _chipScroll.dispose();
     super.dispose();
   }
 
@@ -277,6 +283,19 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen> {
     });
     final selected =
         adults.where((b) => b.id == _bugId).firstOrNull ?? adults.firstOrNull;
+    if (!_scrolledToInitial && widget.initialBugId != null) {
+      _scrolledToInitial = true;
+      final i = adults.indexWhere((b) => b.id == widget.initialBugId);
+      if (i > 0) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!_chipScroll.hasClients) return;
+          final pos = _chipScroll.position;
+          // 칸 너비 74 + 사이 6 — 고른 칸이 가운데 오게.
+          final target = i * 80.0 - (pos.viewportDimension - 74) / 2;
+          _chipScroll.jumpTo(target.clamp(0.0, pos.maxScrollExtent));
+        });
+      }
+    }
 
     return Scaffold(
       backgroundColor: _bg,
@@ -315,6 +334,7 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen> {
                 SizedBox(
                   height: 124,
                   child: ListView.separated(
+                    controller: _chipScroll,
                     scrollDirection: Axis.horizontal,
                     itemCount: adults.length,
                     separatorBuilder: (_, _) => const SizedBox(width: 6),
@@ -449,7 +469,11 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen> {
           _pushNow();
           AudioService.instance.sfxEnhance();
         } else {
-          showCenterToast(context, l.notEnoughJelly);
+          // 젤리가 모자란 때만 젤리 문구(이미 끝났으면 그렇다고 — 출시 전 점검).
+          showCenterToast(
+            context,
+            err == 'jelly' ? l.notEnoughJelly : l.trainAlreadyDone,
+          );
         }
       });
 
@@ -877,13 +901,20 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen> {
                 color: const Color(0xFF8FD8FF),
               ),
               const SizedBox(width: 6),
-              Text(
-                l.trainPtUsed('$used', '$budget'),
-                key: const ValueKey('trainPoints'),
-                style: const TextStyle(
-                  color: _text,
-                  fontSize: 18,
-                  fontWeight: FontWeight.w900,
+              // 좁은 화면·일본어에서 오른쪽 "남은 포인트"와 겹쳐 넘쳤다(출시 전 점검) — 칸에 맞게 줄인다.
+              Flexible(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    l.trainPtUsed('$used', '$budget'),
+                    key: const ValueKey('trainPoints'),
+                    style: const TextStyle(
+                      color: _text,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
                 ),
               ),
               if (bonus > 0) ...[
@@ -1266,7 +1297,7 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen> {
                         showCenterToast(context, switch (err) {
                           'maxed' => l.trainPresetNoRoom,
                           'respec' => l.trainPtRespecBusy,
-                          _ => l.battleServerFailed,
+                          _ => l.igGradeFailed,
                         });
                       }),
                     ),
@@ -1655,7 +1686,7 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen> {
       'maxed' => l.trainPtMaxed,
       'points' => (_gradeOn ? l.trainPtNoPointsGrade : l.trainPtNoPoints),
       'respec' => l.trainPtRespecBusy,
-      _ => l.battleServerFailed,
+      _ => l.igGradeFailed,
     });
   });
 
@@ -1734,7 +1765,12 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen> {
                         AudioService.instance.sfxEnhance();
                         showCenterToast(context, l.trainRespecDone);
                       } else {
-                        showCenterToast(context, l.notEnoughJelly);
+                        showCenterToast(
+                          context,
+                          err == 'jelly'
+                              ? l.notEnoughJelly
+                              : l.trainAlreadyDone,
+                        );
                       }
                     }),
                   ),
@@ -1917,7 +1953,7 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen> {
               'maxed' => l.trainPtMaxed,
               'points' =>
                 (_gradeOn ? l.trainPtNoPointsGrade : l.trainPtNoPoints),
-              _ => l.battleServerFailed,
+              _ => l.igGradeFailed,
             });
           }),
         ),
@@ -2072,7 +2108,10 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen> {
       final err = await _ctrl.buyDuelStoneNow(kind);
       if (!mounted) return;
       if (err != null) {
-        showCenterToast(context, l.notEnoughJelly);
+        showCenterToast(
+          context,
+          err == 'jelly' ? l.notEnoughJelly : l.igGradeFailed,
+        );
         return;
       }
       _pushNow();

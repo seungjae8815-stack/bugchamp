@@ -78,3 +78,25 @@ Widget individualGradeTag(
     ),
   );
 }
+
+/// 희귀도 보석(1.0.22 출시 점검) — 희귀도와 개체 등급이 같은 이름(일반~전설)·같은 색을 써서 헷갈렸다.
+/// **희귀도는 늘 보석(◆) 모양**, 개체 등급은 이름표([individualGradeTag]) — 모양으로 가른다.
+Widget rarityGem(Grade rarity, {double size = 11}) => Icon(
+  Icons.diamond_rounded,
+  size: size,
+  color: rarityGemColor(rarity),
+  shadows: const [Shadow(color: Colors.black, blurRadius: 2)],
+);
+
+/// 보석 색(어두운 배경에서 잘 보이게 — 등급 이름표보다 밝다).
+Color rarityGemColor(Grade g) => switch (g) {
+  Grade.common => const Color(0xFFB6C2CC),
+  Grade.uncommon => const Color(0xFF5CD65C),
+  Grade.rare => const Color(0xFF3FA9FF),
+  Grade.epic => const Color(0xFFC072F0),
+  Grade.legendary => const Color(0xFFFFC93C),
+};
+
+/// "희귀도 전설" — 희귀도를 글로 쓸 때는 늘 이 말머리를 붙인다(개체 등급 "전설"과 섞이지 않게).
+String rarityText(AppLocalizations l, Grade g) =>
+    l.igSpeciesRarity(gradeLabel(l, g));

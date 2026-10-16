@@ -52,6 +52,36 @@ void main() {
     expect(onArena, greaterThan(plain));
   });
 
+  test(
+    'simulateDuel 은 경기장을 자동으로 입히지 않는다 — 넘긴 arena 만(길드전에 안 보이는 ±10% 가 붙던 것)',
+    () {
+      String j(DuelBout b) => b.toJson().toString();
+      var differs = 0;
+      for (var s = 0; s < 40; s++) {
+        final a = [bug('a', Element.fire)], b = [bug('b', Element.earth)];
+        // 경기장을 안 넘기면 첫 판 = 경기장 없는 한 판 그대로.
+        final noArena = simulateDuel(seed: s, teamA: a, teamB: b, params: on);
+        final plain = simulateBout(
+          seed: duelBoutSeed(s, 0),
+          a: a.first,
+          b: b.first,
+          params: on,
+        );
+        expect(j(noArena.bouts.first), j(plain), reason: 'seed $s');
+        // 넘기면 그 경기장이 실린다.
+        final withArena = simulateDuel(
+          seed: s,
+          teamA: a,
+          teamB: b,
+          params: on,
+          arena: Element.fire,
+        );
+        if (j(withArena.bouts.first) != j(plain)) differs++;
+      }
+      expect(differs, greaterThan(0));
+    },
+  );
+
   test('경기장은 seed 로 정해진다(결정론) · 5종이 다 나온다', () {
     expect(duelArenaOf(12345), duelArenaOf(12345));
     final seen = {for (var s = 0; s < 200; s++) duelArenaOf(s)};

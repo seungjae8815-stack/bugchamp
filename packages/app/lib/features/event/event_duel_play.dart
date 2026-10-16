@@ -442,20 +442,10 @@ Future<void> playEventDuel({
         foe: [foe(0)],
         foeAt: foe,
         foeIndex: () => driver.preview.wave - 1,
-        header: () {
-          final w = driver.preview.wave;
-          final a = eventArenaOf(roundSeed, w, params);
-          if (a == null) return lz.eventWaveHeader(w);
-          // 경기장 오행(2026-10-16) — 이번 웨이브 경기장과 효과를 한 줄로.
-          final weak = Element.values.firstWhere(a.restrains, orElse: () => a);
-          final line = lz.arenaEffectLine(
-            elementLabel(lz, a),
-            (params.arenaSame * 100).round().toString(),
-            elementLabel(lz, weak),
-            (params.arenaRestrained * 100).round().toString(),
-          );
-          return '${lz.eventWaveHeader(w)}\n$line';
-        },
+        header: () => lz.eventWaveHeader(driver.preview.wave),
+        // 경기장 오행(2026-10-16) — 웨이브마다 바뀐다. 효과 줄은 경기 화면이 이름 줄 아래에 따로 그린다
+        // (머리말에 붙이면 세 언어 모두 넘쳤다 — 출시 전 점검).
+        arenaEffect: eventArenaOf(roundSeed, 1, params) != null,
         driver: driver,
         params: params,
         // 경기장 오행(2026-10-16) — 웨이브마다(회차 seed — 모두 같다). 효과가 꺼져 있으면 예전처럼 내 곤충 오행 그림.

@@ -190,7 +190,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String seasonTrophyReset(int from, int to) {
-    return '트로피 $from → $to';
+    return '별 $from → $to';
   }
 
   @override
@@ -245,7 +245,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String accountDeleteBody(String word) {
-    return '곤충·재화·트로피·짝짓기 기록이 모두 사라지고 되돌릴 수 없어요.\n\n확인을 위해 아래에 «$word» 라고 입력해 주세요.';
+    return '곤충·재화·결투 기록·짝짓기 기록이 모두 사라지고 되돌릴 수 없어요.\n\n확인을 위해 아래에 «$word» 라고 입력해 주세요.';
   }
 
   @override
@@ -795,7 +795,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get upBossDamage => '투지';
 
   @override
-  String get upMaxHp => '근성';
+  String get upMaxHp => '체력';
 
   @override
   String get upDefense => '맷집';
@@ -947,7 +947,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get whatsNewTranscend => '공방 초월 — 공방 최대 등급에서 초월하면 옵션 최대치가 올라요';
 
   @override
-  String get whatsNewHuntDefense => '사냥의 근성·맷집·회복력 강화가 바로 체감돼요 (사냥터 몬스터 수치 변경)';
+  String get whatsNewHuntDefense => '사냥의 체력·맷집·회복력 강화가 바로 체감돼요 (사냥터 몬스터 수치 변경)';
 
   @override
   String get whatsNewMissionSwap =>
@@ -1102,7 +1102,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get speciesPassiveHint =>
-      '이 곤충을 애완펫으로 장착하면 붙어요. 같은 종을 여러 마리 장착하면 합쳐져요.';
+      '이 곤충을 애완펫으로 장착하면 붙어요. 같은 종류의 패시브를 여러 마리 장착하면 합쳐져요.';
 
   @override
   String get storageFilterLabel => '받을 등급';
@@ -2004,6 +2004,9 @@ class AppLocalizationsKo extends AppLocalizations {
   String get trainMaxed => '최대 레벨';
 
   @override
+  String get trainFailed => '지금은 수련할 수 없어요 — 레벨 상한·돌파 중인지 확인해 주세요';
+
+  @override
   String get trainSnack => '수련 완료! 레벨 +1';
 
   @override
@@ -2844,7 +2847,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String pvpTicketJellyBtn(int cost) {
-    return '젤리 $cost 만땅 충전';
+    return '젤리 $cost 충전';
   }
 
   @override
@@ -2856,13 +2859,13 @@ class AppLocalizationsKo extends AppLocalizations {
   String get pvpTicketFilled => '티켓을 가득 채웠어요';
 
   @override
-  String get pvpTicketAlreadyFull => '티켓이 이미 가득 찼어요';
+  String get pvpTicketAlreadyFull => '티켓이 가득 차 있어요 — 무료 충전 횟수는 쓰지 않았어요';
 
   @override
   String get pvpTicketChargeFailed => '티켓을 충전하지 못했어요. 잠시 후 다시 시도해 주세요';
 
   @override
-  String get pvpTicketWhy => '티켓은 트로피 랭킹을 \'많이 돌린 순\'이 아니라 \'전력 순\'으로 지켜 줘요.';
+  String get pvpTicketWhy => '티켓은 결투 순위를 \'많이 돌린 순\'이 아니라 \'전력 순\'으로 지켜 줘요.';
 
   @override
   String adDailyLimit(int limit) {
@@ -3652,7 +3655,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String polishStacks(String n, String max, String floor) {
-    return '다듬기 $n/$max · 지금 최대의 $floor% · 다음 값은 늘 더 높아요';
+    return '다듬은 횟수 $n번(비용은 $max번째부터 그대로) · 지금 최대의 $floor% · 다음 값은 늘 더 높아요';
   }
 
   @override
@@ -3726,7 +3729,7 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
-  String get forgeTranscendWarn => '⚠️ 낀 장비와 모루 위 장비가 전부 사라져요(별·정성 포함).';
+  String get forgeTranscendWarn => '⚠️ 낀 장비와 모루 위 장비가 전부 사라져요(별·다듬은 옵션 포함).';
 
   @override
   String get forgeTranscendAction => '공방 초월';
@@ -3799,7 +3802,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String forgeStarCarryBody(String stars, String exp) {
-    return '같은 등급 장비라 지금 낀 장비의 별 ★$stars와 모은 별 재료 $exp개(강화 중이면 그 시간까지)를 새 장비가 그대로 이어받아요. 정성(다듬기)은 옵션에 붙은 것이라 새 장비 그대로예요.\n\n바꿀까요?';
+    return '같은 등급 장비라 지금 낀 장비의 별 ★$stars와 모은 별 재료 $exp개(강화 중이면 그 시간까지)를 새 장비가 그대로 이어받아요. 다듬은 횟수(다듬기 비용 단계)는 옵션에 붙은 것이라 새 장비 그대로예요.\n\n바꿀까요?';
   }
 
   @override
@@ -3831,7 +3834,7 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
-  String get forgeRerollHint => '등급·부위는 그대로 · 다듬기 버튼으로 옵션을 바꿔요';
+  String get forgeRerollHint => '등급·부위는 그대로 · 다듬기 버튼으로 옵션을 더 좋게 다듬어요';
 
   @override
   String forgeRushOn(int s) {
@@ -4200,7 +4203,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String duelTrophy(String delta) {
-    return '트로피 $delta';
+    return '별 $delta';
   }
 
   @override
@@ -5789,7 +5792,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String guideElementBody(String mult) {
-    return '곤충마다 오행 속성이 하나 있어요. 결투에서 상극 관계인 상대와 부딪히면 피해가 $mult배가 돼요. 빨간 화살표가 이기는 방향이에요.';
+    return '곤충마다 오행 속성이 하나 있어요. 결투에서 상극 관계인 상대와 부딪히면 피해가 $mult배가 돼요. 빨간 화살표가 이기는 방향이에요. 경기장에도 오행이 있어서, 경기장과 같은 오행 곤충은 체력·공격·방어가 오르고 경기장이 이기는 오행 곤충은 내려가요(결투는 상대를 고를 때, 대회는 웨이브마다 정해져요).';
   }
 
   @override
@@ -5946,7 +5949,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get fairyEquippedTag => '착용 중';
 
   @override
-  String get fairyMergeEquipped => '착용 중인 요정은 합성할 수 없어요';
+  String get fairyMergeEquipped => '동행 중인 요정은 합성할 수 없어요';
 
   @override
   String get fairyAutoMergeDone => '합성 결과';
@@ -6161,7 +6164,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String eggOddsPity(String n, String grade) {
-    return '$n회째에는 $grade 이상 확정';
+    return '$n회째에는 $grade 등급 이상 확정';
   }
 
   @override
@@ -7072,7 +7075,7 @@ class AppLocalizationsKo extends AppLocalizations {
     String floor,
     String floorMax,
   ) {
-    return '다듬기: 옵션 한 줄을 다시 굴리고 이전 값과 새 값 중 남길 쪽을 골라요. 비용은 화석(등급 1칸마다 $fossil개) 또는 젤리 $jelly개, 원하는 종류를 지정하면 ×$mult. 다듬을 때마다 그 줄의 정성이 쌓여 나올 수 있는 가장 낮은 값이 $floor씩 올라가요(최대 $floorMax).';
+    return '다듬기: 옵션 한 줄을 다시 굴려요. 새 값은 늘 지금보다 높아요(종류가 바뀌면 이전 값을 남길 수도 있어요). 비용은 화석(등급 1칸마다 $fossil개) 또는 젤리 $jelly개, 종류를 지정하면 ×$mult. 같은 줄을 다듬을 때마다 비용이 ×$floor씩 올라요($floorMax번째부터 그대로). 이미 최대인 줄은 다듬을 수 없어요.';
   }
 
   @override
@@ -7090,7 +7093,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get guideHuntDefenseBody =>
-      '몬스터의 공격은 사냥터마다 정해져 있어요. 근성(체력)·맷집(방어)·회복력을 올리면 받는 피해가 그대로 줄어들고, 같은 사냥터에 머물며 강해질수록 점점 덜 아파요. 보스에서 막히면 그 사냥터에서 더 강화하고 다시 도전하세요.';
+      '몬스터의 공격은 사냥터마다 정해져 있어요. 체력·맷집(방어)·회복력을 올리면 받는 피해가 그대로 줄어들고, 같은 사냥터에 머물며 강해질수록 점점 덜 아파요. 보스에서 막히면 그 사냥터에서 더 강화하고 다시 도전하세요.';
 
   @override
   String guideMissionRewardBody(String minutes, String times) {
@@ -7146,7 +7149,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get bugRarityHelp =>
-      '곤충마다 따로 정해지는 희귀도예요. 같은 종이어도 일반부터 전설까지 나와요. 희귀할수록 부화·짝짓기가 오래 걸리지만, 펫 효과·펫 패시브·결투 능력치가 크고 정수로 바꿀 때 더 많이 받아요.';
+      '곤충마다 따로 정해지는 희귀도예요. 같은 종이어도 일반부터 전설까지 나와요. 희귀할수록 부화·짝짓기가 오래 걸리지만, 펫 효과·펫 패시브·결투 능력치가 크고 정수로 바꿀 때 더 많이 받아요.\n\n희귀도는 보석(◆) 색으로, 개체 등급은 이름표로 보여요 — 이름은 같아도 다른 것이에요.';
 
   @override
   String igSpeciesRarity(String grade) {
@@ -7260,7 +7263,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get igNoEssence => '정수가 부족해요';
 
   @override
-  String get igGradeFailed => '할 수 없어요';
+  String get igGradeFailed => '지금은 할 수 없어요 — 잠시 후 다시 해 주세요';
 
   @override
   String get igVaultTitle => '정수 보관함';
@@ -7314,16 +7317,16 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
-  String get igPotionDailyLimit => '오늘은 더 살 수 없어요';
+  String get igPotionDailyLimit => '오늘 구매 한도를 다 샀어요 — 내일 다시 살 수 있어요';
 
   @override
   String gachaPityLeftGrade(int n, String grade) {
-    return '$n회 안에 $grade 이상 확정';
+    return '$n회 안에 $grade 등급 이상 확정';
   }
 
   @override
   String gachaDescGrade(String grade) {
-    return '$grade 등급 이상 보장 · 이색 확률 10배';
+    return '$grade 등급 이상 보장 · 희귀도 고급 이상 · 이색 확률 10배';
   }
 
   @override
@@ -7401,7 +7404,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String guideDuelLeague(int min, int up, int down, int reward, int full) {
-    return '리그는 매주 같은 리그끼리 별(승리 점수)로 겨뤄요. 그 주 결투한 인원이 $min명 이상이면 상위 $up% 승급 · 하위 $down% 강등이고, $min명 미만이면 승급이 없어요. 순위 젤리는 $reward명 이상일 때부터 인원의 절반까지 받고, $full명이 안 되면 인원만큼 줄어들어요. $reward명 미만인 리그는 결산 때 아래 리그로 합쳐지고, 한 주를 쉬면 한 단계 내려가요.';
+    return '리그는 매주 같은 리그끼리 별로 겨뤄요(이기면 받고 져도 잃지 않아요). 그 주 결투한 인원이 $min명 이상이면 상위 $up% 승급 · 하위 $down% 강등이고, $min명 미만이면 승급이 없어요. 순위 젤리는 $reward명 이상일 때부터 인원의 절반까지 받고, $full명이 안 되면 인원만큼 줄어들어요. $reward명 미만인 리그는 결산 때 아래 리그로 합쳐지고, 한 주를 쉬면 한 단계 내려가요.';
   }
 
   @override
@@ -7545,11 +7548,11 @@ class AppLocalizationsKo extends AppLocalizations {
   String get rarityFilterButton => '받을 희귀도';
 
   @override
-  String get rarityFilterAll => '모든 종';
+  String get rarityFilterAll => '모든 곤충';
 
   @override
   String rarityFilterAtLeast(String grade) {
-    return '$grade 종 이상';
+    return '희귀도 $grade 이상';
   }
 
   @override
@@ -7722,7 +7725,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get whatsNew21Passive =>
-      '펫 패시브가 개체 등급·종 희귀도를 따라 커져요 — 업데이트 전 곤충은 대부분 낮아져서 곤충마다 무료 재굴림 5번을 드려요';
+      '펫 패시브가 개체 등급·희귀도를 따라 커져요 — 업데이트 전 곤충은 대부분 낮아져서 곤충마다 무료 재굴림 5번을 드려요';
 
   @override
   String get whatsNew21Egg =>
@@ -7759,7 +7762,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String passiveRerollFreeHint(String n) {
-    return '업데이트 전부터 있던 곤충은 무료로 $n번 재굴림할 수 있어요.';
+    return '1.0.21 전부터 있던 곤충은 패시브 크기를 무료로 $n번 재굴림할 수 있어요.';
   }
 
   @override
@@ -7787,12 +7790,12 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String rarityUpConfirm(int n, String grade, String next) {
-    return '같은 종 · $grade 곤충 $n마리를 재료로 써서 $next(으)로 올려요.\n재료 곤충은 사라져요(키운 곤충·장착·잠금 곤충은 재료로 쓰지 않아요).';
+    return '같은 종 · 희귀도 $grade 곤충 $n마리를 재료로 써서 희귀도 $next(으)로 올려요.\n재료 곤충은 사라져요(키운 곤충·등급 올린 곤충·뽑기 출신·장착·잠금 곤충은 쓰지 않아요).';
   }
 
   @override
   String rarityUpNeed(int need, String grade, int have) {
-    return '같은 종 $grade 곤충이 $need마리 필요해요 (지금 $have마리 · 키운 곤충·장착·잠금 곤충은 재료가 아니에요)';
+    return '같은 종 · 희귀도 $grade 곤충이 $need마리 필요해요(지금 $have마리 · 키운 곤충·등급 올린 곤충·뽑기 출신·장착·잠금 곤충은 재료가 아니에요)';
   }
 
   @override
@@ -7807,16 +7810,29 @@ class AppLocalizationsKo extends AppLocalizations {
   String get rarityUpGo => '올리기';
 
   @override
-  String arenaEffectLine(String arena, String up, String weak, String down) {
-    return '$arena 경기장 · $arena 곤충 +$up% · $weak 곤충 −$down%';
+  String arenaName(String arena) {
+    return '$arena 경기장';
   }
+
+  @override
+  String arenaBugUp(String el, String pct) {
+    return '$el 곤충 +$pct%';
+  }
+
+  @override
+  String arenaBugDown(String el, String pct) {
+    return '$el 곤충 −$pct%';
+  }
+
+  @override
+  String get arenaStatsNote => '(체력·공격·방어)';
 
   @override
   String get igLegacyRoll => '놓친 능력치 굴리기';
 
   @override
   String igLegacyRollDesc(int n) {
-    return '업데이트 전에 키워서 등급을 올리며 굴리지 못한 몫이에요 · 남은 $n번(무료)';
+    return '옛 규칙으로 등급이 올라 능력치 품질을 굴리지 못한 몫이에요 — 무료로 $n번 굴릴 수 있어요(좋은 쪽만 남아요)';
   }
 
   @override
@@ -7824,4 +7840,273 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get polishMaxed => '이 줄은 이미 최대예요';
+
+  @override
+  String get rarityUpFodderHead => '재료로 쓰일 곤충';
+
+  @override
+  String polishJellyConfirm(int jelly) {
+    return '젤리 $jelly개로 이 줄을 다듬을까요? 새 값은 늘 지금보다 높아요.';
+  }
+
+  @override
+  String get polishApplied => '옵션이 더 좋아졌어요!';
+
+  @override
+  String get polishChanged => '그 사이 장비가 바뀌어 새 값을 얹지 못했어요(비용은 이미 썼어요)';
+
+  @override
+  String get igNoPotion => '성장물약이 모자라요';
+
+  @override
+  String get igLegacyRollNone => '남은 무료 굴리기가 없어요';
+
+  @override
+  String get passiveRerollNoFree => '무료 재굴림을 다 썼어요';
+
+  @override
+  String get passiveRerollPending => '이전 재굴림 결과를 먼저 골라 주세요';
+
+  @override
+  String passiveRerollRange(String min, String max) {
+    return '종류는 그대로 · 크기 $min~$max 사이에서 다시 굴려요';
+  }
+
+  @override
+  String passiveRerollMaxNow(String max) {
+    return '지금 등급·희귀도에서 최대 $max';
+  }
+
+  @override
+  String igLegacyRollAllPotions(int n, String total) {
+    return '「$n번 모두」는 물약을 모두 $total개 써요';
+  }
+
+  @override
+  String get duelOfferExpired => '후보가 바뀌었어요 — 전투 시작을 다시 눌러 주세요';
+
+  @override
+  String get duelTeamInvalid => '출전 곤충을 다시 골라 주세요(성충만 · 3마리)';
+
+  @override
+  String get trainAlreadyDone => '이미 끝났어요';
+
+  @override
+  String get trainMaxAction => '최대';
+
+  @override
+  String trainMaxSnack(int n) {
+    return '수련 +$n레벨!';
+  }
+
+  @override
+  String igLegacyRollAll(int n) {
+    return '$n번 모두';
+  }
+
+  @override
+  String get breedingExpandedSnack => '짝짓기 칸을 늘렸어요';
+
+  @override
+  String get maxShort => '최대';
+
+  @override
+  String get whatsNew22Rarity =>
+      '희귀도가 곤충마다 정해져요 — 같은 종도 일반~전설이 나와요. 갖고 있던 곤충도 희귀도와 패시브 종류가 새로 정해졌어요';
+
+  @override
+  String get whatsNew22RarityUp =>
+      '희귀도 올리기: 같은 종 · 같은 희귀도 곤충 3마리로 한 단계 올려요. 채집함에서 보석(◆)이 희귀도, 초록 화살표가 「올릴 수 있음」이고 자동으로 한 번에 올릴 수도 있어요';
+
+  @override
+  String get whatsNew22Arena =>
+      '경기장에 오행이 생겼어요 — 같은 오행 곤충 +10%, 경기장이 이기는 오행 −10%(결투는 상대를 고를 때, 대회는 웨이브마다 정해져요)';
+
+  @override
+  String get whatsNew22LegacyRoll =>
+      '업데이트 전부터 높은 등급이던 곤충은 놓친 능력치 굴리기를 무료로 받아요(곤충 상세 → 등급)';
+
+  @override
+  String get whatsNew22Polish => '장비 다듬기는 이제 늘 더 좋은 값이 나와요(다듬을수록 비용이 올라요)';
+
+  @override
+  String get whatsNew22Convenience =>
+      '결투 티켓 무료 충전은 가득 찰 때까지만 · 훈련 배분 ＋/－ 길게 누르기 · 수련 「최대」 버튼 · 넘치던 글씨와 안내 문구 정리';
+
+  @override
+  String get whatsNew22Power =>
+      '종끼리 결투 배율을 고르게 다시 맞춰 전투력 숫자가 대부분 올라요(이길 확률 계산은 그대로)';
+
+  @override
+  String get igLegacyRollDone => '능력치 품질이 올랐어요';
+
+  @override
+  String igLegacyPotionHint(String n) {
+    return '물약 1개마다 굴린 뒤 모든 능력치 +$n점(100까지) — 굴린 값은 내려가지 않아요';
+  }
+
+  @override
+  String get fairyErrBoxMax => '요정함은 이미 최대 크기예요';
+
+  @override
+  String get fairyErrNestBusy => '둥지에 이미 알이 있어요';
+
+  @override
+  String get fairyErrNoEgg => '요정 알이 없어요';
+
+  @override
+  String get fairyErrNoStone => '그 속성석이 없어요';
+
+  @override
+  String get fairyErrNestEmpty => '둥지가 비어 있어요';
+
+  @override
+  String get fairyErrNotReady => '아직 부화하지 않았어요';
+
+  @override
+  String get fairyErrAlreadyReady => '이미 부화했어요 — 받기를 눌러 주세요';
+
+  @override
+  String get fairyErrNoAccel => '가속기가 없어요';
+
+  @override
+  String get fairyErrNoFairy => '요정을 찾을 수 없어요 — 화면을 다시 열어 주세요';
+
+  @override
+  String get fairyErrCompanion => '동행 중인 요정은 합성·분해할 수 없어요';
+
+  @override
+  String get fairyErrMismatch => '같은 종류·같은 등급 요정끼리만 합성할 수 있어요';
+
+  @override
+  String get fairyErrMaxGrade => '이미 가장 높은 등급이에요';
+
+  @override
+  String get fairyErrMaxLevel => '이미 최고 레벨이에요';
+
+  @override
+  String get fairyErrRerollPending => '먼저 지난 재굴림 결과를 골라 주세요';
+
+  @override
+  String get skillErrAlreadyOwned => '이미 해금한 스킬이에요';
+
+  @override
+  String get skillErrNotOwned => '먼저 스킬을 해금해 주세요';
+
+  @override
+  String get skillErrMaxLevel => '이미 최고 레벨이에요';
+
+  @override
+  String get skillErrNotReady => '아직 수련이 끝나지 않았어요';
+
+  @override
+  String get skillErrMaxGrade => '가장 높은 등급은 더 올릴 수 없어요';
+
+  @override
+  String get skillErrNoFree => '오늘 무료 뽑기를 이미 썼어요';
+
+  @override
+  String get injuryHealNotInjured => '이미 회복했어요';
+
+  @override
+  String get injuryHealNetwork => '대회 부상은 서버에 연결되어야 회복할 수 있어요. 잠시 뒤 다시 시도해 주세요';
+
+  @override
+  String injuryHealAll(Object n) {
+    return '모두 회복 · 젤리 $n';
+  }
+
+  @override
+  String get injuryHealAllLabel => '모두 회복';
+
+  @override
+  String injuryHealAllConfirm(Object count, Object n) {
+    return '곤충 $count마리를 젤리 $n개로 모두 지금 회복할까요?';
+  }
+
+  @override
+  String injuryHealAllDone(Object count) {
+    return '$count마리를 회복했어요';
+  }
+
+  @override
+  String fairyLevelUpMax(Object lv) {
+    return 'Lv.$lv까지';
+  }
+
+  @override
+  String fairyLevelUpMaxDone(Object lv) {
+    return 'Lv.$lv까지 올렸어요';
+  }
+
+  @override
+  String gachaDrawMany(Object count, Object n) {
+    return '$count회 뽑기 · 젤리 $n';
+  }
+
+  @override
+  String gachaDrawManyTitle(Object count) {
+    return '$count회 뽑기';
+  }
+
+  @override
+  String gachaDrawManyConfirm(String n, String count) {
+    return '젤리 $n개로 알 $count개를 한 번에 뽑을까요?\n확률·천장은 한 번씩 뽑을 때와 같아요.';
+  }
+
+  @override
+  String gachaStorageNeed(Object count, Object free) {
+    return '채집함 빈칸이 $count칸 필요해요 (지금 $free칸)';
+  }
+
+  @override
+  String get rarityAutoTitle => '희귀도 자동 올리기';
+
+  @override
+  String rarityAutoBody(String ups, String fodder) {
+    return '같은 종·같은 희귀도 곤충을 모아 희귀도를 올려요.\n올리기 $ups번 · 재료로 사라지는 곤충 $fodder마리';
+  }
+
+  @override
+  String get rarityAutoSafe =>
+      '키운·잠근·장착한·등급 올린·뽑기 출신 곤충은 재료로 쓰지 않아요. 아끼는 곤충부터 올려요.';
+
+  @override
+  String get rarityAutoRun => '자동으로 올리기';
+
+  @override
+  String get rarityAutoShowList => '올릴 수 있는 곤충 보기';
+
+  @override
+  String rarityAutoDone(Object ups) {
+    return '희귀도를 $ups번 올렸어요';
+  }
+
+  @override
+  String get rarityAutoNone => '지금 희귀도를 올릴 수 있는 곤충이 없어요';
+
+  @override
+  String get storageViewRarity => '희귀도';
+
+  @override
+  String storageViewRarityAtLeast(Object grade) {
+    return '◆$grade 이상';
+  }
+
+  @override
+  String get storageViewRarityUp => '희귀도 올릴 수 있음';
+
+  @override
+  String incubatorAutoPlace(Object n) {
+    return '좋은 알부터 $n개 넣기';
+  }
+
+  @override
+  String incubatorAutoPlaced(Object n) {
+    return '알 $n개를 부화기에 넣었어요';
+  }
+
+  @override
+  String get whatsNew22Convenience2 =>
+      '알 10회 뽑기 · 회복실 「모두 회복」 · 부화기 「좋은 알부터 넣기」 · 요정 레벨 한 번에 올리기 · 사냥 강화 「근성」 이름을 「체력」으로';
 }

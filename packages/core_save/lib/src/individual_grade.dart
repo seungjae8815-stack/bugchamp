@@ -315,13 +315,16 @@ int potionDropsOn(SaveGame s, String day) {
 
 /// 롤 정리(서버 업로드 · 앱 로드 공용) — **등급 올리기를 한 적 없는 곤충(합성 단계 0)의 롤은 처음 롤**이다.
 /// 처음 롤은 id 로 다시 계산되므로, 저장값이 붙어 있으면 위조(또는 옛 데이터)라 지운다. 칸 수가 다르면 지운다.
+/// 놓친 능력치 굴리기(`lru`)로 남은 롤은 **놓친 굴리기가 있는 곤충**(업데이트 전 곤충)만 인정한다 —
+/// 새 곤충에 `lru` 를 붙여 만점 롤을 남기던 구멍(2026-10-16 출시 전 검토).
 SaveGame sanitizeGradeRolls(SaveGame s) {
   var changed = false;
+  bool earned(IndividualBug b) =>
+      b.synthUps > 0 || (b.legacyRollUps > 0 && legacyMissedRolls(b) > 0);
   final bugs = [
     for (final b in s.bugs)
       if (b.rolls != null &&
-          ((b.synthUps <= 0 && b.legacyRollUps <= 0) ||
-              b.rolls!.length != StatRoll.values.length))
+          (!earned(b) || b.rolls!.length != StatRoll.values.length))
         () {
           changed = true;
           return IndividualBug.fromJson(b.toJson()..remove('rl'));

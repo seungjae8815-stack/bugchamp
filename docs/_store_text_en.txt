@@ -1,6 +1,6 @@
 ========================================
  Bug Champ - Store Listing (English)
- 2026-10-15 full rewrite (based on 1.0.21) - Google Play + App Store
+ 2026-10-15 full rewrite (based on 1.0.21) - 2026-10-16 rarity and arena element added (1.0.22) - Google Play + App Store
 ========================================
 * Why: the old text described the pre-1.0.14 battle (stances, energy, element order, manual mind games)
   and said "ads are opt-in rewarded ads". The game now has NO ads, physics "bug sumo" duels and a 3-bug team league.
@@ -35,10 +35,13 @@ Bugs clash for real on a round wooden arena.
 * Each bug fights its own way: Ram charges, Grip clamps and shoves, Throw hurls
 * In a pinch, mash the screen to hold on - the Tap Counter can turn a match around
 * 3-bug winner-stays matches: the winner faces the next rival with the HP it has left
+* Every match has an arena element - bugs of the same element get a boost
 * Climb a weekly league from Bronze to Diamond
 
 - NO TWO BUGS ARE ALIKE -
 Even two giant stag beetles are never the same.
+* Rarity (Common to Legendary) is rolled for each bug - any species can be Legendary
+* Gather three of the same species and rarity to raise rarity one step
 * Grade (Common to Legendary), size (heavier bugs are harder to push), element, temperament, male or female
 * Very rare color variants: Rainbow and Albino
 * Spend training points across 10 stats to build attackers, tanks or team leaders
@@ -51,7 +54,7 @@ Even two giant stag beetles are never the same.
 * Fairy companions and 12 skills to shape your own play style
 
 - FILL YOUR BUG BOOK -
-Record the biggest size, best grade and color variants for all 20 species, and collect all 44 bosses.
+Record the biggest size, best grade, best rarity and color variants for all 20 species, and collect all 44 bosses.
 
 - PERFECT FOR YOU IF YOU -
 * kept rhino or stag beetles as a kid
