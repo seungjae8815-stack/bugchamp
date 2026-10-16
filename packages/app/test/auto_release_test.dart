@@ -90,6 +90,13 @@ void main() {
   }) => IndividualBug(
     id: id,
     speciesId: sp,
+    // 곤충 희귀도(1.0.22)를 종 이름대로 정해 둔다(alpha 일반 · beta 희귀 · gamma 전설) — id 롤에 맡기면
+    // 필터가 어떤 곤충을 고를지 테스트가 알 수 없다.
+    rarity: const {
+      'alpha': Grade.common,
+      'beta': Grade.rare,
+      'gamma': Grade.legendary,
+    }[sp],
     sizeMm: 40,
     potential: potential,
     temperament: Temperament.steadfast,

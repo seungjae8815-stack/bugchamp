@@ -18,6 +18,7 @@ import '../../domain/save_controller.dart';
 import 'package:core_save/core_save.dart';
 import '../../l10n/app_localizations.dart';
 import '../../ui/ad_gate.dart';
+import '../../ui/arena_line.dart';
 import '../../ui/art.dart';
 import '../../ui/grade_rarity_rows.dart';
 import '../../ui/jelly_confirm.dart';
@@ -92,6 +93,11 @@ class _TicketBarState extends ConsumerState<TicketBar> {
 
   Future<void> _watchAd(AppLocalizations l) async {
     final cfg = _cfg;
+    // 가득 차 있으면 무료 충전을 쓰지 않고 바로 알려 준다(상한을 넘겨 쌓이던 버그, 2026-10-16).
+    if (ref.read(saveControllerProvider.notifier).ticketsNow >= cfg.ticketMax) {
+      _report(l, TicketCharge.alreadyFull, okMsg: '');
+      return;
+    }
     setState(() => _busy = true);
     try {
       // 광고를 끝까지 본 경우에만 지급(하루 상한도 여기서 먼저 확인).
@@ -1617,6 +1623,8 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
     final server = ref.read(gameServerProvider);
     List<_Candidate> cands;
     String? offerId;
+    // 경기장 오행(2026-10-16) — 서버가 제안 때 정한 값(연습 결투는 여기서 굴린다).
+    Element? arena;
     if (server.available) {
       setState(() => _starting = true);
       try {
@@ -1637,6 +1645,9 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
           return;
         }
         offerId = res.data!['offerId']?.toString();
+        arena = res.data!['arena'] is String
+            ? Element.fromKeyOrNull(res.data!['arena'] as String)
+            : null;
         cands = [
           for (final s in (res.data!['slots'] as List? ?? const []))
             _Candidate.fromServer(Map<String, dynamic>.from(s as Map)),
@@ -1651,9 +1662,12 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
       return;
     } else {
       cands = _localCandidates(data, save, locale, ids);
+      if (_duelParams(data).arenaOn) {
+        arena = Element.values[_rng.nextInt(Element.values.length)];
+      }
     }
     if (!mounted || cands.isEmpty) return;
-    final pick = await _pickOpponent(l, data, locale, cands);
+    final pick = await _pickOpponent(l, data, locale, cands, arena: arena);
     if (pick == null || !mounted) return;
     await _battleManual(
       data,
@@ -1661,6 +1675,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
       locale,
       pick,
       offerId: offerId,
+      arena: arena,
     );
   }
 
@@ -1769,8 +1784,9 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
     AppLocalizations l,
     GameData data,
     String locale,
-    List<_Candidate> cands,
-  ) {
+    List<_Candidate> cands, {
+    Element? arena,
+  }) {
     final ids = _team.whereType<String>().toList();
     final save = ref.read(saveControllerProvider).requireValue;
     final myPower = duelTeamFor(
@@ -1801,6 +1817,11 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
                   fontWeight: FontWeight.w900,
                 ),
               ),
+              // 경기장 오행(2026-10-16) — 고르기 전에 보여 준다(출정 곤충을 바꿀 수 있게. 경기를 치를 때까지 그대로).
+              if (arena != null) ...[
+                const SizedBox(height: 4),
+                arenaEffectLine(l, arena, _duelParams(data)),
+              ],
               const SizedBox(height: 2),
               Text(
                 l.opponentPickHint(
@@ -2009,6 +2030,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
     required Future<void> Function(DuelStep last) onFinished,
     List<String> foeBadges = const [],
     String? foeAvatar,
+    Element? arena,
   }) async {
     final save = ref.read(saveControllerProvider).value;
     final myBadges = publicSkins(
@@ -2022,7 +2044,8 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
           foe: foe,
           driver: driver,
           params: _duelParams(data),
-          arena: foe.first.element,
+          // 경기장 오행(2026-10-16) — 서버가 정한 경기장(없으면 옛 그림 규칙: 상대 첫 곤충).
+          arena: arena ?? foe.first.element,
           mySkins: mySkins,
           foeSkins: foeSkins,
           myBadges: myBadges,
@@ -2047,6 +2070,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
     String locale,
     _Candidate c, {
     String? offerId,
+    Element? arena,
   }) async {
     final l = AppLocalizations.of(context);
     final ids = _duelTeamIds(l);
@@ -2101,6 +2125,9 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
           // 상대 프로필 그림 — 사람일 때만(야생 팀은 이름이 비어 있다).
           foeAvatar: c.nickname.isEmpty ? null : (c.avatar ?? ''),
           onFinished: _adoptDuel,
+          arena: res.data!['arena'] is String
+              ? Element.fromKeyOrNull(res.data!['arena'] as String)
+              : arena,
         );
       } finally {
         close();
@@ -2122,6 +2149,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
         battle: data.battleConfig ?? const BattleConfig(),
         trophies: save.pvpTrophies,
         rewardMult: 1.0,
+        arena: arena,
       ),
       onBout: (i, won) {
         if (i == 0) _localLosers.clear();
@@ -2140,6 +2168,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
       mySkins: mySkins,
       foeSkins: const {},
       onFinished: (last) => _applyLocalDuel(last, ids),
+      arena: arena,
     );
   }
 
@@ -3078,7 +3107,10 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
                           )],
                         _ => null,
                       },
-                      rarity: sp.grade,
+                      // 곤충 희귀도(1.0.22) — 내 곤충은 계산, 상대는 서버가 실어 준 값(없으면 종 희귀도).
+                      rarity: bug != null
+                          ? bugRarityOf(data, bug, sp)
+                          : (d.rarity ?? sp.grade),
                     ),
                     const SizedBox(height: 4),
                   ],
@@ -3087,7 +3119,19 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
                     runSpacing: 3,
                     children: [
                       if (sp != null && !individualGradeOn(data))
-                        _chip(gradeLabel(l, sp.grade), gradeColor(sp.grade)),
+                        _chip(
+                          gradeLabel(
+                            l,
+                            bug != null
+                                ? bugRarityOf(data, bug, sp)
+                                : (d.rarity ?? sp.grade),
+                          ),
+                          gradeColor(
+                            bug != null
+                                ? bugRarityOf(data, bug, sp)
+                                : (d.rarity ?? sp.grade),
+                          ),
+                        ),
                       _chip(
                         elementLabel(l, d.element),
                         elementColor(d.element),

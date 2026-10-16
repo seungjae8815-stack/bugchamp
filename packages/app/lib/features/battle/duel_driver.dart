@@ -1,4 +1,5 @@
 import 'package:core_battle/core_battle.dart';
+import 'package:core_models/core_models.dart';
 import 'package:core_run/core_run.dart';
 
 import '../../domain/game_server.dart';
@@ -139,9 +140,13 @@ class LocalDuelDriver implements DuelDriver {
     required this.battle,
     required this.trophies,
     required this.rewardMult,
+    this.arena,
   });
 
   final int seed;
+
+  /// 경기장 오행(2026-10-16) — 서버 결투와 같은 효과(같은 엔진 함수).
+  final Element? arena;
   final List<DuelBug> mine;
   final List<DuelBug> foe;
   final DuelParams params;
@@ -184,6 +189,7 @@ class LocalDuelDriver implements DuelDriver {
       a: mine[st.ia],
       b: foe[st.ib],
       params: params,
+      arena: arena,
       launchA: launch,
       hpA: st.hpA,
       hpB: st.hpB,

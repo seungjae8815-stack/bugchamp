@@ -36,6 +36,7 @@ class DuelBug {
     this.aura = 0,
     this.auraApplied = false,
     this.potential = 0,
+    this.rarity,
   });
 
   final String id;
@@ -94,6 +95,10 @@ class DuelBug {
   /// 옛 서버·옛 행은 키가 없어 0 이다(화면은 종 희귀도만 보여 준다).
   final int potential;
 
+  /// 곤충 희귀도(1.0.22, JSON `rr`) — **표시 전용**(상대 곤충 창). 판정에는 안 쓴다(능력치에 이미 들어 있다).
+  /// null = 모름(옛 서버·옛 행) — 화면은 종 희귀도로 보여 준다.
+  final Grade? rarity;
+
   /// 오라 역할·크기를 붙인다(능력치는 그대로 — 입히는 것은 [applyTeamAura]).
   DuelBug withAura(DuelRole? role, double value) => _copy(
     auraRole: role,
@@ -134,6 +139,7 @@ class DuelBug {
     aura: aura ?? this.aura,
     auraApplied: auraApplied ?? this.auraApplied,
     potential: potential,
+    rarity: rarity,
   );
 
   /// 훈련소 보너스를 입힌다(공격·방어 배율, 회피·치명·회복력 가산). 값은 호출자가
@@ -174,6 +180,7 @@ class DuelBug {
     aura: aura,
     auraApplied: auraApplied,
     potential: potential,
+    rarity: rarity,
   );
 
   /// 한 판 안에서만 쓰는 전투 수치로 바꾼다(전력 압축·게이지 보너스, 엔진 내부용).
@@ -192,6 +199,7 @@ class DuelBug {
     required Specialty specialty,
     double sizeStatMult = 1,
     int potential = 0,
+    Grade? rarity,
   }) => DuelBug(
     id: b.id,
     name: b.name,
@@ -206,6 +214,7 @@ class DuelBug {
     spd: b.spd,
     sizeStatMult: sizeStatMult,
     potential: potential,
+    rarity: rarity,
   );
 
   DuelBug copyWith({
@@ -236,6 +245,7 @@ class DuelBug {
     aura: aura,
     auraApplied: auraApplied,
     potential: potential,
+    rarity: rarity,
   );
 
   /// 몸 반경.
@@ -333,6 +343,7 @@ class DuelBug {
     if (auraRole != null && aura > 0) 'av': aura,
     if (auraApplied) 'aa': 1,
     if (potential > 0) 'pt': potential,
+    if (rarity != null) 'rr': rarity!.key,
   };
 
   factory DuelBug.fromJson(Map<String, dynamic> j) => DuelBug(
@@ -361,6 +372,7 @@ class DuelBug {
     aura: (j['av'] as num?)?.toDouble() ?? 0,
     auraApplied: j['aa'] == 1 || j['aa'] == true,
     potential: (j['pt'] as num?)?.toInt() ?? 0,
+    rarity: j['rr'] is String ? Grade.fromKeyOrNull(j['rr'] as String) : null,
   );
 }
 

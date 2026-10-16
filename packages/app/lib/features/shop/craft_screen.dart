@@ -679,7 +679,7 @@ class _GachaCard extends ConsumerWidget {
           ),
           const SizedBox(height: 3),
           if (cfg.individualGrade.enabled)
-            // 개체 등급이 주인공 — 등급 이름을 그 색으로, 종 희귀도는 옆에 작게.
+            // 개체 등급이 주인공 — 등급 이름을 그 색으로, 희귀도(곤충마다 — 1.0.22)는 옆에 작게.
             Text.rich(
               TextSpan(
                 children: [
@@ -693,7 +693,7 @@ class _GachaCard extends ConsumerWidget {
                   ),
                   TextSpan(
                     text:
-                        ' · ${l.igSpeciesRarity(gradeLabel(l, sp.grade))}'
+                        ' · ${l.igSpeciesRarity(gradeLabel(l, bugRarityOf(data, bug, sp)))}'
                         '${bug.variant != BugVariant.none ? ' · ${l.dexVariant}!' : ''}',
                   ),
                 ],
@@ -702,7 +702,7 @@ class _GachaCard extends ConsumerWidget {
             )
           else
             Text(
-              '${gradeLabel(l, sp.grade)} · ${bug.potential}★'
+              '${gradeLabel(l, bugRarityOf(data, bug, sp))} · ${bug.potential}★'
               '${bug.variant != BugVariant.none ? ' · ${l.dexVariant}!' : ''}',
               style: const TextStyle(color: Color(0xDDFFFFFF), fontSize: 12.5),
             ),
@@ -1416,15 +1416,27 @@ void _showEggOdds(
 ) {
   final data = ref.read(gameDataProvider).requireValue;
   String pct(double v) => (v * 100).toStringAsFixed(v * 100 < 10 ? 2 : 1);
-  final gTotal = cfg.gachaWeights.values.fold<double>(0, (a, b) => a + b);
+  // 곤충 희귀도(1.0.22)가 켜지면 희귀도 표는 `bugRarity.gachaWeights` · 종은 전 종 고르게(뽑기 `gachaDraw` 와 같은 규칙).
+  final rarityOn = cfg.bugRarity.enabled;
+  final gw = rarityOn
+      ? {
+          for (final g in Grade.values)
+            if (g.index < cfg.bugRarity.gachaWeights.length &&
+                cfg.bugRarity.gachaWeights[g.index] > 0)
+              g: cfg.bugRarity.gachaWeights[g.index],
+        }
+      : cfg.gachaWeights;
+  final gTotal = gw.values.fold<double>(0, (a, b) => a + b);
   final pTotal = cfg.gachaPotentialWeights.values.fold<double>(
     0,
     (a, b) => a + b,
   );
   final ig = cfg.individualGrade;
   final igTotal = ig.gachaGradeWeights.fold<double>(0, (a, b) => a + b);
-  int speciesOf(Grade g) =>
-      data.allSpecies.where((s) => s.grade == g).length.clamp(1, 999);
+  int speciesOf(Grade g) => data.allSpecies
+      .where((s) => rarityOn || s.grade == g)
+      .length
+      .clamp(1, 999);
   const head = TextStyle(
     color: kHoney,
     fontSize: 13,
@@ -1448,12 +1460,12 @@ void _showEggOdds(
             ),
             const SizedBox(height: 4),
             for (final g in Grade.values.reversed)
-              if ((cfg.gachaWeights[g] ?? 0) > 0 && gTotal > 0)
+              if ((gw[g] ?? 0) > 0 && gTotal > 0)
                 Text(
                   l.eggOddsGradeLine(
                     gradeLabel(l, g),
-                    pct(cfg.gachaWeights[g]! / gTotal),
-                    pct(cfg.gachaWeights[g]! / gTotal / speciesOf(g)),
+                    pct(gw[g]! / gTotal),
+                    pct(gw[g]! / gTotal / speciesOf(g)),
                   ),
                   style: body.copyWith(color: gradeColor(g)),
                 ),

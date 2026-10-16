@@ -33,6 +33,7 @@ class DuelArenaScreen extends StatefulWidget {
     required this.params,
     required this.arena,
     required this.onFinished,
+    this.arenaAt,
     this.mySkins = const {},
     this.foeSkins = const {},
     this.myBadges = const [],
@@ -56,8 +57,13 @@ class DuelArenaScreen extends StatefulWidget {
   final DuelDriver driver;
   final DuelParams params;
 
-  /// 경기장 오행(상대 1번 곤충) — 그림만 고른다.
+  /// 경기장 오행 — 그림(2026-10-16 부터는 서버가 정한 경기장 · 효과는 엔진이 이미 입혔다).
   final Element arena;
+
+  /// 판마다 경기장이 바뀌는 곳(대회 웨이브)의 지금 경기장. null = [arena] 고정.
+  final Element Function()? arenaAt;
+
+  Element get arenaNow => arenaAt?.call() ?? arena;
 
   /// 경기가 끝났을 때(결과 팝업 전) — 호출자가 세이브를 채택하거나 로컬 보상을 반영한다.
   final Future<void> Function(DuelStep last) onFinished;
@@ -931,7 +937,7 @@ class _DuelArenaScreenState extends State<DuelArenaScreen>
           children: [
             ClipOval(
               child: gameImageChain(
-                ['assets/images/duel/arena_${widget.arena.key}.webp'],
+                ['assets/images/duel/arena_${widget.arenaNow.key}.webp'],
                 size: side,
                 fit: BoxFit.cover,
                 fallback: Container(
@@ -1571,7 +1577,7 @@ class _DuelArenaScreenState extends State<DuelArenaScreen>
             stops: [0, 0.14, 0.84, 1],
           ).createShader(rect),
           child: gameImageChain(
-            ['assets/images/duel/arena_${widget.arena.key}_side.webp'],
+            ['assets/images/duel/arena_${widget.arenaNow.key}_side.webp'],
             size: imgH,
             fit: BoxFit.fill,
             fallback: Center(

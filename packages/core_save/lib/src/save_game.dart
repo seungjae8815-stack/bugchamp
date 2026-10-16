@@ -30,7 +30,10 @@ const int kSaveSchemaVersion = 18;
 /// 25(2026-10-12): 공방 초월 시간 — 진행 중 초월 끝 시각 `ftAt`.
 /// 26(2026-10-14): 별 재료 이월 — 장비 `sx` 가 이번 별 몫이 아니라 만렙까지 남은 합까지(구버전은 불러올 때 이번 몫으로 자른다 →
 ///    서버가 같은 장비·같은 별이면 저장본과 큰 쪽을 지킨다, `_keepStarCarry`).
-const int kSaveFeatureLevel = 26;
+/// 27(2026-10-16, 1.0.22): 곤충 희귀도 — 곤충 `ry` · 짝짓기 슬롯 `mr`(어미 희귀도, 표시 전용).
+///    `ry` 는 버전과 상관없이 서버가 같은 id 면 저장본 값으로 지킨다(`guardGradeBugFields`) · `mr` 은 떨궈도 종 희귀도로 보일 뿐이다.
+///    곤충 `lru`(놓친 능력치 굴리기 사용 횟수) — 서버가 줄지 않게(큰 쪽) 지킨다.
+const int kSaveFeatureLevel = 27;
 
 /// 프로필 그림 id 형식(2026-10-10) — `assets/data/avatars.json` 의 id 꼴이자 Supabase `profiles.avatar` 의 SQL 검사와 같다.
 /// 서버는 이 꼴이 아닌 값을 받지 않는다(긴 문자열이 상대의 결투 후보 응답·세션에 그대로 실려 나갔다 — 2026-10-10 점검).
@@ -139,6 +142,7 @@ class BreedingSlot {
     this.fatherTrait = BugTrait.none,
     this.motherVariant = BugVariant.none,
     this.fatherVariant = BugVariant.none,
+    this.motherRarity,
   });
 
   final String id;
@@ -168,6 +172,10 @@ class BreedingSlot {
   final BugVariant motherVariant;
   final BugVariant fatherVariant;
 
+  /// 어미 희귀도(1.0.22 곤충 희귀도, JSON `mr`) — 산란 시간이 어미 희귀도로 정해져 진행 바 전체 길이를 알려면 필요하다.
+  /// **표시 전용**(시간은 시작할 때 [endsAt] 으로 정해졌다). null = 옛 슬롯·구버전 — 종 희귀도로 본다.
+  final Grade? motherRarity;
+
   factory BreedingSlot.fromJson(Map<String, dynamic> json) => BreedingSlot(
     id: json['id'] as String,
     speciesId: json['speciesId'] as String,
@@ -184,6 +192,9 @@ class BreedingSlot {
     fatherTrait: BugTrait.fromKey(json['fatherTrait'] as String? ?? 'none'),
     motherVariant: BugVariant.fromKey(json['motherVariant'] as String? ?? ''),
     fatherVariant: BugVariant.fromKey(json['fatherVariant'] as String? ?? ''),
+    motherRarity: json['mr'] is String
+        ? Grade.fromKeyOrNull(json['mr'] as String)
+        : null,
   );
 
   /// 모르는 키는 null 로 — 구버전 앱이 신규 값을 만나도 세이브가 죽지 않는다.
@@ -219,6 +230,7 @@ class BreedingSlot {
     if (fatherTrait != BugTrait.none) 'fatherTrait': fatherTrait.key,
     if (motherVariant != BugVariant.none) 'motherVariant': motherVariant.key,
     if (fatherVariant != BugVariant.none) 'fatherVariant': fatherVariant.key,
+    if (motherRarity != null) 'mr': motherRarity!.key,
   };
 
   /// 부모 스냅샷([mother]/[father])을 그대로 담은 슬롯을 만든다.
@@ -231,6 +243,7 @@ class BreedingSlot {
     required IndividualBug father,
     required DateTime endsAt,
     required int seed,
+    Grade? motherRarity,
   }) => BreedingSlot(
     id: id,
     speciesId: mother.speciesId,
@@ -247,6 +260,7 @@ class BreedingSlot {
     fatherTrait: father.trait,
     motherVariant: mother.variant,
     fatherVariant: father.variant,
+    motherRarity: motherRarity,
   );
 
   /// 이 슬롯에서 자식(알) 하나를 롤한다.
@@ -318,7 +332,12 @@ class DexEntry {
     this.variantFound = false,
     this.maxLevel = 0,
     this.legacyConquered = false,
+    this.maxRarity,
   });
+
+  /// 이 종으로 얻은 **역대 최고 희귀도**(1.0.22 곤충 희귀도, JSON `r`, 2026-10-16 사장님 확정 — 표시·기록만).
+  /// "전설 장수풍뎅이 모으기" 같은 수집 목표. null = 아직 기록 없음(옛 기록·꺼진 상태).
+  final Grade? maxRarity;
 
   /// 이 종으로 잡은 **역대 최대 크기**(mm). 곤충 게임의 원초적 자랑거리다.
   final double maxSizeMm;
@@ -356,6 +375,7 @@ class DexEntry {
     bool adult = false,
     bool variant = false,
     int level = 0,
+    Grade? rarity,
   }) => DexEntry(
     maxSizeMm: sizeMm > maxSizeMm ? sizeMm : maxSizeMm,
     maxPotential: potential > maxPotential ? potential : maxPotential,
@@ -363,6 +383,10 @@ class DexEntry {
     variantFound: variantFound || variant,
     maxLevel: level > maxLevel ? level : maxLevel,
     legacyConquered: legacyConquered,
+    maxRarity:
+        rarity != null && (maxRarity == null || rarity.index > maxRarity!.index)
+        ? rarity
+        : maxRarity,
   );
 
   /// 정복 판정 — [needLevel] 이상 키웠거나, 기준을 올리기 전에 이미 정복했거나.
@@ -380,6 +404,9 @@ class DexEntry {
     //  새로 만든 기록이 여기에 잘못 걸리는 일은 없다.)
     legacyConquered:
         json['g'] as bool? ?? (json['a'] == true && !json.containsKey('lv')),
+    maxRarity: json['r'] is String
+        ? Grade.fromKeyOrNull(json['r'] as String)
+        : null,
   );
 
   /// 키를 한 글자로 줄인다 — 20종 × 3필드라 작지만, 세이브는 60초마다
@@ -393,6 +420,7 @@ class DexEntry {
     // 오해돼(위 legacyConquered) 정복이 공짜로 인정된다.
     'lv': maxLevel,
     if (legacyConquered) 'g': true,
+    if (maxRarity != null) 'r': maxRarity!.key,
   };
 }
 
@@ -406,6 +434,8 @@ Map<String, DexEntry> updatedDex({
   required Map<String, DexEntry> current,
   required Iterable<IndividualBug> bugs,
   required LifeStage Function(IndividualBug) stageOf,
+  // 곤충 희귀도(1.0.22) — 주면 종마다 최고 희귀도를 기록한다. 없으면(꺼짐) 기록하지 않는다.
+  Grade Function(IndividualBug)? rarityOf,
 }) {
   Map<String, DexEntry>? next;
   for (final b in bugs) {
@@ -419,12 +449,14 @@ Map<String, DexEntry> updatedDex({
       adult: stage == LifeStage.adult,
       variant: b.variant != BugVariant.none,
       level: b.level,
+      rarity: rarityOf?.call(b),
     );
     if (after.maxSizeMm == before.maxSizeMm &&
         after.maxPotential == before.maxPotential &&
         after.raisedToAdult == before.raisedToAdult &&
         after.variantFound == before.variantFound &&
         after.maxLevel == before.maxLevel &&
+        after.maxRarity == before.maxRarity &&
         current.containsKey(b.speciesId)) {
       continue; // 이미 기록된 것보다 나을 게 없다
     }

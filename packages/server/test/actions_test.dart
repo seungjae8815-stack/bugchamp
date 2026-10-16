@@ -534,6 +534,20 @@ void main() {
       expect(r.extra['adUsed'], 1);
     });
 
+    // 2026-10-16 사장님 지적: 상한을 넘겨 쌓여서 매일 무료분을 모아 두면 판수가 계속 늘었다.
+    test('무료 충전은 상한까지만 — 가득이면 거부하고 하루 횟수도 안 쓴다', () {
+      final full = spent.copyWith(pvpTickets: cfg.ticketMax);
+      final r = actions.grantAdTicket(full);
+      expect(r.error, 'already_full');
+      final over = spent.copyWith(pvpTickets: cfg.ticketMax + 4);
+      expect(actions.grantAdTicket(over).error, 'already_full');
+      // 하나 모자라면 하나만 채운다(+3 이어도 상한에서 멈춘다).
+      final almost = spent.copyWith(pvpTickets: cfg.ticketMax - 1);
+      final r2 = actions.grantAdTicket(almost);
+      expect(r2.isOk, isTrue);
+      expect(r2.save!.pvpTickets, cfg.ticketMax);
+    });
+
     test('하루 상한을 넘기면 거부 — 광고제거 구매자도 동일', () {
       final maxed = spent.copyWith(
         adUseCounts: {kAdFeaturePvpTicket: cfg.ticketAdDailyLimit},
@@ -579,7 +593,9 @@ void main() {
         config: _Config(),
         now: () => DateTime.utc(2026, 7, 27, 1),
       );
-      expect(monday.grantAdTicket(rich).isOk, isTrue);
+      // 티켓은 그 시각에 2장(자연 충전으로 가득이면 무료 충전이 막힌다 — 상한까지만, 2026-10-16).
+      final mondaySave = rich.copyWith(ticketsAt: DateTime.utc(2026, 7, 27, 1));
+      expect(monday.grantAdTicket(mondaySave).isOk, isTrue);
     });
 
     test('젤리가 모자라면 충전되지 않는다', () {
@@ -760,14 +776,24 @@ void main() {
       expect(r.extra['clears'] as int, lessThanOrEqualTo(300));
     });
 
+    // 곤충 희귀도(1.0.22) — 희귀도는 종이 아니라 곤충마다(일반 종도 희귀 이상이 나온다).
+    Grade rarityOf(GameActions a, IndividualBug b) => a.config.pet.rarityOf(
+      b,
+      a.config.speciesList.firstWhere((s) => s.id == b.speciesId),
+    );
+
     test('등급 필터를 서버도 건다 — 클라만 거르면 구버전 앱이 우회한다', () {
-      // 테스트 종은 common 하나뿐이라, 기준을 rare 로 올리면 전부 걸린다.
       final filtered = aged(
         const Duration(hours: 8),
       ).copyWith(bugFilterMinGrade: Grade.rare);
-      final r = seeded(3).sync(filtered);
-      expect(r.save!.bugs, isEmpty);
-      expect(r.extra['bugsGained'], 0);
+      final a = seeded(3);
+      final r = a.sync(filtered);
+      // 기준(희귀) 미만 곤충은 하나도 들어오지 않는다.
+      expect(
+        r.save!.bugs.every((b) => rarityOf(a, b).index >= Grade.rare.index),
+        isTrue,
+      );
+      expect(r.extra['bugsGained'], r.save!.bugs.length);
     });
 
     test('필터에 걸린 곤충은 재료로 환산된다(자동 방생) — 젤리가 아니다', () {
@@ -785,8 +811,13 @@ void main() {
       var plainBugs = 0, plainMats = 0, releasedMats = 0;
       for (var seed = 1; seed <= 8; seed++) {
         final plain = seeded(seed).sync(base).save!;
-        final released = seeded(seed).sync(filtered).save!;
-        expect(released.bugs, isEmpty);
+        final a = seeded(seed);
+        final released = a.sync(filtered).save!;
+        // 전설 미만은 하나도 들어오지 않는다(곤충 희귀도 — 전설은 1%).
+        expect(
+          released.bugs.every((b) => rarityOf(a, b) == Grade.legendary),
+          isTrue,
+        );
         // ⚠️ 프리미엄 재화(젤리)는 자동 통로로 절대 새면 안 된다(§2.6).
         expect(released.materialCount(MaterialKind.jelly), 0);
         plainBugs += plain.bugs.length;

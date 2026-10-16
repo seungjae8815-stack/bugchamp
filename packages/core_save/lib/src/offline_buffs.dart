@@ -184,10 +184,11 @@ OfflineGain expectedOfflineGain(
   FairyConfig? fairy,
   DuelStoneConfig? stones,
   IndividualGradeConfig? grade,
+  BugRarityConfig? rarity,
   required DateTime now,
   double goldMult = 1.0,
 }) {
-  final share = _gradeShares(run, species, save);
+  final share = _gradeShares(run, species, save, rarity: rarity);
   var bugs = 0.0, rare = 0.0, mats = 0.0;
   var fStones = 0.0, dStones = 0.0, potions = 0.0;
   for (final p in plan.parts) {
@@ -241,12 +242,19 @@ OfflineGain expectedOfflineGain(
 ({double accepted, double rareAccepted}) _gradeShares(
   RunConfig run,
   List<Species> species,
-  SaveGame save,
-) {
+  SaveGame save, {
+  BugRarityConfig? rarity,
+}) {
   final present = {for (final s in species) s.grade};
   if (present.isEmpty) return (accepted: 0, rareAccepted: 0);
   final w = <Grade, double>{};
-  if (run.dropGradeWeights.isEmpty) {
+  if (rarity != null && rarity.enabled) {
+    // 곤충 희귀도(1.0.22) — 희귀도는 종이 아니라 곤충 롤(야생 표, `pickWildDrop` 과 같은 몫).
+    for (final g in Grade.values) {
+      if (g.index < rarity.wildWeights.length)
+        w[g] = rarity.wildWeights[g.index];
+    }
+  } else if (run.dropGradeWeights.isEmpty) {
     for (final s in species) {
       w[s.grade] = (w[s.grade] ?? 0) + 1;
     }

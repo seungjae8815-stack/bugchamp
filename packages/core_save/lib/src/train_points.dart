@@ -566,6 +566,8 @@ TrainOp allocTrainPoint(
   DateTime now, {
   int count = 1,
   EnhanceConfig? enhance,
+  // 곤충 희귀도(1.0.22, 호출자 `PetConfig.rarityOf`) — 없으면 종 희귀도.
+  Grade? rarity,
 }) {
   if (count < 1) return (save: null, error: 'count');
   s = finishTrainPointsIfDue(s, now);
@@ -596,7 +598,7 @@ TrainOp allocTrainPoint(
   var cost = 0;
   var secs = 0;
   for (var k = 1; k <= count; k++) {
-    cost += cfg.pointCost(rec.paid + k, sp.grade);
+    cost += cfg.pointCost(rec.paid + k, rarity ?? sp.grade);
     secs += cfg.pointTime(rec.paid + k).inSeconds;
   }
   if (kTrainingMaterials.any((k) => s.materialCount(k) < cost)) {

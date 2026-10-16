@@ -256,6 +256,48 @@ void main() {
     await _drain(tester);
   });
 
+  // 2026-10-16 사장님 요청 — 배분 편집 ＋/－ 를 누르고 있으면 계속 오르내린다(다 쓰면 그 자리에서 멈춘다).
+  testWidgets('다시 찍기 편집 — 누르고 있으면 계속 · 남은 포인트에서 멈춘다', (tester) async {
+    await _pump(
+      tester,
+      _seed(
+        train: const BugTrain(
+          alloc: {TrainSlot.attack: 4},
+          paid: 4,
+          freeRespec: true,
+        ),
+      ),
+    );
+    await _tap(tester, const ValueKey('trainRespecBtn'));
+    Future<void> hold(Key key, Duration d) async {
+      await tester.ensureVisible(find.byKey(key));
+      await tester.pumpAndSettle();
+      final g = await tester.startGesture(tester.getCenter(find.byKey(key)));
+      for (var t = 0; t < d.inMilliseconds; t += 20) {
+        await tester.pump(const Duration(milliseconds: 20));
+      }
+      await g.up();
+      await tester.pumpAndSettle();
+    }
+
+    // [-] 를 1.5초 누르면 공격 4 → 0(한 번씩 누를 필요 없이) — 0 에서 멈춘다.
+    await hold(
+      const ValueKey('trainSlot:attack:minus'),
+      const Duration(milliseconds: 1500),
+    );
+    expect(_value(tester, TrainSlot.attack), startsWith('0 /'));
+    expect(find.text('새 배분 — 남은 포인트 4'), findsOneWidget);
+    // [+] 를 누르고 있으면 남은 4 포인트까지만 오른다.
+    await hold(
+      const ValueKey('trainSlot:hp:plus'),
+      const Duration(milliseconds: 1500),
+    );
+    expect(_value(tester, TrainSlot.hp), startsWith('4 /'));
+    expect(find.text('새 배분 — 남은 포인트 0'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+    await _drain(tester);
+  });
+
   testWidgets('추천 배분 — 다음 추천 칸 · 남는 포인트를 한 번에 채운다', (tester) async {
     final c = await _pump(
       tester,

@@ -125,33 +125,53 @@ void main() {
       }
     });
 
-    test('정성이 쌓이면 바닥이 오른다 — 정성 10 이면 최대의 40% 아래로는 안 나온다', () {
-      final maxed = _item(
-        options: const [
-          ItemOption(kind: ItemOptionKind.attack, value: 5, polish: 9),
-          ItemOption(kind: ItemOptionKind.critDamage, value: 10),
-        ],
-      );
-      final range = items.optionPool.firstWhere(
-        (r) => r.kind == ItemOptionKind.bossDamage,
-      );
-      final lo =
-          range.min +
-          items.polishMaxStacks *
-              items.polishFloorPerStack *
-              (range.maxAt(_amber) - range.min);
-      for (var seed = 0; seed < 200; seed++) {
+    // 다듬기 v3(2026-10-16 사장님 확정) — 늘 더 좋게 · 다듬을수록 비싸게.
+    test('새 값은 늘 지금보다 높다(범위 안 위치) — 거듭 다듬으면 최대에 다가가고 내려오지 않는다', () {
+      var it = _item();
+      var pos = polishPositionOf(items, it, 0);
+      for (var i = 0; i < 12; i++) {
+        if (polishMaxed(items, it, 0)) break;
+        final r = polishOptionAt(
+          rng: Random(i),
+          items: items,
+          item: it,
+          index: 0,
+          kind: ItemOptionKind.attack,
+        )!;
+        it = applyPolish(r.kept, 0, r.candidate);
+        final next = polishPositionOf(items, it, 0);
+        expect(next, greaterThanOrEqualTo(pos), reason: '$i번째');
+        pos = next;
+      }
+      expect(pos, greaterThan(0.9));
+      // 종류가 바뀌어도 범위 안 위치는 지금보다 높다.
+      for (var seed = 0; seed < 100; seed++) {
         final r = polishOptionAt(
           rng: Random(seed),
           items: items,
-          item: maxed,
+          item: _item(),
           index: 0,
-          kind: ItemOptionKind.bossDamage,
         )!;
-        expect(r.candidate.polish, items.polishMaxStacks);
-        expect(r.candidate.value, greaterThanOrEqualTo(lo - 0.05));
-        expect(r.candidate.value, lessThanOrEqualTo(range.maxAt(_amber)));
+        final now = polishPositionOf(items, _item(), 0);
+        final got = polishPositionOf(
+          items,
+          applyPolish(r.kept, 0, r.candidate),
+          0,
+        );
+        expect(got, greaterThanOrEqualTo(now - 0.01));
       }
+    });
+
+    test('비용은 다듬은 횟수마다 ×polishCostGrowth(젤리는 5 단위)', () {
+      final c0 = forge.polishCost(_amber, pickKind: false);
+      final c2 = forge.polishCost(_amber, pickKind: false, done: 2);
+      expect(forge.polishCostGrowth, greaterThan(1));
+      expect(
+        c2.fossils,
+        (c0.fossils * forge.polishCostGrowth * forge.polishCostGrowth).round(),
+      );
+      expect(c2.jelly, greaterThan(c0.jelly));
+      expect(c2.jelly % 5, 0);
     });
 
     test('새 값 고르기는 그 줄만 바꾸고 별은 그대로', () {

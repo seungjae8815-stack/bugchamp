@@ -8,6 +8,7 @@ export 'src/battle_config.dart';
 export 'src/chapter_reward.dart';
 export 'src/jelly_cost.dart';
 export 'src/buff_config.dart';
+export 'src/bug_rarity_config.dart';
 export 'src/character_stats.dart';
 export 'src/craft_config.dart';
 export 'src/daily_config.dart';

@@ -203,6 +203,13 @@ double _duelPower(DuelBug b, GameActions actions) =>
 String? _defenderSkin(Map<String, dynamic> d) => d['skin']?.toString();
 
 /// 세션 id — 추측 불가능해야 한다(남의 세션을 찍어보지 못하게).
+/// 유저마다 하나인 "다음 결투 경기장" 줄의 id(세션 표 재사용 — 32자 16진수, 유저 id 에서 첫 글자만 바꾼다).
+String _duelArenaRowId(String userId) {
+  final hex = userId.replaceAll('-', '').toLowerCase();
+  if (hex.length != 32) return _newSessionId();
+  return '${hex[0] == 'a' ? 'b' : 'a'}${hex.substring(1)}';
+}
+
 String _newSessionId() {
   final r = Random.secure();
   return List<int>.generate(
@@ -1956,7 +1963,9 @@ Handler buildHandler({
           final sp = bug == null ? null : species[bug.speciesId];
           if (sp == null) continue;
           preInjured[b.id] = tNow.add(
-            Duration(seconds: cfg.pet.injuryDuration(sp.grade)),
+            Duration(
+              seconds: cfg.pet.injuryDuration(cfg.pet.rarityOf(bug!, sp)),
+            ),
           );
         }
 
@@ -2398,15 +2407,43 @@ Handler buildHandler({
           });
         }
         final offerId = _newSessionId();
+        // 경기장 오행(2026-10-16) — 후보를 고르기 전에 보여 준다(출정 곤충을 바꿀 수 있게). 서버 난수 — 앱이 고를 수 없다.
+        // **경기를 시작할 때까지 같은 경기장**(유저마다 한 줄) — 후보 창을 닫았다 다시 열어 원하는 경기장이 나올 때까지
+        // 공짜로 다시 굴리지 못하게. `/duel/start` 가 쓴 것으로 표시하면 다음 제안에서 새로 정한다.
+        Element? arena;
+        if (actions.duelParams.arenaOn) {
+          final row = await store.loadSession(_duelArenaRowId(user.id));
+          final d = row == null
+              ? null
+              : Map<String, dynamic>.from(row['data'] as Map);
+          final keep =
+              d != null &&
+                  row!['user_id']?.toString() == user.id &&
+                  d['kind'] == 'duelArena' &&
+                  d['used'] != true
+              ? Element.fromKeyOrNull('${d['arena']}')
+              : null;
+          arena =
+              keep ?? Element.values[_seedRng.nextInt(Element.values.length)];
+          if (keep == null) {
+            await store.saveSession(_duelArenaRowId(user.id), user.id, {
+              'kind': 'duelArena',
+              'arena': arena.key,
+              'used': false,
+            });
+          }
+        }
         await store.saveSession(offerId, user.id, {
           'kind': 'duelOffer',
           'season': season,
           'at': t.toIso8601String(),
           'used': false,
           'slots': offerSlots,
+          'arena': ?arena?.key,
         });
         return _json({
           'offerId': offerId,
+          'arena': ?arena?.key,
           'league': league,
           'me': ?(me == null
               ? null
@@ -2611,10 +2648,21 @@ Handler buildHandler({
           trophiesAtStart: started.extra['trophiesAtStart'] as int,
           trophyPrepaid: started.extra['trophyPrepaid'] as int,
           winPoints: winPoints,
+          arena: offer['arena'] is String
+              ? Element.fromKeyOrNull(offer['arena'] as String)
+              : null,
         );
         await store.saveSession(sessionId, user.id, session.toJson());
         // 제안은 한 번만 쓴다(같은 제안으로 5점 상대를 거듭 고르지 못하게).
         await store.saveSession(offerId, user.id, {...offer, 'used': true});
+        // 경기장을 썼다 — 다음 제안에서 새 경기장(2026-10-16).
+        if (session.arena != null) {
+          await store.saveSession(_duelArenaRowId(user.id), user.id, {
+            'kind': 'duelArena',
+            'arena': session.arena!.key,
+            'used': true,
+          });
+        }
         // 패배분 선차감도 트로피 변화다 — 시즌 점수에 같이 반영한다.
         final scored = await _recordPvpScore(
           store,
@@ -2625,6 +2673,7 @@ Handler buildHandler({
         await store.save(user.id, scored.toJson());
         return _json({
           'sessionId': sessionId,
+          'arena': ?session.arena?.key,
           'bestOf': actions.duelParams.bestOf,
           'winPoints': winPoints,
           if (started.extra['tickets'] != null)

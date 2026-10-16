@@ -561,6 +561,7 @@ class SaveController extends AsyncNotifier<SaveGame> {
       fairy: fairyCfg,
       stones: _stoneCfg,
       grade: _gradeCfg,
+      rarity: data.petConfig?.bugRarity,
       now: now,
       goldMult: goldMult,
     );
@@ -838,6 +839,14 @@ class SaveController extends AsyncNotifier<SaveGame> {
     return null;
   }
 
+  Grade Function(IndividualBug) _dexRarityOf(PetConfig cfg) {
+    final byId = ref.read(gameDataProvider).value?.speciesById ?? const {};
+    return (b) {
+      final sp = byId[b.speciesId];
+      return sp == null ? Grade.common : cfg.rarityOf(b, sp);
+    };
+  }
+
   /// 보유 곤충을 훑어 도감을 갱신한 세이브. 바뀐 게 없으면 [save] 그대로.
   SaveGame _withUpdatedDex(SaveGame save, DateTime now) {
     final cfg = ref.read(gameDataProvider).value?.petConfig;
@@ -846,6 +855,8 @@ class SaveController extends AsyncNotifier<SaveGame> {
       current: save.dex,
       bugs: save.bugs,
       stageOf: (b) => effectiveStage(b.stage, b.stageSince, now, cfg),
+      // 종마다 최고 희귀도(1.0.22) — 켜져 있을 때만 기록한다.
+      rarityOf: cfg.bugRarity.enabled ? _dexRarityOf(cfg) : null,
     );
     // identical 이면 저장할 게 없다 — 불필요한 업로드를 만들지 않는다.
     return identical(next, save.dex) ? save : save.copyWith(dex: next);
@@ -1725,7 +1736,9 @@ class SaveController extends AsyncNotifier<SaveGame> {
       );
       final sp = bug == null ? null : data.speciesById[bug.speciesId];
       if (sp == null) continue;
-      injured[id] = now.add(Duration(seconds: cfg.injuryDuration(sp.grade)));
+      injured[id] = now.add(
+        Duration(seconds: cfg.injuryDuration(cfg.rarityOf(bug!, sp))),
+      );
     }
     await _commit(s.copyWith(injured: injured));
   }
@@ -1757,7 +1770,9 @@ class SaveController extends AsyncNotifier<SaveGame> {
         final sp = data.speciesById[bug.speciesId];
         if (sp == null) continue;
         // 이미 부상 중이면 더 늦은 회복 시각으로 갱신(중복 KO 방어).
-        final until = now.add(Duration(seconds: cfg.injuryDuration(sp.grade)));
+        final until = now.add(
+          Duration(seconds: cfg.injuryDuration(cfg.rarityOf(bug, sp))),
+        );
         final prev = injured[id];
         injured[id] = (prev != null && prev.isAfter(until)) ? prev : until;
       }
@@ -1905,6 +1920,8 @@ class SaveController extends AsyncNotifier<SaveGame> {
   /// 무제한으로 받을 수 있고, 그러면 판수 제한이 무의미해진다.
   Future<TicketCharge> grantAdTickets() async {
     final cfg = _battleCfg;
+    // 가득이면 묻지도 않는다(서버도 막는다 — 상한을 넘겨 쌓이던 버그, 2026-10-16).
+    if (ticketsNow >= cfg.ticketMax) return TicketCharge.alreadyFull;
     final server = ref.read(gameServerProvider);
     if (server.available) {
       final res = await server.pvpTicketAd();
@@ -1914,6 +1931,7 @@ class SaveController extends AsyncNotifier<SaveGame> {
       }
       return switch (res.error) {
         'ad_limit' => TicketCharge.adLimit,
+        'already_full' => TicketCharge.alreadyFull,
         'season_closed' => TicketCharge.seasonClosed,
         _ => TicketCharge.failed,
       };
@@ -1927,13 +1945,14 @@ class SaveController extends AsyncNotifier<SaveGame> {
     if (cfg.ticketAdDailyLimit > 0 && used >= cfg.ticketAdDailyLimit) {
       return TicketCharge.adLimit;
     }
-    final next = grantTickets(
+    // 상한까지만(2026-10-16) — 가득이면 받지 않는다(서버 `grantAdTicket` 과 같은 함수).
+    final next = freeTickets(
       tickets: s.pvpTickets,
       at: s.ticketsAt,
       now: now,
       cfg: cfg,
-      amount: cfg.ticketAdGrant,
     );
+    if (next == null) return TicketCharge.alreadyFull;
     await _commit(
       s.copyWith(
         pvpTickets: next.tickets,
@@ -2130,6 +2149,7 @@ class SaveController extends AsyncNotifier<SaveGame> {
       now,
       count: count,
       enhance: data.enhanceConfig,
+      rarity: _rarityOf(bug),
     );
     if (r.save == null) return r.error;
     final startedJob = r.save!.trainPointJob != null && s.trainPointJob == null;
@@ -3193,11 +3213,7 @@ class SaveController extends AsyncNotifier<SaveGame> {
     final spec = cfg.spec(part);
     // 등급이 높을수록 비싸다 — 강화 총량이 유한해서 배수가 없으면 후반엔
     // 전설도 사실상 공짜로 만렙이 된다.
-    final grade = ref
-        .read(gameDataProvider)
-        .requireValue
-        .speciesById[bug.speciesId]
-        ?.grade;
+    final grade = _rarityOf(bug);
     final cost = grade == null
         ? spec.costAt(bug.enhancement.levelOf(part))
         : cfg.costFor(part, bug.enhancement.levelOf(part), grade);
@@ -3358,11 +3374,11 @@ class SaveController extends AsyncNotifier<SaveGame> {
     // 스킨 계열 편의 보너스(§2.6 — 시간만, 전투 스탯 아님).
     final sec =
         data.iapConfig?.skinnedIncubateSeconds(
-          cfg.incubateDuration(sp.grade),
+          cfg.incubateDuration(cfg.rarityOf(bug, sp)),
           s.ownedSkins,
           bug.speciesId,
         ) ??
-        cfg.incubateDuration(sp.grade);
+        cfg.incubateDuration(cfg.rarityOf(bug, sp));
     final endsAt = now.add(Duration(seconds: sec));
     final inc = Map<String, DateTime>.from(s.incubating)..[bugId] = endsAt;
     await _commit(s.copyWith(incubating: inc));
@@ -3395,7 +3411,15 @@ class SaveController extends AsyncNotifier<SaveGame> {
         cfg.gachaEpicPity > 0 && s.gachaPity >= cfg.gachaEpicPity - 1;
 
     // 등급: 가중치 롤. 천장이면 보장 등급 미만을 잘라낸다.
-    var weights = Map<Grade, double>.from(cfg.gachaWeights);
+    // 곤충 희귀도가 켜지면 희귀도 표는 `bugRarity.gachaWeights`(같은 비율 — 확률 공개 화면도 이 표).
+    var weights = cfg.bugRarity.enabled
+        ? {
+            for (final g in Grade.values)
+              if (g.index < cfg.bugRarity.gachaWeights.length &&
+                  cfg.bugRarity.gachaWeights[g.index] > 0)
+                g: cfg.bugRarity.gachaWeights[g.index],
+          }
+        : Map<Grade, double>.from(cfg.gachaWeights);
     weights.remove(Grade.common); // 어떤 설정이 와도 일반은 안 나온다
     final ig = cfg.individualGrade;
     // 개체 등급(2026-10-11): 천장은 **영웅 이상 개체** — 종 희귀도는 확률대로 고른다.
@@ -3416,10 +3440,12 @@ class SaveController extends AsyncNotifier<SaveGame> {
         break;
       }
     }
-    // 그 등급의 종 중에서(한정 종은 기간 안에만).
+    // 곤충 희귀도(1.0.22): 희귀도는 곤충마다(뽑기 표 + id 롤) — 종은 전 종에서 고르게. 위 희귀도 롤은 꺼졌을 때만 쓴다.
+    // 꺼져 있으면 옛 규칙: 그 희귀도의 종 중에서(한정 종은 기간 안에만).
+    final rarityOn = cfg.bugRarity.enabled;
     final pool = [
       for (final sp in data.allSpecies)
-        if (sp.grade == grade && sp.availableAt(now)) sp,
+        if ((rarityOn || sp.grade == grade) && sp.availableAt(now)) sp,
     ];
     if (pool.isEmpty) return (bug: null, error: 'off');
     final sp = pool[rng.nextInt(pool.length)];
@@ -3454,7 +3480,9 @@ class SaveController extends AsyncNotifier<SaveGame> {
         ).copyWith(
           stage: LifeStage.egg,
           stageSince: now,
-          fromGacha: ig.enabled,
+          // 곤충 희귀도(1.0.22)는 칸에 적지 않는다 — 뽑기 표식(`gc`) + id 롤(뽑기 표)로 정해진다.
+          // 서버가 같은 id 로 다시 계산할 수 있어야 해서다(희귀도를 적어 보내게 두면 전설을 위조한다).
+          fromGacha: ig.enabled || rarityOn,
           newGen: ig.enabled,
         );
 
@@ -3932,7 +3960,15 @@ class SaveController extends AsyncNotifier<SaveGame> {
     if (target == null || index >= target.options.length) {
       return (candidate: null, error: 'no_item');
     }
-    final cost = forge.polishCost(target.tier, pickKind: kind != null);
+    // 늘 더 좋은 값이 나오므로 이미 최대면 막는다(2026-10-16). 비용은 그 줄을 다듬은 횟수만큼 오른다.
+    if (polishMaxed(items, target, index, maxMult: _maxMult(s))) {
+      return (candidate: null, error: 'maxed');
+    }
+    final cost = forge.polishCost(
+      target.tier,
+      pickKind: kind != null,
+      done: target.options[index].polish,
+    );
     final payKind = payJelly ? MaterialKind.jelly : MaterialKind.fossil;
     final price = payJelly ? cost.jelly : cost.fossils;
     final have = s.materialCount(payKind);
@@ -4577,6 +4613,7 @@ class SaveController extends AsyncNotifier<SaveGame> {
       id: _uuid.v4(),
       mother: mother,
       father: father,
+      motherRarity: cfg.rarityOf(mother, sp),
       // 스킨 계열 편의 보너스(산란 시간 −N%, 2026-10-08). 서버와 같은 함수.
       endsAt: now.add(
         Duration(
@@ -4586,18 +4623,18 @@ class SaveController extends AsyncNotifier<SaveGame> {
                   .value
                   ?.iapConfig
                   ?.skinnedBreedSeconds(
-                    cfg.breedingDuration(sp.grade),
+                    cfg.breedingDuration(cfg.rarityOf(mother, sp)),
                     s.ownedSkins,
                     sp.id,
                   ) ??
-              cfg.breedingDuration(sp.grade),
+              cfg.breedingDuration(cfg.rarityOf(mother, sp)),
         ),
       ),
       seed: seed,
     );
     // 쿨다운은 **시작할 때** 건다(수령이 아니라). 수령을 미루는 것으로 텀을
     // 피할 수 있으면 제한이 없는 것과 같다.
-    final cool = cfg.breedingCooldown(sp.grade);
+    final cool = cfg.breedingCooldown(cfg.rarityOf(mother, sp));
     final cooldowns = s.prunedBreedCooldowns(now);
     if (cool > 0) {
       final until = now.add(Duration(seconds: cool));
@@ -4790,7 +4827,7 @@ class SaveController extends AsyncNotifier<SaveGame> {
     final cfg = data.petConfig;
     // 젤리는 **획득 시점 포텐셜**로 — 합성으로 올린 5성을 분해하면 젤리가 무한히 나왔다(2026-09-30).
     final reward = cfg?.disassembleJelly(bug.bornPotential) ?? 0;
-    final grade = data.speciesById[bug.speciesId]?.grade;
+    final grade = _rarityOf(bug);
     final matGain = (cfg == null || grade == null)
         ? 0
         : data.iapConfig?.skinnedReleaseMaterial(
@@ -4951,7 +4988,7 @@ class SaveController extends AsyncNotifier<SaveGame> {
         return false;
       }
       if (filter == null) return true;
-      final grade = data.speciesById[b.speciesId]?.grade;
+      final grade = _rarityOf(b);
       // 종을 모르면 건드리지 않는다 — 정체를 모르는 개체를 지우는 쪽보다
       // 남기는 쪽이 안전하다.
       return grade != null && filter.accepts(grade, b.potential);
@@ -5075,7 +5112,7 @@ class SaveController extends AsyncNotifier<SaveGame> {
       // 장착·부화·훈련·잠금(pinnedBugIds)은 건드리지 않는다.
       if (s.pinnedBugIds.contains(b.id)) continue;
       if (isPreciousBug(b)) continue;
-      final grade = data.speciesById[b.speciesId]?.grade;
+      final grade = _rarityOf(b);
       if (grade == null) continue; // 종을 모르면 건드리지 않는다
       if (filter != null && !filter.accepts(grade, b.potential)) continue;
       targets.add(b);
@@ -5101,7 +5138,7 @@ class SaveController extends AsyncNotifier<SaveGame> {
     final mats = Map<MaterialKind, int>.from(s.materials);
     final rng = math.Random();
     for (final b in targets) {
-      final grade = data.speciesById[b.speciesId]!.grade;
+      final grade = _rarityOf(b)!;
       final amount =
           data.iapConfig?.skinnedReleaseMaterial(
             cfg.releaseMaterial(grade),
@@ -5154,6 +5191,14 @@ class SaveController extends AsyncNotifier<SaveGame> {
   // 규칙은 core_save `individual_grade.dart` 한 곳(서버와 같은 함수) — 여기는 데이터를 넘기고 저장만 한다.
 
   /// 곤충들을 그 종 **정수**로 바꾼다(알·보호 곤충은 건너뛴다). 꺼져 있으면 실패('off').
+  /// 곤충 희귀도(1.0.22 — 곤충마다, 꺼져 있으면 종 희귀도). 종을 모르면 null.
+  Grade? _rarityOf(IndividualBug b) {
+    final data = ref.read(gameDataProvider).requireValue;
+    final sp = data.speciesById[b.speciesId];
+    if (sp == null) return null;
+    return data.petConfig?.rarityOf(b, sp) ?? sp.grade;
+  }
+
   Future<GradeOp> convertBugsToEssence(Iterable<String> ids) async {
     final data = ref.read(gameDataProvider).requireValue;
     if (!_gradeCfg.enabled) return const GradeOp.fail('off');
@@ -5162,12 +5207,23 @@ class SaveController extends AsyncNotifier<SaveGame> {
       ids,
       _gradeCfg,
       data.speciesById,
+      rarity: data.petConfig?.bugRarity ?? const BugRarityConfig(),
     );
     if (r.isOk) await _commit(r.save!);
     return r;
   }
 
   /// 곤충 [id] 를 한 등급 올린다 — 그 종 정수 + 성장물약 [potions] 개.
+  /// 희귀도 올리기(1.0.22) — 같은 종 · 같은 희귀도 곤충 재료(덜 아까운 것부터 자동). 규칙은 core_save `rarityUp`(서버 검사와 같은 재료 규칙).
+  Future<GradeOp> rarityUpBug(String id) async {
+    final data = ref.read(gameDataProvider).requireValue;
+    final pet = data.petConfig;
+    if (pet == null) return const GradeOp.fail('off');
+    final r = rarityUp(state.requireValue, id, pet, data.speciesById);
+    if (r.isOk) await _commit(r.save!);
+    return r;
+  }
+
   Future<GradeOp> gradeUpBug(String id, {int potions = 0}) async {
     final data = ref.read(gameDataProvider).requireValue;
     if (!_gradeCfg.enabled) return const GradeOp.fail('off');
@@ -5184,6 +5240,20 @@ class SaveController extends AsyncNotifier<SaveGame> {
       // 등급 올리기가 옛 합성(3마리 → +1)을 대체한다 — 길드전 1일차 "합성" 점수도 그대로 잡는다.
       GuildWarTally.add('synth', ref.read(clockProvider).now().toUtc());
     }
+    return r;
+  }
+
+  /// 놓친 능력치 굴리기(1.0.22) — 업데이트 전 곤충이 등급마다 받지 못한 롤 굴리기를 무료로(물약은 넣은 만큼).
+  Future<GradeOp> legacyRollBug(String id, {int potions = 0}) async {
+    if (!_gradeCfg.enabled) return const GradeOp.fail('off');
+    final r = legacyRollUp(
+      state.requireValue,
+      id,
+      _gradeCfg,
+      math.Random(),
+      potions: potions,
+    );
+    if (r.isOk) await _commit(r.save!);
     return r;
   }
 

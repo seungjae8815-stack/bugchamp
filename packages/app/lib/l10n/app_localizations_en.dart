@@ -3741,7 +3741,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String polishStacks(String n, String max, String floor) {
-    return 'Care $n/$max · next roll at least $floor% of max';
+    return 'Polished $n/$max · now $floor% of max · the next value is always higher';
   }
 
   @override
@@ -3749,11 +3749,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String polishHint(String have) {
-    return 'Care rises whichever you keep · $have fossils';
+    return 'Each polish costs more · $have fossils';
   }
 
   @override
-  String get polishChooseHint => 'Pick one to keep — care has risen either way';
+  String get polishChooseHint =>
+      'The new value is higher — keep the old one if you prefer its type';
 
   @override
   String get polishKeepOld => 'Keep old';
@@ -7295,11 +7296,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get bugRarityHelp =>
-      'How rare this species is. It is fixed per species and never changes. Rarer species drop less often and take longer to hatch and pair, but have bigger pet passives and give more essence.';
+      'How rare this bug is. It is rolled for each bug, so the same species can be anything from Common to Legendary. Rarer bugs take longer to hatch and pair, but give stronger pet effects, bigger passives, better duel stats and more essence.';
 
   @override
   String igSpeciesRarity(String grade) {
-    return 'Species rarity $grade';
+    return 'Rarity $grade';
   }
 
   @override
@@ -7482,19 +7483,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get eggOddsIndividualHead => 'Individual grade';
 
   @override
-  String get eggOddsSpeciesHead =>
-      'Species rarity (all species of a rarity are equally likely)';
+  String get eggOddsSpeciesHead => 'Rarity (every species is equally likely)';
 
   @override
-  String get igFilterTitle => 'Choose species rarity to keep';
+  String get igFilterTitle => 'Choose rarity to keep';
 
   @override
   String igFilterSnack(String grade) {
-    return 'Species below $grade rarity are released for materials';
+    return 'Bugs below $grade rarity are released for materials';
   }
 
   @override
-  String get igAutoFilterRarity => 'Target species rarity';
+  String get igAutoFilterRarity => 'Target rarity';
 
   @override
   String igAutoFilterGrade(String grade) {
@@ -7717,12 +7717,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String rarityFilterOnly(String grade) {
-    return '$grade species only';
+    return '$grade bugs only';
   }
 
   @override
   String get rarityFilterHint =>
-      'Filters by each species\' fixed rarity — not by an individual bug\'s grade. Bugs you already own are not affected.';
+      'Filters by each bug\'s rarity — not by its grade. Bugs you already own are not affected.';
 
   @override
   String get storageViewButton => 'View';
@@ -7776,8 +7776,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get passiveCardTitle => 'Pet passive';
 
   @override
-  String get passiveCardHint =>
-      'Grows with this bug\'s grade and its species rarity.';
+  String get passiveCardHint => 'Grows with this bug\'s grade and rarity.';
 
   @override
   String get passiveNone => 'No passive';
@@ -7837,7 +7836,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get dexPassiveV2 =>
-      'Pet passives differ per bug (they grow with the bug\'s grade and species rarity)';
+      'Pet passives differ per bug (they grow with the bug\'s grade and rarity)';
 
   @override
   String dexPassiveLegacy(String kind) {
@@ -7863,7 +7862,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String guidePassiveBody(String grade, String rarity, String roll) {
-    return 'Only bugs equipped as pets raise one hunting stat (the same type from several pets adds up). The type differs per bug — bugs from before the update keep their species\' passive type.\nSize = individual grade ($grade) × species rarity ($rarity) × innate strength ($roll–100%). It grows as you grade up; the exact value shows after hatching.';
+    return 'Only bugs equipped as pets raise one hunting stat (the same type from several pets adds up). The type differs per bug.\nSize = individual grade ($grade) × rarity ($rarity) × innate strength ($roll–100%). It grows as you grade up; the exact value shows after hatching.';
   }
 
   @override
@@ -7945,4 +7944,55 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get respecGift1021Toast =>
       '1.0.21 gift — every bug gets one free respec (no wait)';
+
+  @override
+  String get dexBestRarity => 'Best rarity';
+
+  @override
+  String rarityUpBtn(int have, int need) {
+    return 'Raise rarity $have/$need';
+  }
+
+  @override
+  String get rarityUpTitle => 'Raise rarity';
+
+  @override
+  String rarityUpConfirm(int n, String grade, String next) {
+    return 'Uses $n $grade bugs of the same species to raise this bug to $next.\nThe material bugs disappear (trained, equipped and locked bugs are never used).';
+  }
+
+  @override
+  String rarityUpNeed(int need, String grade, int have) {
+    return 'Needs $need $grade bugs of the same species (you have $have · trained, equipped and locked bugs don\'t count)';
+  }
+
+  @override
+  String rarityUpDone(String grade) {
+    return 'Rarity raised to $grade!';
+  }
+
+  @override
+  String get rarityUpMax => 'Already the highest rarity';
+
+  @override
+  String get rarityUpGo => 'Raise';
+
+  @override
+  String arenaEffectLine(String arena, String up, String weak, String down) {
+    return '$arena arena · $arena bugs +$up% · $weak bugs −$down%';
+  }
+
+  @override
+  String get igLegacyRoll => 'Missed stat rolls';
+
+  @override
+  String igLegacyRollDesc(int n) {
+    return 'Rolls this bug missed by growing before the update · $n left (free)';
+  }
+
+  @override
+  String get igLegacyRollGo => 'Roll';
+
+  @override
+  String get polishMaxed => 'This line is already at max';
 }

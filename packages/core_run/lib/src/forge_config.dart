@@ -40,6 +40,7 @@ class ForgeConfig {
     this.rerollJelly = 15,
     this.polishFossilPerTier = 20,
     this.polishKindMult = 3,
+    this.polishCostGrowth = 1.0,
     this.transcendMax = 5,
     this.transcendStep = 0.15,
     this.transcendFossilBase = 10000,
@@ -184,6 +185,10 @@ class ForgeConfig {
   /// 옵션 종류를 지정해 다듬을 때 비용 배율(화석·젤리 모두).
   final int polishKindMult;
 
+  /// 다듬기 비용이 **그 줄을 다듬은 횟수**마다 곱해지는 배율(2026-10-16 사장님 확정 — 다듬기는 늘 더 좋은 값이
+  /// 나오는 대신 할수록 비싸진다). 1 이면 예전처럼 정액.
+  final double polishCostGrowth;
+
   /// 공방 초월(2026-10-10 사장님 확정) — 공방 최대 레벨에서 초월하면 장비가 전부 사라지고 공방이 **풀잎부터 다시**,
   /// 대신 모든 등급의 옵션 최대치가 단계마다 [transcendStep] 씩 오른다(5단계 +75%).
   final int transcendMax;
@@ -210,12 +215,19 @@ class ForgeConfig {
   /// 초월 [n] 단계 → [n]+1 비용(화석).
   int transcendFossilCost(int n) => transcendFossilBase * (n + 1);
 
-  /// 다듬기 1회 비용 — 화석으로 낼 때 / 젤리로 낼 때.
-  ({int fossils, int jelly}) polishCost(int tier, {required bool pickKind}) {
+  /// 다듬기 1회 비용 — 화석으로 낼 때 / 젤리로 낼 때. [done] = 그 줄을 이미 다듬은 횟수(옵션 `p`).
+  /// 횟수마다 ×[polishCostGrowth](젤리는 5·10 단위 가격표로 — `roundJellyCost`).
+  ({int fossils, int jelly}) polishCost(
+    int tier, {
+    required bool pickKind,
+    int done = 0,
+  }) {
     final m = pickKind ? polishKindMult : 1;
+    final g = math.pow(polishCostGrowth, done.clamp(0, 99)).toDouble();
     return (
-      fossils: polishFossilPerTier * (tier.clamp(0, 1 << 10) + 1) * m,
-      jelly: rerollJelly * m,
+      fossils: (polishFossilPerTier * (tier.clamp(0, 1 << 10) + 1) * m * g)
+          .round(),
+      jelly: g == 1 ? rerollJelly * m : roundJellyCost(rerollJelly * m * g),
     );
   }
 
@@ -365,6 +377,8 @@ class ForgeConfig {
       rerollJelly: (json['rerollJelly'] as num?)?.toInt() ?? 15,
       polishFossilPerTier: (json['polishFossilPerTier'] as num?)?.toInt() ?? 20,
       polishKindMult: (json['polishKindMult'] as num?)?.toInt() ?? 3,
+      polishCostGrowth:
+          (json['polishCostGrowth'] as num?)?.toDouble() ?? 1.0,
       transcendMax: (json['transcendMax'] as num?)?.toInt() ?? 5,
       transcendStep: (json['transcendStep'] as num?)?.toDouble() ?? 0.15,
       transcendFossilBase:
@@ -484,13 +498,12 @@ EquipItem rerollOptionAt({
     item.options[index].polish + 1,
     items.polishMaxStacks,
   );
-  final floor = (polish * items.polishFloorPerStack).clamp(0.0, 1.0);
-  final roll = math.max(
-    math.pow(rng.nextDouble(), items.optionCurve).toDouble(),
-    floor,
-  );
+  // **늘 지금보다 좋게**(2026-10-16 사장님 확정) — 지금 값의 범위 안 위치(0~1)와 최대 사이에서 굴린다.
+  // 종류가 바뀌어도 "범위 안 위치"로 견준다. 예전엔 바닥(정성)만 올라 높은 값 뒤에 낮은 값이 나왔다.
+  final at = polishPositionOf(items, item, index, maxMult: maxMult);
   final hi = r.maxAt(item.tier) * maxMult;
-  final v = r.min + roll * (hi - r.min);
+  final roll = at + (1 - at) * (0.05 + 0.95 * rng.nextDouble());
+  final v = r.min + roll.clamp(0.0, 1.0) * (hi - r.min);
   final cur = [...item.options];
   cur[index] = cur[index].copyWith(polish: polish);
   return (
@@ -502,6 +515,29 @@ EquipItem rerollOptionAt({
     ),
   );
 }
+
+/// 줄 [index] 의 지금 값이 그 종류 범위(최소 ~ 그 등급 최대 × [maxMult]) 안에서 어디쯤인지(0~1).
+double polishPositionOf(
+  ItemConfig items,
+  EquipItem item,
+  int index, {
+  double maxMult = 1,
+}) {
+  final o = item.options[index];
+  final r = items.optionPool.where((x) => x.kind == o.kind).firstOrNull;
+  if (r == null) return 0;
+  final hi = r.maxAt(item.tier) * maxMult;
+  if (hi <= r.min) return 1;
+  return ((o.value - r.min) / (hi - r.min)).clamp(0.0, 1.0);
+}
+
+/// 더 다듬을 수 없나(이미 최대 — 소수 첫째 자리 반올림이라 99.5% 이상이면 끝).
+bool polishMaxed(
+  ItemConfig items,
+  EquipItem item,
+  int index, {
+  double maxMult = 1,
+}) => polishPositionOf(items, item, index, maxMult: maxMult) >= 0.995;
 
 /// 다듬기 결과에서 **새 값**을 고른다.
 EquipItem applyPolish(EquipItem item, int index, ItemOption candidate) {

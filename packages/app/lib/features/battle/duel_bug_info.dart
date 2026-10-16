@@ -50,11 +50,17 @@ Future<bool?> showDuelBugInfo(
           grade: p > 0
               ? Grade.values[(p - 1).clamp(0, Grade.values.length - 1)]
               : null,
-          rarity: sp.grade,
+          // 곤충 희귀도(1.0.22) — 내 곤충은 계산, 상대는 서버가 실어 준 값(없으면 종 희귀도).
+          rarity: bug != null
+              ? bugRarityOf(data, bug, sp)
+              : (d.rarity ?? sp.grade),
         );
       } else {
-        grade = gradeLabel(l, sp.grade);
-        gradeC = gradeColor(sp.grade);
+        final r = bug != null
+            ? bugRarityOf(data, bug, sp)
+            : (d.rarity ?? sp.grade);
+        grade = gradeLabel(l, r);
+        gradeC = gradeColor(r);
       }
     }
   } catch (_) {}

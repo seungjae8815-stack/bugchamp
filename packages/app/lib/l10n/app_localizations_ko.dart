@@ -3652,7 +3652,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String polishStacks(String n, String max, String floor) {
-    return '정성 $n/$max · 다음 굴림은 최대의 $floor% 이상';
+    return '다듬기 $n/$max · 지금 최대의 $floor% · 다음 값은 늘 더 높아요';
   }
 
   @override
@@ -3660,11 +3660,11 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String polishHint(String have) {
-    return '어느 쪽을 골라도 정성이 올라요 · 화석 $have개 보유';
+    return '다듬을 때마다 비용이 올라요 · 화석 $have개 보유';
   }
 
   @override
-  String get polishChooseHint => '남길 값을 고르세요 — 어느 쪽이든 정성은 올랐어요';
+  String get polishChooseHint => '새 값이 더 높아요 — 종류가 바뀌었으면 이전 값을 남길 수도 있어요';
 
   @override
   String get polishKeepOld => '이전 값 유지';
@@ -7146,11 +7146,11 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get bugRarityHelp =>
-      '이 종이 얼마나 드문지예요. 종마다 정해져 있어 바뀌지 않아요. 드문 종일수록 잘 안 나오고 부화·짝짓기가 오래 걸리지만, 펫 패시브가 크고 정수로 바꿀 때 더 많이 받아요.';
+      '곤충마다 따로 정해지는 희귀도예요. 같은 종이어도 일반부터 전설까지 나와요. 희귀할수록 부화·짝짓기가 오래 걸리지만, 펫 효과·펫 패시브·결투 능력치가 크고 정수로 바꿀 때 더 많이 받아요.';
 
   @override
   String igSpeciesRarity(String grade) {
-    return '종 희귀도 $grade';
+    return '희귀도 $grade';
   }
 
   @override
@@ -7330,18 +7330,18 @@ class AppLocalizationsKo extends AppLocalizations {
   String get eggOddsIndividualHead => '개체 등급';
 
   @override
-  String get eggOddsSpeciesHead => '종 희귀도 (같은 희귀도 안의 종은 모두 같은 확률)';
+  String get eggOddsSpeciesHead => '희귀도 (종은 모두 같은 확률)';
 
   @override
-  String get igFilterTitle => '받을 종 희귀도 고르기';
+  String get igFilterTitle => '받을 희귀도 고르기';
 
   @override
   String igFilterSnack(String grade) {
-    return '종 희귀도 $grade 미만은 자동으로 놓아주고 재료로 바꿔요';
+    return '희귀도 $grade 미만은 자동으로 놓아주고 재료로 바꿔요';
   }
 
   @override
-  String get igAutoFilterRarity => '대상 종 희귀도';
+  String get igAutoFilterRarity => '대상 희귀도';
 
   @override
   String igAutoFilterGrade(String grade) {
@@ -7542,7 +7542,7 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
-  String get rarityFilterButton => '받을 종 희귀도';
+  String get rarityFilterButton => '받을 희귀도';
 
   @override
   String get rarityFilterAll => '모든 종';
@@ -7554,12 +7554,12 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String rarityFilterOnly(String grade) {
-    return '$grade 종만';
+    return '$grade 곤충만';
   }
 
   @override
   String get rarityFilterHint =>
-      '종마다 정해진 희귀도(종 희귀도)로 걸러요 — 곤충 하나하나의 개체 등급과는 상관없어요. 이미 가진 곤충에는 영향이 없어요.';
+      '곤충마다 정해진 희귀도로 걸러요 — 개체 등급과는 상관없어요. 이미 가진 곤충에는 영향이 없어요.';
 
   @override
   String get storageViewButton => '보기';
@@ -7611,7 +7611,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get passiveCardTitle => '펫 패시브';
 
   @override
-  String get passiveCardHint => '개체 등급과 종 희귀도에 따라 커져요.';
+  String get passiveCardHint => '개체 등급과 희귀도에 따라 커져요.';
 
   @override
   String get passiveNone => '패시브 없음';
@@ -7670,7 +7670,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get passiveRerollEgg => '부화한 뒤에 재굴림할 수 있어요';
 
   @override
-  String get dexPassiveV2 => '펫 패시브는 개체마다 달라요 (개체 등급·종 희귀도에 따라 커져요)';
+  String get dexPassiveV2 => '펫 패시브는 곤충마다 달라요 (개체 등급·희귀도에 따라 커져요)';
 
   @override
   String dexPassiveLegacy(String kind) {
@@ -7696,7 +7696,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String guidePassiveBody(String grade, String rarity, String roll) {
-    return '펫으로 장착한 곤충만 사냥 능력치 하나를 올려 줘요(같은 종류를 여러 마리 끼면 더해져요). 어떤 능력치인지(종류)는 곤충마다 달라요 — 업데이트 전부터 있던 곤충은 그 종의 패시브 종류 그대로예요.\n크기 = 개체 등급($grade) × 종 희귀도($rarity) × 타고난 세기($roll~100%). 등급을 올리면 커지고, 정확한 값은 부화한 뒤에 보여요.';
+    return '펫으로 장착한 곤충만 사냥 능력치 하나를 올려 줘요(같은 종류를 여러 마리 끼면 더해져요). 어떤 능력치인지(종류)는 곤충마다 달라요.\n크기 = 개체 등급($grade) × 희귀도($rarity) × 타고난 세기($roll~100%). 등급을 올리면 커지고, 정확한 값은 부화한 뒤에 보여요.';
   }
 
   @override
@@ -7773,4 +7773,55 @@ class AppLocalizationsKo extends AppLocalizations {
   @override
   String get respecGift1021Toast =>
       '1.0.21 업데이트 기념 — 모든 곤충의 훈련 다시 찍기가 한 번 무료예요(대기 없음)';
+
+  @override
+  String get dexBestRarity => '최고 희귀도';
+
+  @override
+  String rarityUpBtn(int have, int need) {
+    return '희귀도 올리기 $have/$need';
+  }
+
+  @override
+  String get rarityUpTitle => '희귀도 올리기';
+
+  @override
+  String rarityUpConfirm(int n, String grade, String next) {
+    return '같은 종 · $grade 곤충 $n마리를 재료로 써서 $next(으)로 올려요.\n재료 곤충은 사라져요(키운 곤충·장착·잠금 곤충은 재료로 쓰지 않아요).';
+  }
+
+  @override
+  String rarityUpNeed(int need, String grade, int have) {
+    return '같은 종 $grade 곤충이 $need마리 필요해요 (지금 $have마리 · 키운 곤충·장착·잠금 곤충은 재료가 아니에요)';
+  }
+
+  @override
+  String rarityUpDone(String grade) {
+    return '희귀도가 $grade(으)로 올랐어요!';
+  }
+
+  @override
+  String get rarityUpMax => '이미 가장 높은 희귀도예요';
+
+  @override
+  String get rarityUpGo => '올리기';
+
+  @override
+  String arenaEffectLine(String arena, String up, String weak, String down) {
+    return '$arena 경기장 · $arena 곤충 +$up% · $weak 곤충 −$down%';
+  }
+
+  @override
+  String get igLegacyRoll => '놓친 능력치 굴리기';
+
+  @override
+  String igLegacyRollDesc(int n) {
+    return '업데이트 전에 키워서 등급을 올리며 굴리지 못한 몫이에요 · 남은 $n번(무료)';
+  }
+
+  @override
+  String get igLegacyRollGo => '굴리기';
+
+  @override
+  String get polishMaxed => '이 줄은 이미 최대예요';
 }

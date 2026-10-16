@@ -243,6 +243,48 @@ Widget gradeActionsCard(
             ),
           ],
         ),
+        // 놓친 능력치 굴리기(1.0.22, 사장님 확정) — 업데이트 전 곤충만, 남은 횟수가 있을 때.
+        if (!isEgg && legacyRollsLeft(bug) > 0) ...[
+          const SizedBox(height: 6),
+          Row(
+            children: [
+              gameIcon('star_up', size: 23, fallback: Icons.casino_rounded),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      l.igLegacyRoll,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w800,
+                        fontSize: 13.5,
+                      ),
+                    ),
+                    Text(
+                      l.igLegacyRollDesc(legacyRollsLeft(bug)),
+                      style: const TextStyle(
+                        color: Color(0xB3FFFFFF),
+                        fontSize: 11.5,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              FilledButton(
+                key: const ValueKey('legacyRollBtn'),
+                onPressed: () => _openLegacyRoll(ctx, r, data, bug.id),
+                style: FilledButton.styleFrom(
+                  backgroundColor: kHoney,
+                  foregroundColor: kHoneyInk,
+                  minimumSize: const Size(0, 36),
+                ),
+                child: Text(l.igLegacyRollGo),
+              ),
+            ],
+          ),
+        ],
         const SizedBox(height: 6),
         Row(
           children: [
@@ -301,7 +343,8 @@ Future<void> confirmBugToEssence(
   final cfg = data.petConfig!.individualGrade;
   final sp = data.species(bug.speciesId);
   final name = sp.name.resolve(Localizations.localeOf(ctx).languageCode);
-  final gain = cfg.essenceOf(bug, sp.grade);
+  // 정수 가치는 곤충 희귀도(1.0.22 — 꺼져 있으면 종 희귀도).
+  final gain = cfg.essenceOf(bug, data.petConfig!.rarityOf(bug, sp));
   final reasons = preciousReasons(l, bug);
   final precious = reasons.isNotEmpty;
   // 결과 알림은 앱 화면 기준으로 — 곤충이 사라지면 이 창도 닫힌다(분해와 같은 이유).
@@ -570,6 +613,107 @@ Future<void> _openGradeUp(
   await _showGradeUpResult(ctx, l, to, before, after, passiveLine);
 }
 
+/// 놓친 능력치 굴리기 창(1.0.22) — 물약 개수를 고르고 굴린다. 결과는 등급 올리기와 같은 창(칸마다 이전 → 이후).
+Future<void> _openLegacyRoll(
+  BuildContext ctx,
+  WidgetRef r,
+  GameData data,
+  String bugId,
+) async {
+  final l = AppLocalizations.of(ctx);
+  final cfg = data.petConfig!.individualGrade;
+  final save = r.read(saveControllerProvider).requireValue;
+  IndividualBug? bug;
+  for (final b in save.bugs) {
+    if (b.id == bugId) bug = b;
+  }
+  if (bug == null) return;
+  final maxPotions = save.growthPotions < cfg.potionMaxPerUse
+      ? save.growthPotions
+      : cfg.potionMaxPerUse;
+  var potions = 0;
+  final go = await showGameDialog<bool>(
+    ctx,
+    title: l.igLegacyRoll,
+    icon: Icons.casino_rounded,
+    content: StatefulBuilder(
+      builder: (context, setState) => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            l.igLegacyRollDesc(legacyRollsLeft(bug!)),
+            textAlign: TextAlign.center,
+            style: const TextStyle(color: Colors.white, fontSize: 13),
+          ),
+          const SizedBox(height: 10),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              IconButton(
+                onPressed: potions > 0
+                    ? () => setState(() => potions -= 1)
+                    : null,
+                icon: const Icon(Icons.remove_circle_outline),
+                color: Colors.white,
+              ),
+              _potionIcon(20),
+              const SizedBox(width: 4),
+              Flexible(
+                child: Text(
+                  l.igPotionUse('$potions', '${save.growthPotions}'),
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    color: Color(0xFFB2EBF2),
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+              IconButton(
+                onPressed: potions < maxPotions
+                    ? () => setState(() => potions += 1)
+                    : null,
+                icon: const Icon(Icons.add_circle_outline),
+                color: Colors.white,
+              ),
+            ],
+          ),
+          Text(
+            l.igPotionHint('${cfg.potionRollBonus}'),
+            textAlign: TextAlign.center,
+            style: const TextStyle(color: Color(0x99FFFFFF), fontSize: 11),
+          ),
+        ],
+      ),
+    ),
+    actions: [
+      gameDialogButton(
+        l.actionCancel,
+        () => Navigator.pop(ctx, false),
+        primary: false,
+      ),
+      gameDialogButton(l.igLegacyRollGo, () => Navigator.pop(ctx, true)),
+    ],
+  );
+  if (go != true || !ctx.mounted) return;
+  final res = await r
+      .read(saveControllerProvider.notifier)
+      .legacyRollBug(bugId, potions: potions);
+  if (!ctx.mounted) return;
+  if (!res.isOk) {
+    showCenterToast(ctx, l.igGradeFailed);
+    return;
+  }
+  AudioService.instance.sfxLevelUp();
+  await _showGradeUpResult(
+    ctx,
+    l,
+    bug.individualGrade,
+    (res.extra['before'] as List?)?.cast<int>() ?? const [],
+    (res.extra['after'] as List?)?.cast<int>() ?? const [],
+  );
+}
+
 /// 패시브 한 줄("골드 +5.4%")에서 크기만("+5.4%") — 종류 이름은 한 번만 쓴다.
 String _passiveValuePart(AppLocalizations l, SpeciesPassive p) {
   final full = passiveText(l, p);
@@ -778,7 +922,13 @@ Future<void> convertBulkToEssence(
     return;
   }
   final save = ref.read(saveControllerProvider).requireValue;
-  final preview = convertToEssence(save, ids, cfg, data.speciesById);
+  final preview = convertToEssence(
+    save,
+    ids,
+    cfg,
+    data.speciesById,
+    rarity: data.petConfig?.bugRarity ?? const BugRarityConfig(),
+  );
   if (!preview.isOk) {
     // 대상이 모두 알·보호 곤충이면 왜 못 바꾸는지 알려 준다(자동 분해 목록엔 알도 들어 있다).
     showCenterToast(ctx, switch (preview.error) {

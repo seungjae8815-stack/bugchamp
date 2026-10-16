@@ -205,7 +205,9 @@ class _CharacterSceneState extends ConsumerState<CharacterScene>
     // 전체에서 세운 곤충은 그대로 채집함에 들어왔다(2026-10-14 점검). 잡기 전에 한 번 더 보고, 걸리면
     // "잡았다"를 띄우지 않고 그 자리에 받을 수 있는 종을 새로 세운다(놓친 것처럼 날아간다).
     final save = ref.read(saveControllerProvider).value;
-    if (save != null && !save.acceptsGrade(species.grade)) {
+    final wild = _wild[idx];
+    final rarity = wild.rarity ?? species.grade;
+    if (save != null && !save.acceptsGrade(rarity)) {
       setState(() => _wild[idx] = _rollWild(idx));
       return;
     }
@@ -220,7 +222,7 @@ class _CharacterSceneState extends ConsumerState<CharacterScene>
       _wild[idx] = _rollWild(idx);
     });
 
-    if (species.grade.index >= Grade.rare.index) {
+    if (rarity.index >= Grade.rare.index) {
       AudioService.instance.sfxRare();
     } else {
       AudioService.instance.sfxCatch();
@@ -235,7 +237,7 @@ class _CharacterSceneState extends ConsumerState<CharacterScene>
           xp: 0,
           bug:
               IndividualBug.roll(
-                id: _uuid.v4(),
+                id: wild.id.isEmpty ? _uuid.v4() : wild.id,
                 species: species,
                 rng: _rng,
                 potential: wildPotentialOf(
@@ -283,25 +285,37 @@ class _CharacterSceneState extends ConsumerState<CharacterScene>
     // 골라 휘두르는 조작이라, 잡고 나서 방생하면 "잡았는데 없어졌다"가 된다.
     // 아예 나타나지 않게 하면 헛스윙 자체가 없다.
     final save = ref.read(saveControllerProvider).value;
-    final pool = save == null
+    final data = ref.read(gameDataProvider).value;
+    final run = data?.runConfig;
+    final pet = data?.petConfig;
+    final now = ref.read(clockProvider).now().toUtc();
+    final bugRarityOn = pet?.bugRarity.enabled ?? false;
+    // 옛 규칙(종 희귀도): 필터에 걸리는 종은 아예 빼고 고른다.
+    // 곤충 희귀도(1.0.22): 희귀도가 곤충 id 롤이라 종으로는 못 거른다 — 세워 보고 걸리면 다시 세운다(몇 번까지).
+    final pool = save == null || bugRarityOn
         ? all
         : all.where((s) => save.acceptsGrade(s.grade)).toList();
     // 필터가 너무 세서 아무것도 안 남으면 씬이 텅 빈다 — 그때는 필터를 무시하고
     // 전체에서 세운다(잡히면 방생되지만, 빈 화면보다는 낫다).
     final src = pool.isEmpty ? all : pool;
-    // 등급 가중치를 여기도 건다 — 안 걸면 채집망만 전 종 균등이라
-    // **전설이 20종 중 2종 = 10%** 로 쏟아진다(방치 드롭과 규칙이 갈린다).
-    final sp = pickDropSpecies(
-      _rng,
-      src,
-      weights:
-          ref.read(gameDataProvider).value?.runConfig?.dropGradeWeights ??
-          const {},
-      now: ref.read(clockProvider).now().toUtc(),
-    );
+    // 종·희귀도는 방치 드롭·실시간 처치와 같은 함수 — 안 맞추면 채집망만 희귀도 분포가 갈린다
+    // (예전엔 채집망만 전 종 균등이라 **전설이 20종 중 2종 = 10%** 로 쏟아졌다).
+    ({Species species, Grade rarity, Grade? fixed})? drop;
+    var id = '';
+    for (var tries = 0; tries < 30; tries++) {
+      id = _uuid.v4();
+      drop = (run == null || pet == null)
+          ? null
+          : pickWildDrop(_rng, src, run: run, pet: pet, id: id, now: now);
+      if (drop == null || save == null || save.acceptsGrade(drop.rarity)) {
+        break;
+      }
+    }
     return _Wild(
-      speciesId: sp?.id ?? '',
+      speciesId: drop?.species.id ?? '',
       bug: _Wanderer(seed: seed * 37 + _rng.nextInt(9999)),
+      id: id,
+      rarity: drop?.rarity,
     );
   }
 
@@ -522,7 +536,9 @@ class _CharacterSceneState extends ConsumerState<CharacterScene>
                 '🐛',
                 style: TextStyle(
                   fontSize: 24,
-                  color: species == null ? null : gradeColor(species.grade),
+                  color: species == null
+                      ? null
+                      : gradeColor(w.rarity ?? species.grade),
                 ),
               ),
             ),
@@ -535,10 +551,19 @@ class _CharacterSceneState extends ConsumerState<CharacterScene>
 
 /// 무대에 서 있는 야생 곤충 한 마리 — 어떤 종인지 + 어떻게 움직이는지.
 class _Wild {
-  const _Wild({required this.speciesId, required this.bug});
+  const _Wild({
+    required this.speciesId,
+    required this.bug,
+    this.id = '',
+    this.rarity,
+  });
 
   final String speciesId;
   final _Wanderer bug;
+
+  /// 잡히면 줄 곤충 id · 그 희귀도(1.0.22 — 곤충 희귀도가 id 롤이라 세울 때 정한다). null = 모름(종 희귀도).
+  final String id;
+  final Grade? rarity;
 }
 
 /// 곤충 한 마리의 배회 — 좌우로 오가며 가끔 통통 뛴다.

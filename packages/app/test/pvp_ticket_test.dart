@@ -151,12 +151,15 @@ void main() {
     );
   });
 
-  test('광고 보상은 상한을 넘겨 쌓일 수 있다(9장에서 봐도 낭비 없음)', () async {
+  // 2026-10-16 사장님 확정: 무료 충전은 상한까지만(예전엔 넘겨 쌓여 매일 모아 두면 판수가 계속 늘었다).
+  test('무료 충전은 상한까지만 — 가득이면 받지 않고 하루 횟수도 안 쓴다', () async {
     final c = container(seeded(tickets: 9));
     await c.read(saveControllerProvider.future);
     final ctrl = c.read(saveControllerProvider.notifier);
     expect(await ctrl.grantAdTickets(), TicketCharge.ok);
-    expect(ctrl.ticketsNow, 12);
+    expect(ctrl.ticketsNow, 10); // +3 이어도 상한(10)에서 멈춘다
+    expect(await ctrl.grantAdTickets(), TicketCharge.alreadyFull);
+    expect(ctrl.ticketsNow, 10);
   });
 
   test('젤리 충전: 값을 치르고 만땅, 부족하면 아무것도 소비하지 않는다', () async {

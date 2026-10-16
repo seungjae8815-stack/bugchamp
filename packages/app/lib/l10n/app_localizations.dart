@@ -6433,7 +6433,7 @@ abstract class AppLocalizations {
   /// No description provided for @polishStacks.
   ///
   /// In en, this message translates to:
-  /// **'Care {n}/{max} · next roll at least {floor}% of max'**
+  /// **'Polished {n}/{max} · now {floor}% of max · the next value is always higher'**
   String polishStacks(String n, String max, String floor);
 
   /// No description provided for @polishRandomKind.
@@ -6445,13 +6445,13 @@ abstract class AppLocalizations {
   /// No description provided for @polishHint.
   ///
   /// In en, this message translates to:
-  /// **'Care rises whichever you keep · {have} fossils'**
+  /// **'Each polish costs more · {have} fossils'**
   String polishHint(String have);
 
   /// No description provided for @polishChooseHint.
   ///
   /// In en, this message translates to:
-  /// **'Pick one to keep — care has risen either way'**
+  /// **'The new value is higher — keep the old one if you prefer its type'**
   String get polishChooseHint;
 
   /// No description provided for @polishKeepOld.
@@ -12072,13 +12072,13 @@ abstract class AppLocalizations {
   /// No description provided for @bugRarityHelp.
   ///
   /// In en, this message translates to:
-  /// **'How rare this species is. It is fixed per species and never changes. Rarer species drop less often and take longer to hatch and pair, but have bigger pet passives and give more essence.'**
+  /// **'How rare this bug is. It is rolled for each bug, so the same species can be anything from Common to Legendary. Rarer bugs take longer to hatch and pair, but give stronger pet effects, bigger passives, better duel stats and more essence.'**
   String get bugRarityHelp;
 
   /// No description provided for @igSpeciesRarity.
   ///
   /// In en, this message translates to:
-  /// **'Species rarity {grade}'**
+  /// **'Rarity {grade}'**
   String igSpeciesRarity(String grade);
 
   /// No description provided for @eggPickRarity.
@@ -12372,25 +12372,25 @@ abstract class AppLocalizations {
   /// No description provided for @eggOddsSpeciesHead.
   ///
   /// In en, this message translates to:
-  /// **'Species rarity (all species of a rarity are equally likely)'**
+  /// **'Rarity (every species is equally likely)'**
   String get eggOddsSpeciesHead;
 
   /// No description provided for @igFilterTitle.
   ///
   /// In en, this message translates to:
-  /// **'Choose species rarity to keep'**
+  /// **'Choose rarity to keep'**
   String get igFilterTitle;
 
   /// No description provided for @igFilterSnack.
   ///
   /// In en, this message translates to:
-  /// **'Species below {grade} rarity are released for materials'**
+  /// **'Bugs below {grade} rarity are released for materials'**
   String igFilterSnack(String grade);
 
   /// No description provided for @igAutoFilterRarity.
   ///
   /// In en, this message translates to:
-  /// **'Target species rarity'**
+  /// **'Target rarity'**
   String get igAutoFilterRarity;
 
   /// No description provided for @igAutoFilterGrade.
@@ -12702,13 +12702,13 @@ abstract class AppLocalizations {
   /// No description provided for @rarityFilterOnly.
   ///
   /// In en, this message translates to:
-  /// **'{grade} species only'**
+  /// **'{grade} bugs only'**
   String rarityFilterOnly(String grade);
 
   /// No description provided for @rarityFilterHint.
   ///
   /// In en, this message translates to:
-  /// **'Filters by each species\' fixed rarity — not by an individual bug\'s grade. Bugs you already own are not affected.'**
+  /// **'Filters by each bug\'s rarity — not by its grade. Bugs you already own are not affected.'**
   String get rarityFilterHint;
 
   /// No description provided for @storageViewButton.
@@ -12804,7 +12804,7 @@ abstract class AppLocalizations {
   /// No description provided for @passiveCardHint.
   ///
   /// In en, this message translates to:
-  /// **'Grows with this bug\'s grade and its species rarity.'**
+  /// **'Grows with this bug\'s grade and rarity.'**
   String get passiveCardHint;
 
   /// No description provided for @passiveNone.
@@ -12906,7 +12906,7 @@ abstract class AppLocalizations {
   /// No description provided for @dexPassiveV2.
   ///
   /// In en, this message translates to:
-  /// **'Pet passives differ per bug (they grow with the bug\'s grade and species rarity)'**
+  /// **'Pet passives differ per bug (they grow with the bug\'s grade and rarity)'**
   String get dexPassiveV2;
 
   /// No description provided for @dexPassiveLegacy.
@@ -12948,7 +12948,7 @@ abstract class AppLocalizations {
   /// No description provided for @guidePassiveBody.
   ///
   /// In en, this message translates to:
-  /// **'Only bugs equipped as pets raise one hunting stat (the same type from several pets adds up). The type differs per bug — bugs from before the update keep their species\' passive type.\nSize = individual grade ({grade}) × species rarity ({rarity}) × innate strength ({roll}–100%). It grows as you grade up; the exact value shows after hatching.'**
+  /// **'Only bugs equipped as pets raise one hunting stat (the same type from several pets adds up). The type differs per bug.\nSize = individual grade ({grade}) × rarity ({rarity}) × innate strength ({roll}–100%). It grows as you grade up; the exact value shows after hatching.'**
   String guidePassiveBody(String grade, String rarity, String roll);
 
   /// No description provided for @guidePassiveReroll.
@@ -13064,6 +13064,84 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'1.0.21 gift — every bug gets one free respec (no wait)'**
   String get respecGift1021Toast;
+
+  /// No description provided for @dexBestRarity.
+  ///
+  /// In en, this message translates to:
+  /// **'Best rarity'**
+  String get dexBestRarity;
+
+  /// No description provided for @rarityUpBtn.
+  ///
+  /// In en, this message translates to:
+  /// **'Raise rarity {have}/{need}'**
+  String rarityUpBtn(int have, int need);
+
+  /// No description provided for @rarityUpTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Raise rarity'**
+  String get rarityUpTitle;
+
+  /// No description provided for @rarityUpConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Uses {n} {grade} bugs of the same species to raise this bug to {next}.\nThe material bugs disappear (trained, equipped and locked bugs are never used).'**
+  String rarityUpConfirm(int n, String grade, String next);
+
+  /// No description provided for @rarityUpNeed.
+  ///
+  /// In en, this message translates to:
+  /// **'Needs {need} {grade} bugs of the same species (you have {have} · trained, equipped and locked bugs don\'t count)'**
+  String rarityUpNeed(int need, String grade, int have);
+
+  /// No description provided for @rarityUpDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Rarity raised to {grade}!'**
+  String rarityUpDone(String grade);
+
+  /// No description provided for @rarityUpMax.
+  ///
+  /// In en, this message translates to:
+  /// **'Already the highest rarity'**
+  String get rarityUpMax;
+
+  /// No description provided for @rarityUpGo.
+  ///
+  /// In en, this message translates to:
+  /// **'Raise'**
+  String get rarityUpGo;
+
+  /// No description provided for @arenaEffectLine.
+  ///
+  /// In en, this message translates to:
+  /// **'{arena} arena · {arena} bugs +{up}% · {weak} bugs −{down}%'**
+  String arenaEffectLine(String arena, String up, String weak, String down);
+
+  /// No description provided for @igLegacyRoll.
+  ///
+  /// In en, this message translates to:
+  /// **'Missed stat rolls'**
+  String get igLegacyRoll;
+
+  /// No description provided for @igLegacyRollDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Rolls this bug missed by growing before the update · {n} left (free)'**
+  String igLegacyRollDesc(int n);
+
+  /// No description provided for @igLegacyRollGo.
+  ///
+  /// In en, this message translates to:
+  /// **'Roll'**
+  String get igLegacyRollGo;
+
+  /// No description provided for @polishMaxed.
+  ///
+  /// In en, this message translates to:
+  /// **'This line is already at max'**
+  String get polishMaxed;
 }
 
 class _AppLocalizationsDelegate

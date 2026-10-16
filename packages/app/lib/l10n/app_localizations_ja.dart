@@ -3645,7 +3645,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String polishStacks(String n, String max, String floor) {
-    return '丹精 $n/$max · 次は最大の$floor%以上';
+    return '磨き $n/$max・今は最大の$floor%・次は必ずもっと高く';
   }
 
   @override
@@ -3653,11 +3653,11 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String polishHint(String have) {
-    return 'どちらを選んでも丹精が上がります · 化石 $have個';
+    return '磨くたびに費用が上がります・化石 $have個';
   }
 
   @override
-  String get polishChooseHint => '残す値を選んでください — どちらでも丹精は上がりました';
+  String get polishChooseHint => '新しい値の方が高いです — 種類が変わった場合は前の値を残すこともできます';
 
   @override
   String get polishKeepOld => '以前の値を残す';
@@ -7135,11 +7135,11 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get bugRarityHelp =>
-      'この種がどれだけ珍しいかです。種ごとに決まっていて変わりません。珍しい種ほど出にくく孵化・ペアリングに時間がかかりますが、ペットパッシブが大きく、エッセンスに変えると多くもらえます。';
+      '虫ごとに決まる希少度です。同じ種でも一般から伝説まで出ます。珍しいほど孵化・ペアリングに時間がかかりますが、ペット効果・ペットパッシブ・対戦の能力が高く、エッセンスに変えると多くもらえます。';
 
   @override
   String igSpeciesRarity(String grade) {
-    return '種の希少度 $grade';
+    return '希少度 $grade';
   }
 
   @override
@@ -7319,18 +7319,18 @@ class AppLocalizationsJa extends AppLocalizations {
   String get eggOddsIndividualHead => '個体等級';
 
   @override
-  String get eggOddsSpeciesHead => '種の希少度 (同じ希少度の種はすべて同じ確率)';
+  String get eggOddsSpeciesHead => '希少度（種はすべて同じ確率）';
 
   @override
-  String get igFilterTitle => '受け取る種の希少度を選ぶ';
+  String get igFilterTitle => '受け取る希少度を選ぶ';
 
   @override
   String igFilterSnack(String grade) {
-    return '種の希少度$grade未満は自動で逃がして素材にします';
+    return '希少度$grade未満は自動で逃がして素材にします';
   }
 
   @override
-  String get igAutoFilterRarity => '対象の種の希少度';
+  String get igAutoFilterRarity => '対象の希少度';
 
   @override
   String igAutoFilterGrade(String grade) {
@@ -7530,7 +7530,7 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get rarityFilterButton => '受け取る種の希少度';
+  String get rarityFilterButton => '受け取る希少度';
 
   @override
   String get rarityFilterAll => 'すべての種';
@@ -7542,12 +7542,12 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String rarityFilterOnly(String grade) {
-    return '$grade種のみ';
+    return '$gradeの虫のみ';
   }
 
   @override
   String get rarityFilterHint =>
-      '種ごとに決まった希少度（種の希少度）で絞り込みます。個体ごとの等級とは関係ありません。すでに持っている昆虫には影響しません。';
+      '虫ごとに決まった希少度で絞り込みます。個体の等級とは関係ありません。すでに持っている昆虫には影響しません。';
 
   @override
   String get storageViewButton => '表示';
@@ -7599,7 +7599,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get passiveCardTitle => 'ペットパッシブ';
 
   @override
-  String get passiveCardHint => '虫の等級と種の希少度で大きくなります。';
+  String get passiveCardHint => '虫の等級と希少度で大きくなります。';
 
   @override
   String get passiveNone => 'パッシブなし';
@@ -7658,7 +7658,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get passiveRerollEgg => '孵化してから再抽選できます';
 
   @override
-  String get dexPassiveV2 => 'ペットパッシブは個体ごとに違います（個体等級・種の希少度で大きくなります）';
+  String get dexPassiveV2 => 'ペットパッシブは個体ごとに違います（個体等級・希少度で大きくなります）';
 
   @override
   String dexPassiveLegacy(String kind) {
@@ -7684,7 +7684,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String guidePassiveBody(String grade, String rarity, String roll) {
-    return 'ペットとして装備した虫だけが狩りの能力を1つ上げます（同じ種類を複数装備すると合算）。どの能力か（種類）は虫ごとに違います — アップデート前からいる虫はその種のパッシブの種類のままです。\n大きさ = 個体等級（$grade）× 種の希少度（$rarity）× 生まれつきの強さ（$roll〜100%）。等級を上げると大きくなり、正確な値は孵化後に見えます。';
+    return 'ペットとして装備した虫だけが狩りの能力を1つ上げます（同じ種類を複数装備すると合算）。どの能力か（種類）は虫ごとに違います。\n大きさ = 個体等級（$grade）× 希少度（$rarity）× 生まれつきの強さ（$roll〜100%）。等級を上げると大きくなり、正確な値は孵化後に見えます。';
   }
 
   @override
@@ -7760,4 +7760,55 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get respecGift1021Toast => '1.0.21記念 — すべての虫の振り直しが1回無料です（待ち時間なし）';
+
+  @override
+  String get dexBestRarity => '最高の希少度';
+
+  @override
+  String rarityUpBtn(int have, int need) {
+    return '希少度を上げる $have/$need';
+  }
+
+  @override
+  String get rarityUpTitle => '希少度を上げる';
+
+  @override
+  String rarityUpConfirm(int n, String grade, String next) {
+    return '同じ種・$gradeの虫$n匹を素材にして$nextに上げます。\n素材の虫はいなくなります（育てた虫・装備中・ロックした虫は使いません）。';
+  }
+
+  @override
+  String rarityUpNeed(int need, String grade, int have) {
+    return '同じ種の$gradeの虫が$need匹必要です（今$have匹・育てた虫・装備中・ロックした虫は素材になりません）';
+  }
+
+  @override
+  String rarityUpDone(String grade) {
+    return '希少度が$gradeに上がりました！';
+  }
+
+  @override
+  String get rarityUpMax => 'すでに最高の希少度です';
+
+  @override
+  String get rarityUpGo => '上げる';
+
+  @override
+  String arenaEffectLine(String arena, String up, String weak, String down) {
+    return '$arenaの土俵・$arenaの虫 +$up%・$weakの虫 −$down%';
+  }
+
+  @override
+  String get igLegacyRoll => '取り逃した能力ロール';
+
+  @override
+  String igLegacyRollDesc(int n) {
+    return 'アップデート前に育てたため等級アップで振れなかった分です・残り$n回（無料）';
+  }
+
+  @override
+  String get igLegacyRollGo => '振る';
+
+  @override
+  String get polishMaxed => 'この行はすでに最大です';
 }

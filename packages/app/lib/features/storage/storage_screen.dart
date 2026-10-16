@@ -460,7 +460,7 @@ class StorageScreen extends ConsumerWidget {
   /// 받을 **종 희귀도** 고르기 — 기준 미만 종은 채집함에 **안 들어오고 재료로 환산**된다(§2.1).
   /// 칸이 50~100개뿐이라 필터가 없으면 후반엔 일반 곤충이 칸을 채우고,
   /// 정작 쓸 개체가 드롭 차단에 걸린다.
-  /// ⚠️ 비교 대상은 종 희귀도(`species.grade`)다 — 개체 등급으로 읽히지 않게 이름에 "종"을 붙인다(2026-10-14).
+  /// ⚠️ 비교 대상은 희귀도(1.0.22 곤충 희귀도 — 꺼져 있으면 종 희귀도)다 — 개체 등급과는 상관없다.
   Future<void> _showBugFilter(
     BuildContext ctx,
     WidgetRef ref,
@@ -1113,11 +1113,11 @@ class StorageScreen extends ConsumerWidget {
     final remaining = slot.endsAt.difference(now);
     final total =
         data.iapConfig?.skinnedBreedSeconds(
-          cfg.breedingDuration(sp.grade),
+          cfg.breedingDuration(slot.motherRarity ?? sp.grade),
           save.ownedSkins,
           sp.id,
         ) ??
-        cfg.breedingDuration(sp.grade);
+        cfg.breedingDuration(slot.motherRarity ?? sp.grade);
     final fill = ready
         ? 1.0
         : (total > 0 ? (1 - remaining.inSeconds / total).clamp(0.0, 1.0) : 1.0);
@@ -1852,11 +1852,11 @@ class StorageScreen extends ConsumerWidget {
       final total = sp == null
           ? 1
           : (data.iapConfig?.skinnedIncubateSeconds(
-                  cfg.incubateDuration(sp.grade),
+                  cfg.incubateDuration(bugRarityOf(data, bug!, sp)),
                   save.ownedSkins,
                   sp.id,
                 ) ??
-                cfg.incubateDuration(sp.grade));
+                cfg.incubateDuration(bugRarityOf(data, bug!, sp)));
       final rem = occupant.value.difference(now);
       done = rem <= Duration.zero;
       fill = total > 0 ? (1 - rem.inSeconds / total).clamp(0.0, 1.0) : 1.0;
@@ -2227,7 +2227,10 @@ class StorageScreen extends ConsumerWidget {
       return btn(
         key: const ValueKey('eggIncubatorPlace'),
         label: l.eggToIncubator(
-          _remainLabel(l, Duration(seconds: _incubateSeconds(data, save, sp))),
+          _remainLabel(
+            l,
+            Duration(seconds: _incubateSeconds(data, save, bug, sp)),
+          ),
         ),
         bg: const Color(0xFF2E6DA4),
         onTap: place,
@@ -2415,6 +2418,7 @@ class StorageScreen extends ConsumerWidget {
                       seconds: _incubateSeconds(
                         data,
                         r.read(saveControllerProvider).requireValue,
+                        bug,
                         sp,
                       ),
                     ),
@@ -2511,6 +2515,7 @@ class StorageScreen extends ConsumerWidget {
                       seconds: _incubateSeconds(
                         data,
                         r.read(saveControllerProvider).requireValue,
+                        bug,
                         sp,
                       ),
                     ),
@@ -2519,8 +2524,8 @@ class StorageScreen extends ConsumerWidget {
                 ),
               _eggInfoLine(
                 label: l.eggPickRarity,
-                value: gradeLabel(l, sp.grade),
-                color: gradeColor(sp.grade),
+                value: gradeLabel(l, bugRarityOf(data, bug, sp)),
+                color: gradeColor(bugRarityOf(data, bug, sp)),
               ),
               _eggInfoLine(
                 label: l.igGradeLabel,
@@ -2630,11 +2635,11 @@ class StorageScreen extends ConsumerWidget {
                 gradeLabel(l, shownGrade(data, bug, sp)),
                 gradeColor(shownGrade(data, bug, sp)),
               ),
-              // 켜지면 종 희귀도를 작게 덧붙인다(부화·짝짓기 시간은 종 기준).
+              // 켜지면 희귀도(곤충 희귀도 — 1.0.22, 부화·짝짓기 시간이 이걸로)를 작게 덧붙인다.
               if (individualGradeOn(data))
                 _eggBadge(
-                  l.igSpeciesRarity(gradeLabel(l, sp.grade)),
-                  gradeColor(sp.grade).withValues(alpha: 0.7),
+                  l.igSpeciesRarity(gradeLabel(l, bugRarityOf(data, bug, sp))),
+                  gradeColor(bugRarityOf(data, bug, sp)).withValues(alpha: 0.7),
                 ),
               if (!bug.trait.isNone)
                 _eggBadge(traitLabel(l, bug.trait), traitColor(bug.trait)),
@@ -2756,9 +2761,8 @@ class StorageScreen extends ConsumerWidget {
     }).toList();
     // 켜지면 개체 등급 → 종 희귀도(`bugGradeSortKey`), 꺼지면 예전 순서(종 등급 → 단계 → 포텐셜) 그대로.
     final gradeOn = individualGradeOn(data);
-    int gradeRank(IndividualBug b) => gradeOn
-        ? bugGradeSortKey(data, b)
-        : data.speciesById[b.speciesId]?.grade.index ?? -1;
+    int gradeRank(IndividualBug b) =>
+        gradeOn ? bugGradeSortKey(data, b) : bugGradeSortKey(data, b);
     list.sort((a, b) {
       if (a.equipped != b.equipped) return a.equipped ? -1 : 1;
       final gr = gradeRank(b.bug) - gradeRank(a.bug);
@@ -3121,7 +3125,10 @@ class StorageScreen extends ConsumerWidget {
                       for (final sp in species)
                         _gradeChip(
                           label: sp.name.resolve(locale),
-                          color: gradeColor(sp.grade),
+                          // 곤충 희귀도(1.0.22)가 켜지면 종에는 희귀도가 없다 — 종 칩은 한 색.
+                          color: bugRarityOn(data)
+                              ? const Color(0xFFB08A4E)
+                              : gradeColor(sp.grade),
                           selected: view.speciesId == sp.id,
                           onTap: () =>
                               ctrl.set(view.copyWith(speciesId: () => sp.id)),
@@ -3208,7 +3215,7 @@ class StorageScreen extends ConsumerWidget {
       child: Container(
         // 개체 등급이 켜지면 테두리도 개체 등급(종 희귀도는 상세에 작게).
         decoration: _gradeFrame(
-          individualGradeOn(data) ? bug.individualGrade : species.grade,
+          shownGrade(data, bug, species),
           equipped: equipped,
         ),
         foregroundDecoration: injured
@@ -3829,14 +3836,21 @@ class StorageScreen extends ConsumerWidget {
   }
 
   /// 이 종 알의 실제 부화 시간(초) — 스킨 편의 보너스까지(`placeInIncubator` 와 같은 계산).
-  int _incubateSeconds(GameData data, SaveGame save, Species sp) {
+  int _incubateSeconds(
+    GameData data,
+    SaveGame save,
+    IndividualBug bug,
+    Species sp,
+  ) {
     final cfg = data.petConfig!;
+    // 부화 시간은 곤충 희귀도(1.0.22 — 꺼져 있으면 종 희귀도). 컨트롤러 `placeInIncubator` 와 같은 값.
+    final g = bugRarityOf(data, bug, sp);
     return data.iapConfig?.skinnedIncubateSeconds(
-          cfg.incubateDuration(sp.grade),
+          cfg.incubateDuration(g),
           save.ownedSkins,
           sp.id,
         ) ??
-        cfg.incubateDuration(sp.grade);
+        cfg.incubateDuration(g);
   }
 
   static String _mmss(Duration d) =>
@@ -3878,7 +3892,9 @@ class StorageScreen extends ConsumerWidget {
             final isEgg = effStage == LifeStage.egg;
             // 개체 등급(2026-10-11) — 켜지면 등급 이름·테두리는 개체 등급, 종 등급은 "종 희귀도"로 작게.
             final gradeOn = individualGradeOn(data);
-            final shownGrade = gradeOn ? bug.individualGrade : species.grade;
+            final shownGrade = gradeOn
+                ? bug.individualGrade
+                : bugRarityOf(data, bug, species);
             return SingleChildScrollView(
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 14),
               child: Column(
@@ -3925,9 +3941,14 @@ class StorageScreen extends ConsumerWidget {
                             if (gradeOn)
                               GradeRarityRows(
                                 grade: bug.individualGrade,
-                                rarity: species.grade,
-                              )
-                            else ...[
+                                rarity: bugRarityOf(data, bug, species),
+                              ),
+                            // 희귀도 올리기(1.0.22, 사장님 확정) — 같은 종 · 같은 희귀도 재료. 알은 부화한 뒤에.
+                            if (bugRarityOn(data) &&
+                                effStage != LifeStage.egg) ...[
+                              const SizedBox(height: 4),
+                              _rarityUpButton(ctx, r, data, bug, species),
+                            ] else ...[
                               Text(
                                 gradeLabel(l, shownGrade),
                                 style: TextStyle(
@@ -4153,7 +4174,10 @@ class StorageScreen extends ConsumerWidget {
                                               ? petCfg.individualGrade
                                                     .essenceOf(
                                                       bug,
-                                                      species.grade,
+                                                      petCfg.rarityOf(
+                                                        bug,
+                                                        species,
+                                                      ),
                                                     )
                                               : 0;
                                           final go =
@@ -4485,6 +4509,7 @@ class StorageScreen extends ConsumerWidget {
       variant: bug.variant,
       passive: passiveOf(bug, sp, cfg), // 펫 패시브 v2 — 합산과 같은 함수
       trainMult: trainMult,
+      rarityMult: cfg.bugRarity.huntMultOf(cfg.rarityOf(bug, sp)),
     ), cfg);
     // 폭은 다른 카드처럼 가득 — 글자 폭만큼만 좁게 떠 있었다(2026-10-15 에뮬 확인).
     return SizedBox(
@@ -5267,3 +5292,84 @@ Widget _lockButton(
     ),
   ),
 );
+
+/// 곤충 상세의 "희귀도 올리기 n/3" 버튼(1.0.22). 재료가 모자라면 무엇이 몇 마리 필요한지 알려 준다.
+Widget _rarityUpButton(
+  BuildContext ctx,
+  WidgetRef r,
+  GameData data,
+  IndividualBug bug,
+  Species sp,
+) {
+  final l = AppLocalizations.of(ctx);
+  final pet = data.petConfig!;
+  final save = r.watch(saveControllerProvider).requireValue;
+  final cur = bugRarityOf(data, bug, sp);
+  final need = pet.bugRarity.upFodder;
+  final maxed = cur == Grade.legendary;
+  final have = maxed
+      ? 0
+      : rarityUpFodder(save, bug, pet, data.speciesById).length;
+  final ready = !maxed && have >= need;
+  return InkWell(
+    key: const ValueKey('rarityUpBtn'),
+    borderRadius: BorderRadius.circular(10),
+    onTap: () async {
+      if (maxed) {
+        showCenterToast(ctx, l.rarityUpMax);
+        return;
+      }
+      if (!ready) {
+        showCenterToast(ctx, l.rarityUpNeed(need, gradeLabel(l, cur), have));
+        return;
+      }
+      final next = Grade.values[cur.index + 1];
+      final ok = await showGameDialog<bool>(
+        ctx,
+        title: l.rarityUpTitle,
+        icon: Icons.auto_awesome_rounded,
+        content: Text(
+          l.rarityUpConfirm(need, gradeLabel(l, cur), gradeLabel(l, next)),
+          style: const TextStyle(
+            color: Color(0xDDFFFFFF),
+            fontSize: 13,
+            height: 1.45,
+          ),
+        ),
+        actions: [
+          gameDialogButton(l.actionClose, () => Navigator.pop(ctx, false)),
+          gameDialogButton(l.rarityUpGo, () => Navigator.pop(ctx, true)),
+        ],
+      );
+      if (ok != true || !ctx.mounted) return;
+      final res = await r
+          .read(saveControllerProvider.notifier)
+          .rarityUpBug(bug.id);
+      if (!ctx.mounted) return;
+      if (res.isOk) {
+        AudioService.instance.sfxRare();
+        showCenterToast(ctx, l.rarityUpDone(gradeLabel(l, next)));
+      } else {
+        showCenterToast(ctx, l.rarityUpNeed(need, gradeLabel(l, cur), have));
+      }
+    },
+    child: Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: ready ? const Color(0x33EBA52F) : const Color(0x22FFFFFF),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(
+          color: ready ? const Color(0xFFEBA52F) : const Color(0x44FFFFFF),
+        ),
+      ),
+      child: Text(
+        maxed ? l.rarityUpMax : l.rarityUpBtn(have, need),
+        style: TextStyle(
+          color: ready ? const Color(0xFFFFD27A) : const Color(0xAAFFFFFF),
+          fontSize: 11.5,
+          fontWeight: FontWeight.w800,
+        ),
+      ),
+    ),
+  );
+}

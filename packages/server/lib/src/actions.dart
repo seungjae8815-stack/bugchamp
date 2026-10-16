@@ -1778,7 +1778,22 @@ class GameActions {
     SaveGame client,
     DateTime t,
   ) {
-    var out = sanitizeGradeRolls(guardGradeBugFields(stored, client));
+    // 새 곤충의 희귀도 칸 `ry`(1.0.22 희귀 천장) — 업로드당 2개 + 지난 업로드 뒤 10분마다 1개(천장은 400마리마다 —
+    // 8시간 방치 최대 약 30번 = 16분에 1번).
+    final sinceLast = t.difference(stored.lastSeen).inSeconds;
+    final ryAllowance =
+        kNewRarityPerUpload +
+        (sinceLast <= 0 ? 0 : sinceLast ~/ kNewRaritySecondsEach);
+    final fodderUsed = <String>{};
+    var out = sanitizeGradeRolls(
+      guardGradeBugFields(
+        stored,
+        client,
+        rarity: config.pet.bugRarity,
+        newRarityAllowance: ryAllowance,
+        fodderUsed: fodderUsed,
+      ),
+    );
     // 무엇을 되돌렸나 — 운영 요약에 싣는다(2026-10-13, 사유만으로는 정상 유저인지 알 수 없었다).
     final notes = <String>[];
     if (!identical(out, client)) {
@@ -1799,12 +1814,16 @@ class GameActions {
     final allow = <String, int>{};
     for (final b in stored.bugs) {
       if (now.contains(b.id)) continue;
+      // 희귀도 올리기 재료로 쓴 곤충은 정수로 또 받지 못한다(1.0.22).
+      if (fodderUsed.contains(b.id)) continue;
       final sp = byId[b.speciesId];
       if (sp == null) continue;
       final asSeen = b.stage == LifeStage.egg
           ? b.copyWith(stage: LifeStage.larva)
           : b;
-      allow[sp.id] = (allow[sp.id] ?? 0) + cfg.essenceOf(asSeen, sp.grade);
+      allow[sp.id] =
+          (allow[sp.id] ?? 0) +
+          cfg.essenceOf(asSeen, config.pet.rarityOf(asSeen, sp));
     }
     final diff =
         stored.materialCount(MaterialKind.jelly) -
@@ -1884,13 +1903,50 @@ class GameActions {
   ///  - 뽑기 출신(`gc`)은 지워지지 않는다(지우면 희귀도 가치를 받는다).
   ///  - 켜진 뒤 생김(`ng`)은 저장본 값 그대로 — **새 id 에만** 붙을 수 있다(붙이면 새 등급 누적으로 가치가 커진다).
   ///  - 옛 합성 단계(`ls`)는 한 번 적히면 고정, 처음 적힐 때는 저장본 합성 단계를 넘지 못한다.
-  static SaveGame guardGradeBugFields(SaveGame stored, SaveGame client) {
+  static const kNewRarityPerUpload = 2;
+  static const kNewRaritySecondsEach = 600;
+
+  static SaveGame guardGradeBugFields(
+    SaveGame stored,
+    SaveGame client, {
+    BugRarityConfig rarity = const BugRarityConfig(),
+    int newRarityAllowance = kNewRarityPerUpload,
+    // 희귀도 올리기 재료로 인정한 곤충 id 를 넣어 준다(호출자가 정수 허용치에서 뺀다).
+    Set<String>? fodderUsed,
+  }) {
     final old = {for (final b in stored.bugs) b.id: b};
     var changed = false;
+    var ryUsed = 0;
+    // 희귀도 올리기(1.0.22) 재료 — 이번 업로드에서 사라진 곤충(종·희귀도). [rarityUpAllowed] 가 꺼내 쓴다.
+    final nowIds = {for (final b in client.bugs) b.id};
+    final gone = [
+      if (rarity.enabled)
+        for (final b in stored.bugs)
+          if (!nowIds.contains(b.id) && b.stage != LifeStage.egg)
+            (id: b.id, speciesId: b.speciesId, rarity: rarity.ownRarityOf(b)),
+    ];
     final bugs = <IndividualBug>[];
     for (final b in client.bugs) {
       final o = old[b.id];
       if (o == null) {
+        // 새 곤충의 희귀도 칸 `ry`(1.0.22) — 정해서 주는 곳은 희귀 천장뿐이고 값은 id 로 정해진다
+        // ([BugRarityConfig.pityRarityOf]). 그 id 로 나올 수 없는 값·뽑기 출신·허용치를 넘는 것은 지운다(= id 롤).
+        // 안 막으면 `ry: legendary` 한 줄로 전설을 무한히 만든다(세이브 검토 2026-10-16).
+        final ry = b.rarity;
+        if (ry != null) {
+          final ok =
+              rarity.enabled &&
+              !b.fromGacha &&
+              ry == rarity.pityRarityOf(b.id) &&
+              ryUsed < newRarityAllowance;
+          if (ok) {
+            ryUsed++;
+          } else {
+            changed = true;
+            bugs.add(IndividualBug.fromJson(b.toJson()..remove('ry')));
+            continue;
+          }
+        }
         bugs.add(b);
         continue;
       }
@@ -1898,13 +1954,34 @@ class GameActions {
       final oBorn = max(1, o.potential - o.synthUps);
       if (b.potential - su > oBorn) su = b.potential - oBorn;
       if (su < 0) su = 0;
-      final gc = b.fromGacha || o.fromGacha;
+      // 뽑기 출신 표식은 저장본 그대로(1.0.22) — 곤충 희귀도가 `gc` 면 뽑기 표(전설 17%)로 굴려진다.
+      // 옛 곤충에 붙여 희귀도를 다시 굴리지 못하게. 붙는 곳은 새 곤충(뽑기·결제 알)뿐이다(위 `o == null` 분기).
+      final gc = o.fromGacha;
+      // 곤충 희귀도 칸 `ry`(1.0.22)도 저장본 그대로 — 옛 곤충에 전설을 적어 넣지 못하게, 구버전 앱이 모르고 떨궈도 되돌린다.
+      // 단, **희귀도 올리기**로 오른 것은 이번 업로드에서 사라진 같은 종·같은 희귀도 재료가 있으면 인정한다.
+      var ry = o.rarity;
+      if (rarity.enabled && b.rarity != null) {
+        final was = rarity.ownRarityOf(o);
+        if (b.rarity!.index > was.index &&
+            rarityUpAllowed(
+              from: was,
+              to: b.rarity!,
+              speciesId: b.speciesId,
+              gone: gone,
+              cfg: rarity,
+              used: fodderUsed,
+            )) {
+          ry = b.rarity;
+        }
+      }
       final ng = o.newGen;
       // 패시브 v2 표식도 저장본 그대로(2026-10-14) — 옛 곤충에 붙여 패시브 종류를 바꾸거나, 새 곤충에서 떼어 종 패시브로
       // 되돌리지 못하게. 새 id 에만 붙을 수 있다(위 `o == null` 분기).
       final p2 = o.passiveV2;
       // 무료 패시브 재굴림 사용 횟수는 줄지 않는다(2026-10-14) — 0 으로 고쳐 올려 무료 5번을 다시 받지 못하게.
       final pfu = max(b.passiveFreeUsed, o.passiveFreeUsed);
+      // 놓친 능력치 굴리기 사용 횟수도 줄지 않는다(1.0.22) — 0 으로 고쳐 무료 굴리기를 다시 받지 못하게. 구버전이 떨궈도 되돌린다.
+      final lru = max(b.legacyRollUps, o.legacyRollUps);
       int? ls;
       if (ng) {
         ls = null;
@@ -1918,7 +1995,9 @@ class GameActions {
           ng == b.newGen &&
           p2 == b.passiveV2 &&
           pfu == b.passiveFreeUsed &&
-          ls == b.legacySynthUps) {
+          ls == b.legacySynthUps &&
+          ry == b.rarity &&
+          lru == b.legacyRollUps) {
         bugs.add(b);
         continue;
       }
@@ -1929,7 +2008,9 @@ class GameActions {
         ..remove('ng')
         ..remove('p2')
         ..remove('pfu')
-        ..remove('ls');
+        ..remove('ls')
+        ..remove('ry')
+        ..remove('lru');
       bugs.add(
         IndividualBug.fromJson({
           ...j,
@@ -1939,6 +2020,8 @@ class GameActions {
           if (p2) 'p2': true,
           if (pfu > 0) 'pfu': pfu,
           if (ls != null) 'ls': ls,
+          if (ry != null) 'ry': ry.key,
+          if (lru > 0) 'lru': lru,
         }),
       );
     }
@@ -2559,7 +2642,9 @@ class GameActions {
       final sp = speciesById[bug.speciesId];
       if (sp == null) continue;
       final until = t.add(
-        Duration(seconds: petConfig.injuryDuration(sp.grade)),
+        Duration(
+          seconds: petConfig.injuryDuration(petConfig.rarityOf(bug, sp)),
+        ),
       );
       final prev = injured[koedId];
       injured[koedId] = (prev != null && prev.isAfter(until)) ? prev : until;
@@ -2749,6 +2834,8 @@ class GameActions {
                   sizeStatMult: bug.statMultiplier(sp),
                   // 개체 등급 — 화면 표시 전용(상대 곤충 창, 2026-10-15). 판정에는 안 쓴다.
                   potential: bug.potential,
+                  // 곤충 희귀도 — 화면 표시 전용(상대 곤충 창, 1.0.22). 능력치에는 [battleMods] 로 이미 들어간다.
+                  rarity: petConfig.rarityOf(bug, sp),
                 ).withTraining(
                   evade: t.evade,
                   crit: t.crit,
@@ -2760,7 +2847,11 @@ class GameActions {
                 );
             // 개체 등급(2026-10-11) — 등급 배율 × 종 배율 × 롤 · 타고난 치명·회피·회복력 · 밀어내기.
             // 꺼져 있으면 중립. 앱 `duelBugFor` 와 같은 함수.
-            final m = petConfig.individualGrade.battleMods(bug, sp);
+            final m = petConfig.individualGrade.battleMods(
+              bug,
+              sp,
+              rarityMult: petConfig.duelRarityMultOf(bug, sp),
+            );
             // 팀 역할 오라(1.0.21 D3) — 역할·크기만 붙인다(입히는 것은 [validateDuelTeam] 의 applyTeamAura).
             final aura = duelAuraOf(
               save,
@@ -2884,10 +2975,13 @@ class GameActions {
     final injured = Map<String, DateTime>.from(start.injured);
     final byId = {for (final b in start.bugs) b.id: b};
     for (final id in myTeamBugIds) {
-      final sp = speciesById[byId[id]?.speciesId];
-      if (sp == null) continue;
+      final bug = byId[id];
+      final sp = speciesById[bug?.speciesId];
+      if (bug == null || sp == null) continue;
       injured[id] = t.add(
-        Duration(seconds: petConfig.injuryDuration(sp.grade)),
+        Duration(
+          seconds: petConfig.injuryDuration(petConfig.rarityOf(bug, sp)),
+        ),
       );
     }
     final paid = start.copyWith(
@@ -2938,10 +3032,13 @@ class GameActions {
     final lost = lostBugIds.toSet();
     for (final id in teamBugIds) {
       if (lost.contains(id)) {
-        final sp = speciesById[byId[id]?.speciesId];
-        if (sp == null) continue;
+        final bug = byId[id];
+        final sp = speciesById[bug?.speciesId];
+        if (bug == null || sp == null) continue;
         final until = t.add(
-          Duration(seconds: petConfig.injuryDuration(sp.grade)),
+          Duration(
+            seconds: petConfig.injuryDuration(petConfig.rarityOf(bug, sp)),
+          ),
         );
         final prev = injured[id];
         injured[id] = prev != null && prev.isAfter(until) ? prev : until;
@@ -3092,6 +3189,8 @@ class GameActions {
       a: mine.team[ia],
       b: session.foe[ib],
       params: p,
+      // 경기장 오행(2026-10-16) — 제안 때 보여 준 경기장(옛 세션은 null = 효과 없음).
+      arena: p.arenaOn ? session.arena : null,
       launchA: q,
       hpA: session.hpA,
       hpB: session.hpB,
@@ -3447,7 +3546,11 @@ class GameActions {
       );
       // 개체 등급(2026-10-12 점검) — 내 곤충 쪽은 결투에서 등급 배율·롤을 받는데 야생 기준(내 상위 3마리 평균)에는
       // 안 실려, 켜면 야생이 등급만큼 약하게(또는 세게) 만들어졌다. 결투 팀과 같은 [battleMods] 를 곱한다(꺼지면 중립).
-      final m = petConfig.individualGrade.battleMods(bug, sp);
+      final m = petConfig.individualGrade.battleMods(
+        bug,
+        sp,
+        rarityMult: petConfig.duelRarityMultOf(bug, sp),
+      );
       mine.add(
         buildBattleBug(
           bug: bug,
@@ -3897,11 +4000,12 @@ class GameActions {
       id: _uuid.v4(),
       mother: mother,
       father: father,
+      motherRarity: petConfig.rarityOf(mother, sp),
       // 스킨 계열 편의 보너스(산란 시간 −N%, 2026-10-08 — 시간만, 전투 스탯 아님). 앱과 같은 함수.
       endsAt: t.add(
         Duration(
           seconds: config.iap.skinnedBreedSeconds(
-            petConfig.breedingDuration(sp.grade),
+            petConfig.breedingDuration(petConfig.rarityOf(mother, sp)),
             save.ownedSkins,
             sp.id,
           ),
@@ -3911,7 +4015,7 @@ class GameActions {
       seed: rng.nextInt(1 << 31),
     );
     // 쿨다운은 **시작 시점**에 건다 — 수령을 미뤄 텀을 피할 수 없게.
-    final cool = petConfig.breedingCooldown(sp.grade);
+    final cool = petConfig.breedingCooldown(petConfig.rarityOf(mother, sp));
     final cooldowns = save.prunedBreedCooldowns(t);
     if (cool > 0) {
       final until = t.add(Duration(seconds: cool));
@@ -4016,7 +4120,7 @@ class GameActions {
     final reward = petConfig.disassembleJelly(bug.bornPotential);
     final grade = config.speciesList
         .where((s) => s.id == bug.speciesId)
-        .map((s) => s.grade)
+        .map((s) => petConfig.rarityOf(bug, s))
         .firstOrNull;
     final matGain = grade == null
         ? 0
@@ -4088,13 +4192,14 @@ class GameActions {
     if (cfg.ticketAdDailyLimit > 0 && used >= cfg.ticketAdDailyLimit) {
       return const ActionResult.fail('ad_limit');
     }
-    final next = grantTickets(
+    // 상한까지만(2026-10-16) — 가득이면 받지 않고 하루 횟수도 쓰지 않는다.
+    final next = freeTickets(
       tickets: save.pvpTickets,
       at: save.ticketsAt,
       now: t,
       cfg: cfg,
-      amount: cfg.ticketAdGrant,
     );
+    if (next == null) return const ActionResult.fail('already_full');
     // 날짜가 바뀌었으면 카운터를 통째로 새로 시작한다(다른 기능 키까지 리셋).
     final counts = save.adUseDate == today
         ? Map<String, int>.from(save.adUseCounts)
@@ -5296,6 +5401,8 @@ class GameActions {
         spec: spec,
         launch: launch,
         clutchScores: clutchScores,
+        // 경기장 오행 — 회차 seed + 웨이브(모두 같다, 2026-10-16).
+        roundSeed: roundSeed,
       );
       final stop = step.bout.pending;
       if (stop != null) {

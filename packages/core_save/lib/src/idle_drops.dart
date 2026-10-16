@@ -63,21 +63,26 @@ IdleDrops rollIdleDrops({
     pity++;
     if (species.isNotEmpty &&
         (pityDue || rng.nextDouble() < run.bugDropChance * bugFind)) {
-      final sp = pickDropSpecies(
+      // 종·희귀도는 앱 실시간 처치·채집망과 같은 함수(곤충 희귀도 — 1.0.22). id 를 먼저 만든다(희귀도가 id 롤).
+      final id = newId();
+      final drop = pickWildDrop(
         rng,
         species,
-        weights: run.dropGradeWeights,
+        run: run,
+        pet: pet,
+        id: id,
         now: now,
-        minGrade: pityDue ? Grade.rare : null,
+        pity: pityDue,
       );
-      if (sp != null) {
+      if (drop != null) {
+        final sp = drop.species;
         // 천장은 실제로 받았거나 필터로 재료가 됐을 때만 되감는다 — 채집함이 가득 차
         // 버려진 롤로 되감으면 천장이 허공에 쓰인다.
-        final rarePlus = sp.grade.index >= Grade.rare.index;
+        final rarePlus = drop.rarity.index >= Grade.rare.index;
         // 온라인과 같은 분포: rng*rng 라 고포텐셜이 드물다.
         final potential = pet.wildPotential(rng.nextDouble(), rng.nextDouble());
-        if (!save.acceptsGrade(sp.grade)) {
-          final base = pet.releaseMaterial(sp.grade);
+        if (!save.acceptsGrade(drop.rarity)) {
+          final base = pet.releaseMaterial(drop.rarity);
           final give = iap == null
               ? base
               : iap.skinnedReleaseMaterial(base, save.ownedSkins, sp.id);
@@ -89,7 +94,7 @@ IdleDrops rollIdleDrops({
         } else if (bugRoom > 0) {
           newBugs.add(
             IndividualBug.roll(
-              id: newId(),
+              id: id,
               species: sp,
               rng: rng,
               potential: potential.clamp(1, 5),
@@ -98,6 +103,7 @@ IdleDrops rollIdleDrops({
               stage: LifeStage.egg,
               stageSince: now,
               newGen: pet.individualGrade.enabled,
+              rarity: drop.fixed,
             ),
           );
           bugRoom--;

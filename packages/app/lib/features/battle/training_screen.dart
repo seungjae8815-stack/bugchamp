@@ -174,7 +174,12 @@ class TrainingScreen extends ConsumerStatefulWidget {
 class _TrainingScreenState extends ConsumerState<TrainingScreen> {
   /// 곤충 한 마리의 표시 등급(켜지면 개체 등급, 꺼지면 종 등급).
   Grade _gradeOf(IndividualBug b, Species sp) =>
-      _gradeOn ? b.individualGrade : sp.grade;
+      _gradeOn ? b.individualGrade : _rarityOf(b, sp);
+
+  /// 곤충 희귀도(1.0.22 — 곤충마다, 꺼져 있으면 종 희귀도). 훈련 비용은 이 값으로.
+  Grade _rarityOf(IndividualBug b, Species sp) =>
+      ref.read(gameDataProvider).requireValue.petConfig?.rarityOf(b, sp) ??
+      sp.grade;
 
   /// 개체 등급이 켜졌나(켜지면 별 대신 등급 이름).
   bool get _gradeOn =>
@@ -727,11 +732,11 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen> {
                     gradeLabel(l, _gradeOf(bug, sp)),
                     gradeColor(_gradeOf(bug, sp)),
                   ),
-                  // 켜지면 종 희귀도를 작게 덧붙인다.
+                  // 켜지면 희귀도(곤충 희귀도 — 1.0.22)를 작게 덧붙인다.
                   if (_gradeOn)
                     _chip(
-                      l.igSpeciesRarity(gradeLabel(l, sp.grade)),
-                      gradeColor(sp.grade),
+                      l.igSpeciesRarity(gradeLabel(l, _rarityOf(bug, sp))),
+                      gradeColor(_rarityOf(bug, sp)),
                     ),
                   if (!_gradeOn)
                     _chip(
@@ -828,7 +833,7 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen> {
     required int free,
     required bool jobBusy,
   }) {
-    final quote = trainPointQuote(rec, cfg, sp.grade);
+    final quote = trainPointQuote(rec, cfg, _rarityOf(bug, sp));
     // 다음 포인트가 생기는 조건.
     final k = cfg.levelsPerPoint;
     final cap = data.petConfig?.levelCap(bug.breakthroughTier);
@@ -1497,6 +1502,7 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen> {
                   Icons.remove_rounded,
                   key: ValueKey('trainSlot:${sl.key}:minus'),
                   enabled: pts > 0,
+                  repeat: true,
                   onTap: () => setState(() {
                     final d = Map<TrainSlot, int>.from(draft);
                     d[sl] = math.max(0, (d[sl] ?? 0) - 1);
@@ -1508,6 +1514,7 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen> {
                   Icons.add_rounded,
                   key: ValueKey('trainSlot:${sl.key}:plus'),
                   enabled: pts < cap && draftSum < respecMax,
+                  repeat: true,
                   onTap: () => setState(() {
                     final d = Map<TrainSlot, int>.from(draft);
                     d[sl] = (d[sl] ?? 0) + 1;
@@ -1557,30 +1564,41 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen> {
     required bool enabled,
     required VoidCallback onTap,
     bool big = false,
+    bool repeat = false,
     Key? key,
   }) {
     final s = big ? 40.0 : 34.0;
+    final face = Container(
+      width: s,
+      height: s,
+      decoration: BoxDecoration(
+        color: enabled ? const Color(0xFFE08A2E) : const Color(0xFF4A453E),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(
+          color: enabled ? const Color(0xFFFFC27A) : const Color(0x33FFFFFF),
+        ),
+      ),
+      child: Icon(
+        icon,
+        color: enabled ? Colors.white : const Color(0x99FFFFFF),
+        size: big ? 24 : 20,
+      ),
+    );
+    // 누르고 있으면 계속(2026-10-16 사장님 요청 — 배분 편집 ＋/－). 재료·시간이 드는 찍기 [+] 는 한 번씩.
+    if (repeat) {
+      return _RepeatPress(
+        key: key,
+        enabled: enabled,
+        onStep: onTap,
+        child: face,
+      );
+    }
     return GestureDetector(
       key: key,
       behavior: HitTestBehavior.opaque,
       // 비활성도 눌러서 이유를 들을 수 있게(찍기 [+] 만) — 편집 스테퍼는 그냥 막는다.
       onTap: enabled || big ? onTap : null,
-      child: Container(
-        width: s,
-        height: s,
-        decoration: BoxDecoration(
-          color: enabled ? const Color(0xFFE08A2E) : const Color(0xFF4A453E),
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(
-            color: enabled ? const Color(0xFFFFC27A) : const Color(0x33FFFFFF),
-          ),
-        ),
-        child: Icon(
-          icon,
-          color: enabled ? Colors.white : const Color(0x99FFFFFF),
-          size: big ? 24 : 20,
-        ),
-      ),
+      child: face,
     );
   }
 
@@ -1617,7 +1635,7 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen> {
         );
         return;
       }
-      final q = trainPointQuote(rec, cfg, sp.grade);
+      final q = trainPointQuote(rec, cfg, _rarityOf(bug, sp));
       if (kTrainingMaterials.any((k) => save.materialCount(k) < q.cost)) {
         showCenterToast(context, l.trainingNoMaterials);
         return;
@@ -2375,4 +2393,73 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen> {
           ),
         ),
       );
+}
+
+/// 누르고 있으면 반복하는 버튼 — 누르는 순간 한 번, [_delay] 뒤부터 점점 빠르게(최소 [_fastest]).
+/// 화면이 다시 그려질 때마다 들어오는 **최신** [onStep]·[enabled] 를 쓴다(다 찍으면 그 자리에서 멈춘다).
+class _RepeatPress extends StatefulWidget {
+  const _RepeatPress({
+    super.key,
+    required this.enabled,
+    required this.onStep,
+    required this.child,
+  });
+
+  final bool enabled;
+  final VoidCallback onStep;
+  final Widget child;
+
+  @override
+  State<_RepeatPress> createState() => _RepeatPressState();
+}
+
+class _RepeatPressState extends State<_RepeatPress> {
+  static const _delay = Duration(milliseconds: 350);
+  static const _first = 120;
+  static const _fastest = 40;
+  Timer? _timer;
+  int _gap = _first;
+
+  void _step() {
+    if (!mounted || !widget.enabled) {
+      _stop();
+      return;
+    }
+    widget.onStep();
+  }
+
+  void _start() {
+    if (!widget.enabled) return;
+    _step();
+    _gap = _first;
+    _timer?.cancel();
+    _timer = Timer(_delay, _tick);
+  }
+
+  void _tick() {
+    _step();
+    if (_timer == null) return;
+    _gap = math.max(_fastest, (_gap * 0.85).round());
+    _timer = Timer(Duration(milliseconds: _gap), _tick);
+  }
+
+  void _stop() {
+    _timer?.cancel();
+    _timer = null;
+  }
+
+  @override
+  void dispose() {
+    _stop();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => GestureDetector(
+    behavior: HitTestBehavior.opaque,
+    onTapDown: (_) => _start(),
+    onTapUp: (_) => _stop(),
+    onTapCancel: _stop,
+    child: widget.child,
+  );
 }

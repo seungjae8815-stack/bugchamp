@@ -27,6 +27,43 @@ void main() {
   LifeStage asStored(IndividualBug b) => b.stage;
 
   group('updatedDex — 보유 곤충 → 기록', () {
+    test('최고 희귀도(1.0.22) — 높은 쪽만 남고, 곤충이 사라져도 남는다 · 저장 키 r', () {
+      Grade r(IndividualBug b) =>
+          b.sizeMm >= 50 ? Grade.legendary : Grade.uncommon;
+      var dex = updatedDex(
+        current: const {},
+        bugs: [bug('alpha', size: 40)],
+        stageOf: asStored,
+        rarityOf: r,
+      );
+      expect(dex['alpha']!.maxRarity, Grade.uncommon);
+      dex = updatedDex(
+        current: dex,
+        bugs: [bug('alpha', size: 55)],
+        stageOf: asStored,
+        rarityOf: r,
+      );
+      expect(dex['alpha']!.maxRarity, Grade.legendary);
+      // 전설이 사라지고 고급만 남아도 기록은 그대로.
+      dex = updatedDex(
+        current: dex,
+        bugs: [bug('alpha', size: 41)],
+        stageOf: asStored,
+        rarityOf: r,
+      );
+      expect(dex['alpha']!.maxRarity, Grade.legendary);
+      final back = DexEntry.fromJson(dex['alpha']!.toJson());
+      expect(dex['alpha']!.toJson()['r'], 'legendary');
+      expect(back.maxRarity, Grade.legendary);
+      // 꺼져 있으면(rarityOf 없음) 기록하지 않는다.
+      final off = updatedDex(
+        current: const {},
+        bugs: [bug('beta')],
+        stageOf: asStored,
+      );
+      expect(off['beta']!.maxRarity, isNull);
+    });
+
     test('처음 보는 종이 등록된다', () {
       final dex = updatedDex(
         current: const {},

@@ -180,6 +180,8 @@ PowerParts ceilingParts(
     // 훈련 포인트 전부(balance_targets.json → pets.trainPoints) × petPerPoint — 게임의 `trainPetMult` 와 같은 식.
     trainMult:
         1 + (pets['trainPoints'] as num).toDouble() * data.training.petPerPoint,
+    // 곤충 희귀도(1.0.22) — 현실적 최고치는 희귀도 배율을 넣지 않는다(평균 ≈ 1, 표는 평균 유저 기준).
+    rarityMult: 1.0,
   );
   final bonus = computePetBonus(
     List.filled((pets['count'] as num).toInt(), one),
