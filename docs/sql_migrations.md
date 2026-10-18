@@ -38,6 +38,8 @@ Supabase 스키마 변경 SQL 의 **적용 여부**를 기록한다.
 | `_sql_20261014_event_badge_silver_bronze.sql` | 대회 뱃지 개편(1.0.21: 1위 금·2위 은·3위 동·4~10위 입상) — **1회차 2·3위 2명**의 `finalist:1` 을 `silver:1`·`bronze:1` 로(saves.eventBadges + profiles.badge, 조건부라 재실행 안전). ⚠️ **1.0.21 서버 배포 뒤**(1.0.20 서버는 silver/bronze 를 몰라 대표 뱃지를 덮을 수 있다). 실행 뒤 마지막 select 로 확인, 안 바뀌었으면 한 번 더 | ✅ 적용 2026-10-16 (1.0.21 서버 00139 배포 뒤 · 2위 silver:1 · 3위 bronze:1 세이브·대표 뱃지 모두 확인) |
 | `_sql_20261010_avatar.sql` | 1.0.19 프로필 그림 — `profiles.avatar`(형식 검사 · 앱 UPDATE 권한) · `chat_messages.avatar` + `chat_stamp_badge` 가 그림도 찍기 · `leaderboard_top`·`pvp_league_top`·`abyss_top`·`event_top` 이 avatar 반환(drop→create, 서버 전용 revoke 다시). 데이터 변경 없음. rank_hidden 적용 DB 기준(숨김 조건 유지). 운영 서버 배포 전에(순서가 바뀌어도 깨지지 않음) | ✅ 적용 2026-10-10 (확인 7줄 모두 true) |
 | `_sql_20261015_daily_stats_real_users.sql` | 텔레그램 일일 리포트 — `bugchamp_daily_stats` 활동을 `saves.updated_at` 대신 세이브 `lastSeen` 기준으로(월간 812 → 실제 289) · 새 키 `real_dau/wau/mau`·`real_users`(닉네임+레벨5↑)·`payers`·`new_named_today` · `retained` 는 진짜 이용자만. 함수 본문만 교체, 데이터 변경 없음. 리포트 함수(daily-report)는 새 키가 없으면 옛 모양 | ✅ 적용 2026-10-15 (real_users 308 · mau 290 · real_mau 164 · payers 7) |
+| `_sql_20261017_event_score_fix.sql` | 왕충 선발대회 2회차(2026-1005) 운영 보정 — 세계최고채집가 84웨이브 · 84,405점(사장님 지시). 원래 값은 ① 조회 결과를 파일 머리말에 적는다 | 대기 |
+| `_sql_20261017_daily_stats_real_new.sql` | 텔레그램 일일 리포트 — 신규·D1 을 '진짜 신규'(레벨 3 이상까지 간 계정)로도 센다. 새 키 `new_real_today`·`d1_new_real`·`d1_returned_real`(10-16 신규 19명 중 실제 7~8명 — 구글 출시 전 자동 테스트 로봇·첫 실행 중복 익명 계정). 함수 본문만 교체, 데이터 변경 없음. 리포트 함수는 새 키가 없으면 지금 모양 | ✅ 적용 2026-10-17 (new_real_today 6 · 설치 20 · D1 Lv3↑ 9명 중 3명) · 함수는 대시보드에서 직접 배포 |
 
 > `미확인` = 이 대장을 만들기(2026-09-08) 전에 있던 파일이라 적용 여부를 알 수 없다.
 > 다음에 각 파일을 다룰 때 확인해서 `적용` / `대기` / `폐기` 로 바꾼다.
