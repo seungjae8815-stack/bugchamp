@@ -298,8 +298,15 @@ Handler buildHandler({
   GuildMissionStore? guildMissionStore,
   GuildBossStore? guildBossStore,
   GuildWarStore? guildWarStore,
+
+  /// 이 미만의 세이브 기능 레벨(`feat`) 업로드를 받지 않는다. 생략하면 환경변수 `MIN_SAVE_FEAT`(0 = 끔).
+  int? minSaveFeat,
 }) {
   final support = supportNotifier ?? SupportNotifier();
+  final saveFeatFloor =
+      minSaveFeat ??
+      int.tryParse(Platform.environment['MIN_SAVE_FEAT'] ?? '') ??
+      0;
   final ops = opsMonitor ?? OpsMonitor(send: (t) => support.notify(t));
   final verifier =
       jwtVerifier ?? SupabaseJwtVerifier.forProject(config.supabaseUrl);
@@ -635,6 +642,16 @@ Handler buildHandler({
         final session = body['session'];
         if (GameActions.sessionTaken(stored, session)) {
           return _json({'error': 'session_taken'}, status: 409);
+        }
+        // 강제 업데이트 뒤에도 켜 둔 채 노는 구버전 앱(2026-10-18 — 1.0.21 앱이 7시간 동안 1.0.22 서버에
+        // 올려 정수가 잘렸다). 버전 확인은 켤 때·다시 앞으로 올 때뿐이라 서버가 끊는다. 구버전 앱이 화면을
+        // 덮는 응답은 "다른 기기에서 접속 중"뿐이다 — 껐다 켜면 강제 업데이트 화면이 뜬다. 저장하지 않는다.
+        // 강제 업데이트(`MIN_SUPPORTED_VERSION`)를 올릴 때 그 버전의 `kSaveFeatureLevel` 로 함께 올린다.
+        if (saveFeatFloor > 0) {
+          final feat = incoming['feat'];
+          if ((feat is num ? feat.toInt() : 0) < saveFeatFloor) {
+            return _json({'error': 'session_taken'}, status: 409);
+          }
         }
         var r = actions.mergeSave(stored, migrateToCurrent(incoming));
         if (!r.isOk) return _json({'error': r.error}, status: r.status);

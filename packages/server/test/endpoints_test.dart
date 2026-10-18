@@ -284,6 +284,7 @@ void main() {
     GuildMissionStore? guildMissionStore,
     Map<String, Map<String, dynamic>> otherSaves = const {},
     Map<String, Object?> rpc = const {},
+    int minSaveFeat = 0,
   }) {
     fake = _Fake(
       {if (serverHasSave) 'user-1': (save ?? mySave).toJson(), ...otherSaves},
@@ -311,6 +312,7 @@ void main() {
       clock: () => _t,
       guildStore: guildStore ?? MemoryGuildStore(clock: () => _t),
       guildMissionStore: guildMissionStore ?? MemoryGuildMissionStore(),
+      minSaveFeat: minSaveFeat,
     );
   }
 
@@ -1248,6 +1250,48 @@ void main() {
       expect(res.statusCode, 200);
       expect(savedNow().gold, 999);
       expect(savedNow().activeSession, tablet);
+    });
+
+    // 2026-10-18 — 강제 업데이트 뒤에도 켜 둔 1.0.21 앱이 몇 시간씩 올렸다(정수 잘림).
+    test('MIN_SAVE_FEAT 미만 업로드는 밀려난 기기처럼 거절하고 저장하지 않는다', () async {
+      final old = mySave.copyWith(gold: 999).toJson()
+        ..['feat'] = kSaveFeatureLevel - 1;
+      final res = await post(
+        handler(
+          save: mySave.copyWith(activeSession: phone),
+          minSaveFeat: kSaveFeatureLevel,
+        ),
+        '/save',
+        {'save': old, 'session': phone},
+        token: makeToken(),
+      );
+      expect(res.statusCode, 409);
+      expect(jsonDecode(await res.readAsString())['error'], 'session_taken');
+      expect(fake.lastSaved, isNull);
+    });
+
+    test('feat 이 문턱 이상이면 통과 · 문턱 0 이면 옛 feat 도 통과', () async {
+      final res = await post(
+        handler(
+          save: mySave.copyWith(activeSession: phone),
+          minSaveFeat: kSaveFeatureLevel,
+        ),
+        '/save',
+        {'save': mySave.copyWith(gold: 999).toJson(), 'session': phone},
+        token: makeToken(),
+      );
+      expect(res.statusCode, 200);
+      expect(savedNow().gold, 999);
+
+      final old = mySave.copyWith(gold: 777).toJson()
+        ..['feat'] = kSaveFeatureLevel - 1;
+      final off = await post(
+        handler(save: mySave.copyWith(activeSession: phone)),
+        '/save',
+        {'save': old, 'session': phone},
+        token: makeToken(),
+      );
+      expect(off.statusCode, 200);
     });
 
     test('표식을 안 보내는 구버전 앱은 지금처럼 통과한다', () async {
