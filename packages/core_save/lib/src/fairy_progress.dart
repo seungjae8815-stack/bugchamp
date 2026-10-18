@@ -511,6 +511,25 @@ FairyOp levelUpFairy(FairyState s, FairyConfig cfg, String id) {
   );
 }
 
+/// 가루가 닿는 데까지 레벨을 한 번에 올린다(1.0.22 출시 점검 — 한 번에 한 레벨씩 수십 번 눌렀다).
+/// 한 레벨도 못 올리면 [levelUpFairy] 의 실패 그대로. extra: `levels`(올린 수) · `dust`(쓴 가루).
+FairyOp levelUpFairyMax(FairyState s, FairyConfig cfg, String id) {
+  var cur = levelUpFairy(s, cfg, id);
+  if (!cur.isOk) return cur;
+  var state = cur.state!;
+  var levels = 1;
+  while (true) {
+    final next = levelUpFairy(state, cfg, id);
+    if (!next.isOk) break;
+    state = next.state!;
+    levels++;
+  }
+  return FairyOp.ok(
+    state,
+    extra: {'levels': levels, 'dust': s.dust - state.dust},
+  );
+}
+
 /// 동행 요정을 정한다. null 이면 해제.
 FairyOp setFairyCompanion(FairyState s, String? id) {
   if (id == null) return FairyOp.ok(s.copyWith(clearCompanion: true));

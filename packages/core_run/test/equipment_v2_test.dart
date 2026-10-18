@@ -125,33 +125,188 @@ void main() {
       }
     });
 
-    test('정성이 쌓이면 바닥이 오른다 — 정성 10 이면 최대의 40% 아래로는 안 나온다', () {
-      final maxed = _item(
-        options: const [
-          ItemOption(kind: ItemOptionKind.attack, value: 5, polish: 9),
-          ItemOption(kind: ItemOptionKind.critDamage, value: 10),
-        ],
-      );
-      final range = items.optionPool.firstWhere(
-        (r) => r.kind == ItemOptionKind.bossDamage,
-      );
-      final lo =
-          range.min +
-          items.polishMaxStacks *
-              items.polishFloorPerStack *
-              (range.maxAt(_amber) - range.min);
-      for (var seed = 0; seed < 200; seed++) {
+    // 다듬기 v3(2026-10-16 사장님 확정) — 늘 더 좋게 · 다듬을수록 비싸게.
+    test('새 값은 늘 지금보다 높다(범위 안 위치) — 거듭 다듬으면 최대에 다가가고 내려오지 않는다', () {
+      var it = _item();
+      var pos = polishPositionOf(items, it, 0);
+      for (var i = 0; i < 12; i++) {
+        if (polishMaxed(items, it, 0, kind: ItemOptionKind.attack)) break;
+        final r = polishOptionAt(
+          rng: Random(i),
+          items: items,
+          item: it,
+          index: 0,
+          kind: ItemOptionKind.attack,
+        )!;
+        it = applyPolish(r.kept, 0, r.candidate);
+        final next = polishPositionOf(items, it, 0);
+        expect(next, greaterThanOrEqualTo(pos), reason: '$i번째');
+        pos = next;
+      }
+      expect(pos, greaterThan(0.9));
+      // 종류가 바뀌어도 범위 안 위치는 지금보다 높다.
+      for (var seed = 0; seed < 100; seed++) {
         final r = polishOptionAt(
           rng: Random(seed),
           items: items,
-          item: maxed,
+          item: _item(),
           index: 0,
-          kind: ItemOptionKind.bossDamage,
         )!;
-        expect(r.candidate.polish, items.polishMaxStacks);
-        expect(r.candidate.value, greaterThanOrEqualTo(lo - 0.05));
-        expect(r.candidate.value, lessThanOrEqualTo(range.maxAt(_amber)));
+        final now = polishPositionOf(items, _item(), 0);
+        final got = polishPositionOf(
+          items,
+          applyPolish(r.kept, 0, r.candidate),
+          0,
+        );
+        expect(got, greaterThanOrEqualTo(now - 0.01));
       }
+    });
+
+    // 2026-10-16 출시 전 검토 — 0.1 단위 반올림 + 초월 배율로 같은 값만 나오고 비용만 오르던 것.
+    group('반올림·최대 판정', () {
+      const leaf = 1; // 풀잎 — 치명 확률 최대 3, 공격 최소 = 최대 1
+      const trans = 1.15; // 초월 1단계
+      EquipItem crit(double v) => _item(
+        tier: leaf,
+        options: [
+          ItemOption(kind: ItemOptionKind.critChance, value: v),
+          const ItemOption(kind: ItemOptionKind.maxHp, value: 2),
+        ],
+      );
+
+      test('초월 ×1.15 · 치명 확률 풀잎 3.4 → 최대(3.45 는 0.1 단위로 못 닿는다)', () {
+        expect(
+          polishMaxed(
+            items,
+            crit(3.4),
+            0,
+            maxMult: trans,
+            kind: ItemOptionKind.critChance,
+          ),
+          isTrue,
+        );
+        expect(
+          polishMaxed(
+            items,
+            crit(3.3),
+            0,
+            maxMult: trans,
+            kind: ItemOptionKind.critChance,
+          ),
+          isFalse,
+        );
+        // 다른 종류로 바꾸는 다듬기·무작위는 막지 않는다.
+        expect(
+          polishMaxed(
+            items,
+            crit(3.4),
+            0,
+            maxMult: trans,
+            kind: ItemOptionKind.attack,
+          ),
+          isFalse,
+        );
+        expect(polishMaxed(items, crit(3.4), 0, maxMult: trans), isFalse);
+        // 무작위인데 최대면 지금 종류는 후보에서 빠진다.
+        for (var seed = 0; seed < 50; seed++) {
+          final r = polishOptionAt(
+            rng: Random(seed),
+            items: items,
+            item: crit(3.4),
+            index: 0,
+            maxMult: trans,
+          )!;
+          expect(r.candidate.kind, isNot(ItemOptionKind.critChance));
+        }
+      });
+
+      test('같은 종류면 새 값은 늘 지금 + 0.1 이상 · 0.1 단위로 내린 최대 이하', () {
+        for (final mult in [1.0, trans, 1.3, 1.45]) {
+          for (var seed = 0; seed < 60; seed++) {
+            var it = crit(1.0);
+            for (var i = 0; i < 40; i++) {
+              if (polishMaxed(
+                items,
+                it,
+                0,
+                maxMult: mult,
+                kind: ItemOptionKind.critChance,
+              )) {
+                break;
+              }
+              final r = polishOptionAt(
+                rng: Random(seed * 100 + i),
+                items: items,
+                item: it,
+                index: 0,
+                maxMult: mult,
+                kind: ItemOptionKind.critChance,
+              )!;
+              final before = it.options[0].value;
+              final got = r.candidate.value;
+              expect(got, greaterThanOrEqualTo(before + 0.1 - 1e-9));
+              expect(got, lessThanOrEqualTo(3 * mult + 1e-9));
+              it = applyPolish(r.kept, 0, r.candidate);
+            }
+            expect(
+              polishMaxed(
+                items,
+                it,
+                0,
+                maxMult: mult,
+                kind: ItemOptionKind.critChance,
+              ),
+              isTrue,
+              reason: '×$mult seed $seed',
+            );
+          }
+        }
+      });
+
+      test('최소 = 최대인 줄(풀잎 공격 1)도 무작위·다른 종류로 다듬을 수 있다', () {
+        final it = _item(
+          tier: leaf,
+          options: const [
+            ItemOption(kind: ItemOptionKind.attack, value: 1),
+            ItemOption(kind: ItemOptionKind.maxHp, value: 2),
+          ],
+        );
+        expect(polishMaxed(items, it, 0), isFalse);
+        expect(polishMaxed(items, it, 0, kind: ItemOptionKind.attack), isTrue);
+        expect(
+          polishMaxed(items, it, 0, kind: ItemOptionKind.critChance),
+          isFalse,
+        );
+        final r = polishOptionAt(
+          rng: Random(3),
+          items: items,
+          item: it,
+          index: 0,
+        )!;
+        expect(r.candidate.kind, isNot(ItemOptionKind.attack));
+        expect(
+          polishOptionAt(
+            rng: Random(3),
+            items: items,
+            item: it,
+            index: 0,
+            kind: ItemOptionKind.critChance,
+          )!.candidate.kind,
+          ItemOptionKind.critChance,
+        );
+      });
+    });
+
+    test('비용은 다듬은 횟수마다 ×polishCostGrowth(젤리는 5 단위)', () {
+      final c0 = forge.polishCost(_amber, pickKind: false);
+      final c2 = forge.polishCost(_amber, pickKind: false, done: 2);
+      expect(forge.polishCostGrowth, greaterThan(1));
+      expect(
+        c2.fossils,
+        (c0.fossils * forge.polishCostGrowth * forge.polishCostGrowth).round(),
+      );
+      expect(c2.jelly, greaterThan(c0.jelly));
+      expect(c2.jelly % 5, 0);
     });
 
     test('새 값 고르기는 그 줄만 바꾸고 별은 그대로', () {

@@ -14,6 +14,14 @@ import 'labels.dart';
 bool individualGradeOn(GameData data) =>
     data.petConfig?.individualGrade.enabled ?? false;
 
+/// 곤충 희귀도(1.0.22, `pets.json → bugRarity`) — 곤충마다. 꺼져 있으면 종 희귀도(예전 그대로).
+/// 곤충 한 마리의 희귀도를 보여 주는 자리는 모두 이 함수를 쓴다(앱·서버 계산과 같은 `PetConfig.rarityOf`).
+Grade bugRarityOf(GameData data, IndividualBug bug, Species sp) =>
+    data.petConfig?.rarityOf(bug, sp) ?? sp.grade;
+
+/// 곤충 희귀도가 켜졌나 — 켜지면 "종 희귀도"라는 말이 없어진다(도감의 종 색은 그대로 종 희귀도).
+bool bugRarityOn(GameData data) => data.petConfig?.bugRarity.enabled ?? false;
+
 /// 포텐셜(1~5) → 개체 등급.
 Grade gradeOfPotential(int potential) =>
     Grade.values[(potential - 1).clamp(0, Grade.values.length - 1)];
@@ -21,7 +29,7 @@ Grade gradeOfPotential(int potential) =>
 /// 곤충 **한 마리**를 보여 주는 자리의 등급 — 켜지면 개체 등급, 꺼지면 종 등급(예전 그대로).
 /// 도감·타이머·비용·드롭 필터처럼 종을 말하는 자리는 이걸 쓰지 않고 `sp.grade` 그대로 둔다.
 Grade shownGrade(GameData data, IndividualBug bug, Species sp) =>
-    individualGradeOn(data) ? bug.individualGrade : sp.grade;
+    individualGradeOn(data) ? bug.individualGrade : bugRarityOf(data, bug, sp);
 
 /// 포텐셜 표기 — 켜지면 등급 이름, 꺼지면 ★×N.
 String potentialText(AppLocalizations l, int potential, bool on) =>
@@ -31,12 +39,14 @@ String potentialText(AppLocalizations l, int potential, bool on) =>
 Color potentialColor(int potential, bool on) =>
     on ? gradeColor(gradeOfPotential(potential)) : const Color(0xFFFFC928);
 
-/// 곤충 목록 정렬 키 — **클수록 위**. 켜지면 개체 등급(포텐셜) → 종 희귀도, 꺼지면 종 등급 → 포텐셜(예전 그대로).
+/// 곤충 목록 정렬 키 — **클수록 위**. 켜지면 개체 등급(포텐셜) → 희귀도, 꺼지면 희귀도 → 포텐셜(예전 그대로).
+/// 희귀도는 곤충 희귀도([bugRarityOf], 꺼져 있으면 종 희귀도).
 ///
 /// 목록마다 "종 등급 → 포텐셜" 두 줄 비교를 따로 들고 있으면 켰을 때 한 곳씩 빠진다(2026-10-12 점검:
 /// 채집함·짝짓기·훈련소·회복실·대회가 모두 종 희귀도 우선이었다) — 그래서 한 함수로 모은다.
 int bugGradeSortKey(GameData data, IndividualBug bug) {
-  final species = data.speciesById[bug.speciesId]?.grade.index ?? -1;
+  final sp = data.speciesById[bug.speciesId];
+  final species = sp == null ? -1 : bugRarityOf(data, bug, sp).index;
   final pot = bug.potential.clamp(0, 9);
   return individualGradeOn(data) ? pot * 10 + species : species * 10 + pot;
 }
@@ -68,3 +78,25 @@ Widget individualGradeTag(
     ),
   );
 }
+
+/// 희귀도 보석(1.0.22 출시 점검) — 희귀도와 개체 등급이 같은 이름(일반~전설)·같은 색을 써서 헷갈렸다.
+/// **희귀도는 늘 보석(◆) 모양**, 개체 등급은 이름표([individualGradeTag]) — 모양으로 가른다.
+Widget rarityGem(Grade rarity, {double size = 11}) => Icon(
+  Icons.diamond_rounded,
+  size: size,
+  color: rarityGemColor(rarity),
+  shadows: const [Shadow(color: Colors.black, blurRadius: 2)],
+);
+
+/// 보석 색(어두운 배경에서 잘 보이게 — 등급 이름표보다 밝다).
+Color rarityGemColor(Grade g) => switch (g) {
+  Grade.common => const Color(0xFFB6C2CC),
+  Grade.uncommon => const Color(0xFF5CD65C),
+  Grade.rare => const Color(0xFF3FA9FF),
+  Grade.epic => const Color(0xFFC072F0),
+  Grade.legendary => const Color(0xFFFFC93C),
+};
+
+/// "희귀도 전설" — 희귀도를 글로 쓸 때는 늘 이 말머리를 붙인다(개체 등급 "전설"과 섞이지 않게).
+String rarityText(AppLocalizations l, Grade g) =>
+    l.igSpeciesRarity(gradeLabel(l, g));

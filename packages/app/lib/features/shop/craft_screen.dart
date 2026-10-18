@@ -594,8 +594,164 @@ class _GachaCard extends ConsumerWidget {
               ),
             ),
           ),
+          // 10회 뽑기(1.0.22 출시 점검) — 값·확률·천장은 한 번씩과 같다(할인 없음). 카드 고르기 없이 한 번에.
+          const SizedBox(height: 6),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton(
+              onPressed: () => _drawMany(context, ref, l, 10),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: const Color(0xFFE9A6FF),
+                side: const BorderSide(color: Color(0xFF8E4DA8)),
+              ),
+              child: Text(
+                l.gachaDrawMany('10', '${cfg.gachaJellyCost * 10}'),
+                style: const TextStyle(fontWeight: FontWeight.w900),
+              ),
+            ),
+          ),
         ],
       ),
+    );
+  }
+
+  /// [count] 번 한 번에 뽑기 — 젤리 확인 창 → 결과 한 장(알 목록).
+  Future<void> _drawMany(
+    BuildContext context,
+    WidgetRef ref,
+    AppLocalizations l,
+    int count,
+  ) async {
+    final save = ref.read(saveControllerProvider).requireValue;
+    final cfg = ref.read(gameDataProvider).requireValue.petConfig;
+    if (cfg == null) return;
+    final free = save.storageCapacity - save.bugs.length;
+    if (free < count) {
+      showCenterToast(context, l.gachaStorageNeed('$count', '$free'));
+      return;
+    }
+    final jelly = cfg.gachaJellyCost * count;
+    if (!await confirmJellySpend(
+      context,
+      title: l.gachaDrawManyTitle('$count'),
+      body: l.gachaDrawManyConfirm('$jelly', '$count'),
+      jelly: jelly,
+      actionLabel: l.gachaDrawManyTitle('$count'),
+    )) {
+      return;
+    }
+    if (!context.mounted) return;
+    final r = await ref
+        .read(saveControllerProvider.notifier)
+        .gachaDrawMany(count);
+    if (!context.mounted) return;
+    if (r.bugs.isEmpty) {
+      showCenterToast(context, switch (r.error) {
+        'storage_full' => l.gachaStorageNeed('$count', '$free'),
+        'no_jelly' => l.notEnoughJelly,
+        _ => l.gachaOff,
+      });
+      return;
+    }
+    final data = ref.read(gameDataProvider).requireValue;
+    final locale = Localizations.localeOf(context).languageCode;
+    // 좋은 것부터(개체 등급 → 희귀도 → 이색).
+    final bugs = [...r.bugs]
+      ..sort((a, b) {
+        final g = bugGradeSortKey(data, b).compareTo(bugGradeSortKey(data, a));
+        if (g != 0) return g;
+        return b.variant.index.compareTo(a.variant.index);
+      });
+    AudioService.instance.sfxRare();
+    await showGameDialog<void>(
+      context,
+      title: l.gachaResultTitle,
+      iconWidget: dialogIcon('egg'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Wrap(
+            spacing: 6,
+            runSpacing: 8,
+            alignment: WrapAlignment.center,
+            children: [
+              for (final bug in bugs)
+                if (data.speciesById[bug.speciesId] case final sp?)
+                  SizedBox(
+                    width: 64,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        bugStageImage(
+                          bug.speciesId,
+                          LifeStage.adult,
+                          size: 48,
+                          fallback: bugAvatar(sp, size: 44),
+                          skin: bug.variant == BugVariant.none
+                              ? null
+                              : SkinView(bug.variant.key),
+                        ),
+                        Text(
+                          sp.name.resolve(locale),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 10.5,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                        Text(
+                          cfg.individualGrade.enabled
+                              ? gradeLabel(l, bug.individualGrade)
+                              : '${bug.potential}★',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: gradeColor(
+                              cfg.individualGrade.enabled
+                                  ? bug.individualGrade
+                                  : bugRarityOf(data, bug, sp),
+                            ),
+                            fontSize: 10.5,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                        // 희귀도는 보석(◆)으로 — 위 줄의 개체 등급과 섞이지 않게.
+                        FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              rarityGem(bugRarityOf(data, bug, sp), size: 10),
+                              const SizedBox(width: 2),
+                              Text(
+                                gradeLabel(l, bugRarityOf(data, bug, sp)) +
+                                    (bug.variant != BugVariant.none
+                                        ? ' · ${l.dexVariant}'
+                                        : ''),
+                                style: const TextStyle(
+                                  color: Color(0xB3FFFFFF),
+                                  fontSize: 9.5,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            l.gachaResultHint,
+            textAlign: TextAlign.center,
+            style: const TextStyle(color: Color(0x99FFFFFF), fontSize: 11),
+          ),
+        ],
+      ),
+      actions: [gameDialogButton(l.actionClose, () => Navigator.pop(context))],
     );
   }
 
@@ -679,7 +835,7 @@ class _GachaCard extends ConsumerWidget {
           ),
           const SizedBox(height: 3),
           if (cfg.individualGrade.enabled)
-            // 개체 등급이 주인공 — 등급 이름을 그 색으로, 종 희귀도는 옆에 작게.
+            // 개체 등급이 주인공 — 등급 이름을 그 색으로, 희귀도(곤충마다 — 1.0.22)는 옆에 작게.
             Text.rich(
               TextSpan(
                 children: [
@@ -693,7 +849,7 @@ class _GachaCard extends ConsumerWidget {
                   ),
                   TextSpan(
                     text:
-                        ' · ${l.igSpeciesRarity(gradeLabel(l, sp.grade))}'
+                        ' · ${l.igSpeciesRarity(gradeLabel(l, bugRarityOf(data, bug, sp)))}'
                         '${bug.variant != BugVariant.none ? ' · ${l.dexVariant}!' : ''}',
                   ),
                 ],
@@ -702,7 +858,7 @@ class _GachaCard extends ConsumerWidget {
             )
           else
             Text(
-              '${gradeLabel(l, sp.grade)} · ${bug.potential}★'
+              '${gradeLabel(l, bugRarityOf(data, bug, sp))} · ${bug.potential}★'
               '${bug.variant != BugVariant.none ? ' · ${l.dexVariant}!' : ''}',
               style: const TextStyle(color: Color(0xDDFFFFFF), fontSize: 12.5),
             ),
@@ -1416,15 +1572,27 @@ void _showEggOdds(
 ) {
   final data = ref.read(gameDataProvider).requireValue;
   String pct(double v) => (v * 100).toStringAsFixed(v * 100 < 10 ? 2 : 1);
-  final gTotal = cfg.gachaWeights.values.fold<double>(0, (a, b) => a + b);
+  // 곤충 희귀도(1.0.22)가 켜지면 희귀도 표는 `bugRarity.gachaWeights` · 종은 전 종 고르게(뽑기 `gachaDraw` 와 같은 규칙).
+  final rarityOn = cfg.bugRarity.enabled;
+  final gw = rarityOn
+      ? {
+          for (final g in Grade.values)
+            if (g.index < cfg.bugRarity.gachaWeights.length &&
+                cfg.bugRarity.gachaWeights[g.index] > 0)
+              g: cfg.bugRarity.gachaWeights[g.index],
+        }
+      : cfg.gachaWeights;
+  final gTotal = gw.values.fold<double>(0, (a, b) => a + b);
   final pTotal = cfg.gachaPotentialWeights.values.fold<double>(
     0,
     (a, b) => a + b,
   );
   final ig = cfg.individualGrade;
   final igTotal = ig.gachaGradeWeights.fold<double>(0, (a, b) => a + b);
-  int speciesOf(Grade g) =>
-      data.allSpecies.where((s) => s.grade == g).length.clamp(1, 999);
+  int speciesOf(Grade g) => data.allSpecies
+      .where((s) => rarityOn || s.grade == g)
+      .length
+      .clamp(1, 999);
   const head = TextStyle(
     color: kHoney,
     fontSize: 13,
@@ -1448,12 +1616,12 @@ void _showEggOdds(
             ),
             const SizedBox(height: 4),
             for (final g in Grade.values.reversed)
-              if ((cfg.gachaWeights[g] ?? 0) > 0 && gTotal > 0)
+              if ((gw[g] ?? 0) > 0 && gTotal > 0)
                 Text(
                   l.eggOddsGradeLine(
                     gradeLabel(l, g),
-                    pct(cfg.gachaWeights[g]! / gTotal),
-                    pct(cfg.gachaWeights[g]! / gTotal / speciesOf(g)),
+                    pct(gw[g]! / gTotal),
+                    pct(gw[g]! / gTotal / speciesOf(g)),
                   ),
                   style: body.copyWith(color: gradeColor(g)),
                 ),

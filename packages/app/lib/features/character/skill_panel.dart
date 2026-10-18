@@ -509,6 +509,7 @@ class _SkillPanelState extends ConsumerState<SkillPanel> {
                           ),
                           const SizedBox(width: 6),
                           Text(
+                            maxLines: 1,
                             wild > 0
                                 ? l.skillShardProgressWild(
                                     '$have',
@@ -609,7 +610,7 @@ class _SkillPanelState extends ConsumerState<SkillPanel> {
   Future<void> _toggle(AppLocalizations l, SkillDef def) async {
     final err = await _ctrl.toggleSkill(def.id);
     if (!mounted || err == null) return;
-    showCenterToast(context, err == 'slots_full' ? l.skillSlotsFull : err);
+    showCenterToast(context, _errText(l, err));
   }
 
   /// 만능 조각을 섞어 해금 — 무엇을 얼마나 태우는지 먼저 보여 주고 확인받는다(만능은 되돌릴 수 없다).
@@ -761,6 +762,12 @@ class _SkillPanelState extends ConsumerState<SkillPanel> {
     'training_busy' => l.skillErrTrainingBusy,
     'not_enough_jelly' => l.notEnoughJelly,
     'slots_full' => l.skillSlotsFull,
+    'already_owned' => l.skillErrAlreadyOwned,
+    'not_owned' => l.skillErrNotOwned,
+    'max_level' => l.skillErrMaxLevel,
+    'not_ready' => l.skillErrNotReady,
+    'max_grade' => l.skillErrMaxGrade,
+    'no_free' => l.skillErrNoFree,
     // 매핑 안 된 서버 코드를 원문으로 띄우지 않는다(2026-10-02 출시 점검).
     _ => l.guildErrGeneric,
   };

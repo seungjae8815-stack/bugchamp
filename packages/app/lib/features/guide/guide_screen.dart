@@ -428,8 +428,9 @@ class GuideScreen extends ConsumerWidget {
                 '${forge.polishFossilPerTier}',
                 '${forge.rerollJelly}',
                 '${forge.polishKindMult}',
-                _pct(items.polishFloorPerStack),
-                _pct(items.polishFloorPerStack * items.polishMaxStacks),
+                // 다듬기 v3(2026-10-16) — 같은 줄을 다듬을 때마다 비용 배율 · 몇 번째부터 그대로인지.
+                '${forge.polishCostGrowth}',
+                '${items.polishMaxStacks}',
               ),
             ),
             _p(

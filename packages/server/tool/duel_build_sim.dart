@@ -19,6 +19,8 @@
 //   dart run tool/duel_build_sim.dart --aura=2                       # 표 번호만(쉼표로 여러 개)
 //   dart run tool/duel_build_sim.dart --team-eval                    # 종 배율(gradeScale) 점검 — 3마리 경기·1:1·대회
 //   dart run tool/duel_build_sim.dart --team-fit --rounds=10 --m=20000 --vm=60000
+//   dart run tool/duel_build_sim.dart --team-fit --flat ...            # 1.0.22 곤충 희귀도 — 종끼리 50%
+//   dart run tool/duel_build_sim.dart --rarity-fit --rm=4000           # 1.0.22 희귀도 결투 배율(전설 대 일반 65%)
 //       # 종 배율을 3마리 경기 "종 출전 승률"로 다시 맞춘다(결과 표를 species.json 에 손으로 옮긴다)
 //
 // 보는 것:
@@ -147,7 +149,11 @@ Future<void> main(List<String> args) async {
   }
 
   if (args.any(
-    (a) => a == '--team-fit' || a == '--team-eval' || a == '--event-fit',
+    (a) =>
+        a == '--team-fit' ||
+        a == '--team-eval' ||
+        a == '--event-fit' ||
+        a == '--rarity-fit',
   )) {
     _teamFit(actions, cfg, species, t0, args);
     return;
@@ -433,11 +439,14 @@ void _auraTables(
   double match(List<DuelBug> a, List<DuelBug> b) {
     // 자리(A/B)를 번갈아.
     final flip = (seed & 1) == 1;
+    final sd = seed++;
     final m = simulateDuel(
-      seed: seed++,
+      seed: sd,
       teamA: flip ? b : a,
       teamB: flip ? a : b,
       params: p,
+      // 리그 결투처럼 경기장 오행을 입힌다(엔진은 이제 자동으로 입히지 않는다).
+      arena: p.arenaOn ? duelArenaOf(sd) : null,
     );
     final w = m.winner(p);
     if (w == null) return 0.5;
@@ -717,6 +726,7 @@ void _teamFit(
       teamA: flip ? b : a,
       teamB: flip ? a : b,
       params: p,
+      arena: p.arenaOn ? duelArenaOf(seed) : null,
     );
     final w = r.winner(p);
     if (w == null) return 0.5;
@@ -882,6 +892,7 @@ void _teamFit(
               ),
               params: ep,
               spec: spec,
+              roundSeed: roundSeed,
             ).run;
           }
           sum += run.cleared;
@@ -925,16 +936,71 @@ void _teamFit(
   }
 
   var scale = Map<String, double>.from(s0);
+  if (args.contains('--rarity-fit')) {
+    // 곤충 희귀도 결투 배율(1.0.22, pets.json → bugRarity.duelMult, 2026-10-16 사장님 확정 "전설 대 일반 65%").
+    // 같은 종·같은 기질·같은 훈련의 3마리 팀끼리(거울) 한쪽만 체력·공격·방어 ×f — 승률이 목표가 되는 f 를 찾는다.
+    // 희귀도 사이는 고르게(곱으로 4등분): [1, f^¼, f^½, f^¾, f].
+    final goalR = optD('rarity-goal', 0.65);
+    final games = opt('rm', 4000);
+    final rng0 = math.Random(2026);
+    (Species, Temperament) pick() => (
+      species[rng0.nextInt(species.length)],
+      fixT ?? temps[rng0.nextInt(temps.length)],
+    );
+    final picks = [
+      for (var i = 0; i < games; i++) [pick(), pick(), pick()],
+    ];
+    double rate(double f) {
+      final up = {for (final sp in species) sp.id: scale[sp.id]! * f};
+      var w = 0.0;
+      for (var i = 0; i < games; i++) {
+        w += play(
+          team(picks[i], up, 'a'),
+          team(picks[i], scale, 'b'),
+          7001 + i,
+        );
+      }
+      return w / games;
+    }
+
+    var lo = 1.0, hi = 3.0;
+    for (var it = 0; it < 14; it++) {
+      final mid = (lo + hi) / 2;
+      if (rate(mid) < goalR) {
+        lo = mid;
+      } else {
+        hi = mid;
+      }
+    }
+    final f = (lo + hi) / 2;
+    final steps = [for (var i = 0; i <= 4; i++) math.pow(f, i / 4).toDouble()];
+    stdout.writeln(
+      '희귀도 결투 배율: 전설 대 일반 ${pct(goalR)} → ×${f.toStringAsFixed(3)} '
+      '(3마리 거울 팀 $games경기)',
+    );
+    stdout.writeln(
+      '  duelMult = [${steps.map((v) => v.toStringAsFixed(3)).join(', ')}]',
+    );
+    for (var i = 1; i <= 4; i++) {
+      stdout.writeln(
+        '  ${Grade.values[i].key} 대 일반 ${pct(rate(steps[i]))} · 한 칸 위 ${pct(rate(steps[1]))}',
+      );
+    }
+    return;
+  }
   if (args.contains('--event-fit')) {
     // 대회 전용 종 배율(event.json → duelWave.speciesScale) — 종별 도달 웨이브를 전체 평균 둘레로 모은다
     // (희귀도 기울기: 일반 −6% · 고급 −3% · 희귀 0 · 영웅 +3% · 전설 +6%). 종 배율(gradeScale)은 지금 데이터 그대로.
-    const tilt = {
-      Grade.common: 0.94,
-      Grade.uncommon: 0.97,
-      Grade.rare: 1.00,
-      Grade.epic: 1.03,
-      Grade.legendary: 1.06,
-    };
+    // --flat(1.0.22 곤충 희귀도) — 종에는 희귀도가 없으니 기울기 없이 모든 종을 같은 웨이브로.
+    final tilt = flat
+        ? {for (final g in Grade.values) g: 1.0}
+        : const {
+            Grade.common: 0.94,
+            Grade.uncommon: 0.97,
+            Grade.rare: 1.00,
+            Grade.epic: 1.03,
+            Grade.legendary: 1.06,
+          };
     final ev0 = {
       for (final sp in species)
         sp.id: actions.eventDuelSpec.speciesScaleOf(sp.id),

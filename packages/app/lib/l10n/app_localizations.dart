@@ -439,7 +439,7 @@ abstract class AppLocalizations {
   /// No description provided for @seasonTrophyReset.
   ///
   /// In en, this message translates to:
-  /// **'Trophies {from} → {to}'**
+  /// **'Stars {from} → {to}'**
   String seasonTrophyReset(int from, int to);
 
   /// No description provided for @seasonEndsIn.
@@ -535,7 +535,7 @@ abstract class AppLocalizations {
   /// No description provided for @accountDeleteBody.
   ///
   /// In en, this message translates to:
-  /// **'All bugs, currency, trophies and breeding records will be gone for good.\n\nType «{word}» below to confirm.'**
+  /// **'All bugs, currency, duel records and pairing records will be gone for good.\n\nType «{word}» below to confirm.'**
   String accountDeleteBody(String word);
 
   /// No description provided for @accountDeleteWord.
@@ -1471,7 +1471,7 @@ abstract class AppLocalizations {
   /// No description provided for @upMaxHp.
   ///
   /// In en, this message translates to:
-  /// **'Grit'**
+  /// **'Vitality'**
   String get upMaxHp;
 
   /// No description provided for @upDefense.
@@ -2005,7 +2005,7 @@ abstract class AppLocalizations {
   /// No description provided for @speciesPassiveHint.
   ///
   /// In en, this message translates to:
-  /// **'Applies while this bug is equipped as a pet. Equipping several of the same species stacks it.'**
+  /// **'Applies while this bug is equipped as a pet. Equipping several bugs with the same passive type stacks it.'**
   String get speciesPassiveHint;
 
   /// No description provided for @storageFilterLabel.
@@ -3616,6 +3616,12 @@ abstract class AppLocalizations {
   /// **'Max level'**
   String get trainMaxed;
 
+  /// No description provided for @trainFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Can\'t train right now — check the level cap or an ongoing breakthrough'**
+  String get trainFailed;
+
   /// No description provided for @trainSnack.
   ///
   /// In en, this message translates to:
@@ -5095,7 +5101,7 @@ abstract class AppLocalizations {
   /// No description provided for @pvpTicketAlreadyFull.
   ///
   /// In en, this message translates to:
-  /// **'Tickets are already full'**
+  /// **'Tickets are full — no free refill was used'**
   String get pvpTicketAlreadyFull;
 
   /// No description provided for @pvpTicketChargeFailed.
@@ -5107,7 +5113,7 @@ abstract class AppLocalizations {
   /// No description provided for @pvpTicketWhy.
   ///
   /// In en, this message translates to:
-  /// **'Tickets keep the trophy ranking about strength, not how many matches you grind.'**
+  /// **'Tickets keep the duel ranking about strength, not how many matches you grind.'**
   String get pvpTicketWhy;
 
   /// No description provided for @adDailyLimit.
@@ -6433,7 +6439,7 @@ abstract class AppLocalizations {
   /// No description provided for @polishStacks.
   ///
   /// In en, this message translates to:
-  /// **'Care {n}/{max} · next roll at least {floor}% of max'**
+  /// **'Refined {n}× (cost stops rising at {max}) · now {floor}% of max · the next value is always higher'**
   String polishStacks(String n, String max, String floor);
 
   /// No description provided for @polishRandomKind.
@@ -6445,13 +6451,13 @@ abstract class AppLocalizations {
   /// No description provided for @polishHint.
   ///
   /// In en, this message translates to:
-  /// **'Care rises whichever you keep · {have} fossils'**
+  /// **'Each polish costs more · {have} fossils'**
   String polishHint(String have);
 
   /// No description provided for @polishChooseHint.
   ///
   /// In en, this message translates to:
-  /// **'Pick one to keep — care has risen either way'**
+  /// **'The new value is higher — keep the old one if you prefer its type'**
   String get polishChooseHint;
 
   /// No description provided for @polishKeepOld.
@@ -6547,7 +6553,7 @@ abstract class AppLocalizations {
   /// No description provided for @forgeTranscendWarn.
   ///
   /// In en, this message translates to:
-  /// **'⚠️ All equipped and anvil gear disappears (including stars and care).'**
+  /// **'⚠️ All equipped and anvil gear disappears (including stars and refined options).'**
   String get forgeTranscendWarn;
 
   /// No description provided for @forgeTranscendAction.
@@ -6655,7 +6661,7 @@ abstract class AppLocalizations {
   /// No description provided for @forgeStarCarryBody.
   ///
   /// In en, this message translates to:
-  /// **'Same grade, so the new gear keeps your current gear\'s ★{stars} stars and {exp} star materials (and any upgrade in progress). Care (polish) belongs to the options, so the new gear keeps its own.\n\nSwap?'**
+  /// **'Same grade, so the new gear keeps your current gear\'s ★{stars} stars and {exp} star materials (and any upgrade in progress). Refine counts (cost steps) belong to the options, so the new gear keeps its own.\n\nSwap?'**
   String forgeStarCarryBody(String stars, String exp);
 
   /// No description provided for @starBonus.
@@ -6697,7 +6703,7 @@ abstract class AppLocalizations {
   /// No description provided for @forgeRerollHint.
   ///
   /// In en, this message translates to:
-  /// **'Grade and slot stay · use Refine to change an option'**
+  /// **'Grade and slot stay · use Refine to improve an option'**
   String get forgeRerollHint;
 
   /// No description provided for @forgeRushOn.
@@ -7303,7 +7309,7 @@ abstract class AppLocalizations {
   /// No description provided for @duelTrophy.
   ///
   /// In en, this message translates to:
-  /// **'Trophies {delta}'**
+  /// **'Stars {delta}'**
   String duelTrophy(String delta);
 
   /// No description provided for @duelResultOk.
@@ -9949,7 +9955,7 @@ abstract class AppLocalizations {
   /// No description provided for @guideElementBody.
   ///
   /// In en, this message translates to:
-  /// **'Each bug has one element. In duels, when a bug clashes with an element it restrains, it deals {mult}x damage. The red arrows show who beats whom.'**
+  /// **'Each bug has one element. In duels, when a bug clashes with an element it restrains, it deals {mult}x damage. The red arrows show who beats whom. Arenas have an element too: bugs matching it gain HP/ATK/DEF and bugs the arena beats lose some (duels: set when picking an opponent; event: every wave).'**
   String guideElementBody(String mult);
 
   /// No description provided for @guideElementLine.
@@ -10196,7 +10202,7 @@ abstract class AppLocalizations {
   /// No description provided for @fairyMergeEquipped.
   ///
   /// In en, this message translates to:
-  /// **'An equipped fairy can\'t be merged'**
+  /// **'Your companion fairy can\'t be merged'**
   String get fairyMergeEquipped;
 
   /// No description provided for @fairyAutoMergeDone.
@@ -10526,7 +10532,7 @@ abstract class AppLocalizations {
   /// No description provided for @eggOddsPity.
   ///
   /// In en, this message translates to:
-  /// **'Every {n}th draw guarantees {grade} or higher'**
+  /// **'Within {n} draws: {grade} grade or higher guaranteed'**
   String eggOddsPity(String n, String grade);
 
   /// No description provided for @eggOddsNote.
@@ -11963,7 +11969,7 @@ abstract class AppLocalizations {
   /// No description provided for @guideGearPolishBody.
   ///
   /// In en, this message translates to:
-  /// **'Refining: reroll one option line and keep the old or new value. Costs {fossil} fossils per grade step or {jelly} jelly; picking a type costs ×{mult}. Each refine adds care to that line, raising the lowest possible roll by {floor} (up to {floorMax}).'**
+  /// **'Refining: reroll one option line. The new value is always higher (if the type changes you may keep the old one). Costs {fossil} fossils per grade step or {jelly} jelly; picking a type costs ×{mult}. Each refine on the same line costs ×{floor} more (stops rising at the {floorMax}th). Lines already at max can\'t be refined.'**
   String guideGearPolishBody(
     String fossil,
     String jelly,
@@ -11993,7 +11999,7 @@ abstract class AppLocalizations {
   /// No description provided for @guideHuntDefenseBody.
   ///
   /// In en, this message translates to:
-  /// **'Monster attacks are fixed per zone. Raising Grit (HP), Toughness (defense) and Recovery directly cuts the damage you take, and the stronger you get in a zone the less it hurts. Stuck on a boss? Upgrade more in that zone and try again.'**
+  /// **'Monster attacks are fixed per zone. Raising Vitality (HP), Toughness (defense) and Recovery directly cuts the damage you take, and the stronger you get in a zone the less it hurts. Stuck on a boss? Upgrade more in that zone and try again.'**
   String get guideHuntDefenseBody;
 
   /// No description provided for @guideMissionRewardBody.
@@ -12072,13 +12078,13 @@ abstract class AppLocalizations {
   /// No description provided for @bugRarityHelp.
   ///
   /// In en, this message translates to:
-  /// **'How rare this species is. It is fixed per species and never changes. Rarer species drop less often and take longer to hatch and pair, but have bigger pet passives and give more essence.'**
+  /// **'How rare this bug is. It is rolled for each bug, so the same species can be anything from Common to Legendary. Rarer bugs take longer to hatch and pair, but give stronger pet effects, bigger passives, better duel stats and more essence.\n\nRarity is shown as a gem (◆) color and bug grade as a name tag — same names, different things.'**
   String get bugRarityHelp;
 
   /// No description provided for @igSpeciesRarity.
   ///
   /// In en, this message translates to:
-  /// **'Species rarity {grade}'**
+  /// **'Rarity {grade}'**
   String igSpeciesRarity(String grade);
 
   /// No description provided for @eggPickRarity.
@@ -12264,7 +12270,7 @@ abstract class AppLocalizations {
   /// No description provided for @igGradeFailed.
   ///
   /// In en, this message translates to:
-  /// **'Can\'t do that'**
+  /// **'Can\'t do that right now — please try again shortly'**
   String get igGradeFailed;
 
   /// No description provided for @igVaultTitle.
@@ -12348,19 +12354,19 @@ abstract class AppLocalizations {
   /// No description provided for @igPotionDailyLimit.
   ///
   /// In en, this message translates to:
-  /// **'Daily limit reached'**
+  /// **'Today\'s purchase limit reached — buy again tomorrow'**
   String get igPotionDailyLimit;
 
   /// No description provided for @gachaPityLeftGrade.
   ///
   /// In en, this message translates to:
-  /// **'Within {n} draws: {grade} or better guaranteed'**
+  /// **'Within {n} draws: {grade} grade or better guaranteed'**
   String gachaPityLeftGrade(int n, String grade);
 
   /// No description provided for @gachaDescGrade.
   ///
   /// In en, this message translates to:
-  /// **'{grade} grade or better guaranteed · 10× variant chance'**
+  /// **'{grade} grade or better guaranteed · Uncommon+ rarity · 10× variant chance'**
   String gachaDescGrade(String grade);
 
   /// No description provided for @eggOddsIndividualHead.
@@ -12372,25 +12378,25 @@ abstract class AppLocalizations {
   /// No description provided for @eggOddsSpeciesHead.
   ///
   /// In en, this message translates to:
-  /// **'Species rarity (all species of a rarity are equally likely)'**
+  /// **'Rarity (every species is equally likely)'**
   String get eggOddsSpeciesHead;
 
   /// No description provided for @igFilterTitle.
   ///
   /// In en, this message translates to:
-  /// **'Choose species rarity to keep'**
+  /// **'Choose rarity to keep'**
   String get igFilterTitle;
 
   /// No description provided for @igFilterSnack.
   ///
   /// In en, this message translates to:
-  /// **'Species below {grade} rarity are released for materials'**
+  /// **'Bugs below {grade} rarity are released for materials'**
   String igFilterSnack(String grade);
 
   /// No description provided for @igAutoFilterRarity.
   ///
   /// In en, this message translates to:
-  /// **'Target species rarity'**
+  /// **'Target rarity'**
   String get igAutoFilterRarity;
 
   /// No description provided for @igAutoFilterGrade.
@@ -12468,7 +12474,7 @@ abstract class AppLocalizations {
   /// No description provided for @guideDuelLeague.
   ///
   /// In en, this message translates to:
-  /// **'Each week you compete with your own league for stars (win points). If {min}+ players battled that week, the top {up}% promote and the bottom {down}% demote; with fewer than {min}, nobody promotes. Rank jelly starts at {reward}+ players and goes to the top half of players, reduced in proportion until there are {full}. Leagues with fewer than {reward} players merge into the league below at settlement, and skipping a week drops you one league.'**
+  /// **'Each week you compete with your own league for stars (earned by winning, never lost). If {min}+ players battled that week, the top {up}% promote and the bottom {down}% demote; with fewer than {min}, nobody promotes. Rank jelly starts at {reward}+ players and goes to the top half of players, reduced in proportion until there are {full}. Leagues with fewer than {reward} players merge into the league below at settlement, and skipping a week drops you one league.'**
   String guideDuelLeague(int min, int up, int down, int reward, int full);
 
   /// No description provided for @igEssenceWarnTitle.
@@ -12690,25 +12696,25 @@ abstract class AppLocalizations {
   /// No description provided for @rarityFilterAll.
   ///
   /// In en, this message translates to:
-  /// **'All species'**
+  /// **'All bugs'**
   String get rarityFilterAll;
 
   /// No description provided for @rarityFilterAtLeast.
   ///
   /// In en, this message translates to:
-  /// **'{grade}+ species'**
+  /// **'{grade}+ rarity'**
   String rarityFilterAtLeast(String grade);
 
   /// No description provided for @rarityFilterOnly.
   ///
   /// In en, this message translates to:
-  /// **'{grade} species only'**
+  /// **'{grade} bugs only'**
   String rarityFilterOnly(String grade);
 
   /// No description provided for @rarityFilterHint.
   ///
   /// In en, this message translates to:
-  /// **'Filters by each species\' fixed rarity — not by an individual bug\'s grade. Bugs you already own are not affected.'**
+  /// **'Filters by each bug\'s rarity — not by its grade. Bugs you already own are not affected.'**
   String get rarityFilterHint;
 
   /// No description provided for @storageViewButton.
@@ -12804,7 +12810,7 @@ abstract class AppLocalizations {
   /// No description provided for @passiveCardHint.
   ///
   /// In en, this message translates to:
-  /// **'Grows with this bug\'s grade and its species rarity.'**
+  /// **'Grows with this bug\'s grade and rarity.'**
   String get passiveCardHint;
 
   /// No description provided for @passiveNone.
@@ -12906,7 +12912,7 @@ abstract class AppLocalizations {
   /// No description provided for @dexPassiveV2.
   ///
   /// In en, this message translates to:
-  /// **'Pet passives differ per bug (they grow with the bug\'s grade and species rarity)'**
+  /// **'Pet passives differ per bug (they grow with the bug\'s grade and rarity)'**
   String get dexPassiveV2;
 
   /// No description provided for @dexPassiveLegacy.
@@ -12948,7 +12954,7 @@ abstract class AppLocalizations {
   /// No description provided for @guidePassiveBody.
   ///
   /// In en, this message translates to:
-  /// **'Only bugs equipped as pets raise one hunting stat (the same type from several pets adds up). The type differs per bug — bugs from before the update keep their species\' passive type.\nSize = individual grade ({grade}) × species rarity ({rarity}) × innate strength ({roll}–100%). It grows as you grade up; the exact value shows after hatching.'**
+  /// **'Only bugs equipped as pets raise one hunting stat (the same type from several pets adds up). The type differs per bug.\nSize = individual grade ({grade}) × rarity ({rarity}) × innate strength ({roll}–100%). It grows as you grade up; the exact value shows after hatching.'**
   String guidePassiveBody(String grade, String rarity, String roll);
 
   /// No description provided for @guidePassiveReroll.
@@ -12984,7 +12990,7 @@ abstract class AppLocalizations {
   /// No description provided for @whatsNew21Passive.
   ///
   /// In en, this message translates to:
-  /// **'Pet passives now grow with grade and species rarity — most older bugs dropped, so each gets 5 free rerolls'**
+  /// **'Pet passives now grow with grade and rarity — most older bugs dropped, so each gets 5 free rerolls'**
   String get whatsNew21Passive;
 
   /// No description provided for @whatsNew21Egg.
@@ -13044,7 +13050,7 @@ abstract class AppLocalizations {
   /// No description provided for @passiveRerollFreeHint.
   ///
   /// In en, this message translates to:
-  /// **'Bugs from before the update get {n} free rerolls.'**
+  /// **'Bugs from before 1.0.21 get {n} free passive-size rerolls.'**
   String passiveRerollFreeHint(String n);
 
   /// No description provided for @passiveRerollTitleBug.
@@ -13064,6 +13070,540 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'1.0.21 gift — every bug gets one free respec (no wait)'**
   String get respecGift1021Toast;
+
+  /// No description provided for @dexBestRarity.
+  ///
+  /// In en, this message translates to:
+  /// **'Best rarity'**
+  String get dexBestRarity;
+
+  /// No description provided for @rarityUpBtn.
+  ///
+  /// In en, this message translates to:
+  /// **'Raise rarity {have}/{need}'**
+  String rarityUpBtn(int have, int need);
+
+  /// No description provided for @rarityUpTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Raise rarity'**
+  String get rarityUpTitle;
+
+  /// No description provided for @rarityUpConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Uses {n} bugs of the same species with {grade} rarity to raise this bug to {next} rarity.\nThe material bugs disappear (trained, graded-up, gacha, equipped and locked bugs are never used).'**
+  String rarityUpConfirm(int n, String grade, String next);
+
+  /// No description provided for @rarityUpNeed.
+  ///
+  /// In en, this message translates to:
+  /// **'Needs {need} bugs of the same species with {grade} rarity (you have {have} · trained, graded-up, gacha, equipped and locked bugs don\'t count)'**
+  String rarityUpNeed(int need, String grade, int have);
+
+  /// No description provided for @rarityUpDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Rarity raised to {grade}!'**
+  String rarityUpDone(String grade);
+
+  /// No description provided for @rarityUpMax.
+  ///
+  /// In en, this message translates to:
+  /// **'Already the highest rarity'**
+  String get rarityUpMax;
+
+  /// No description provided for @rarityUpGo.
+  ///
+  /// In en, this message translates to:
+  /// **'Raise'**
+  String get rarityUpGo;
+
+  /// No description provided for @arenaName.
+  ///
+  /// In en, this message translates to:
+  /// **'{arena} arena'**
+  String arenaName(String arena);
+
+  /// No description provided for @arenaBugUp.
+  ///
+  /// In en, this message translates to:
+  /// **'{el} bugs +{pct}%'**
+  String arenaBugUp(String el, String pct);
+
+  /// No description provided for @arenaBugDown.
+  ///
+  /// In en, this message translates to:
+  /// **'{el} bugs −{pct}%'**
+  String arenaBugDown(String el, String pct);
+
+  /// No description provided for @arenaStatsNote.
+  ///
+  /// In en, this message translates to:
+  /// **'(HP/ATK/DEF)'**
+  String get arenaStatsNote;
+
+  /// No description provided for @igLegacyRoll.
+  ///
+  /// In en, this message translates to:
+  /// **'Missed stat rolls'**
+  String get igLegacyRoll;
+
+  /// No description provided for @igLegacyRollDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Rolls this bug missed because its grade rose under the old rules — {n} free rolls left (only better values stay)'**
+  String igLegacyRollDesc(int n);
+
+  /// No description provided for @igLegacyRollGo.
+  ///
+  /// In en, this message translates to:
+  /// **'Roll'**
+  String get igLegacyRollGo;
+
+  /// No description provided for @polishMaxed.
+  ///
+  /// In en, this message translates to:
+  /// **'This line is already at max'**
+  String get polishMaxed;
+
+  /// No description provided for @rarityUpFodderHead.
+  ///
+  /// In en, this message translates to:
+  /// **'Material bugs'**
+  String get rarityUpFodderHead;
+
+  /// No description provided for @polishJellyConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Refine this line for {jelly} jelly? The new value is always higher.'**
+  String polishJellyConfirm(int jelly);
+
+  /// No description provided for @polishApplied.
+  ///
+  /// In en, this message translates to:
+  /// **'The option got better!'**
+  String get polishApplied;
+
+  /// No description provided for @polishChanged.
+  ///
+  /// In en, this message translates to:
+  /// **'The gear changed meanwhile, so the new value wasn\'t applied (the cost was already paid)'**
+  String get polishChanged;
+
+  /// No description provided for @igNoPotion.
+  ///
+  /// In en, this message translates to:
+  /// **'Not enough growth potions'**
+  String get igNoPotion;
+
+  /// No description provided for @igLegacyRollNone.
+  ///
+  /// In en, this message translates to:
+  /// **'No free rolls left'**
+  String get igLegacyRollNone;
+
+  /// No description provided for @passiveRerollNoFree.
+  ///
+  /// In en, this message translates to:
+  /// **'No free rerolls left'**
+  String get passiveRerollNoFree;
+
+  /// No description provided for @passiveRerollPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick the previous reroll result first'**
+  String get passiveRerollPending;
+
+  /// No description provided for @passiveRerollRange.
+  ///
+  /// In en, this message translates to:
+  /// **'Same kind · size rerolls between {min} and {max}'**
+  String passiveRerollRange(String min, String max);
+
+  /// No description provided for @passiveRerollMaxNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Max at current grade & rarity: {max}'**
+  String passiveRerollMaxNow(String max);
+
+  /// No description provided for @igLegacyRollAllPotions.
+  ///
+  /// In en, this message translates to:
+  /// **'\"Roll all {n}\" uses {total} potions in total'**
+  String igLegacyRollAllPotions(int n, String total);
+
+  /// No description provided for @duelOfferExpired.
+  ///
+  /// In en, this message translates to:
+  /// **'The opponents changed — tap Start Battle again'**
+  String get duelOfferExpired;
+
+  /// No description provided for @duelTeamInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick your team again (adults only, 3 bugs)'**
+  String get duelTeamInvalid;
+
+  /// No description provided for @trainAlreadyDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Already finished'**
+  String get trainAlreadyDone;
+
+  /// No description provided for @trainMaxAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Max'**
+  String get trainMaxAction;
+
+  /// No description provided for @trainMaxSnack.
+  ///
+  /// In en, this message translates to:
+  /// **'Trained +{n} levels!'**
+  String trainMaxSnack(int n);
+
+  /// No description provided for @igLegacyRollAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All {n}'**
+  String igLegacyRollAll(int n);
+
+  /// No description provided for @breedingExpandedSnack.
+  ///
+  /// In en, this message translates to:
+  /// **'Pairing slot added'**
+  String get breedingExpandedSnack;
+
+  /// No description provided for @maxShort.
+  ///
+  /// In en, this message translates to:
+  /// **'MAX'**
+  String get maxShort;
+
+  /// No description provided for @whatsNew22Rarity.
+  ///
+  /// In en, this message translates to:
+  /// **'Rarity is now rolled per bug — the same species can be Common to Legendary. Your existing bugs got a new rarity and passive type too'**
+  String get whatsNew22Rarity;
+
+  /// No description provided for @whatsNew22RarityUp.
+  ///
+  /// In en, this message translates to:
+  /// **'Raise rarity: use 3 bugs of the same species and rarity to raise one step. In storage the gem (◆) shows rarity, a green arrow means it can go up, and you can raise them all at once'**
+  String get whatsNew22RarityUp;
+
+  /// No description provided for @whatsNew22Arena.
+  ///
+  /// In en, this message translates to:
+  /// **'Arenas now have an element — matching bugs +10%, bugs the arena beats −10% (duels: shown when picking an opponent; event: changes every wave)'**
+  String get whatsNew22Arena;
+
+  /// No description provided for @whatsNew22LegacyRoll.
+  ///
+  /// In en, this message translates to:
+  /// **'Bugs that were high grade before the update get their missed stat rolls for free (bug details → grade)'**
+  String get whatsNew22LegacyRoll;
+
+  /// No description provided for @whatsNew22Polish.
+  ///
+  /// In en, this message translates to:
+  /// **'Gear refining now always gives a better value (the cost rises each time)'**
+  String get whatsNew22Polish;
+
+  /// No description provided for @whatsNew22Convenience.
+  ///
+  /// In en, this message translates to:
+  /// **'Free ticket refills stop at full · hold ＋/－ when editing training · Max button for leveling · text overflow and messages fixed'**
+  String get whatsNew22Convenience;
+
+  /// No description provided for @whatsNew22Power.
+  ///
+  /// In en, this message translates to:
+  /// **'Duel species multipliers were rebalanced evenly, so most power numbers go up (win odds math is unchanged)'**
+  String get whatsNew22Power;
+
+  /// No description provided for @igLegacyRollDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Stat quality improved'**
+  String get igLegacyRollDone;
+
+  /// No description provided for @igLegacyPotionHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Each potion adds +{n} to every stat after the roll (up to 100) — values never go down'**
+  String igLegacyPotionHint(String n);
+
+  /// No description provided for @fairyErrBoxMax.
+  ///
+  /// In en, this message translates to:
+  /// **'The fairy box is already at its maximum size'**
+  String get fairyErrBoxMax;
+
+  /// No description provided for @fairyErrNestBusy.
+  ///
+  /// In en, this message translates to:
+  /// **'There\'s already an egg in the nest'**
+  String get fairyErrNestBusy;
+
+  /// No description provided for @fairyErrNoEgg.
+  ///
+  /// In en, this message translates to:
+  /// **'You have no fairy eggs'**
+  String get fairyErrNoEgg;
+
+  /// No description provided for @fairyErrNoStone.
+  ///
+  /// In en, this message translates to:
+  /// **'You don\'t have that element stone'**
+  String get fairyErrNoStone;
+
+  /// No description provided for @fairyErrNestEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'The nest is empty'**
+  String get fairyErrNestEmpty;
+
+  /// No description provided for @fairyErrNotReady.
+  ///
+  /// In en, this message translates to:
+  /// **'It hasn\'t hatched yet'**
+  String get fairyErrNotReady;
+
+  /// No description provided for @fairyErrAlreadyReady.
+  ///
+  /// In en, this message translates to:
+  /// **'It has already hatched — tap Collect'**
+  String get fairyErrAlreadyReady;
+
+  /// No description provided for @fairyErrNoAccel.
+  ///
+  /// In en, this message translates to:
+  /// **'You have no accelerators'**
+  String get fairyErrNoAccel;
+
+  /// No description provided for @fairyErrNoFairy.
+  ///
+  /// In en, this message translates to:
+  /// **'Fairy not found — please reopen this screen'**
+  String get fairyErrNoFairy;
+
+  /// No description provided for @fairyErrCompanion.
+  ///
+  /// In en, this message translates to:
+  /// **'Your companion fairy can\'t be merged or released'**
+  String get fairyErrCompanion;
+
+  /// No description provided for @fairyErrMismatch.
+  ///
+  /// In en, this message translates to:
+  /// **'Only fairies of the same kind and grade can be merged'**
+  String get fairyErrMismatch;
+
+  /// No description provided for @fairyErrMaxGrade.
+  ///
+  /// In en, this message translates to:
+  /// **'Already at the highest grade'**
+  String get fairyErrMaxGrade;
+
+  /// No description provided for @fairyErrMaxLevel.
+  ///
+  /// In en, this message translates to:
+  /// **'Already at max level'**
+  String get fairyErrMaxLevel;
+
+  /// No description provided for @fairyErrRerollPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick the result of your last reroll first'**
+  String get fairyErrRerollPending;
+
+  /// No description provided for @skillErrAlreadyOwned.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'ve already unlocked this skill'**
+  String get skillErrAlreadyOwned;
+
+  /// No description provided for @skillErrNotOwned.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlock this skill first'**
+  String get skillErrNotOwned;
+
+  /// No description provided for @skillErrMaxLevel.
+  ///
+  /// In en, this message translates to:
+  /// **'Already at max level'**
+  String get skillErrMaxLevel;
+
+  /// No description provided for @skillErrNotReady.
+  ///
+  /// In en, this message translates to:
+  /// **'Training isn\'t finished yet'**
+  String get skillErrNotReady;
+
+  /// No description provided for @skillErrMaxGrade.
+  ///
+  /// In en, this message translates to:
+  /// **'The highest grade can\'t go any higher'**
+  String get skillErrMaxGrade;
+
+  /// No description provided for @skillErrNoFree.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'ve already used today\'s free draw'**
+  String get skillErrNoFree;
+
+  /// No description provided for @injuryHealNotInjured.
+  ///
+  /// In en, this message translates to:
+  /// **'Already recovered'**
+  String get injuryHealNotInjured;
+
+  /// No description provided for @injuryHealNetwork.
+  ///
+  /// In en, this message translates to:
+  /// **'Contest injuries can only be healed while connected to the server. Please try again shortly'**
+  String get injuryHealNetwork;
+
+  /// No description provided for @injuryHealAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Heal all · {n} jelly'**
+  String injuryHealAll(Object n);
+
+  /// No description provided for @injuryHealAllLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Heal all'**
+  String get injuryHealAllLabel;
+
+  /// No description provided for @injuryHealAllConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Heal all {count} bugs now for {n} jelly?'**
+  String injuryHealAllConfirm(Object count, Object n);
+
+  /// No description provided for @injuryHealAllDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Healed {count} bugs'**
+  String injuryHealAllDone(Object count);
+
+  /// No description provided for @fairyLevelUpMax.
+  ///
+  /// In en, this message translates to:
+  /// **'To Lv.{lv}'**
+  String fairyLevelUpMax(Object lv);
+
+  /// No description provided for @fairyLevelUpMaxDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Now Lv.{lv}'**
+  String fairyLevelUpMaxDone(Object lv);
+
+  /// No description provided for @gachaDrawMany.
+  ///
+  /// In en, this message translates to:
+  /// **'Draw {count} · {n} jelly'**
+  String gachaDrawMany(Object count, Object n);
+
+  /// No description provided for @gachaDrawManyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Draw {count}'**
+  String gachaDrawManyTitle(Object count);
+
+  /// No description provided for @gachaDrawManyConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Spend {n} jelly to draw {count} eggs at once?\nRates and pity are the same as drawing one at a time.'**
+  String gachaDrawManyConfirm(String n, String count);
+
+  /// No description provided for @gachaStorageNeed.
+  ///
+  /// In en, this message translates to:
+  /// **'You need {count} free storage slots (you have {free})'**
+  String gachaStorageNeed(Object count, Object free);
+
+  /// No description provided for @rarityAutoTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto rarity up'**
+  String get rarityAutoTitle;
+
+  /// No description provided for @rarityAutoBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Gathers bugs of the same species and rarity to raise rarity.\nRarity ups: {ups} · bugs used as material: {fodder}'**
+  String rarityAutoBody(String ups, String fodder);
+
+  /// No description provided for @rarityAutoSafe.
+  ///
+  /// In en, this message translates to:
+  /// **'Trained, locked, equipped, graded-up and gacha bugs are never used as material. Your most valued bugs go up first.'**
+  String get rarityAutoSafe;
+
+  /// No description provided for @rarityAutoRun.
+  ///
+  /// In en, this message translates to:
+  /// **'Raise now'**
+  String get rarityAutoRun;
+
+  /// No description provided for @rarityAutoShowList.
+  ///
+  /// In en, this message translates to:
+  /// **'Show eligible bugs'**
+  String get rarityAutoShowList;
+
+  /// No description provided for @rarityAutoDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Rarity raised: {ups}'**
+  String rarityAutoDone(Object ups);
+
+  /// No description provided for @rarityAutoNone.
+  ///
+  /// In en, this message translates to:
+  /// **'No bugs can have their rarity raised right now'**
+  String get rarityAutoNone;
+
+  /// No description provided for @storageViewRarity.
+  ///
+  /// In en, this message translates to:
+  /// **'Rarity'**
+  String get storageViewRarity;
+
+  /// No description provided for @storageViewRarityAtLeast.
+  ///
+  /// In en, this message translates to:
+  /// **'◆{grade}+'**
+  String storageViewRarityAtLeast(Object grade);
+
+  /// No description provided for @storageViewRarityUp.
+  ///
+  /// In en, this message translates to:
+  /// **'Rarity up ready'**
+  String get storageViewRarityUp;
+
+  /// No description provided for @incubatorAutoPlace.
+  ///
+  /// In en, this message translates to:
+  /// **'Place best eggs ({n})'**
+  String incubatorAutoPlace(Object n);
+
+  /// No description provided for @incubatorAutoPlaced.
+  ///
+  /// In en, this message translates to:
+  /// **'Eggs placed in the incubator: {n}'**
+  String incubatorAutoPlaced(Object n);
+
+  /// No description provided for @whatsNew22Convenience2.
+  ///
+  /// In en, this message translates to:
+  /// **'Draw 10 eggs at once · Heal all in the recovery room · Place best eggs in the incubator · Level fairies up in one go · Hunting upgrade Grit renamed to Vitality'**
+  String get whatsNew22Convenience2;
 }
 
 class _AppLocalizationsDelegate

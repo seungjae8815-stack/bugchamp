@@ -50,6 +50,8 @@ class DuelParams {
     this.tossAirSeconds = 0.55,
     this.tossLandDamage = 0.18,
     this.restrainMult = 1.3,
+    this.arenaSame = 0,
+    this.arenaRestrained = 0,
     this.launchSpeedMult = 1.1,
     this.launchBonusMax = 0.10,
     this.launchAuto = 0.6,
@@ -194,6 +196,14 @@ class DuelParams {
 
   /// 오행 상극 배율(피해·밀어내기).
   final double restrainMult;
+
+  /// 경기장 오행(2026-10-16 사장님 확정, `docs/design_arena_element.md`) — 경기장과 같은 오행 곤충 체력·공격·방어
+  /// ×(1 + [arenaSame]) · 경기장이 이기는(상극) 오행 곤충 ×(1 − [arenaRestrained]). 둘 다 0 이면 꺼짐(옛 규칙).
+  final double arenaSame;
+  final double arenaRestrained;
+
+  /// 경기장 효과가 켜졌나.
+  bool get arenaOn => arenaSame != 0 || arenaRestrained != 0;
 
   /// 첫 돌진(던져진 직후) 속도 = 최고 속도 × launchSpeedMult × (1 + 게이지 × launchBonusMax).
   final double launchSpeedMult;
@@ -413,6 +423,8 @@ class DuelParams {
       tossAirSeconds: n('tossAirSeconds', d.tossAirSeconds),
       tossLandDamage: n('tossLandDamage', d.tossLandDamage),
       restrainMult: n('restrainMult', d.restrainMult),
+      arenaSame: n('arenaSame', d.arenaSame),
+      arenaRestrained: n('arenaRestrained', d.arenaRestrained),
       launchSpeedMult: n('launchSpeedMult', d.launchSpeedMult),
       launchBonusMax: n('launchBonusMax', d.launchBonusMax),
       launchAuto: n('launchAuto', d.launchAuto),

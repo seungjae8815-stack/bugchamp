@@ -1,4 +1,5 @@
 import 'package:core_battle/core_battle.dart';
+import 'package:core_models/core_models.dart';
 
 /// 결투(곤충 배틀 스타디움) 세션 — 판마다 던지기 게이지를 받아 서버가 한 판씩 확정한다.
 ///
@@ -26,6 +27,7 @@ class DuelSession {
     this.clutchScores,
     this.pendingLaunch,
     this.pendingIndex,
+    this.arena,
   });
 
   final String id;
@@ -70,6 +72,10 @@ class DuelSession {
   /// (같은 위기에 점수를 두 번 넣거나 앞질러 넣지 못하게).
   final int? pendingIndex;
 
+  /// 경기장 오행(2026-10-16, `docs/design_arena_element.md`) — 상대 후보 제안 때 서버가 정해 보여 준 값.
+  /// null = 옛 세션(경기장 효과 없음 — 그 시절 판정 그대로).
+  final Element? arena;
+
   /// 위기에서 멈춰 탭 점수를 기다리는 중인가.
   bool get clutchPending => pendingLaunch != null && pendingIndex != null;
 
@@ -107,6 +113,7 @@ class DuelSession {
     clutchScores: clearClutch ? null : clutchScores ?? this.clutchScores,
     pendingLaunch: clearClutch ? null : pendingLaunch ?? this.pendingLaunch,
     pendingIndex: clearClutch ? null : pendingIndex ?? this.pendingIndex,
+    arena: arena,
   );
 
   Map<String, dynamic> toJson() => {
@@ -130,6 +137,7 @@ class DuelSession {
     'clutch': ?clutchScores,
     'pendLaunch': ?pendingLaunch,
     'pendIdx': ?pendingIndex,
+    'arena': ?arena?.key,
   };
 
   static bool isDuel(Map<String, dynamic> j) => j['kind'] == 'duel';
@@ -166,6 +174,9 @@ class DuelSession {
         : null,
     pendingLaunch: (j['pendLaunch'] as num?)?.toDouble(),
     pendingIndex: (j['pendIdx'] as num?)?.toInt(),
+    arena: j['arena'] is String
+        ? Element.fromKeyOrNull(j['arena'] as String)
+        : null,
   );
 }
 

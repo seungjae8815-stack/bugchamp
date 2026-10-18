@@ -466,6 +466,17 @@ class DexScreen extends ConsumerWidget {
     final found = entry != null;
     final conquered = entry?.conquered(_needLevel(context)) ?? false;
     final variant = entry?.variantFound ?? false;
+    // 곤충 희귀도(1.0.22) — 종에 희귀도가 없으니 칸 테두리는 그 종으로 얻은 **최고 희귀도** 색(없으면 회색).
+    final rarityOn =
+        ProviderScope.containerOf(
+          context,
+        ).read(gameDataProvider).value?.petConfig?.bugRarity.enabled ??
+        false;
+    final frameColor = rarityOn
+        ? (entry?.maxRarity == null
+              ? const Color(0xFF8A8F94)
+              : gradeColor(entry!.maxRarity!))
+        : gradeColor(sp.grade);
     // 한 종을 **끝까지** 모았는가 = 발견 + 정복 + 이색. 하나씩 채워 나가는
     // 느낌을 주려면 "완료"라는 종착점이 눈에 보여야 한다(2026-08-31 지시).
     final complete = found && conquered && variant;
@@ -488,7 +499,7 @@ class DexScreen extends ConsumerWidget {
                 ? const Color(0xFFCE7AE0)
                 : conquered
                 ? _honey
-                : gradeColor(sp.grade).withValues(alpha: found ? 0.7 : 0.18),
+                : frameColor.withValues(alpha: found ? 0.7 : 0.18),
             width: complete ? 2 : (conquered ? 1.6 : 1.2),
           ),
           boxShadow: complete
@@ -624,6 +635,18 @@ class DexScreen extends ConsumerWidget {
           context,
         ).read(gameDataProvider).value?.petConfig?.individualGrade.enabled ??
         false;
+    // 곤충 희귀도(1.0.22) — 켜지면 종 희귀도 대신 이 종으로 얻은 최고 희귀도를 보여 준다.
+    final rarityOn =
+        ProviderScope.containerOf(
+          context,
+        ).read(gameDataProvider).value?.petConfig?.bugRarity.enabled ??
+        false;
+    // 패시브 종류도 업데이트 전 곤충까지 곤충마다(`legacyRandom`) — 종 패시브 줄을 감춘다.
+    final legacyRandom =
+        ProviderScope.containerOf(
+          context,
+        ).read(gameDataProvider).value?.petConfig?.passiveV2.legacyRandom ??
+        false;
     // 펫 패시브 v2(2026-10-14) — 켜지면 패시브는 개체마다 달라 종 하나로 말할 수 없다.
     final passiveV2On =
         ProviderScope.containerOf(
@@ -645,16 +668,18 @@ class DexScreen extends ConsumerWidget {
             )
           else ...[
             // 켜지면 종 등급은 "종 희귀도"다 — 등급 이름만 두면 개체 등급처럼 읽힌다.
-            Text(
-              gradeOn
-                  ? l.igSpeciesRarity(gradeLabel(l, sp.grade))
-                  : gradeLabel(l, sp.grade),
-              style: TextStyle(
-                color: gradeColor(sp.grade),
-                fontWeight: FontWeight.w900,
-                fontSize: 12.5,
+            // 곤충 희귀도(1.0.22)가 켜지면 종에는 희귀도가 없다 — 이 줄 대신 아래 "최고 희귀도" 줄.
+            if (!rarityOn)
+              Text(
+                gradeOn
+                    ? l.igSpeciesRarity(gradeLabel(l, sp.grade))
+                    : gradeLabel(l, sp.grade),
+                style: TextStyle(
+                  color: gradeColor(sp.grade),
+                  fontWeight: FontWeight.w900,
+                  fontSize: 12.5,
+                ),
               ),
-            ),
             if (sp.desc != null) ...[
               const SizedBox(height: 6),
               Text(
@@ -677,6 +702,11 @@ class DexScreen extends ConsumerWidget {
                     potentialText(l, entry.maxPotential, true),
                   )
                 : _row(l.dexMaxPotential, '${entry.maxPotential}★'),
+            if (rarityOn)
+              _row(
+                l.dexBestRarity,
+                entry.maxRarity == null ? '—' : gradeLabel(l, entry.maxRarity!),
+              ),
             // 미달이면 **얼마나 남았는지** 보여준다 — "아니오"만 뜨면 무엇을
             // 해야 하는지 알 수 없다(수련 레벨이 기준이라는 걸 화면에서 처음 본다).
             _row(
@@ -764,7 +794,7 @@ class DexScreen extends ConsumerWidget {
                       ),
                     ),
                     // 업데이트 전 곤충은 종 패시브 **종류**를 그대로 가진다(크기는 새 규칙).
-                    if (sp.passive != null) ...[
+                    if (sp.passive != null && !legacyRandom) ...[
                       const SizedBox(height: 2),
                       Text(
                         l.dexPassiveLegacy(

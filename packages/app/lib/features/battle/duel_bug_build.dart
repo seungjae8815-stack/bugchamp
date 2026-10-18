@@ -96,6 +96,8 @@ DuelBug duelBugFor(
         sizeStatMult: bug.statMultiplier(sp),
         // 개체 등급 — 화면 표시 전용(상대 곤충 창, 2026-10-15). 판정에는 안 쓴다.
         potential: bug.potential,
+        // 곤충 희귀도 — 화면 표시 전용(1.0.22). 서버 `validateDuelTeam` 과 같은 값.
+        rarity: data.petConfig?.rarityOf(bug, sp),
       )
       .withTraining(
         evade: t.evade,
@@ -106,7 +108,7 @@ DuelBug duelBugFor(
         tech: t.tech,
         grit: t.grit,
       )
-      .withGradeMods(data.petConfig?.individualGrade, bug, sp)
+      .withGradeMods(data.petConfig, bug, sp)
       .withAuraOf(bug, sp, data, save);
 }
 
@@ -154,13 +156,14 @@ extension on DuelBug {
     return withAura(a.role, a.value);
   }
 
-  DuelBug withGradeMods(
-    IndividualGradeConfig? cfg,
-    IndividualBug bug,
-    Species sp,
-  ) {
+  DuelBug withGradeMods(PetConfig? cfg, IndividualBug bug, Species sp) {
     if (cfg == null) return this;
-    final m = cfg.battleMods(bug, sp);
+    // 곤충 희귀도 결투 배율(1.0.22) — 서버 `validateDuelTeam` 과 같은 몫.
+    final m = cfg.individualGrade.battleMods(
+      bug,
+      sp,
+      rarityMult: cfg.duelRarityMultOf(bug, sp),
+    );
     return withTraining(
       hpMult: m.hp,
       atkMult: m.atk,

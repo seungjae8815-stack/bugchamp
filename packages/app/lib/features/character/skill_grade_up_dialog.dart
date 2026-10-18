@@ -165,7 +165,7 @@ class _SkillGradeUpDialogState extends ConsumerState<SkillGradeUpDialog> {
                 ),
                 TextButton(
                   onPressed: () => setState(() => _times = maxTimes),
-                  child: const Text('MAX'),
+                  child: Text(AppLocalizations.of(context).maxShort),
                 ),
               ],
             ),
@@ -331,7 +331,10 @@ class _SkillGradeUpDialogState extends ConsumerState<SkillGradeUpDialog> {
         .gradeUpSkillShards(from: _from, sources: order, times: times);
     if (!mounted) return;
     if (err != null) {
-      showCenterToast(context, l.skillErrNotEnoughShards);
+      showCenterToast(
+        context,
+        err == 'max_grade' ? l.skillErrMaxGrade : l.skillErrNotEnoughShards,
+      );
       return;
     }
     showCenterToast(context, l.skillGradeUpDone('$times', gradeLabel(l, to)));

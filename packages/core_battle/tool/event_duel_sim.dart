@@ -158,6 +158,7 @@ void main(List<String> args) {
         ),
         params: p,
         spec: spec,
+        roundSeed: roundSeed,
         launch: gauge,
       );
       run = step.run;

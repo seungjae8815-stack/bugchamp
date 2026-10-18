@@ -188,6 +188,7 @@ class LocalEventDuelDriver extends EventDuelDriver {
       spec: spec,
       launch: launch,
       clutchScores: List.of(_scores),
+      roundSeed: roundSeed,
     );
     // 위기에서 멈췄다 — 진행(run)은 그대로(점수를 받으면 같은 웨이브를 처음부터 다시).
     if (step.bout.pending != null) {
@@ -442,9 +443,16 @@ Future<void> playEventDuel({
         foeAt: foe,
         foeIndex: () => driver.preview.wave - 1,
         header: () => lz.eventWaveHeader(driver.preview.wave),
+        // 경기장 오행(2026-10-16) — 웨이브마다 바뀐다. 효과 줄은 경기 화면이 이름 줄 아래에 따로 그린다
+        // (머리말에 붙이면 세 언어 모두 넘쳤다 — 출시 전 점검).
+        arenaEffect: eventArenaOf(roundSeed, 1, params) != null,
         driver: driver,
         params: params,
-        arena: mine.element,
+        // 경기장 오행(2026-10-16) — 웨이브마다(회차 seed — 모두 같다). 효과가 꺼져 있으면 예전처럼 내 곤충 오행 그림.
+        arena: eventArenaOf(roundSeed, 1, params) ?? mine.element,
+        arenaAt: () =>
+            eventArenaOf(roundSeed, driver.preview.wave, params) ??
+            mine.element,
         mySkins: {mine.id: bugView(ref.read(skinOfProvider), bug)},
         // 내 프로필 그림(2026-10-10) — 상대는 웨이브 적이라 그리지 않는다.
         myAvatar: ref.read(saveControllerProvider).value?.avatar ?? '',

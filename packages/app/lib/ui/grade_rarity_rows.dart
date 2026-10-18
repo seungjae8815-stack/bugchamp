@@ -2,6 +2,7 @@ import 'package:core_models/core_models.dart';
 import 'package:flutter/material.dart';
 
 import '../l10n/app_localizations.dart';
+import 'bug_grade.dart';
 import 'game_dialog.dart';
 import 'labels.dart';
 
@@ -69,6 +70,7 @@ class GradeRarityRows extends StatelessWidget {
           gradeLabel(l, rarity),
           gradeBrightColor(rarity),
           l.bugRarityHelp,
+          lead: rarityGem(rarity, size: fontSize),
         ),
       ],
     );
@@ -79,10 +81,12 @@ class GradeRarityRows extends StatelessWidget {
     String label,
     String value,
     Color color,
-    String help,
-  ) => Row(
+    String help, {
+    Widget? lead,
+  }) => Row(
     mainAxisSize: MainAxisSize.min,
     children: [
+      if (lead != null) ...[lead, const SizedBox(width: 3)],
       Text(
         label,
         style: TextStyle(color: const Color(0xB3FFFFFF), fontSize: fontSize),

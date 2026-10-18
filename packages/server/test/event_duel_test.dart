@@ -170,7 +170,10 @@ void main() {
   test('그만하기 — 기록 확정 · 체력을 남기면 부상이 줄어든다', () {
     final r = start(saveOf());
     final sess = r.extra['session'] as Map<String, dynamic>;
-    final full = cfg.pet.injuryDuration(testSpecies.grade);
+    // 부상 시간은 곤충 희귀도(1.0.22) — 종 grade 로 재던 버그(2026-10-16 출시 전 검토).
+    final rarity = cfg.pet.rarityOf(adult('a'), testSpecies);
+    expect(rarity, isNot(testSpecies.grade)); // 이 곤충은 종 grade 와 다르다(회귀 검사의 전제)
+    final full = cfg.pet.injuryDuration(rarity);
     // 시작하자마자 그만두면 체력 100% → 최소 비율(20%)만 쉰다.
     final q = actions.eventDuelQuit(
       r.save!,
@@ -197,7 +200,10 @@ void main() {
   test('체력이 바닥나서 끝나면 최대 부상', () {
     final r = start(saveOf());
     final out = playOut(r.save!, r.extra['session'] as Map<String, dynamic>);
-    final full = cfg.pet.injuryDuration(testSpecies.grade);
+    // 부상 시간은 곤충 희귀도(1.0.22) — 종 grade 로 재던 버그(2026-10-16 출시 전 검토).
+    final rarity = cfg.pet.rarityOf(adult('a'), testSpecies);
+    expect(rarity, isNot(testSpecies.grade)); // 이 곤충은 종 grade 와 다르다(회귀 검사의 전제)
+    final full = cfg.pet.injuryDuration(rarity);
     final sec = out.save.injuredUntil('a')!.difference(t0).inSeconds;
     expect(sec, closeTo(full, 2));
   });

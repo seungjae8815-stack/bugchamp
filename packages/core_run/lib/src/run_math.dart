@@ -6,6 +6,7 @@ import 'package:core_models/core_models.dart'
         kMaxMonsterHp,
         Species,
         Grade,
+        IndividualBug,
         clampCurrency,
         MaterialKind,
         kMaxCurrency;
@@ -14,6 +15,8 @@ import 'package:meta/meta.dart';
 import 'character_stats.dart';
 import 'enums.dart';
 import 'monster_config.dart';
+import 'bug_rarity_config.dart';
+import 'pet_config.dart';
 import 'run_config.dart';
 
 /// v2 런의 **순수 결정론 수식**. 실시간 루프(앱)는 이 함수들만 호출한다.
@@ -926,6 +929,49 @@ OfflineReport computeOfflineReward({
     gold: (clears * goldPer).round(),
     xp: (clears * xpPer).round(),
     accrued: capped,
+  );
+}
+
+/// 야생 드롭 하나 — 종과 그 곤충의 희귀도(방치 정산·실시간 처치·채집망 공용, 앱·서버 같은 함수).
+///
+/// - 곤충 희귀도가 꺼져 있으면 옛 규칙: [pickDropSpecies](희귀도 가중치 → 종), 희귀도 = 종 희귀도.
+/// - 켜져 있으면(1.0.22, `docs/design_bug_rarity.md`): **종은 균등**, 희귀도는 곤충 [id] 롤(야생 표).
+///   희귀 천장([pity])이면 희귀 이상 표 + 같은 id 롤([BugRarityConfig.pityRarityOf])로 정해 [fixed] 로 돌려준다
+///   — 곤충에 `ry` 로 실어야 한다(서버가 id 로 다시 계산해 맞춰 본다).
+/// [id] 는 그 곤충에 줄 id 다(받지 않고 재료로 바뀌어도 미리 만든다 — 필터가 희귀도를 봐야 해서).
+({Species species, Grade rarity, Grade? fixed})? pickWildDrop(
+  math.Random rng,
+  List<Species> all, {
+  required RunConfig run,
+  required PetConfig pet,
+  required String id,
+  DateTime? now,
+  bool pity = false,
+}) {
+  final br = pet.bugRarity;
+  if (!br.enabled) {
+    final sp = pickDropSpecies(
+      rng,
+      all,
+      weights: run.dropGradeWeights,
+      now: now,
+      minGrade: pity ? Grade.rare : null,
+    );
+    return sp == null ? null : (species: sp, rarity: sp.grade, fixed: null);
+  }
+  final sp = pickDropSpecies(rng, all, now: now);
+  if (sp == null) return null;
+  if (pity) {
+    final g = br.pityRarityOf(id);
+    return (species: sp, rarity: g, fixed: g);
+  }
+  return (
+    species: sp,
+    rarity: BugRarityConfig.pickWith(
+      br.wildWeights,
+      IndividualBug.rarityRollOf(id),
+    ),
+    fixed: null,
   );
 }
 

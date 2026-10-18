@@ -302,11 +302,31 @@ class _Body {
 /// 넣을 탭 점수(0~1). 목록이 다 떨어졌는데 A 에게 새 위기가 오면 그 틱에서 멈추고
 /// [DuelBout.pending] 에 자리를 적어 돌려준다(winner = -1). null 이면 A 도 자동 점수(구버전 앱·시뮬).
 /// B 는 늘 자동 점수다(판 seed 기반 전용 난수 — [duelClutchSeed]).
+/// 경기장 오행 — **경기 seed**(서버 비밀 난수 · 대회는 회차 seed + 웨이브)로 정한다. 앱 재생·시뮬이 같은 함수.
+Element duelArenaOf(int matchSeed) =>
+    Element.values[math.Random(
+      matchSeed ^ 0x51ed27,
+    ).nextInt(Element.values.length)];
+
+/// 경기장 [arena] 위의 [bug] 능력치 배율(같은 오행 + · 경기장이 이기는 오행 −). [arena] 가 null 이거나 꺼져 있으면 1.
+double duelArenaMult(Element bug, Element? arena, DuelParams p) {
+  if (arena == null || !p.arenaOn) return 1;
+  if (bug == arena) return 1 + p.arenaSame;
+  if (arena.restrains(bug)) return 1 - p.arenaRestrained;
+  return 1;
+}
+
+DuelBug _onArena(DuelBug d, Element? arena, DuelParams p) {
+  final m = duelArenaMult(d.element, arena, p);
+  return m == 1 ? d : d.withTraining(hpMult: m, atkMult: m, defMult: m);
+}
+
 DuelBout simulateBout({
   required int seed,
   required DuelBug a,
   required DuelBug b,
   required DuelParams params,
+  Element? arena,
   double? launchA,
   double? launchB,
   double hpA = 1,
@@ -314,6 +334,9 @@ DuelBout simulateBout({
   List<double>? clutchScores,
 }) {
   final p = params;
+  // 경기장 오행(2026-10-16) — 두 곤충에 같은 규칙으로 먼저 입힌다(전력 압축보다 앞).
+  a = _onArena(a, arena, p);
+  b = _onArena(b, arena, p);
   final rng = math.Random(seed);
   final clutchRng = [
     math.Random(duelClutchSeed(seed, 0)),
@@ -1156,6 +1179,8 @@ double duelCarryHp(double endPct, DuelBug bug, DuelParams p) =>
 /// [launchesA] 를 주면 그 판의 게이지 값을 쓴다(없으면 자동값).
 /// [clutchScores] 는 A(플레이어) 위기에 경기 전체에서 순서대로 넣을 탭 점수 — 다 떨어지면
 /// 그 위기에서 멈추고 [DuelMatch.pending] 을 채워 돌려준다. null 이면 A 도 자동 점수.
+/// [arena] 는 경기장 오행(1.0.22) — **부르는 쪽이 정해 넘긴다**(null = 효과 없음). seed 로 자동으로 입히지 않는다 —
+/// 경기장을 보여 주지 않는 경기(길드전 등)에 안 보이는 ±10% 가 붙었다(2026-10-16 출시 전 검토).
 DuelMatch simulateDuel({
   required int seed,
   required List<DuelBug> teamA,
@@ -1163,6 +1188,7 @@ DuelMatch simulateDuel({
   required DuelParams params,
   List<double>? launchesA,
   List<double>? clutchScores,
+  Element? arena,
 }) {
   final bouts = <DuelBout>[];
   var used = 0;
@@ -1174,6 +1200,7 @@ DuelMatch simulateDuel({
       a: teamA[st.ia],
       b: teamB[st.ib],
       params: params,
+      arena: arena,
       hpA: st.hpA,
       hpB: st.hpB,
       launchA: launchesA != null && i < launchesA.length ? launchesA[i] : null,

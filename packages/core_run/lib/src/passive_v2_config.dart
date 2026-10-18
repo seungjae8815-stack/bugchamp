@@ -20,6 +20,7 @@ class PassiveV2Config {
     this.rerollEssence = 3,
     this.rerollJelly = 10,
     this.legacyFreeRerolls = 0,
+    this.legacyRandom = false,
   });
 
   final bool enabled;
@@ -44,6 +45,10 @@ class PassiveV2Config {
   /// 패시브가 대부분 낮아진 것을 스스로 메우게). 펫 전용이라 결투 P2W 밖.
   final int legacyFreeRerolls;
 
+  /// 업데이트 전 곤충도 종류를 **곤충마다 랜덤**으로(2026-10-16 사장님 확정, 1.0.22 — 희귀도를 새로 굴리는 때 함께).
+  /// 켜면 [kindOf] 가 `p2` 를 보지 않고 모든 곤충에 id 롤을 쓴다. 무료 재굴림([legacyFreeRerolls])은 그대로 남는다.
+  final bool legacyRandom;
+
   /// [bug] 가 무료 재굴림을 몇 번 더 쓸 수 있나(업데이트 전 곤충만).
   int freeRerollsLeft(IndividualBug bug) => bug.passiveV2
       ? 0
@@ -53,7 +58,7 @@ class PassiveV2Config {
 
   /// [bug] 의 패시브 종류 키. 업데이트 전 곤충은 [legacyKey](그 종의 패시브), 없으면 null.
   String? kindOf(IndividualBug bug, String? legacyKey) {
-    if (!bug.passiveV2 || kinds.isEmpty) return legacyKey;
+    if (kinds.isEmpty || (!bug.passiveV2 && !legacyRandom)) return legacyKey;
     final keys = kindKeys;
     return keys[IndividualBug.passivePickOf(bug.id, keys.length)];
   }
@@ -105,6 +110,7 @@ class PassiveV2Config {
       rerollJelly: (j['rerollJelly'] as num?)?.toInt() ?? d.rerollJelly,
       legacyFreeRerolls:
           (j['legacyFreeRerolls'] as num?)?.toInt() ?? d.legacyFreeRerolls,
+      legacyRandom: j['legacyRandom'] == true,
     );
   }
 }

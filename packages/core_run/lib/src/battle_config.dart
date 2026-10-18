@@ -717,6 +717,27 @@ TicketState grantTickets({
   return (tickets: next, at: next >= cfg.ticketMax ? now.toUtc() : cur.at);
 }
 
+/// 무료 충전 — [BattleConfig.ticketAdGrant] 장을 **상한까지만** 준다. 이미 가득이면 null(받지 않는다 — 하루 횟수도 안 쓴다).
+/// 2026-10-16 사장님 지적: 상한을 넘겨 쌓여서, 매일 무료 3장을 모아 두면 판수가 계속 늘었다(하루 판수 제한이 무너짐).
+/// 앱(서버 없을 때)·서버 `grantAdTicket` 이 같은 함수를 쓴다.
+TicketState? freeTickets({
+  required int tickets,
+  required DateTime? at,
+  required DateTime now,
+  required BattleConfig cfg,
+}) {
+  final cur = regenTickets(tickets: tickets, at: at, now: now, cfg: cfg);
+  if (cur.tickets >= cfg.ticketMax) return null;
+  final add = cfg.ticketAdGrant.clamp(0, cfg.ticketMax - cur.tickets);
+  return grantTickets(
+    tickets: tickets,
+    at: at,
+    now: now,
+    cfg: cfg,
+    amount: add,
+  );
+}
+
 /// 젤리 충전 — [BattleConfig.ticketRefillAmount] 장을 준다(상한을 넘겨 쌓일 수 있다).
 /// 0 이면 상한까지 채운다(옛 규칙). 이미 상한 이상이면 그대로(쌓아 두기 방지).
 TicketState refillTickets({

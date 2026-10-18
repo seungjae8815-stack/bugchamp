@@ -1,3 +1,4 @@
+import 'bug_rarity_config.dart';
 import 'passive_v2_config.dart';
 import 'dart:math' as math;
 
@@ -42,6 +43,7 @@ class PetConfig {
     this.potentialScale = 0.06,
     this.individualGrade = const IndividualGradeConfig(),
     this.passiveV2 = const PassiveV2Config(),
+    this.bugRarity = const BugRarityConfig(),
     this.enhanceScale = 0.005,
     this.maxEquip = 3,
     this.accelerateJelly = 2,
@@ -132,6 +134,17 @@ class PetConfig {
 
   /// 펫 패시브 v2(2026-10-14, `pets.json → passiveV2`). 꺼져 있으면 종 패시브 그대로(옛 규칙).
   final PassiveV2Config passiveV2;
+
+  /// 곤충마다 희귀도(2026-10-16, `pets.json → bugRarity`). 꺼져 있으면 종 희귀도(옛 규칙).
+  final BugRarityConfig bugRarity;
+
+  /// [bug] 의 희귀도(곤충마다 — 꺼져 있으면 종 희귀도). 종 희귀도를 읽던 자리는 모두 이 함수로 바꾼다.
+  Grade rarityOf(IndividualBug bug, Species species) =>
+      bugRarity.rarityOf(bug, species);
+
+  /// [bug] 의 결투·대회 희귀도 배율(꺼져 있으면 1) — `individualGrade.battleMods(rarityMult:)` 에 넘긴다.
+  double duelRarityMultOf(IndividualBug bug, Species species) =>
+      bugRarity.duelMultOf(rarityOf(bug, species));
 
   /// 강화 레벨 합 1당 기여 증폭.
   final double enhanceScale;
@@ -548,6 +561,9 @@ class PetConfig {
       passiveV2: PassiveV2Config.fromJson(
         json['passiveV2'] as Map<String, dynamic>?,
       ),
+      bugRarity: BugRarityConfig.fromJson(
+        json['bugRarity'] as Map<String, dynamic>?,
+      ),
       enhanceScale: (json['enhanceScale'] as num?)?.toDouble() ?? 0.005,
       maxEquip: (json['maxEquip'] as num?)?.toInt() ?? 3,
       accelerateJelly: (json['accelerateJelly'] as num?)?.toInt() ?? 2,
@@ -767,6 +783,9 @@ typedef PetStat = ({
   /// 훈련 배율 — 1 + 찍은 훈련 포인트 × `training.petPerPoint`(훈련 v2, 2026-10-08; 옛 부위 강화·훈련
   /// 단계가 있는 곤충은 옛 식과 max). 호출자가 세이브에서 계산한다(core_save `trainPetMult`).
   double trainMult,
+
+  /// 곤충 희귀도 사냥 배율(`bugRarity.huntMult`, 2026-10-16 — 평균 ≈ 1). 꺼져 있으면 1.
+  double rarityMult,
 });
 
 /// 야생 알 포텐셜 — 설정이 없으면(로딩 전) 옛 공식. 난수 두 개를 늘 쓴다([PetConfig.wildPotential]).
@@ -798,6 +817,7 @@ PetStat petStatOf(
   variant: bug.variant,
   passive: passiveOf(bug, species, cfg),
   trainMult: trainMult,
+  rarityMult: cfg.bugRarity.huntMultOf(cfg.rarityOf(bug, species)),
 );
 
 /// [bug] 의 펫 패시브(종류·크기). 패시브 v2 가 꺼져 있으면 종 패시브 그대로(옛 규칙).
@@ -814,7 +834,7 @@ SpeciesPassive? passiveOf(IndividualBug bug, Species species, PetConfig cfg) {
     value: v2.valueAt(
       kind,
       bug.individualGrade,
-      species.grade,
+      cfg.rarityOf(bug, species),
       bug.passiveRollValue,
     ),
   );
@@ -828,7 +848,8 @@ SpeciesPassive? passiveOf(IndividualBug bug, Species species, PetConfig cfg) {
       (1 + p.enhanceTotal * cfg.enhanceScale) *
       (cfg.stageMult[p.stage] ?? 1.0) *
       (1 + (p.level - 1) * cfg.levelBonus) *
-      p.trainMult;
+      p.trainMult *
+      p.rarityMult;
   // 혈통 특성은 **곱이 아니라 축별 가산**이다 — 맹렬은 공격만, 강인은 체력만
   // 올려야 "무엇을 노리고 교배했는지"가 수치로 보인다. scale 에 곱해버리면
   // 두 축이 같이 올라 특성끼리 구분이 사라진다.

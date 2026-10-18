@@ -18,6 +18,7 @@ import '../../domain/save_controller.dart';
 import 'package:core_save/core_save.dart';
 import '../../l10n/app_localizations.dart';
 import '../../ui/ad_gate.dart';
+import '../../ui/arena_line.dart';
 import '../../ui/art.dart';
 import '../../ui/grade_rarity_rows.dart';
 import '../../ui/jelly_confirm.dart';
@@ -92,6 +93,11 @@ class _TicketBarState extends ConsumerState<TicketBar> {
 
   Future<void> _watchAd(AppLocalizations l) async {
     final cfg = _cfg;
+    // 가득 차 있으면 무료 충전을 쓰지 않고 바로 알려 준다(상한을 넘겨 쌓이던 버그, 2026-10-16).
+    if (ref.read(saveControllerProvider.notifier).ticketsNow >= cfg.ticketMax) {
+      _report(l, TicketCharge.alreadyFull, okMsg: '');
+      return;
+    }
     setState(() => _busy = true);
     try {
       // 광고를 끝까지 본 경우에만 지급(하루 상한도 여기서 먼저 확인).
@@ -297,50 +303,54 @@ class _TicketBarState extends ConsumerState<TicketBar> {
       padding: const EdgeInsets.symmetric(vertical: 7),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
     ),
-    child: Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        // 좁은 폰에서 말줄임 대신 **통째로 축소** — 버튼 라벨이 잘리면
-        // 무슨 버튼인지 모른다(부화기 즉시부화와 같은 규칙, 2026-08-20).
-        FittedBox(
-          fit: BoxFit.scaleDown,
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // 젤리 가격은 아이콘으로(글자 '젤리'는 다른 재화와 눈으로 안 갈린다).
-              if (jelly != null) ...[
-                jellyIcon(size: 15),
-                const SizedBox(width: 2),
+    // 두 줄(라벨 · 남은 횟수)을 통째로 칸에 맞게 — 높이 44 에서 1px 넘쳤다(출시 전 점검, 가상 폰).
+    child: FittedBox(
+      fit: BoxFit.scaleDown,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // 좁은 폰에서 말줄임 대신 **통째로 축소** — 버튼 라벨이 잘리면
+          // 무슨 버튼인지 모른다(부화기 즉시부화와 같은 규칙, 2026-08-20).
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // 젤리 가격은 아이콘으로(글자 '젤리'는 다른 재화와 눈으로 안 갈린다).
+                if (jelly != null) ...[
+                  jellyIcon(size: 15),
+                  const SizedBox(width: 2),
+                  Text(
+                    '$jelly',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                ],
                 Text(
-                  '$jelly',
+                  label,
+                  maxLines: 1,
                   style: const TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w900,
                   ),
                 ),
-                const SizedBox(width: 6),
               ],
-              Text(
-                label,
-                maxLines: 1,
-                style: const TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w900,
-                ),
-              ),
-            ],
-          ),
-        ),
-        if (sub != null)
-          Text(
-            sub,
-            style: const TextStyle(
-              fontSize: 9.5,
-              fontWeight: FontWeight.w700,
-              color: Color(0xCCFFFFFF),
             ),
           ),
-      ],
+          if (sub != null)
+            Text(
+              sub,
+              style: const TextStyle(
+                fontSize: 9.5,
+                fontWeight: FontWeight.w700,
+                color: Color(0xCCFFFFFF),
+              ),
+            ),
+        ],
+      ),
     ),
   );
 }
@@ -1360,6 +1370,39 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
                         ],
                       ),
                     ),
+                  // 두 마리 이상이면 한 번에(1.0.22 출시 점검 — 결투 뒤 세 마리를 하나씩 눌렀다).
+                  if (list.length >= 2 && cfg != null) ...[
+                    const SizedBox(height: 10),
+                    Builder(
+                      builder: (_) {
+                        final total = list.fold<int>(
+                          0,
+                          (sum, e) =>
+                              sum + cfg.injuryJelly(e.$2.difference(now)),
+                        );
+                        return SizedBox(
+                          width: double.infinity,
+                          child: FilledButton(
+                            style: FilledButton.styleFrom(
+                              backgroundColor: const Color(0xFF7E57C2),
+                            ),
+                            onPressed: () => _healAllWithJelly([
+                              for (final e in list) e.$1,
+                            ], total),
+                            child: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: jellyPrice(
+                                cost: total,
+                                label: l.injuryHealAllLabel,
+                                size: 18,
+                                fontSize: 15,
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -1382,10 +1425,40 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
       return;
     }
     if (!mounted) return;
-    final ok = await ref
+    final err = await ref
         .read(saveControllerProvider.notifier)
-        .healInjury(bug.id, viaJelly: true);
-    if (!ok && mounted) showCenterToast(context, l.notEnoughJelly);
+        .healInjuryResult(bug.id, viaJelly: true);
+    if (err != null && mounted) {
+      showCenterToast(context, injuryHealErrorText(l, err));
+    }
+  }
+
+  /// 회복실 "모두 회복"(1.0.22) — 회복 중인 곤충 전부를 젤리로(한 마리씩 같은 값). 한 번 확인받는다.
+  /// 도중에 실패하면 거기서 멈추고 이유를 알린다(이미 회복한 곤충은 그대로).
+  Future<void> _healAllWithJelly(List<IndividualBug> bugs, int jelly) async {
+    final l = AppLocalizations.of(context);
+    if (!await confirmJellySpend(
+      context,
+      title: l.injuryHealConfirmTitle,
+      body: l.injuryHealAllConfirm('${bugs.length}', '$jelly'),
+      jelly: jelly,
+      actionLabel: l.injuryHealConfirmTitle,
+    )) {
+      return;
+    }
+    if (!mounted) return;
+    final ctrl = ref.read(saveControllerProvider.notifier);
+    var healed = 0;
+    for (final b in bugs) {
+      final err = await ctrl.healInjuryResult(b.id, viaJelly: true);
+      if (!mounted) return;
+      if (err != null && err != 'not_injured') {
+        showCenterToast(context, injuryHealErrorText(l, err));
+        return;
+      }
+      if (err == null) healed++;
+    }
+    showCenterToast(context, l.injuryHealAllDone('$healed'));
   }
 
   /// 회복 중인 곤충 상세 — 능력치(출정 칸에서 보는 것과 같은 값) + 즉시 회복.
@@ -1617,6 +1690,8 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
     final server = ref.read(gameServerProvider);
     List<_Candidate> cands;
     String? offerId;
+    // 경기장 오행(2026-10-16) — 서버가 제안 때 정한 값(연습 결투는 여기서 굴린다).
+    Element? arena;
     if (server.available) {
       setState(() => _starting = true);
       try {
@@ -1637,6 +1712,9 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
           return;
         }
         offerId = res.data!['offerId']?.toString();
+        arena = res.data!['arena'] is String
+            ? Element.fromKeyOrNull(res.data!['arena'] as String)
+            : null;
         cands = [
           for (final s in (res.data!['slots'] as List? ?? const []))
             _Candidate.fromServer(Map<String, dynamic>.from(s as Map)),
@@ -1651,9 +1729,12 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
       return;
     } else {
       cands = _localCandidates(data, save, locale, ids);
+      if (_duelParams(data).arenaOn) {
+        arena = Element.values[_rng.nextInt(Element.values.length)];
+      }
     }
     if (!mounted || cands.isEmpty) return;
-    final pick = await _pickOpponent(l, data, locale, cands);
+    final pick = await _pickOpponent(l, data, locale, cands, arena: arena);
     if (pick == null || !mounted) return;
     await _battleManual(
       data,
@@ -1661,6 +1742,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
       locale,
       pick,
       offerId: offerId,
+      arena: arena,
     );
   }
 
@@ -1769,8 +1851,9 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
     AppLocalizations l,
     GameData data,
     String locale,
-    List<_Candidate> cands,
-  ) {
+    List<_Candidate> cands, {
+    Element? arena,
+  }) {
     final ids = _team.whereType<String>().toList();
     final save = ref.read(saveControllerProvider).requireValue;
     final myPower = duelTeamFor(
@@ -1787,7 +1870,8 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
       builder: (ctx) => SafeArea(
-        child: Padding(
+        // 작은 폰·영어/일본어(경기장 줄 두 줄)에서 후보 5명이 넘치지 않게 스크롤(2026-10-17 출시 전 점검).
+        child: SingleChildScrollView(
           padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -1801,6 +1885,11 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
                   fontWeight: FontWeight.w900,
                 ),
               ),
+              // 경기장 오행(2026-10-16) — 고르기 전에 보여 준다(출정 곤충을 바꿀 수 있게. 경기를 치를 때까지 그대로).
+              if (arena != null) ...[
+                const SizedBox(height: 4),
+                arenaEffectLine(l, arena, _duelParams(data)),
+              ],
               const SizedBox(height: 2),
               Text(
                 l.opponentPickHint(
@@ -1811,11 +1900,33 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
               ),
               const SizedBox(height: 10),
               for (final c in cands)
-                _candidateCard(l, data, locale, c, myPower, ctx),
+                _candidateCard(l, data, locale, c, myPower, ctx, arena),
             ],
           ),
         ),
       ),
+    );
+  }
+
+  /// 후보 카드 곤충 밑 오행 표시 — 경기장과 같으면 초록 테(+) · 경기장이 이기는 오행이면 빨강 테(−).
+  Widget _foeElementMark(Element e, Element? arena) {
+    final Color? ring = arena == null
+        ? null
+        : e == arena
+        ? arenaUpColor
+        : arena.restrains(e)
+        ? arenaDownColor
+        : null;
+    return Container(
+      margin: const EdgeInsets.only(top: 1),
+      padding: const EdgeInsets.all(1),
+      decoration: ring == null
+          ? null
+          : BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(color: ring, width: 1.5),
+            ),
+      child: elementIcon(e, size: 13),
     );
   }
 
@@ -1826,6 +1937,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
     _Candidate c,
     double myPower,
     BuildContext sheet,
+    Element? arena,
   ) {
     final ratio = myPower <= 0 ? 1.0 : c.teamPower / myPower;
     // 실전 전투력은 비가 곧 이길 확률 비라(2026-10-10) 옛 1.1·0.9 를 1.25·0.8 로 옮겼다(약 56% · 44%).
@@ -1891,21 +2003,29 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
                       for (final t in c.team)
                         Padding(
                           padding: const EdgeInsets.only(right: 3),
-                          child: SizedBox(
-                            width: 27,
-                            height: 27,
-                            // 이색·스킨을 입혀 그린다 — 상대가 무지개를 껴도 안 보였다.
-                            child: bugStageImage(
-                              t.sp,
-                              LifeStage.adult,
-                              size: 27,
-                              skin: _foeView(t.sp, t.variant, t.skin),
-                              fallback: const Icon(
-                                Icons.bug_report,
-                                color: Colors.white54,
-                                size: 20,
+                          // 곤충 밑에 오행(2026-10-17 사장님 요청) — 경기장 이득은 초록 · 불이익은 빨강 테.
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              SizedBox(
+                                width: 27,
+                                height: 27,
+                                // 이색·스킨을 입혀 그린다 — 상대가 무지개를 껴도 안 보였다.
+                                child: bugStageImage(
+                                  t.sp,
+                                  LifeStage.adult,
+                                  size: 27,
+                                  skin: _foeView(t.sp, t.variant, t.skin),
+                                  fallback: const Icon(
+                                    Icons.bug_report,
+                                    color: Colors.white54,
+                                    size: 20,
+                                  ),
+                                ),
                               ),
-                            ),
+                              if (t.element != null)
+                                _foeElementMark(t.element!, arena),
+                            ],
                           ),
                         ),
                       const SizedBox(width: 4),
@@ -2009,6 +2129,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
     required Future<void> Function(DuelStep last) onFinished,
     List<String> foeBadges = const [],
     String? foeAvatar,
+    Element? arena,
   }) async {
     final save = ref.read(saveControllerProvider).value;
     final myBadges = publicSkins(
@@ -2022,7 +2143,9 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
           foe: foe,
           driver: driver,
           params: _duelParams(data),
-          arena: foe.first.element,
+          // 경기장 오행(2026-10-16) — 서버가 정한 경기장(없으면 옛 그림 규칙: 상대 첫 곤충).
+          arena: arena ?? foe.first.element,
+          arenaEffect: arena != null,
           mySkins: mySkins,
           foeSkins: foeSkins,
           myBadges: myBadges,
@@ -2047,6 +2170,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
     String locale,
     _Candidate c, {
     String? offerId,
+    Element? arena,
   }) async {
     final l = AppLocalizations.of(context);
     final ids = _duelTeamIds(l);
@@ -2101,6 +2225,9 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
           // 상대 프로필 그림 — 사람일 때만(야생 팀은 이름이 비어 있다).
           foeAvatar: c.nickname.isEmpty ? null : (c.avatar ?? ''),
           onFinished: _adoptDuel,
+          arena: res.data!['arena'] is String
+              ? Element.fromKeyOrNull(res.data!['arena'] as String)
+              : arena,
         );
       } finally {
         close();
@@ -2122,6 +2249,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
         battle: data.battleConfig ?? const BattleConfig(),
         trophies: save.pvpTrophies,
         rewardMult: 1.0,
+        arena: arena,
       ),
       onBout: (i, won) {
         if (i == 0) _localLosers.clear();
@@ -2140,6 +2268,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
       mySkins: mySkins,
       foeSkins: const {},
       onFinished: (last) => _applyLocalDuel(last, ids),
+      arena: arena,
     );
   }
 
@@ -2747,17 +2876,26 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
                         fontSize: 15,
                       ),
                     ),
-                    const Spacer(),
+                    const SizedBox(width: 8),
                     // 지금 편성의 전투력 — 무엇을 바꿔야 세지는지 바로 보인다.
-                    Text(
-                      l.teamPower(
-                            formatCompact(_myTeamPowerSum(data, save, locale)),
-                          ) +
-                          _auraSuffix(l, _myAuraPower(data, save, locale)),
-                      style: const TextStyle(
-                        color: _honey,
-                        fontWeight: FontWeight.w900,
-                        fontSize: 12.5,
+                    // 오라 몫이 붙으면 영어·일본어에서 줄을 넘쳤다(출시 전 점검) — 칸에 맞게 줄인다.
+                    Expanded(
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.centerRight,
+                        child: Text(
+                          l.teamPower(
+                                formatCompact(
+                                  _myTeamPowerSum(data, save, locale),
+                                ),
+                              ) +
+                              _auraSuffix(l, _myAuraPower(data, save, locale)),
+                          style: const TextStyle(
+                            color: _honey,
+                            fontWeight: FontWeight.w900,
+                            fontSize: 12.5,
+                          ),
+                        ),
                       ),
                     ),
                   ],
@@ -3078,7 +3216,10 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
                           )],
                         _ => null,
                       },
-                      rarity: sp.grade,
+                      // 곤충 희귀도(1.0.22) — 내 곤충은 계산, 상대는 서버가 실어 준 값(없으면 종 희귀도).
+                      rarity: bug != null
+                          ? bugRarityOf(data, bug, sp)
+                          : (d.rarity ?? sp.grade),
                     ),
                     const SizedBox(height: 4),
                   ],
@@ -3087,7 +3228,19 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
                     runSpacing: 3,
                     children: [
                       if (sp != null && !individualGradeOn(data))
-                        _chip(gradeLabel(l, sp.grade), gradeColor(sp.grade)),
+                        _chip(
+                          gradeLabel(
+                            l,
+                            bug != null
+                                ? bugRarityOf(data, bug, sp)
+                                : (d.rarity ?? sp.grade),
+                          ),
+                          gradeColor(
+                            bug != null
+                                ? bugRarityOf(data, bug, sp)
+                                : (d.rarity ?? sp.grade),
+                          ),
+                        ),
                       _chip(
                         elementLabel(l, d.element),
                         elementColor(d.element),
@@ -3620,12 +3773,19 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
     final noTicket = await _syncTicketRejection(res);
     if (!noTicket) await _returnTicket();
     if (!mounted) return;
-    showCenterToast(
-      context,
-      noTicket
-          ? l.pvpTicketNone
-          : (res.error == 'bug_injured' ? l.injuryDesc : l.battleServerFailed),
-    );
+    // 거절 이유마다 맞는 안내(출시 전 점검 — 대부분 "연결을 확인해 주세요"로 뭉뚱그려졌다).
+    showCenterToast(context, switch (res.error) {
+      _ when noTicket => l.pvpTicketNone,
+      'bug_injured' => l.injuryDesc,
+      'bug_training' => l.squadTraining,
+      'season_closed' => l.battleSeasonClosed,
+      'no_offer' || 'offer_expired' || 'empty_foe' => l.duelOfferExpired,
+      'not_adult' ||
+      'bad_team' ||
+      'empty_team' ||
+      'team_size' => l.duelTeamInvalid,
+      _ => l.battleServerFailed,
+    });
   }
 }
 

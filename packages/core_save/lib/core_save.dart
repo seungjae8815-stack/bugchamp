@@ -16,6 +16,7 @@ export 'src/gift_claim.dart';
 export 'src/gift_mail.dart';
 export 'src/iap_grant.dart';
 export 'src/idle_drops.dart';
+export 'src/bug_rarity_up.dart';
 export 'src/individual_grade.dart';
 export 'src/mission_progress.dart';
 export 'src/offline_buffs.dart';

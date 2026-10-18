@@ -99,10 +99,23 @@ class _PolishBodyState extends ConsumerState<_PolishBody> {
         if (!others.contains(r.kind)) r.kind,
     ];
     final save = ref.watch(saveControllerProvider).value;
-    final cost = forge.polishCost(item.tier, pickKind: _kind != null);
+    // 다듬은 횟수만큼 비싸진다(2026-10-16) — 컨트롤러 `polishOption` 과 같은 식.
+    final cost = forge.polishCost(
+      item.tier,
+      pickKind: _kind != null,
+      done: cur.polish,
+    );
     final fossils = save?.materialCount(MaterialKind.fossil) ?? 0;
-    final nextPolish = (cur.polish + 1).clamp(0, items.polishMaxStacks);
-    final floorPct = (nextPolish * items.polishFloorPerStack * 100).round();
+    // 지금 값이 최대의 몇 %인지(다음 값은 늘 이보다 높다 — `polishOptionAt`).
+    final floorPct =
+        (polishPositionOf(
+                  items,
+                  item,
+                  widget.index,
+                  maxMult: forge.transcendMaxMult(save?.forgeTranscend ?? 0),
+                ) *
+                100)
+            .round();
 
     Widget line(String tag, ItemOption o, {bool hi = false}) {
       final mm = forge.transcendMaxMult(save?.forgeTranscend ?? 0);
@@ -266,7 +279,21 @@ class _PolishBodyState extends ConsumerState<_PolishBody> {
             const SizedBox(width: 8),
             Expanded(
               child: FilledButton(
-                onPressed: _busy ? null : () => _roll(payJelly: true),
+                onPressed: _busy
+                    ? null
+                    : () async {
+                        // 젤리를 쓰는 버튼은 확인부터(출시 전 점검 — 다듬을수록 ×1.5 로 비싸진다).
+                        if (!await confirmJellySpend(
+                          context,
+                          title: l.polishTitle,
+                          body: l.polishJellyConfirm(cost.jelly),
+                          jelly: cost.jelly,
+                          actionLabel: l.polishTitle,
+                        )) {
+                          return;
+                        }
+                        await _roll(payJelly: true);
+                      },
                 child: jellyPrice(cost: cost.jelly, fontSize: 13, size: 16),
               ),
             ),
@@ -318,6 +345,15 @@ class _PolishBodyState extends ConsumerState<_PolishBody> {
           payJelly: payJelly,
         );
     if (!mounted) return;
+    // 다듬기 v3 — 새 값은 늘 더 높다. 종류가 그대로면 고를 것 없이 바로 얹는다(출시 전 점검 — 매번 고르기를 거쳤다).
+    final cand = r.candidate;
+    final curKind = _currentKind();
+    if (cand != null && curKind != null && cand.kind == curKind) {
+      setState(() => _busy = false);
+      await _take(cand);
+      if (mounted) showCenterToast(context, l.polishApplied);
+      return;
+    }
     setState(() {
       _busy = false;
       _candidate = r.candidate;
@@ -331,9 +367,22 @@ class _PolishBodyState extends ConsumerState<_PolishBody> {
         showCenterToast(context, l.polishNoFossil);
       case 'bad_kind':
         showCenterToast(context, l.polishBadKind);
+      case 'maxed':
+        showCenterToast(context, l.polishMaxed);
       default:
         showCenterToast(context, l.polishFailed);
     }
+  }
+
+  /// 지금 다듬는 줄의 종류(장비가 그 사이 바뀌었으면 null).
+  ItemOptionKind? _currentKind() {
+    final s = ref.read(saveControllerProvider).value;
+    if (s == null) return null;
+    final item = widget.equipped
+        ? (widget.slot == null ? null : s.equippedItems[widget.slot])
+        : (s.forgeStack.isEmpty ? null : s.forgeStack.last);
+    if (item == null || widget.index >= item.options.length) return null;
+    return item.options[widget.index].kind;
   }
 
   Future<void> _take(ItemOption cand) async {
@@ -349,7 +398,7 @@ class _PolishBodyState extends ConsumerState<_PolishBody> {
     if (!mounted) return;
     // 그 사이 장비가 바뀌어 새 값을 못 얹었으면 말해 준다(조용히 사라진 것처럼 보이지 않게).
     if (!ok) {
-      showCenterToast(context, AppLocalizations.of(context).polishFailed);
+      showCenterToast(context, AppLocalizations.of(context).polishChanged);
     }
     setState(() {
       _busy = false;
@@ -369,23 +418,31 @@ Widget itemStarsRow(
   if (item.stars <= 0 && !progress) return const SizedBox.shrink();
   final need = cfg.starNeedAt(item.stars);
   final pct = (cfg.starEffectPerStar * item.stars * 100).round();
+  // 좁은 칸(제련 비교 카드 등)에서는 글자가 다음 줄로 내려간다 — 한 줄(Row)로 두면 "다음 별 17/200" 이
+  // 칸을 넘어가거나 잘렸다(2026-10-16 사장님 지적).
   return Padding(
     padding: const EdgeInsets.only(bottom: 4),
-    child: Row(
-      mainAxisSize: MainAxisSize.min,
+    child: Wrap(
+      spacing: 6,
+      runSpacing: 2,
+      crossAxisAlignment: WrapCrossAlignment.center,
       children: [
-        for (var i = 0; i < cfg.starMax; i++)
-          // 빈 별은 같은 그림을 흑백·반투명으로(그림이 없으면 예전 빈 별 아이콘).
-          gameIcon(
-            'equip_star',
-            size: 16,
-            fallback: i < item.stars
-                ? Icons.star_rounded
-                : Icons.star_outline_rounded,
-            color: i < item.stars ? kHoney : const Color(0x55FFFFFF),
-            dim: i >= item.stars,
-          ),
-        const SizedBox(width: 4),
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            for (var i = 0; i < cfg.starMax; i++)
+              // 빈 별은 같은 그림을 흑백·반투명으로(그림이 없으면 예전 빈 별 아이콘).
+              gameIcon(
+                'equip_star',
+                size: 16,
+                fallback: i < item.stars
+                    ? Icons.star_rounded
+                    : Icons.star_outline_rounded,
+                color: i < item.stars ? kHoney : const Color(0x55FFFFFF),
+                dim: i >= item.stars,
+              ),
+          ],
+        ),
         if (item.stars > 0)
           Text(
             l.starBonus('$pct'),
@@ -396,14 +453,12 @@ Widget itemStarsRow(
             ),
           ),
         if (progress && need > 0) ...[
-          const SizedBox(width: 6),
           Text(
             l.starProgress('${math.min(item.starExp, need)}', '$need'),
             style: const TextStyle(color: Color(0x99FFFFFF), fontSize: 10.5),
           ),
           // 이번 별 몫을 넘긴 재료는 다음 별로 이월된다(2026-10-14).
           if (item.starExp > need) ...[
-            const SizedBox(width: 6),
             Text(
               l.starCarry('${item.starExp - need}'),
               style: const TextStyle(color: kHoney, fontSize: 10.5),

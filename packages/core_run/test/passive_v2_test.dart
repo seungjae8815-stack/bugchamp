@@ -10,7 +10,19 @@ void main() {
   final raw =
       jsonDecode(File('../app/assets/data/pets.json').readAsStringSync())
           as Map<String, dynamic>;
-  final cfg = PetConfig.fromJson(raw);
+  // 이 파일은 1.0.21 규칙(종 희귀도 · 업데이트 전 곤충은 종 패시브 종류)의 계산식을 본다 —
+  // 1.0.22 곤충 희귀도·옛 곤충 랜덤 종류는 끄고 돈다(새 규칙은 bug_rarity_test).
+  final cfg = PetConfig.fromJson({
+    ...raw,
+    'bugRarity': {
+      ...raw['bugRarity'] as Map<String, dynamic>,
+      'enabled': false,
+    },
+    'passiveV2': {
+      ...raw['passiveV2'] as Map<String, dynamic>,
+      'legacyRandom': false,
+    },
+  });
   final v2 = cfg.passiveV2;
   const common = Species(
     id: 'stag_saw',

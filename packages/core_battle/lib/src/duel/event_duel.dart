@@ -417,6 +417,13 @@ typedef EventDuelStep = ({EventDuelRun run, DuelBout bout, bool won});
 /// 새 위기가 오면 판이 멈추고 `bout.pending` 이 채워진다 — 그때 돌려주는 run 은 **입력 그대로**
 /// (won = false)이고, 점수를 하나 늘려 같은 인자로 다시 부르면 같은 판이 이어진다. null 이면 자동 점수.
 /// 적은 늘 자동 점수.
+/// 대회 웨이브 [wave] 의 경기장 오행(2026-10-16) — **회차 seed** 로 정한다(같은 회차·같은 웨이브면 모두 같다).
+/// [roundSeed] 가 null 이거나 경기장 효과가 꺼져 있으면 null(효과 없음). 앱 화면·서버 판정·시뮬이 같은 함수.
+Element? eventArenaOf(int? roundSeed, int wave, DuelParams p) =>
+    roundSeed == null || !p.arenaOn
+    ? null
+    : duelArenaOf(roundSeed * 31 + wave * 7919);
+
 EventDuelStep eventDuelFight({
   required int seed,
   required EventDuelRun run,
@@ -426,6 +433,7 @@ EventDuelStep eventDuelFight({
   required EventDuelSpec spec,
   double? launch,
   List<double>? clutchScores,
+  int? roundSeed,
 }) {
   // 대회 전용 종 배율([EventDuelSpec.speciesScale]) — 카드보다 먼저(곤충 자체의 몫).
   final f = spec.speciesScaleOf(bug.speciesId);
@@ -435,6 +443,8 @@ EventDuelStep eventDuelFight({
     a: run.dress(me),
     b: enemy,
     params: params,
+    // 경기장 오행 — 웨이브마다 바뀌고 같은 회차의 모두가 같다(회차 seed + 웨이브, 재도전해도 그대로).
+    arena: eventArenaOf(roundSeed, run.wave, params),
     launchA: launch,
     hpA: run.hpPct,
     clutchScores: clutchScores,

@@ -150,6 +150,10 @@ Future<void> _openPassiveReroll(
   final name = sp.name.resolve(Localizations.localeOf(ctx).languageCode);
   final cur = passiveOf(bug, sp, petCfg);
   if (cur == null) return;
+  // 나올 수 있는 범위(롤 0 ~ 100) — "재굴림해도 똑같은 게 나온다"(2026-10-16 사장님 지적): 종류는 고정이고
+  // 크기만 최대치의 80~100% 안에서 움직여서 바뀐 게 안 보였다. 규칙은 그대로, 범위를 보여 준다(사장님 확정).
+  final lo = passiveOf(bug.copyWith(passiveRoll: 0), sp, petCfg);
+  final hi = passiveOf(bug.copyWith(passiveRoll: 100), sp, petCfg);
   final have = save.essence[bug.speciesId] ?? 0;
   final essenceOk = cfg.rerollEssence > 0 && have >= cfg.rerollEssence;
   // 업데이트 전 곤충의 무료 재굴림(2026-10-14 사장님 확정 — 곤충마다 5번).
@@ -174,6 +178,18 @@ Future<void> _openPassiveReroll(
             fontWeight: FontWeight.w900,
           ),
         ),
+        if (lo != null && hi != null) ...[
+          const SizedBox(height: 4),
+          Text(
+            l.passiveRerollRange(passiveValueText(lo), passiveValueText(hi)),
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              color: Color(0xFFFFE08A),
+              fontSize: 12,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+        ],
         const SizedBox(height: 8),
         Text(
           l.passiveRerollDesc,
@@ -194,7 +210,9 @@ Future<void> _openPassiveReroll(
           const SizedBox(height: 4),
         ],
         Text(
-          l.passiveRerollEssenceHave(name, '$have'),
+          cfg.rerollEssence > have
+              ? '${l.passiveRerollEssenceHave(name, '$have')} · ${l.igNeedMoreEssence('${cfg.rerollEssence - have}')}'
+              : l.passiveRerollEssenceHave(name, '$have'),
           textAlign: TextAlign.center,
           style: TextStyle(
             color: essenceOk
@@ -249,9 +267,13 @@ Future<void> _openPassiveReroll(
   if (!res.isOk) {
     showCenterToast(ctx, switch (res.error) {
       'no_jelly' => l.notEnoughJelly,
-      'no_essence' => l.passiveRerollNoEssence,
+      'no_essence' =>
+        cfg.rerollEssence > have
+            ? l.igNeedMoreEssence('${cfg.rerollEssence - have}')
+            : l.passiveRerollNoEssence,
       'egg' => l.passiveRerollEgg,
-      'no_free' => l.igGradeFailed,
+      'no_free' => l.passiveRerollNoFree,
+      'pending' => l.passiveRerollPending,
       _ => l.igGradeFailed,
     });
     return;
@@ -275,6 +297,8 @@ Future<void> _pickPassiveRoll(
   final cur = passiveOf(bug, sp, petCfg);
   final next = passiveOf(bug.copyWith(passiveRoll: newRoll), sp, petCfg);
   if (cur == null || next == null) return;
+  // 지금 등급(개체 등급 × 희귀도)에서 나올 수 있는 최대 — 롤 100 의 값(2026-10-17 사장님: "롤" 대신 최대값으로).
+  final max = passiveOf(bug.copyWith(passiveRoll: 100), sp, petCfg);
 
   Widget side(String title, SpeciesPassive p, int roll, {bool hi = false}) =>
       Expanded(
@@ -333,6 +357,18 @@ Future<void> _pickPassiveRoll(
             side(l.passiveRerollNew, next, newRoll, hi: newRoll > oldRoll),
           ],
         ),
+        if (max != null) ...[
+          const SizedBox(height: 6),
+          Text(
+            l.passiveRerollMaxNow(passiveValueText(max)),
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              color: Color(0xFFFFE08A),
+              fontSize: 12,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+        ],
         const SizedBox(height: 8),
         Text(
           l.passiveRerollPaid,

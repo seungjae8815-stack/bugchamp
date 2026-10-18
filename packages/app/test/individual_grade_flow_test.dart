@@ -145,7 +145,11 @@ void main() {
         levelCap: pet.levelCap(bug.breakthroughTier),
         enhance: data.enhanceConfig,
       );
-      final m = pet.individualGrade.battleMods(bug, sp);
+      final m = pet.individualGrade.battleMods(
+        bug,
+        sp,
+        rarityMult: pet.duelRarityMultOf(bug, sp),
+      );
       final want =
           DuelBug.fromBattleBug(
                 buildBattleBug(

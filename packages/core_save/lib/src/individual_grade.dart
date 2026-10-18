@@ -29,8 +29,10 @@ GradeOp convertToEssence(
   SaveGame s,
   Iterable<String> bugIds,
   IndividualGradeConfig cfg,
-  Map<String, Species> speciesById,
-) {
+  Map<String, Species> speciesById, {
+  // 곤충 희귀도(1.0.22) — 정수 가치는 곤충 희귀도로. 꺼져 있으면 종 희귀도.
+  BugRarityConfig rarity = const BugRarityConfig(),
+}) {
   final want = bugIds.toSet();
   if (want.isEmpty) return const GradeOp.fail('none');
   final pinned = s.pinnedBugIds;
@@ -53,7 +55,7 @@ GradeOp convertToEssence(
       keep.add(b);
       continue;
     }
-    final v = cfg.essenceOf(b, sp.grade);
+    final v = cfg.essenceOf(b, rarity.rarityOf(b, sp));
     if (v <= 0) {
       eggs++;
       keep.add(b);
@@ -129,6 +131,48 @@ GradeOp gradeUp(
       growthPotions: s.growthPotions - potions,
     ),
     extra: {'before': before, 'after': after, 'cost': cost},
+  );
+}
+
+/// 업데이트 전 곤충이 **놓친 능력치 굴리기 횟수**(2026-10-16 사장님 확정, 1.0.22) — 옛 규칙으로 오른 등급 단계 수.
+/// 새 곤충은 일반 → 지금 등급까지 등급마다 한 번씩 굴렸다(등급 − 1번). 업데이트 전 곤충은 옛 합성·태생 등급으로 올라
+/// 한 번도 못 굴렸다 — 그만큼을 무료로 준다. 새 규칙으로 올린 단계(옛 합성 단계 `ls` 뒤)는 이미 굴렸으니 뺀다.
+int legacyMissedRolls(IndividualBug b) {
+  if (b.newGen) return 0;
+  final ls = b.legacySynthUps;
+  final newUps = ls == null ? 0 : math.max(0, b.synthUps - ls);
+  return math.max(0, b.potential - 1 - newUps);
+}
+
+/// 남은 놓친 굴리기 횟수.
+int legacyRollsLeft(IndividualBug b) =>
+    math.max(0, legacyMissedRolls(b) - b.legacyRollUps);
+
+/// 놓친 굴리기 한 번 — 등급 올리기와 **같은 규칙**(칸마다 기존 값과 새 롤 중 큰 쪽 + 물약 1개당 +3점, 내려가지 않는다).
+/// 정수는 들지 않는다(무료 — 이미 그 등급까지 키운 몫). 물약은 [potions] 개 쓴다.
+GradeOp legacyRollUp(
+  SaveGame s,
+  String bugId,
+  IndividualGradeConfig cfg,
+  math.Random rng, {
+  int potions = 0,
+}) {
+  final i = s.bugs.indexWhere((b) => b.id == bugId);
+  if (i < 0) return const GradeOp.fail('no_bug');
+  final b = s.bugs[i];
+  if (b.stage == LifeStage.egg) return const GradeOp.fail('egg');
+  if (legacyRollsLeft(b) <= 0) return const GradeOp.fail('none_left');
+  if (potions < 0 || potions > cfg.potionMaxPerUse) {
+    return const GradeOp.fail('potion_count');
+  }
+  if (potions > s.growthPotions) return const GradeOp.fail('no_potion');
+  final before = b.statRolls;
+  final after = cfg.rollUp(before, rng, potions);
+  final bugs = [...s.bugs]
+    ..[i] = b.copyWith(rolls: after, legacyRollUps: b.legacyRollUps + 1);
+  return GradeOp.ok(
+    s.copyWith(bugs: bugs, growthPotions: s.growthPotions - potions),
+    extra: {'before': before, 'after': after},
   );
 }
 
@@ -271,12 +315,16 @@ int potionDropsOn(SaveGame s, String day) {
 
 /// 롤 정리(서버 업로드 · 앱 로드 공용) — **등급 올리기를 한 적 없는 곤충(합성 단계 0)의 롤은 처음 롤**이다.
 /// 처음 롤은 id 로 다시 계산되므로, 저장값이 붙어 있으면 위조(또는 옛 데이터)라 지운다. 칸 수가 다르면 지운다.
+/// 놓친 능력치 굴리기(`lru`)로 남은 롤은 **놓친 굴리기가 있는 곤충**(업데이트 전 곤충)만 인정한다 —
+/// 새 곤충에 `lru` 를 붙여 만점 롤을 남기던 구멍(2026-10-16 출시 전 검토).
 SaveGame sanitizeGradeRolls(SaveGame s) {
   var changed = false;
+  bool earned(IndividualBug b) =>
+      b.synthUps > 0 || (b.legacyRollUps > 0 && legacyMissedRolls(b) > 0);
   final bugs = [
     for (final b in s.bugs)
       if (b.rolls != null &&
-          (b.synthUps <= 0 || b.rolls!.length != StatRoll.values.length))
+          (!earned(b) || b.rolls!.length != StatRoll.values.length))
         () {
           changed = true;
           return IndividualBug.fromJson(b.toJson()..remove('rl'));

@@ -820,6 +820,22 @@ class _EventScreenState extends ConsumerState<EventScreen> {
     ),
   );
 
+  /// 대회에서 실제로 싸우는 능력치 — 결투 능력치에 대회 전용 종 배율(`duelWave.speciesScale`)을 얹는다
+  /// (엔진 `eventDuelFight` 와 같은 몫). 목록만 배율을 얹고 출전 칸·상세 창은 결투 값이던 시절,
+  /// 배율이 큰 장수하늘소(1.19)와 작은 장수말벌(0.67)의 전투력이 화면마다 뒤바뀌어 보였다(2026-10-16 문의).
+  DuelBug _eventDuelBug(
+    IndividualBug bug,
+    GameData data,
+    SaveGame save,
+    String locale,
+  ) {
+    final d = duelBugFor(bug, data, save, locale);
+    final f = EventDuelSpec.fromJson(
+      data.eventConfig?.duelWaveJson,
+    ).speciesScaleOf(bug.speciesId);
+    return f == 1 ? d : d.withTraining(hpMult: f, atkMult: f, defMult: f);
+  }
+
   /// 출전 확인 — 결투와 같은 능력치 창에 `취소 · 출전`(이미 출전 중이면 `해제`).
   Future<void> _confirmEntry(
     AppLocalizations l,
@@ -832,7 +848,7 @@ class _EventScreenState extends ConsumerState<EventScreen> {
     final ok = await showDuelBugInfo(
       context,
       data,
-      duelBugFor(bug, data, save, locale),
+      _eventDuelBug(bug, data, save, locale),
       confirm: picked ? l.squadRelease : l.squadDeploy,
       bug: bug,
     );
@@ -851,7 +867,7 @@ class _EventScreenState extends ConsumerState<EventScreen> {
         ? null
         : save.bugs.where((b) => b.id == _team.first).firstOrNull;
     final sp = bug == null ? null : data.speciesById[bug.speciesId];
-    final d = bug == null ? null : duelBugFor(bug, data, save, locale);
+    final d = bug == null ? null : _eventDuelBug(bug, data, save, locale);
     const h = 210.0;
     return Container(
       margin: const EdgeInsets.fromLTRB(12, 4, 12, 8),
@@ -1058,18 +1074,9 @@ class _EventScreenState extends ConsumerState<EventScreen> {
     final power = <String, double>{
       for (final b in adults)
         if (basePower[b.id] != null)
-          b.id: switch (spec?.speciesScaleOf(b.speciesId) ?? 1) {
-            1 => basePower[b.id]!,
-            final f => duelPowerOf(
-              duelBugFor(
-                b,
-                data,
-                save,
-                'ko',
-              ).withTraining(hpMult: f, atkMult: f, defMult: f),
-              data,
-            ),
-          },
+          b.id: (spec?.speciesScaleOf(b.speciesId) ?? 1) == 1
+              ? basePower[b.id]!
+              : duelPowerOf(_eventDuelBug(b, data, save, 'ko'), data),
     };
     DateTime? restUntil(IndividualBug b) {
       if (!duel) return save.eventFatigue[b.id];

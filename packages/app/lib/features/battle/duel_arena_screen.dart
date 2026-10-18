@@ -8,6 +8,7 @@ import 'package:flutter/scheduler.dart';
 
 import '../../domain/audio_service.dart';
 import '../../l10n/app_localizations.dart';
+import '../../ui/arena_line.dart';
 import '../../ui/art.dart';
 import '../../ui/game_dialog.dart';
 import '../../ui/skin_badges.dart';
@@ -17,6 +18,7 @@ import 'clutch_gauge.dart';
 import 'duel_driver.dart';
 import '../../ui/colors.dart';
 import '../../ui/avatar.dart';
+import '../../ui/labels.dart';
 
 /// 곤충 배틀 스타디움 — **던질 때는 위에서, 싸울 때는 옆에서**(docs/design_duel.md §7).
 ///
@@ -33,6 +35,8 @@ class DuelArenaScreen extends StatefulWidget {
     required this.params,
     required this.arena,
     required this.onFinished,
+    this.arenaAt,
+    this.arenaEffect = false,
     this.mySkins = const {},
     this.foeSkins = const {},
     this.myBadges = const [],
@@ -56,8 +60,16 @@ class DuelArenaScreen extends StatefulWidget {
   final DuelDriver driver;
   final DuelParams params;
 
-  /// 경기장 오행(상대 1번 곤충) — 그림만 고른다.
+  /// 경기장 오행 — 그림(2026-10-16 부터는 서버가 정한 경기장 · 효과는 엔진이 이미 입혔다).
   final Element arena;
+
+  /// 판마다 경기장이 바뀌는 곳(대회 웨이브)의 지금 경기장. null = [arena] 고정.
+  final Element Function()? arenaAt;
+
+  Element get arenaNow => arenaAt?.call() ?? arena;
+
+  /// 경기장 효과 줄을 보일지(서버가 경기장을 정한 경기·대회만 — 옛 세션은 그림만이라 효과가 없다).
+  final bool arenaEffect;
 
   /// 경기가 끝났을 때(결과 팝업 전) — 호출자가 세이브를 채택하거나 로컬 보상을 반영한다.
   final Future<void> Function(DuelStep last) onFinished;
@@ -130,6 +142,10 @@ class _DuelArenaScreenState extends State<DuelArenaScreen>
   /// 지금 판의 두 곤충 번호 — 승자 연속이라 **진 쪽만** 다음 곤충으로 바뀐다
   /// (내 곤충 = 상대가 이긴 판 수번째). 판 결과 화면까지는 방금 싸운 둘을 그대로 둔다.
   int _ia = 0, _ib = 0;
+
+  /// 이번 판 경기장 — 조준이 시작될 때 정해 판이 끝날 때까지 그대로(2026-10-17 사장님 지적: 대회는 던지면
+  /// 서버가 다음 웨이브 진행을 바로 돌려줘서, 이번 판을 재생하는 동안 경기장이 다음 웨이브 것으로 바뀌었다).
+  late Element _arena = widget.arenaNow;
   DuelBug get _curA => widget.mine[_ia.clamp(0, widget.mine.length - 1)];
   DuelBug get _curB => widget.foeAt != null
       ? widget.foeAt!(_ib)
@@ -484,6 +500,7 @@ class _DuelArenaScreenState extends State<DuelArenaScreen>
       _bout++;
       _ia = _winsB;
       _ib = widget.foeIndex?.call() ?? _winsA;
+      _arena = widget.arenaNow;
       _step = null;
       _go(_Phase.aim);
       if (!widget.driver.interactive) _throw(widget.params.launchAuto);
@@ -669,6 +686,9 @@ class _DuelArenaScreenState extends State<DuelArenaScreen>
                       AvatarCircle(id: widget.myAvatar, size: 24),
                       const SizedBox(width: 5),
                     ],
+                    // 곤충 오행(2026-10-17 사장님 요청) — 경기장·상극을 경기 중에도 읽게.
+                    elementIcon(a.element, size: 16),
+                    const SizedBox(width: 3),
                     Flexible(
                       child: Text(
                         a.name,
@@ -705,6 +725,8 @@ class _DuelArenaScreenState extends State<DuelArenaScreen>
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
+                    const SizedBox(width: 3),
+                    elementIcon(b.element, size: 16),
                     if (widget.foeAvatar != null) ...[
                       const SizedBox(width: 5),
                       AvatarCircle(id: widget.foeAvatar, size: 24),
@@ -714,6 +736,15 @@ class _DuelArenaScreenState extends State<DuelArenaScreen>
               ),
             ],
           ),
+          // 경기장 오행(2026-10-16) — 이름 줄 아래 따로(머리말에 붙이면 세 언어 모두 넘쳤다 — 출시 전 점검).
+          // 던지기(조준) 중에는 숨긴다 — 상대 곤충에 글씨가 가렸다(2026-10-17 사장님 요청). 후보 창에서 이미 봤다.
+          if (widget.arenaEffect &&
+              widget.params.arenaOn &&
+              _phase != _Phase.aim)
+            Padding(
+              padding: const EdgeInsets.only(top: 2),
+              child: arenaEffectLine(l, _arena, widget.params, fontSize: 11.5),
+            ),
         ],
       ),
     );
@@ -931,7 +962,7 @@ class _DuelArenaScreenState extends State<DuelArenaScreen>
           children: [
             ClipOval(
               child: gameImageChain(
-                ['assets/images/duel/arena_${widget.arena.key}.webp'],
+                ['assets/images/duel/arena_${_arena.key}.webp'],
                 size: side,
                 fit: BoxFit.cover,
                 fallback: Container(
@@ -1571,7 +1602,7 @@ class _DuelArenaScreenState extends State<DuelArenaScreen>
             stops: [0, 0.14, 0.84, 1],
           ).createShader(rect),
           child: gameImageChain(
-            ['assets/images/duel/arena_${widget.arena.key}_side.webp'],
+            ['assets/images/duel/arena_${_arena.key}_side.webp'],
             size: imgH,
             fit: BoxFit.fill,
             fallback: Center(

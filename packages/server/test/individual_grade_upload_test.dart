@@ -79,8 +79,9 @@ void main() {
     for (final s in a.config.speciesList) s.id: s,
   };
 
-  Grade rarity(String sp) =>
-      on.config.speciesList.firstWhere((x) => x.id == sp).grade;
+  /// 곤충 희귀도(1.0.22 — 서버 `_enforceGrade` 와 같은 `PetConfig.rarityOf`).
+  Grade bugRarity(IndividualBug b) =>
+      on.config.pet.rarityOf(b, byId(on)[b.speciesId]!);
 
   test('구버전 앱(feat 23)이 올려도 정수·물약·롤·뽑기 출신·표식·옛 합성 단계·전설 천장을 지킨다', () {
     const good = [90, 90, 90, 90, 90, 90, 90, 90];
@@ -133,7 +134,7 @@ void main() {
       final fake = s.copyWith(essence: {'stag_dorcus': 1000}).toJson();
       expect(on.mergeSave(s, fake).save!.essence['stag_dorcus'] ?? 0, 0);
       // a 를 정수로 바꿨다 — 일반 1마리 = 1 × 희귀도.
-      final v = g.essenceOf(bug('a'), rarity('stag_dorcus'));
+      final v = g.essenceOf(bug('a'), bugRarity(bug('a')));
       final ok = s
           .copyWith(bugs: [bug('b')], essence: {'stag_dorcus': v})
           .toJson();
@@ -146,7 +147,10 @@ void main() {
       for (final sp in ['stag_dorcus', 'longhorn_relict']) {
         final egg = bug('e', pot: 3, stage: LifeStage.egg, sp: sp);
         final s = stored([egg, bug('keep')]);
-        final v = g.essenceOf(egg.copyWith(stage: LifeStage.larva), rarity(sp));
+        final v = g.essenceOf(
+          egg.copyWith(stage: LifeStage.larva),
+          bugRarity(egg),
+        );
         expect(v, greaterThan(0));
         final up = s.copyWith(bugs: [bug('keep')], essence: {sp: v}).toJson();
         final r = on.mergeSave(s, up);
@@ -193,6 +197,219 @@ void main() {
       expect(on.mergeSave(s, j).save!.bugs.first.fromGacha, isTrue);
     });
 
+    test('뽑기 출신 표식은 옛 곤충에 새로 붙이지 못한다(1.0.22 — gc 면 희귀도가 뽑기 표로 굴려진다)', () {
+      final s = stored([bug('a', pot: 2)]);
+      final j = stored([bug('a', pot: 2, gc: true)]).toJson();
+      expect(on.mergeSave(s, j).save!.bugs.first.fromGacha, isFalse);
+    });
+
+    test('곤충 희귀도 ry(1.0.22) — 옛 곤충에 적지 못하고, 떨궈도 되돌리고, 다른 값으로 바꾸지 못한다', () {
+      final s = stored([bug('old', pot: 2)]);
+      final j = stored([
+        bug('old', pot: 2).copyWith(rarity: Grade.legendary),
+      ]).toJson();
+      expect(on.mergeSave(s, j).save!.bugs.first.rarity, isNull);
+      // 구버전 앱(ry 를 모름)이 떨궈 올려도 저장본 값.
+      final s2 = stored([bug('r', pot: 1).copyWith(rarity: Grade.rare)]);
+      final j2 = stored([bug('r', pot: 1)]).toJson();
+      expect(on.mergeSave(s2, j2).save!.bugs.first.rarity, Grade.rare);
+      final j3 = stored([
+        bug('r', pot: 1).copyWith(rarity: Grade.legendary),
+      ]).toJson();
+      expect(on.mergeSave(s2, j3).save!.bugs.first.rarity, Grade.rare);
+    });
+
+    test(
+      '곤충 희귀도 ry(1.0.22) — 새 곤충은 희귀 천장 id 롤과 같은 값만 · 허용치까지 · 뽑기 출신은 안 됨',
+      () {
+        const r = BugRarityConfig(enabled: true);
+        IndividualBug pity(String id) =>
+            bug(id, pot: 1).copyWith(rarity: r.pityRarityOf(id));
+        final s = stored(const []);
+        // 맞는 값 2개 + 위조(전설로 고친 것) + 뽑기 출신에 적은 것 + 허용치 넘는 것.
+        var forged = 'f0';
+        for (var i = 0; r.pityRarityOf(forged) == Grade.legendary; i++) {
+          forged = 'f$i';
+        }
+        final client = stored([
+          pity('a'),
+          pity('b'),
+          bug(forged, pot: 1).copyWith(rarity: Grade.legendary),
+          bug('g', pot: 1, gc: true).copyWith(rarity: r.pityRarityOf('g')),
+          pity('c'),
+        ]);
+        final out = GameActions.guardGradeBugFields(
+          s,
+          client,
+          rarity: r,
+          newRarityAllowance: 2,
+        );
+        Grade? ry(String id) => out.bugs.firstWhere((b) => b.id == id).rarity;
+        expect(ry('a'), r.pityRarityOf('a'));
+        expect(ry('b'), r.pityRarityOf('b'));
+        expect(ry(forged), isNull);
+        expect(ry('g'), isNull);
+        expect(ry('c'), isNull); // 허용치(2) 초과
+        // 꺼져 있으면 새 곤충의 ry 도 지운다(쓰이지 않는 값).
+        final off = GameActions.guardGradeBugFields(s, stored([pity('a')]));
+        expect(off.bugs.first.rarity, isNull);
+      },
+    );
+
+    test('희귀도 올리기(1.0.22) — 재료 3마리가 사라진 업로드만 인정 · 재료로 정수를 또 받지 못한다', () {
+      IndividualBug c(String id) =>
+          bug(id, pot: 1).copyWith(rarity: Grade.common);
+      final s = stored([c('t'), c('a'), c('b'), c('c')]);
+      final up = rarityUp(s, 't', on.config.pet, {
+        for (final x in on.config.speciesList) x.id: x,
+      });
+      expect(up.isOk, isTrue);
+      final out = on.mergeSave(s, up.save!.toJson()).save!;
+      expect(out.bugs.single.rarity, Grade.uncommon);
+      // 재료를 남긴 채 희귀도만 올리면 저장본 값.
+      final forged = stored([
+        c('t').copyWith(rarity: Grade.uncommon),
+        c('a'),
+        c('b'),
+        c('c'),
+      ]).toJson();
+      expect(
+        on
+            .mergeSave(s, forged)
+            .save!
+            .bugs
+            .firstWhere((b) => b.id == 't')
+            .rarity,
+        Grade.common,
+      );
+      // 재료를 정수로도 받겠다고 하면 정수는 잘린다(재료 3마리분은 이미 희귀도로 썼다).
+      final greedy = up.save!.copyWith(essence: {'stag_dorcus': 3}).toJson();
+      final r = on.mergeSave(s, greedy).save!;
+      expect(r.bugs.single.rarity, Grade.uncommon);
+      expect(r.essence['stag_dorcus'] ?? 0, lessThan(3));
+    });
+
+    test('희귀도 올리기 — 저장본에 알이던 곤충(마지막 업로드 뒤 부화)도 재료로 센다', () {
+      IndividualBug c(String id, {LifeStage stage = LifeStage.adult}) =>
+          bug(id, pot: 1, stage: stage).copyWith(rarity: Grade.common);
+      final s = stored([
+        c('t'),
+        c('a', stage: LifeStage.egg),
+        c('b', stage: LifeStage.egg),
+        c('c', stage: LifeStage.egg),
+      ]);
+      // 앱: 알 3마리 부화 → 바로 재료로.
+      final client = stored([c('t').copyWith(rarity: Grade.uncommon)]).toJson();
+      final out = on.mergeSave(s, client).save!;
+      expect(out.bugs.single.rarity, Grade.uncommon);
+    });
+
+    test('희귀도 자동 올리기 — 업로드 사이에 올린 곤충을 바로 재료로 써도 인정한다(이어 올리기)', () {
+      IndividualBug c(String id, {int lv = 1}) =>
+          bug(id, pot: 1).copyWith(rarity: Grade.common, level: lv);
+      final s = stored([c('t', lv: 5), for (var i = 0; i < 15; i++) c('w$i')]);
+      final up = autoRarityUp(s, on.config.pet, {
+        for (final x in on.config.speciesList) x.id: x,
+      });
+      expect(up.isOk, isTrue);
+      expect(up.save!.bugs.single.rarity, Grade.rare);
+      final out = on.mergeSave(s, up.save!.toJson()).save!;
+      expect(out.bugs.single.rarity, Grade.rare);
+    });
+
+    test('새 곤충의 뽑기 출신 gc — 쓴 젤리 ÷ 뽑기 가격 개 + 결제 알(iap-) 업로드당 4개까지', () {
+      final cost = on.config.pet.gachaJellyCost;
+      expect(cost, greaterThan(0));
+      final s = stored([
+        // 서버가 먼저 지급한 결제 알(저장본에 있음)은 그대로.
+        bug('iap-old-0', pot: 4, gc: true, stage: LifeStage.egg),
+      ]).copyWith(materials: {MaterialKind.jelly: cost * 3});
+      final client = s.copyWith(
+        materials: {MaterialKind.jelly: cost}, // 2번 뽑을 만큼 썼다
+        bugs: [
+          bug('iap-old-0', pot: 4, gc: true, stage: LifeStage.egg),
+          for (var i = 0; i < 4; i++)
+            bug('g$i', pot: 3, gc: true, stage: LifeStage.egg),
+          for (var i = 0; i < 6; i++)
+            bug('iap-x-$i', pot: 4, gc: true, stage: LifeStage.egg),
+        ],
+      );
+      final out = on.mergeSave(s, client.toJson()).save!;
+      bool gc(String id) => out.bugs.firstWhere((b) => b.id == id).fromGacha;
+      expect(gc('iap-old-0'), isTrue);
+      expect(
+        [for (var i = 0; i < 4; i++) gc('g$i')].where((x) => x).length,
+        2 + GameActions.kGachaSlackPerUpload,
+      );
+      expect(
+        [for (var i = 0; i < 6; i++) gc('iap-x-$i')].where((x) => x).length,
+        GameActions.kNewIapEggsPerUpload,
+      );
+      // 젤리를 안 썼으면 새 곤충의 gc 는 여유분만 남기고 지운다.
+      final free = stored([]).copyWith(
+        bugs: [
+          for (var i = 0; i < 3; i++)
+            bug('f$i', pot: 3, gc: true, stage: LifeStage.egg),
+        ],
+      );
+      expect(
+        on
+            .mergeSave(stored([]), free.toJson())
+            .save!
+            .bugs
+            .where((b) => b.fromGacha)
+            .length,
+        GameActions.kGachaSlackPerUpload,
+      );
+      // 10회 뽑기와 같은 구간에 젤리를 벌어(선물 2배 등) 순감소가 9번 값뿐이어도 10마리 모두 남는다(2026-10-17 점검).
+      final s10 = stored(
+        [],
+      ).copyWith(materials: {MaterialKind.jelly: cost * 10});
+      final c10 = s10.copyWith(
+        materials: {MaterialKind.jelly: 5}, // 10번(전부) 썼고 같은 구간에 젤리 5를 받았다
+        bugs: [
+          for (var i = 0; i < 10; i++)
+            bug('t$i', pot: 3, gc: true, stage: LifeStage.egg),
+        ],
+      );
+      expect(
+        on
+            .mergeSave(s10, c10.toJson())
+            .save!
+            .bugs
+            .where((b) => b.fromGacha)
+            .length,
+        10,
+      );
+    });
+
+    test('놓친 굴리기 횟수(lru)는 놓친 횟수를 넘지 못한다 · 새 곤충엔 붙지 않고 롤도 지운다', () {
+      const full = [100, 100, 100, 100, 100, 100, 100, 100];
+      // 새 곤충(켜진 뒤 생김)에 lru + 만점 롤.
+      final fresh = stored([
+        bug('n', pot: 1).copyWith(legacyRollUps: 1, rolls: full),
+      ]);
+      final n = on.mergeSave(stored([]), fresh.toJson()).save!.bugs.single;
+      expect(n.legacyRollUps, 0);
+      expect(n.rolls, isNull);
+      // 옛 곤충(3성 · 놓친 2번)에 lru 9 → 2.
+      final s = stored([bug('o', pot: 3, ng: false)]);
+      final j = stored([
+        bug('o', pot: 3, ng: false).copyWith(legacyRollUps: 9, rolls: full),
+      ]).toJson();
+      final o = on.mergeSave(s, j).save!.bugs.single;
+      expect(o.legacyRollUps, 2);
+      expect(o.rolls, full);
+    });
+
+    test('놓친 능력치 굴리기 횟수(lru, 1.0.22)는 줄지 않는다 — 0 으로 고쳐 무료 굴리기를 되살리지 못한다', () {
+      final s = stored([
+        bug('o', pot: 5, su: 4, ng: false).copyWith(legacyRollUps: 3),
+      ]);
+      final j = stored([bug('o', pot: 5, su: 4, ng: false)]).toJson();
+      expect(on.mergeSave(s, j).save!.bugs.single.legacyRollUps, 3);
+    });
+
     test('켜진 뒤 생김(ng) — 같은 id 에 새로 붙이지 못하고, 새 id 에는 붙는다', () {
       final s = stored([bug('old', pot: 5, ng: false)]);
       final j = stored([bug('old', pot: 5), bug('new', pot: 2)]).toJson();
@@ -228,7 +445,8 @@ void main() {
         (13 * g.essenceRarity[Grade.legendary]!).round(),
       );
       final s = stored([old]);
-      final v = g.essenceOf(old, rarity('longhorn_relict'));
+      // 곤충 희귀도(1.0.22) — 옛 곤충도 id 롤로 새로 굴려진 희귀도로 정수를 받는다.
+      final v = g.essenceOf(old, bugRarity(old));
       final up = s
           .copyWith(bugs: [], essence: {'longhorn_relict': 100000})
           .toJson();
@@ -435,7 +653,11 @@ void main() {
           levelCap: pet.levelCap(bug.breakthroughTier),
           enhance: on.config.enhance,
         );
-        final m = pet.individualGrade.battleMods(bug, sp);
+        final m = pet.individualGrade.battleMods(
+          bug,
+          sp,
+          rarityMult: pet.duelRarityMultOf(bug, sp),
+        );
         final want =
             DuelBug.fromBattleBug(
                   buildBattleBug(

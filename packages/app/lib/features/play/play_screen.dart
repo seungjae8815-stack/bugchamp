@@ -1843,52 +1843,65 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     // 천장에 닿으면 **드롭 확률 관문도 건너뛰고** 희귀+ 를 강제로 준다.
     // 확률만 강제하고 관문을 남기면 천장 뒤에도 수십 마리를 더 잡아야 한다.
     var pity = save.rarePity + 1;
+    var dropRarePlus = false; // 받았거나 필터로 재료가 된 희귀+ (곤충 희귀도)
     final pityDue =
         _config.rarePityKills > 0 && save.rarePity >= _config.rarePityKills;
     if (pityDue || _rng.nextDouble() < bugChance) {
       // 등급 가중치 + 한정 종(기간)을 한 함수가 처리한다 — 앱과 서버가
       // **같은 함수**를 써야 "화면에선 전설인데 정산은 일반"이 안 생긴다.
       final now = _clock.now().toUtc();
-      final sp = pickDropSpecies(
-        _rng,
-        _data.allSpecies,
-        weights: _config.dropGradeWeights,
-        now: now,
-        minGrade: pityDue ? Grade.rare : null,
-      );
+      // 곤충 희귀도(1.0.22)는 id 롤이라 id 를 먼저 만든다 — 방치 정산(`rollIdleDrops`)과 같은 함수.
+      final id = _uuid.v4();
+      final petCfg = _data.petConfig;
+      final drop = petCfg == null
+          ? null
+          : pickWildDrop(
+              _rng,
+              _data.allSpecies,
+              run: _config,
+              pet: petCfg,
+              id: id,
+              now: now,
+              pity: pityDue,
+            );
       // 종을 못 고르면(전부 기간 밖 등) **곤충만** 건너뛴다 — 여기서
       // return 하면 골드·재료·경험치까지 통째로 날아간다.
-      if (sp != null) {
-        if (!save.acceptsGrade(sp.grade)) {
-          released = sp.grade; // 재료로 환산(아래 mats 에서 합산)
+      if (drop != null) {
+        final sp = drop.species;
+        if (drop.rarity.index >= Grade.rare.index) dropRarePlus = true;
+        if (!save.acceptsGrade(drop.rarity)) {
+          released = drop.rarity; // 재료로 환산(아래 mats 에서 합산)
           releasedSpeciesId = sp.id; // 스킨 계열 보너스 판정용
         } else if (!save.storageFull) {
           // 채집함이 가득 차면 개체 롤 자체를 건너뛴다 — 굴려서 버리면
           // 연출만 뜨고 실제로는 안 들어와 버그로 보인다.
           final potential = wildPotentialOf(
-            _data.petConfig,
+            petCfg,
             _rng.nextDouble(),
             _rng.nextDouble(),
           );
           bug =
               IndividualBug.roll(
-                id: _uuid.v4(),
+                id: id,
                 species: sp,
                 rng: _rng,
                 potential: potential.clamp(1, 5),
-                variantChance: _data.petConfig?.variantWildChance ?? 0,
+                variantChance: petCfg?.variantWildChance ?? 0,
               ).copyWith(
                 stage: LifeStage.egg,
                 stageSince: _clock.now().toUtc(),
                 // 개체 등급이 켜진 뒤 생긴 곤충 표식(정수 가치 — essenceOf).
-                newGen: _data.petConfig?.individualGrade.enabled ?? false,
+                newGen: petCfg?.individualGrade.enabled ?? false,
+                rarity: drop.fixed,
               );
           // 희귀 이상은 전용 팡파레 — "이번 건 다르다"가 즉시 귀로 구분돼야 한다.
-          if (sp.grade.index >= Grade.rare.index) {
+          if (drop.rarity.index >= Grade.rare.index) {
             AudioService.instance.sfxRare();
           } else {
             AudioService.instance.sfxCatch();
           }
+        } else {
+          dropRarePlus = false; // 채집함이 가득 차 버려진 롤 — 천장을 되감지 않는다
         }
       }
     }
@@ -1896,13 +1909,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     // 희귀+ 가 실제로 **나왔을 때만**(받았든 필터로 재료가 됐든) 천장을
     // 되감는다. 채집함이 가득 차 버려진 롤로 되감으면, 천장이 허공에 쓰인다.
     // 필터 방생은 유저의 선택이라 "나온 것"으로 친다.
-    final caughtGrade = bug == null
-        ? null
-        : _data.speciesById[bug.speciesId]?.grade;
-    if ((caughtGrade != null && caughtGrade.index >= Grade.rare.index) ||
-        (released != null && released.index >= Grade.rare.index)) {
-      pity = 0;
-    }
+    if (dropRarePlus) pity = 0;
 
     // 화석 조각(제련용) — **잡는 데 걸린 시간에 비례**해 쌓는다.
     // 스테이지를 보지 않으므로 낮은 난이도로 내려가도 시간당 획득이 같고,
@@ -8218,6 +8225,10 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                       _devBtn('정수 +200(전 종)·물약 +10', () async {
                         await ctrl.devGradeKit();
                         toast('정수·물약 넣음');
+                      }),
+                      _devBtn('희귀도 올리기 재료(같은 종·일반 4마리)', () async {
+                        await ctrl.devRarityUpKit();
+                        toast('같은 종·일반 희귀도 4마리 넣음 — 채집함에서 초록 ↑ 확인');
                       }),
                       // 부화 공개 연출 미리보기(2026-10-14) — 가진 곤충으로 연출만 띄운다(세이브는 그대로).
                       _devBtn('부화 연출 1마리', () => _devHatchReveal(1)),

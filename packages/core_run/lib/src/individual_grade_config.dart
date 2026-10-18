@@ -136,6 +136,8 @@ class IndividualGradeConfig {
   /// 결투·대회 능력치 보정(앱 `duelBugFor`·서버 `validateDuelTeam` 이 같은 함수로 입힌다).
   /// 체력·공격·방어 = 등급 배율 × 종 배율 × 롤 · 속도 = 롤 · 치명·회피·회복력 = 타고난 값 · 밀어내기 = 롤.
   /// 꺼져 있으면 모두 중립(1·0) — 옛 규칙 그대로.
+  /// [rarityMult] = 곤충 희귀도 결투 배율(1.0.22 `bugRarity.duelMult` — 호출자는 `PetConfig.duelRarityMultOf`).
+  /// 개체 등급이 꺼져 있어도 곱한다(희귀도는 별개 축).
   ({
     double hp,
     double atk,
@@ -146,12 +148,12 @@ class IndividualGradeConfig {
     double recovery,
     double push,
   })
-  battleMods(IndividualBug bug, Species species) {
+  battleMods(IndividualBug bug, Species species, {double rarityMult = 1}) {
     if (!enabled) {
       return (
-        hp: 1,
-        atk: 1,
-        def: 1,
+        hp: rarityMult,
+        atk: rarityMult,
+        def: rarityMult,
         spd: 1,
         crit: 0,
         evade: 0,
@@ -161,7 +163,7 @@ class IndividualGradeConfig {
     }
     final r = bug.statRolls;
     int at(StatRoll s) => s.index < r.length ? r[s.index] : 50;
-    final g = statMultOf(bug.potential) * species.gradeScale;
+    final g = statMultOf(bug.potential) * species.gradeScale * rarityMult;
     return (
       hp: g * rollFactor(at(StatRoll.hp)),
       atk: g * rollFactor(at(StatRoll.atk)),

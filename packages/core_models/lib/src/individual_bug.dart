@@ -38,6 +38,8 @@ class IndividualBug {
     this.passiveV2 = false,
     this.passiveRoll,
     this.passiveFreeUsed = 0,
+    this.rarity,
+    this.legacyRollUps = 0,
     Element? element,
   }) : _element = element;
 
@@ -121,6 +123,21 @@ class IndividualBug {
   /// 업데이트 전 곤충의 **무료 패시브 재굴림**을 몇 번 썼나(JSON `pfu`, 2026-10-14 사장님 확정 — 1.0.21 에서
   /// 옛 곤충 패시브가 대부분 낮아져 곤충마다 무료 재굴림 `passiveV2.legacyFreeRerolls`(5)번). 0 이면 싣지 않는다.
   final int passiveFreeUsed;
+
+  /// 곤충 희귀도(2026-10-16 사장님 확정, 1.0.22, JSON `ry`, `docs/design_bug_rarity.md`) — 종이 아니라 **곤충마다**.
+  /// null = id 로 정해지는 롤([rarityRollOf] → 설정의 확률 표, core_run `BugRarityConfig.rarityOf`).
+  /// 업데이트 전 곤충도 같은 함수로 새로 굴려진다(사장님 확정 C안). 값은 천장·뽑기처럼 **정해서 줄 때만** 싣는다.
+  /// 서버는 저장본에 없던 **새 id** 에만 허용한다([newGen] 과 같은 이유).
+  final Grade? rarity;
+
+  /// 업데이트 전 곤충의 **놓친 능력치 굴리기**를 몇 번 썼나(JSON `lru`, 2026-10-16 사장님 확정 — 1.0.22).
+  /// 옛 규칙으로 등급이 오른 곤충은 등급 올리기의 롤 굴리기를 한 번도 못 받아 평균 50점에 머물렀다(문의).
+  /// 놓친 횟수(core_save `legacyMissedRolls`)만큼 무료로 굴린다. 서버는 줄지 않게 지킨다. 0 이면 싣지 않는다.
+  final int legacyRollUps;
+
+  /// id 로 정해지는 희귀도 롤(0 이상 1 미만) — 다른 롤과 겹치지 않는 씨앗.
+  static double rarityRollOf(String id) =>
+      Random(_fnv(id) ^ 0x2545f491).nextDouble();
 
   /// 지금 패시브 크기 롤(저장값 또는 처음 롤).
   int get passiveRollValue => passiveRoll ?? initialPassiveRollOf(id);
@@ -476,6 +493,8 @@ class IndividualBug {
     bool? passiveV2,
     int? passiveRoll,
     int? passiveFreeUsed,
+    Grade? rarity,
+    int? legacyRollUps,
     Element? element,
   }) => IndividualBug(
     id: id ?? this.id,
@@ -502,6 +521,8 @@ class IndividualBug {
     passiveV2: passiveV2 ?? this.passiveV2,
     passiveRoll: passiveRoll ?? this.passiveRoll,
     passiveFreeUsed: passiveFreeUsed ?? this.passiveFreeUsed,
+    rarity: rarity ?? this.rarity,
+    legacyRollUps: legacyRollUps ?? this.legacyRollUps,
     element: element ?? this.element,
   );
 
@@ -558,6 +579,13 @@ class IndividualBug {
     passiveFreeUsed: json['pfu'] is num
         ? ((json['pfu'] as num).toInt()).clamp(0, 999)
         : 0,
+    // 모르는 키는 null(= id 롤) — 던지지 않는다.
+    rarity: json['ry'] is String
+        ? Grade.fromKeyOrNull(json['ry'] as String)
+        : null,
+    legacyRollUps: json['lru'] is num
+        ? ((json['lru'] as num).toInt()).clamp(0, 99)
+        : 0,
     element: json['element'] == null
         ? null
         : Element.fromKeyOrNull(json['element'] as String),
@@ -593,6 +621,9 @@ class IndividualBug {
     if (passiveV2) 'p2': true,
     if (passiveRoll != null) 'pr': passiveRoll,
     if (passiveFreeUsed > 0) 'pfu': passiveFreeUsed,
+    // 정해서 준 희귀도만(대다수는 id 롤) — 세이브 크기(§3).
+    if (rarity != null) 'ry': rarity!.key,
+    if (legacyRollUps > 0) 'lru': legacyRollUps,
     'element': element.key,
   };
 
