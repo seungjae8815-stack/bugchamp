@@ -55,6 +55,14 @@ class _AppShellState extends ConsumerState<AppShell>
   /// 기기 권위 세이브 주기 업로드(서버 연결 시에만 동작).
   late final _uploader = ServerSaveUploader(ref);
 
+  /// 앱이 앞에 있는 동안의 버전·점검 게이트 재확인([_recheckGatePeriodic]).
+  Timer? _gateTimer;
+
+  /// 게이트 재확인 주기. 켜 둔 채 노는 구버전 앱이 강제 업데이트 뒤에도 몇 시간씩 업로드해
+  /// 서버가 정수를 되돌렸다(2026-10-18 운영 요약 — 1.0.21 앱이 1.0.22 서버에 붙음).
+  /// `/version` 은 DB 를 안 보는 가벼운 요청이지만 사용자 수만큼 선형으로 늘어난다 — 줄일 땐 요청 수를 본다.
+  static const _gatePeriod = Duration(minutes: 10);
+
   @override
   void initState() {
     super.initState();
@@ -75,6 +83,10 @@ class _AppShellState extends ConsumerState<AppShell>
       //    여기로 되돌리지 말 것 — 게임 화면 위에 차단 다이얼로그가 얹히고,
       //    동기화 전에 닉네임을 묻는 경합이 다시 생긴다.
       _uploader.start();
+      _gateTimer = Timer.periodic(
+        _gatePeriod,
+        (_) => unawaited(_recheckGatePeriodic()),
+      );
       // 지난 실행에서 검증이 멈춘 결제를 되살린다. 상점을 열어야만 결제
       // 서비스가 만들어지던 구조라, 여기서 부르는 것이 **구매 스트림 구독의
       // 유일한 보장**이기도 하다(앱을 끈 사이 끝난 결제를 놓치지 않는다).
@@ -105,6 +117,7 @@ class _AppShellState extends ConsumerState<AppShell>
   @override
   void dispose() {
     _uploader.stop();
+    _gateTimer?.cancel();
     NotifyPrefs.instance.settings.removeListener(_onNotifyChanged);
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
@@ -204,11 +217,31 @@ class _AppShellState extends ConsumerState<AppShell>
     if (!mounted) return;
     if (verdict == UpdateVerdict.none || verdict == UpdateVerdict.soft) return;
     // offline 도 되돌린다 — 시작 시 온라인 필수 규칙(2026-08)과 같은 자리다.
-    await Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute<void>(builder: (_) => const TitleScreen()),
-      (_) => false,
-    );
+    await _backToTitle();
   }
+
+  /// 앱이 앞에 있는 동안 [_gatePeriod] 마다 게이트를 다시 본다 — 복귀 때만 보던 시절, 켜 둔 채 노는
+  /// 구버전 앱은 강제 업데이트를 영영 못 만났다. **강제 업데이트·점검만** 되돌린다:
+  /// offline 은 놀던 중 잠깐 끊긴 것일 수 있어 게임을 끊지 않는다(연결 끊김 배너가 따로 있다).
+  Future<void> _recheckGatePeriodic() async {
+    if (WidgetsBinding.instance.lifecycleState != AppLifecycleState.resumed) {
+      return; // 백그라운드 — 복귀할 때 [_recheckGateOnResume] 이 본다.
+    }
+    final verdict = await checkAppVersion();
+    if (!mounted) return;
+    if (verdict != UpdateVerdict.hard && verdict != UpdateVerdict.maintenance) {
+      return;
+    }
+    // 되돌리기 전에 진행을 올린다(타이틀이 다시 막는 동안 잃지 않게).
+    await _uploader.flush();
+    if (!mounted) return;
+    await _backToTitle();
+  }
+
+  Future<void> _backToTitle() => Navigator.of(context).pushAndRemoveUntil(
+    MaterialPageRoute<void>(builder: (_) => const TitleScreen()),
+    (_) => false,
+  );
 
   /// 첫 프레임 후 1회: 알림 권한 요청 + 일일 보상 시각(daily.json)마다 반복 예약.
   /// 그 뒤로는 설정 스위치가 바뀔 때마다 예약을 다시 맞춘다([_onNotifyChanged]).
