@@ -84,6 +84,7 @@
 | `SUPABASE_ANON_KEY` | Edge Function(영수증 검증) 호출 (공개값) |
 | `GAME_DATA_DIR` | 밸런스 JSON 경로(Docker 가 설정) |
 | `PORT` | Cloud Run 이 주입(기본 8080) |
+| `MIN_SAVE_FEAT` | 이 미만 세이브 `feat` 업로드를 `409 session_taken` 으로 끊는다(0·없음 = 끔) — 아래 "강제 업데이트 올리는 순서" |
 
 > 🔴 `SUPABASE_SERVICE_ROLE_KEY` 는 **절대 앱·저장소에 넣지 않는다.**
 
@@ -139,6 +140,24 @@ gcloud run deploy bugchamp-server --source . --region asia-northeast3
 날아가고, 강제 업데이트 게이트가 풀리거나 문의가 조용히 죽는다.
 환경변수를 바꿀 땐 배포와 분리해 `services update --update-env-vars` 를 쓴다
 (`update` 는 지정한 것만 바꾼다).
+
+### 강제 업데이트 올리는 순서
+
+강제 업데이트(`MIN_SUPPORTED_VERSION_*`)를 올릴 때 **`MIN_SAVE_FEAT` 도 그 버전의 `kSaveFeatureLevel`**
+(`packages/core_save/lib/src/save_game.dart`)로 함께 올린다. 둘 다 `update` 라 재배포 없이, 지정한 것만 바뀐다.
+
+```powershell
+gcloud run services update bugchamp-server --region asia-northeast3 --update-env-vars MIN_SUPPORTED_VERSION_ANDROID=<새 versionCode>,MIN_SUPPORTED_VERSION_IOS=<새 versionCode>,MIN_SAVE_FEAT=<새 feat>
+```
+
+- 이유: 앱의 버전 확인은 **켤 때·다시 앞으로 올 때**(1.0.23부터는 앞에 있는 동안 10분마다도)뿐이라,
+  강제 업데이트 전부터 켜 둔 구버전 앱은 몇 시간씩 새 서버에 올린다(2026-10-18 — 1.0.21 앱이 7시간 동안
+  1.0.22 서버에 올려 정수가 잘렸다). 서버가 낮은 `feat` 업로드를 저장하지 않고 "다른 기기에서 접속 중"을
+  돌려주면(구버전 앱이 화면을 덮는 유일한 응답) 유저가 껐다 켜고 강제 업데이트 화면을 본다.
+- ⚠️ 새 버전이 `kSaveFeatureLevel` 을 올리지 않았으면 `MIN_SAVE_FEAT` 은 그대로 둔다 — 올리면 **새 버전 앱도 막힌다**.
+- ⚠️ 한 플랫폼만 강제 업데이트할 때(다른 쪽이 아직 심사 중)는 올리지 않는다 — `MIN_SAVE_FEAT` 은 플랫폼을 가리지 않아
+  아직 못 받는 쪽 유저가 막힌다. 양쪽이 다 나간 뒤 올린다.
+- 확인: `/save` 409 가 구버전 유저 IP 에서만 나오는지(`gcloud logging read` 로 리비전별 `httpRequest.status` 집계).
 
 ### 개체 등급(1.0.20) — 출시 순서와 긴급 끄기
 
