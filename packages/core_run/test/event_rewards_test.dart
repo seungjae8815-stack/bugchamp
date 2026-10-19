@@ -156,6 +156,43 @@ void main() {
       expect(c.roundNoOf('2026-0901'), 1);
       expect(c.roundNoOf('2026-0928'), 2);
     });
+
+    // 2026-10-19 — 2회차가 끝나자 홈 배너가 통째로 사라져 명예의 전당에 닿을 길이 없었다.
+    test('끝났고 다음 회차가 없으면 그 다음 번호를 "추후 공지"로 — 진행·개막 전엔 없다', () {
+      final c = EventConfig(
+        roundNo: 2,
+        startsAt: DateTime.utc(2026, 10, 4, 15),
+        endsAt: DateTime.utc(2026, 10, 18, 15),
+        pastRounds: [
+          EventRound(
+            no: 1,
+            startsAt: DateTime.utc(2026, 8, 31, 15),
+            endsAt: DateTime.utc(2026, 9, 14, 15),
+          ),
+        ],
+      );
+      // 1회차 끝 ~ 2회차 개막 전: 개막 예고가 있으니 미정이 아니다.
+      expect(c.nextRoundTbd(DateTime.utc(2026, 9, 20)), isNull);
+      expect(c.displayRoundNo(DateTime.utc(2026, 9, 20)), 2);
+      // 진행 중.
+      expect(c.nextRoundTbd(DateTime.utc(2026, 10, 10)), isNull);
+      // 2회차 끝 — 3회차 일정 추후 공지, 전단지 칭호도 3회차.
+      expect(c.nextRoundTbd(DateTime.utc(2026, 10, 18, 15)), 3);
+      expect(c.displayRoundNo(DateTime.utc(2026, 10, 20)), 3);
+      // 끝난 회차가 없는 설정(상시 진행·첫 회차 개막 전)은 미정이 아니다.
+      expect(
+        const EventConfig().nextRoundTbd(DateTime.utc(2026, 10, 20)),
+        isNull,
+      );
+      expect(
+        EventConfig(
+          roundNo: 1,
+          startsAt: DateTime.utc(2026, 8, 31, 15),
+          endsAt: DateTime.utc(2026, 9, 14, 15),
+        ).nextRoundTbd(DateTime.utc(2026, 8, 1)),
+        isNull,
+      );
+    });
   });
 
   /// 실물은 **안내 대상**을 고르는 표시일 뿐이다 — 지역 판정은 코드가 하지

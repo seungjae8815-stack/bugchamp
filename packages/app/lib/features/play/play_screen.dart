@@ -3176,10 +3176,15 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     final st = ref.watch(eventStateProvider).asData?.value;
     final cfg = ref.watch(gameDataProvider).asData?.value.eventConfig;
     final now = ref.read(clockProvider).now().toUtc();
-    // 진행 중도 아니고 개막 예고도 없으면 자리를 비운다.
-    if (st == null && cfg?.untilOpen(now) == null) {
+    // 회차가 끝나 다음 일정이 없을 때도 배너를 남긴다 — 명예의 전당·대회 소개로 가는 문이 이것뿐이다(2026-10-19).
+    final tbd = st == null ? cfg?.nextRoundTbd(now) : null;
+    // 진행 중도 아니고 개막 예고도, 끝난 회차도 없으면 자리를 비운다.
+    if (st == null && cfg?.untilOpen(now) == null && tbd == null) {
       return const SizedBox.shrink();
     }
+    final title = tbd == null
+        ? l.eventTitle
+        : '${l.eventTitle} · ${l.eventBannerTbd(tbd)}';
     if (inHud) {
       // 아이콘 줄 아래 가로 배너 — 폭은 아이콘 줄에 맞춰 늘어난다(2026-10-01 사장님).
       return Padding(
@@ -3208,7 +3213,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                 const SizedBox(width: 5),
                 Flexible(
                   child: Text(
-                    l.eventTitle,
+                    title,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
@@ -3255,7 +3260,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
               rankImageDlg('trophy', size: 13),
               const SizedBox(width: 5),
               Text(
-                l.eventTitle,
+                title,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(

@@ -291,6 +291,21 @@ class EventConfig {
     return best;
   }
 
+  /// 회차가 끝났고 다음 회차가 아직 잡히지 않았을 때 **그 다음 회차 번호**(일정 추후 공지).
+  /// 진행 중·개막 전·끝난 회차가 없으면 null.
+  ///
+  /// 이게 없던 시절 회차가 끝나면 홈 배너가 통째로 사라져 명예의 전당·대회 소개에 닿을 길이 없었다
+  /// (2026-10-19 사장님 — 2회차 종료 직후). 일정을 비워 "미정"을 나타내면 안 된다 — 둘 다 없으면 상시 진행이다.
+  int? nextRoundTbd(DateTime utc) {
+    if (isOpen(utc) || untilOpen(utc) != null) return null;
+    final ended = lastEndedRound(utc);
+    if (ended == null || ended.no <= 0) return null;
+    return ended.no + 1;
+  }
+
+  /// 전단지·보상 표가 가리키는 회차 번호 — 다음 회차가 미정이면 그 번호(끝난 회차 뱃지를 안내하지 않게).
+  int displayRoundNo(DateTime utc) => nextRoundTbd(utc) ?? roundNo;
+
   /// 참가권. ❌ 젤리로 사지 못한다(사행성·P2W — `event.json` 주석 참조).
   final int ticketMax;
   final int ticketDailyGrant;

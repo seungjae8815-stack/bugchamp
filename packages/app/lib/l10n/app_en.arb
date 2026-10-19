@@ -2918,6 +2918,24 @@
       }
     }
   },
+  "eventNextTbd": "Round {no} schedule will be announced soon",
+  "@eventNextTbd": {
+    "description": "대회 대기 화면 — 회차가 끝났고 다음 회차 일정이 아직 없을 때",
+    "placeholders": {
+      "no": {
+        "type": "int"
+      }
+    }
+  },
+  "eventBannerTbd": "Round {no} · TBA",
+  "@eventBannerTbd": {
+    "description": "홈 대회 배너 — 다음 회차 일정 미정",
+    "placeholders": {
+      "no": {
+        "type": "int"
+      }
+    }
+  },
   "eventDateMd": "{m}/{d}",
   "@eventDateMd": {
     "placeholders": {

@@ -4098,6 +4098,16 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
+  String eventNextTbd(int no) {
+    return '第$no回の日程は後日お知らせします';
+  }
+
+  @override
+  String eventBannerTbd(int no) {
+    return '第$no回 後日告知';
+  }
+
+  @override
   String eventDateMd(int m, int d) {
     return '$m月$d日';
   }

@@ -26,7 +26,7 @@ class EventIntroScreen extends ConsumerWidget {
   /// 순위 보상 표 — `event.json → rewards` 를 그대로 그린다.
   /// 전단지는 대회의 공식 안내라, 여기 적힌 것과 실제 지급이 어긋나면
   /// 그게 곧 클레임이다 — 하드코딩하지 않는 이유다.
-  static Widget _prizeTable(AppLocalizations l, EventConfig cfg) {
+  static Widget _prizeTable(AppLocalizations l, EventConfig cfg, int roundNo) {
     String rankLabel(int from, int to) =>
         from == to && from == 1 ? l.eventRankOne : l.eventRankRange(from, to);
 
@@ -96,9 +96,7 @@ class EventIntroScreen extends ConsumerWidget {
     final rows = <Widget>[];
     var from = 1;
     for (final t in cfg.rewardTiers) {
-      final name = t.badge.isEmpty
-          ? ''
-          : titleName('${t.badge}:${cfg.roundNo}');
+      final name = t.badge.isEmpty ? '' : titleName('${t.badge}:$roundNo');
       rows.add(
         row(rankLabel(from, t.maxRank), highlight: t.physical, [
           if (t.physical)
@@ -124,7 +122,7 @@ class EventIntroScreen extends ConsumerWidget {
       );
       from = t.maxRank + 1;
     }
-    final entrant = titleName(cfg.participantBadgeId(cfg.roundNo) ?? '');
+    final entrant = titleName(cfg.participantBadgeId(roundNo) ?? '');
     if (cfg.participationMaterials.isNotEmpty) {
       rows.add(
         row(l.eventRewardParticipationRow, [
@@ -207,6 +205,7 @@ class EventIntroScreen extends ConsumerWidget {
                   context,
                   l,
                   ref.watch(gameDataProvider).asData?.value.eventConfig,
+                  now: ref.read(clockProvider).now().toUtc(),
                   gradeOn:
                       ref
                           .watch(gameDataProvider)
@@ -250,6 +249,7 @@ class EventIntroScreen extends ConsumerWidget {
     BuildContext context,
     AppLocalizations l,
     EventConfig? cfg, {
+    required DateTime now,
     bool gradeOn = false,
   }) => Container(
     decoration: BoxDecoration(
@@ -294,7 +294,29 @@ class EventIntroScreen extends ConsumerWidget {
                 ),
               ),
               const SizedBox(height: 6),
-              if (cfg?.startsAt != null && cfg?.endsAt != null) ...[
+              // 끝난 회차 기간을 그대로 두면 지난 날짜가 안내된다 — 다음 회차가 미정이면 그 안내로(2026-10-19).
+              if (cfg?.nextRoundTbd(now) case final tbd?) ...[
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: _honey.withValues(alpha: 0.18),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: _honey.withValues(alpha: 0.7)),
+                  ),
+                  child: Text(
+                    l.eventNextTbd(tbd),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w900,
+                      fontSize: 12.5,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
+              ] else if (cfg?.startsAt != null && cfg?.endsAt != null) ...[
                 Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 10,
@@ -427,7 +449,7 @@ class EventIntroScreen extends ConsumerWidget {
                 // 1등 실물만 크게 적으면 "그 밖엔 아무것도 없다"로 읽힌다
                 // (2026-08-27 지적) — 2~10위까지 **표로 명시**한다.
                 // 수치는 event.json → rewards 를 그대로 그린다(§6).
-                if (cfg != null) _prizeTable(l, cfg),
+                if (cfg != null) _prizeTable(l, cfg, cfg.displayRoundNo(now)),
               ],
             ),
           ),

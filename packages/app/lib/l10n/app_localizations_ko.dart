@@ -4105,6 +4105,16 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
+  String eventNextTbd(int no) {
+    return '$no회차 일정은 추후 공지할게요';
+  }
+
+  @override
+  String eventBannerTbd(int no) {
+    return '$no회차 추후 공지';
+  }
+
+  @override
   String eventDateMd(int m, int d) {
     return '$m월 $d일';
   }

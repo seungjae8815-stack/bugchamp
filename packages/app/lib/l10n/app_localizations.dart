@@ -7150,6 +7150,18 @@ abstract class AppLocalizations {
   /// **'Round {no} opens {date}'**
   String eventNextRound(int no, String date);
 
+  /// 대회 대기 화면 — 회차가 끝났고 다음 회차 일정이 아직 없을 때
+  ///
+  /// In en, this message translates to:
+  /// **'Round {no} schedule will be announced soon'**
+  String eventNextTbd(int no);
+
+  /// 홈 대회 배너 — 다음 회차 일정 미정
+  ///
+  /// In en, this message translates to:
+  /// **'Round {no} · TBA'**
+  String eventBannerTbd(int no);
+
   /// No description provided for @eventDateMd.
   ///
   /// In en, this message translates to:

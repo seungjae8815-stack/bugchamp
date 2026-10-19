@@ -4205,6 +4205,16 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String eventNextTbd(int no) {
+    return 'Round $no schedule will be announced soon';
+  }
+
+  @override
+  String eventBannerTbd(int no) {
+    return 'Round $no · TBA';
+  }
+
+  @override
   String eventDateMd(int m, int d) {
     return '$m/$d';
   }

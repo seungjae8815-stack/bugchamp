@@ -442,6 +442,8 @@ class _EventScreenState extends ConsumerState<EventScreen> {
     final now = ref.read(clockProvider).now().toUtc();
     final left = cfg?.untilOpen(now);
     final next = left == null ? null : cfg!.currentRound;
+    // 끝났고 다음 회차 일정이 아직 없음 — "N회차 일정 추후 공지" + 전단지(2026-10-19).
+    final tbd = next == null ? cfg?.nextRoundTbd(now) : null;
     // 종료 시각은 **다음 날 0시**라, 그대로 적으면 하루 긴 기간으로 읽힌다.
     String md(DateTime t) => l.eventDateMd(t.month, t.day);
 
@@ -458,7 +460,7 @@ class _EventScreenState extends ConsumerState<EventScreen> {
           const Icon(Icons.hourglass_top_rounded, size: 34, color: _honey),
           const SizedBox(height: 6),
           Text(
-            next == null ? l.eventClosed : l.eventWaitingTitle,
+            next == null && tbd == null ? l.eventClosed : l.eventWaitingTitle,
             textAlign: TextAlign.center,
             style: const TextStyle(
               color: Colors.white,
@@ -466,6 +468,28 @@ class _EventScreenState extends ConsumerState<EventScreen> {
               fontWeight: FontWeight.w900,
             ),
           ),
+          if (tbd != null) ...[
+            const SizedBox(height: 8),
+            Text(
+              l.eventNextTbd(tbd),
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: _honey,
+                fontSize: 15,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+            const SizedBox(height: 12),
+            OutlinedButton.icon(
+              onPressed: _showIntro,
+              icon: const Icon(Icons.article_rounded, size: 16),
+              label: Text(l.eventSeeFlyer),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: _honey,
+                side: const BorderSide(color: Color(0x66EBA52F)),
+              ),
+            ),
+          ],
           if (next != null) ...[
             const SizedBox(height: 8),
             Text(

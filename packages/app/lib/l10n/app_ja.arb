@@ -1377,6 +1377,8 @@
   "badgeParticipant": "{round}回 参加",
   "eventWaitingTitle": "次の大会を準備中",
   "eventNextRound": "第{no}回大会・{date} 開幕",
+  "eventNextTbd": "第{no}回の日程は後日お知らせします",
+  "eventBannerTbd": "第{no}回 後日告知",
   "eventDateMd": "{m}月{d}日",
   "eventHallTitle": "殿堂",
   "eventHallRound": "第{no}回・参加 {n}名",
