@@ -8110,4 +8110,162 @@ class AppLocalizationsJa extends AppLocalizations {
   @override
   String get whatsNew22Convenience2 =>
       '卵10回ガチャ · 回復室「すべて回復」 · 孵化器「良い卵から入れる」 · 妖精のレベルを一気に上げる · 狩りの強化「根性」を「体力」に改名';
+
+  @override
+  String get guideRarityTitle => '昆虫の希少度（一般〜伝説）';
+
+  @override
+  String guideRarityBody(String wild, String gacha) {
+    return '希少度は種ではなく昆虫ごとに決まります。同じ種でも一般から伝説まであります。希少度は宝石（◆）の色、個体等級は名札で表示されます。\n野生・交配：$wild\n卵ガチャ：$gacha';
+  }
+
+  @override
+  String guideRarityEffect(String hunt, String duel) {
+    return '希少度が高いほど、ペットとして装備したときの狩り貢献が大きくなり（$hunt）、決闘・大会の体力・攻撃・防御が上がります（伝説 $duel）。エッセンスに変えたときの価値も上がり、孵化・交配の時間は長くなります。';
+  }
+
+  @override
+  String guideRarityUp(String n) {
+    return '希少度アップ：同じ種・同じ希少度の昆虫$n匹を素材にすると1段階上がります（伝説まで）。育てた能力値はそのままです。装備中・孵化中・訓練中・ロック中の昆虫、色違い・育成済みの昆虫は素材にしません。';
+  }
+
+  @override
+  String guidePotionCost(String costs, String max, String bonus) {
+    return '等級アップに必要な同種のエッセンス：$costs（一般→高級から順に）。成長薬は1回に$max個まで一緒に使え、1個につき新しく振った能力値品質に+$bonus点加わります（100点まで）。';
+  }
+
+  @override
+  String guidePotionGet(
+    String jelly,
+    String daily,
+    String elite,
+    String bossFirst,
+    String bossChance,
+    String every,
+    String abyss,
+    String cap,
+    String mult,
+  ) {
+    return '成長薬はゼリー$jelly個で1日$daily個まで買えます。無料では精鋭（$elite）、ボス初撃破（$bossFirst個）、ボス再撃破（$bossChance）、その日最初のミッション、深淵$every階ごと（$abyss個）で手に入ります。精鋭・ボスの確率ドロップは1日$cap個までで、採集家の手が有効なら確率×$multです。';
+  }
+
+  @override
+  String get guideZoneTitle => '狩場・ボス・難易度・深淵';
+
+  @override
+  String guideZoneBody(String zones, String kills, String mins) {
+    return '難易度（かんたん・ふつう・むずかしい・極限）ごとに狩場$zonesか所と最終ボスがあります。狩場でモンスターを$kills匹倒すとボス挑戦が開き、ボスを倒すと次の狩場へ進みます。狩場を初めてクリアすると、その狩場の$mins分ぶんのゴールドがもらえます。';
+  }
+
+  @override
+  String get guideZoneFall =>
+      'ボス挑戦に失敗すると、その狩場のゲージが空になります。今行ける一番高い狩場で通常モンスターに倒されると1つ下の狩場に下がります（ボス挑戦は開いたまま）。そのボスを再び倒すと戻れます。狩場1ではゲージが空になるだけです。';
+
+  @override
+  String guideZoneTier(String hours, String bonus) {
+    return '初めての難易度に入ると、強化・レベル・ゴールド・一般素材が最初からになります（ゼリー・化石・昆虫・装備・スキル・図鑑はそのまま）。一度行った難易度はロードマップから自由に行き来できます。アプリを閉じている間も最大$hours時間ぶんの狩り報酬がたまり、起動中に倒したゴールドには+$bonusが付きます。';
+  }
+
+  @override
+  String guideAbyssBody(String every, String fossil, String top) {
+    return '深淵：極限の最終ボスを倒すと開く終わりのない階層です。階ごとにモンスターが強くなり、ゴールドも増えます。$every階ごとに初めて到達すると化石$fossil個・スキルの欠片・決闘石・成長薬がもらえます。毎週月曜午前9時（KST）に1階から再スタートし、週間ランキング上位はゼリーがもらえます（1位$top個）。';
+  }
+
+  @override
+  String get guideBuffTitle => 'バフ';
+
+  @override
+  String guideBuffBody(String dur, String max) {
+    return '1回つけるごとに$dur分延び、最大$max時間までたまります。アプリを閉じている間（放置報酬）も終了時刻まで適用されます。';
+  }
+
+  @override
+  String guideBuffFree(String wait, String cd, String daily, String jelly) {
+    return '無料でつける：$wait秒待つとつきます。同じバフは$cd時間後に再び無料でつけられ、無料は1日合計$daily回までです。それ以外はゼリー$jelly個ですぐにつけられます。';
+  }
+
+  @override
+  String get guideSkillTitle => 'キャラクタースキル';
+
+  @override
+  String guideSkillBody(String n, String first, String max) {
+    return 'スキルは$n種（一般・希少・英雄・伝説）で、アクティブ・パッシブが同じ枠を使います。枠は最初$firstつで、新しい難易度に初めて行くたびに増え、最大$maxつです。スキルは自動で発動し、自分で押すとタイミングボーナスがあります。狩り専用で、決闘・大会には入りません。';
+  }
+
+  @override
+  String guideSkillGrow(String unlock, String ratio) {
+    return 'そのスキルの欠片$unlock個で解放し、欠片と時間で修練（レベルアップ）します。同じ等級の欠片$ratio個で1段階上の等級の万能欠片1個を作る昇級もあります。万能欠片はその等級のどのスキルにも使えます。';
+  }
+
+  @override
+  String guideSkillGet(
+    String first,
+    String repeat,
+    String elite,
+    String freeDraw,
+    String jelly,
+    String shards,
+    String pity,
+    String freeSweep,
+  ) {
+    return '欠片はボス初撃破（$first個確定）、ボス再撃破（$repeatの確率）、精鋭（$eliteの確率）で出ます。スキルガチャは1日$freeDraw回無料、その後はゼリー$jelly個で1スキルの欠片$shards個、$pity回目は伝説確定です。ボス掃討は倒したことのある最高難易度基準の欠片を確定でくれ、1日$freeSweep回無料です。';
+  }
+
+  @override
+  String get guideDexTitle => '昆虫図鑑';
+
+  @override
+  String guideDexBody(String lv) {
+    return '種ごとに発見（入手した）・制覇（修練$lvレベルまで育てた）・色違い（色違い個体を入手した）の3つがあり、すべて埋めると収集完了（👑）です。昆虫を分解したりエッセンスに変えても記録は残ります。';
+  }
+
+  @override
+  String guideDexReward(String atk, String hp, String gold, String bosses) {
+    return '発見・制覇した種の数が増えるとゼリー・ゴールドの報酬がもらえます。制覇した種ごとに攻撃+$atk・体力+$hp、発見した種ごとにゴールド+$goldが永久に付きます。ボス収集は難易度ごとに別に数え（全$bosses体）、集めるほどゼリー・化石がもらえます。';
+  }
+
+  @override
+  String get guideStorageTitle => '採集箱の管理';
+
+  @override
+  String guideStorageBody(String base, String step, String max) {
+    return '採集箱は基本$base枠で、ゼリーで$step枠ずつ最大$max枠まで広げられます。いっぱいになると新しい昆虫は入りません（ゴールド・素材はそのまま入ります）。受け取る希少度を決めると、それより低い昆虫は入らず素材に変わります。';
+  }
+
+  @override
+  String get guideStorageEssence =>
+      'いらない昆虫は分解（素材）するかエッセンスに変えます（幼虫以上のみ）。エッセンスはその種の等級アップに使います。大事な昆虫はロックすれば分解・エッセンス・希少度アップの素材になりません。装備中・孵化中・訓練中の昆虫も変えられません。';
+
+  @override
+  String get guideFairyTitle => '妖精';
+
+  @override
+  String get guideFairyBody =>
+      '妖精は狩りを手伝う仲間です。同行妖精は1匹だけ選べ、その妖精の基本・付加能力値とスキルが狩りに加わります（スキルは自動で使います）。妖精は狩りだけを助け、決闘・大会・ギルドボスには入りません。';
+
+  @override
+  String guideFairyEgg(String hatch, String elite, String gacha, String pity) {
+    return '妖精は妖精の卵を妖精の巣（1枠）で孵化させて手に入れます。孵化時間は$hatchで、加速器で短縮できます。卵はボス初撃破で確定、精鋭撃破で$eliteの確率で出ます。妖精の卵ガチャ（ゼリー$gacha）は$pity回以内に伝説以上が確定です。卵の等級は最初から決まっていて、種類・付加能力値は巣に入れたときに決まります。';
+  }
+
+  @override
+  String guideFairyStone(String stone, String reroll, String cap) {
+    return '卵を巣に入れるときに属性石を一緒に入れると、その付加能力値が$stoneの確率で出ます。持っている妖精は再抽選（ゼリー$reroll、1日$cap回）で付加能力値と品質を振り直せます。品質は下がらず、気に入らなければ今の値を維持できます。';
+  }
+
+  @override
+  String guideFairyMerge(
+    String merge,
+    String mergeEpic,
+    String level,
+    String maxLv,
+    String refund,
+  ) {
+    return '同じ種類・同じ等級の妖精$merge匹を合成すると1等級上の妖精1匹になります（英雄→伝説のみ$mergeEpic匹）。素材がすべて同じ付加能力値ならその付加が引き継がれます。レベルは妖精の粉で上げ（レベルごとに能力値+$level）、等級ごとに最大レベル（$maxLv）が違います。レベルを上げた妖精を合成・分解すると使った粉の$refundが戻ります。';
+  }
+
+  @override
+  String guideFairyBox(String base, String step, String max, String dex) {
+    return '妖精箱は妖精と卵を合わせて基本$base枠で、ゼリーで$step枠ずつ最大$max枠まで広げられます。いっぱいになると新しい卵は妖精の粉に変わります。いらない妖精や卵は分解して粉に変え、卵の自動分解をオンにすると選んだ等級以下の新しい卵がすぐ粉になります。妖精図鑑（$dex枠）を埋めるほど粉・加速器・化石がもらえます。';
+  }
 }

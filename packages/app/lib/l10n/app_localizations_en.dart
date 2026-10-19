@@ -8304,4 +8304,162 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get whatsNew22Convenience2 =>
       'Draw 10 eggs at once · Heal all in the recovery room · Place best eggs in the incubator · Level fairies up in one go · Hunting upgrade Grit renamed to Vitality';
+
+  @override
+  String get guideRarityTitle => 'Bug rarity (Common–Legendary)';
+
+  @override
+  String guideRarityBody(String wild, String gacha) {
+    return 'Rarity is set per bug, not per species — the same species can be anywhere from Common to Legendary. Rarity shows as the gem (◆) color; individual grade shows on the name tag.\nWild · breeding: $wild\nEgg draw: $gacha';
+  }
+
+  @override
+  String guideRarityEffect(String hunt, String duel) {
+    return 'Higher rarity means a bigger hunting contribution as a pet ($hunt) and higher HP/ATK/DEF in duels and contests (Legendary $duel). It is also worth more essence, and takes longer to hatch and breed.';
+  }
+
+  @override
+  String guideRarityUp(String n) {
+    return 'Rarity up: use $n bugs of the same species and rarity as material to raise one step (up to Legendary). Trained stats stay. Equipped, hatching, training, locked, variant and invested bugs are never used as material.';
+  }
+
+  @override
+  String guidePotionCost(String costs, String max, String bonus) {
+    return 'Same-species essence needed to grade up: $costs (from Common→Uncommon onward). Add up to $max growth potions per grade up — each adds +$bonus points to the new stat quality roll (max 100).';
+  }
+
+  @override
+  String guidePotionGet(
+    String jelly,
+    String daily,
+    String elite,
+    String bossFirst,
+    String bossChance,
+    String every,
+    String abyss,
+    String cap,
+    String mult,
+  ) {
+    return 'Buy growth potions for $jelly jelly each, up to $daily a day. Free sources: elites ($elite), first boss kill ($bossFirst), boss rematches ($bossChance), the first mission of the day, and every $every Abyss floors ($abyss). Random drops from elites and bosses stop at $cap a day, and the chance is ×$mult while Gatherer’s Touch is on.';
+  }
+
+  @override
+  String get guideZoneTitle => 'Zones · bosses · difficulty · Abyss';
+
+  @override
+  String guideZoneBody(String zones, String kills, String mins) {
+    return 'Each difficulty (Easy · Normal · Hard · Extreme) has $zones zones plus a final boss. Defeat $kills monsters in a zone to unlock the boss challenge; beat the boss to move on. Clearing a zone for the first time gives $mins minutes worth of that zone’s gold.';
+  }
+
+  @override
+  String get guideZoneFall =>
+      'Failing a boss challenge empties that zone’s gauge. Falling to a normal monster in your highest reachable zone drops you one zone back (with the boss challenge open) — beat that boss again to climb back. In Zone 1 only the gauge empties.';
+
+  @override
+  String guideZoneTier(String hours, String bonus) {
+    return 'Entering a difficulty for the first time restarts upgrades, level, gold and common materials (jelly, fossils, bugs, gear, skills and the Bug Book stay). Difficulties you have reached can be revisited freely from the roadmap. While the app is closed, hunting rewards pile up for up to $hours hours; gold you hunt with the app open gets +$bonus.';
+  }
+
+  @override
+  String guideAbyssBody(String every, String fossil, String top) {
+    return 'Abyss: endless floors that open after the Extreme final boss. Each floor makes monsters tougher and gold bigger. Reaching every ${every}th floor for the first time gives $fossil fossils, skill shards, duel stones and growth potions. It restarts from floor 1 every Monday 9 AM (KST), and top weekly ranks earn jelly (1st: $top).';
+  }
+
+  @override
+  String get guideBuffTitle => 'Buffs';
+
+  @override
+  String guideBuffBody(String dur, String max) {
+    return 'Each activation adds $dur minutes, stacking up to $max hours. Buffs keep working while the app is closed (idle rewards) until they expire.';
+  }
+
+  @override
+  String guideBuffFree(String wait, String cd, String daily, String jelly) {
+    return 'Free activation: wait $wait seconds. The same buff can be activated free again after $cd hours, up to $daily free activations a day in total. Otherwise activate instantly for $jelly jelly.';
+  }
+
+  @override
+  String get guideSkillTitle => 'Character skills';
+
+  @override
+  String guideSkillBody(String n, String first, String max) {
+    return 'There are $n skills (Common · Rare · Epic · Legendary); actives and passives share the same slots. You start with $first slots and gain one each time you first reach a new difficulty, up to $max. Skills cast automatically, and tapping them yourself can earn a timing bonus. Skills apply to hunting only — never to duels or contests.';
+  }
+
+  @override
+  String guideSkillGrow(String unlock, String ratio) {
+    return 'Unlock a skill with $unlock of its shards, then train (level up) it with shards and time. Grade up turns $ratio shards of one grade into 1 wildcard shard of the next grade; wildcard shards work for any skill of that grade.';
+  }
+
+  @override
+  String guideSkillGet(
+    String first,
+    String repeat,
+    String elite,
+    String freeDraw,
+    String jelly,
+    String shards,
+    String pity,
+    String freeSweep,
+  ) {
+    return 'Shards drop from first boss kills ($first guaranteed), boss rematches ($repeat chance) and elites ($elite chance). Skill draws are free $freeDraw time(s) a day, then $jelly jelly for $shards shards of one skill, with a Legendary guaranteed on the ${pity}th draw. Boss sweeps give guaranteed shards based on the highest difficulty boss you have beaten — $freeSweep free a day.';
+  }
+
+  @override
+  String get guideDexTitle => 'Bug Book';
+
+  @override
+  String guideDexBody(String lv) {
+    return 'Each species has three marks: Discovered (obtained once), Conquered (trained to level $lv) and Variant (got a variant). Fill all three for Complete (👑). Records stay even after you disassemble a bug or turn it into essence.';
+  }
+
+  @override
+  String guideDexReward(String atk, String hp, String gold, String bosses) {
+    return 'Reaching discovery/conquest milestones gives jelly and gold. Each conquered species permanently adds ATK +$atk and HP +$hp, and each discovered species gold +$gold. Boss collection counts each difficulty separately ($bosses in total) and rewards jelly and fossils as it grows.';
+  }
+
+  @override
+  String get guideStorageTitle => 'Managing storage';
+
+  @override
+  String guideStorageBody(String base, String step, String max) {
+    return 'Storage starts at $base slots and expands by $step with jelly, up to $max. When it is full, new bugs cannot come in (gold and materials still do). Set a minimum rarity to receive, and lower-rarity bugs turn into materials instead.';
+  }
+
+  @override
+  String get guideStorageEssence =>
+      'Disassemble unwanted bugs for materials, or turn them into essence (larva or older). Essence is used to grade up that species. Lock a bug you want to keep and it is never used for disassembly, essence or rarity up. Equipped, hatching and training bugs cannot be converted either.';
+
+  @override
+  String get guideFairyTitle => 'Fairies';
+
+  @override
+  String get guideFairyBody =>
+      'Fairies are companions that help you hunt. You pick one companion fairy, and its main and sub stats plus its skill are added to hunting (it casts the skill on its own). Fairies help hunting only — never duels, contests or guild bosses.';
+
+  @override
+  String guideFairyEgg(String hatch, String elite, String gacha, String pity) {
+    return 'Hatch fairy eggs in the fairy nest (one slot) to get fairies. Hatching takes $hatch, shortened with accelerators. Eggs are guaranteed from first boss kills and drop from elites at $elite. Fairy egg draws ($gacha jelly) guarantee Legendary or better within $pity draws. An egg’s grade is fixed from the start; its kind and sub stat are set when it goes into the nest.';
+  }
+
+  @override
+  String guideFairyStone(String stone, String reroll, String cap) {
+    return 'Put an attribute stone in with the egg and that sub stat appears with $stone chance. Fairies you own can be rerolled ($reroll jelly, $cap a day) for a new sub stat and quality — quality never goes down, and you can keep the current result if you prefer.';
+  }
+
+  @override
+  String guideFairyMerge(
+    String merge,
+    String mergeEpic,
+    String level,
+    String maxLv,
+    String refund,
+  ) {
+    return 'Merge $merge fairies of the same kind and grade into one fairy of the next grade (Epic → Legendary takes $mergeEpic). If all materials share a sub stat, it carries over. Level up with fairy dust (+$level stats per level); each grade has its own max level ($maxLv). Merging or disassembling a leveled fairy refunds $refund of the dust spent.';
+  }
+
+  @override
+  String guideFairyBox(String base, String step, String max, String dex) {
+    return 'The fairy box holds $base fairies and eggs combined, expandable by $step with jelly up to $max. When it is full, new eggs become fairy dust. Disassemble unwanted fairies and eggs into dust, or turn on auto-disassemble so new eggs at or below the chosen grade become dust right away. Filling the fairy book ($dex entries) rewards dust, accelerators and fossils.';
+  }
 }

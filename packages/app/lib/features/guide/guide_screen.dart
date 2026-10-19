@@ -2,6 +2,7 @@ import 'package:core_battle/core_battle.dart';
 import 'package:core_models/core_models.dart' hide Element;
 import 'package:core_models/core_models.dart' as cm show Element;
 import 'package:core_run/core_run.dart';
+import 'package:core_save/core_save.dart' show kDefaultStorageCapacity;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -76,6 +77,16 @@ class GuideScreen extends ConsumerWidget {
       if (p <= 0) return '-';
       final n = 1 / p;
       return '1/${n >= 100 ? (n / 10).round() * 10 : n.round()}';
+    }
+
+    // 희귀도 확률표(일반 → 전설) → "일반 52% · 고급 28% · …"(0 인 칸은 뺀다).
+    String rarityOdds(List<double> w) {
+      final sum = w.fold<double>(0, (a, b) => a + b);
+      if (sum <= 0) return '-';
+      return [
+        for (var i = 0; i < w.length && i < Grade.values.length; i++)
+          if (w[i] > 0) '${gradeLabel(l, Grade.values[i])} ${_pct(w[i] / sum)}',
+      ].join(' · ');
     }
 
     // 칸 상한 보정(v2 — battle.json training.slot*Mods). 옛 v1 보정(temperamentMods 등)은 이전 환산 전용이다.
@@ -204,8 +215,56 @@ class GuideScreen extends ConsumerWidget {
                     pet?.synthFodder ?? 3,
                   ),
           ),
+          // 등급 올리기 정수 비용 · 성장물약(2026-10-19 — 공략집에 물약이 없었다). 숫자는 pets.json individualGrade.
+          if (gradeOn && pet != null) ...[
+            _p(
+              l.guidePotionCost(
+                [
+                  for (var g = 1; g < 5; g++)
+                    '${pet.individualGrade.upgradeCost(g)}',
+                ].join(' · '),
+                '${pet.individualGrade.potionMaxPerUse}',
+                '${pet.individualGrade.potionRollBonus}',
+              ),
+            ),
+            _p(
+              l.guidePotionGet(
+                '${pet.individualGrade.potionJelly}',
+                '${pet.individualGrade.potionDailyBuy}',
+                _pct(pet.individualGrade.potionEliteChance),
+                '${pet.individualGrade.potionBossFirst}',
+                _pct(pet.individualGrade.potionBossChance),
+                '${data.runConfig?.abyss.milestoneEvery ?? 10}',
+                '${pet.individualGrade.potionAbyss10}',
+                '${pet.individualGrade.potionDropDaily}',
+                _num(data.buffConfig?.spec(BuffKind.gatherer)?.rareDrop ?? 1),
+              ),
+            ),
+          ],
         ],
       ),
+      // 곤충 희귀도(1.0.22) — 종이 아니라 곤충마다 · 희귀도 올리기. 숫자는 pets.json bugRarity.
+      if (pet != null && pet.bugRarity.enabled)
+        _Section(
+          icon: Icons.diamond_rounded,
+          title: l.guideRarityTitle,
+          children: [
+            _p(
+              l.guideRarityBody(
+                rarityOdds(pet.bugRarity.wildWeights),
+                rarityOdds(pet.bugRarity.gachaWeights),
+              ),
+            ),
+            _p(
+              l.guideRarityEffect(
+                _rangePct(pet.bugRarity.huntMult),
+                _signed(pet.bugRarity.duelMult.last - 1),
+              ),
+            ),
+            if (pet.bugRarity.upFodder > 0)
+              _p(l.guideRarityUp('${pet.bugRarity.upFodder}')),
+          ],
+        ),
       // 펫 패시브 v2(1.0.21) — 종류는 곤충마다 · 크기 = 개체 등급 × 종 희귀도 × 타고난 세기. 숫자는 pets.json passiveV2.
       if (pet != null && pet.passiveV2.enabled)
         _Section(
@@ -468,6 +527,183 @@ class GuideScreen extends ConsumerWidget {
             _p(l.guideMissionSwapBody('${missions.swapJelly}')),
         ],
       ),
+      ..._huntSections(l, data),
+    ];
+  }
+
+  /// 사냥(방치) 쪽 항목 — 사냥터·심연 · 버프 · 스킬 · 도감 · 채집함 · 요정(2026-10-19 사장님 — 공략집에 결투 쪽만 있었다).
+  /// 숫자는 전부 JSON 에서 읽는다(§6). 설정이 없으면 그 항목을 뺀다.
+  List<Widget> _huntSections(AppLocalizations l, GameData data) {
+    final run = data.runConfig;
+    final buffs = data.buffConfig;
+    final skill = data.skillConfig;
+    final dex = data.dexConfig;
+    final pet = data.petConfig;
+    final fairy = data.fairyConfig;
+    String hours(int sec) => _num(sec / 3600);
+    // "30m ~ 16h" — 시간이 딱 떨어지면 h, 아니면 m.
+    String dur(Duration d) => d.inMinutes % 60 == 0 && d.inHours > 0
+        ? '${d.inHours}h'
+        : '${d.inMinutes}m';
+    return [
+      if (run != null && run.zoneMode)
+        _Section(
+          icon: Icons.terrain_rounded,
+          title: l.guideZoneTitle,
+          children: [
+            _p(
+              l.guideZoneBody(
+                '${run.zonesPerTier - 1}',
+                '${run.bossUnlockKills}',
+                _num(run.chapterClearHours * 60),
+              ),
+            ),
+            _p(l.guideZoneFall),
+            _p(
+              l.guideZoneTier(
+                '${kMaxOfflineAccrual.inHours}',
+                _pct(run.onlineGoldBonus),
+              ),
+            ),
+            _p(
+              l.guideAbyssBody(
+                '${run.abyss.milestoneEvery}',
+                '${run.abyss.milestoneFossil}',
+                '${run.abyss.rankJelly(1)}',
+              ),
+            ),
+          ],
+        ),
+      if (buffs != null)
+        _Section(
+          icon: Icons.bolt_rounded,
+          title: l.guideBuffTitle,
+          children: [
+            for (final k in BuffKind.values)
+              _line('${buffLabel(l, k)} — ${buffDesc(l, k)}'),
+            const SizedBox(height: 4),
+            _p(
+              l.guideBuffBody(
+                _num(buffs.durationSeconds / 60),
+                hours(buffs.maxSeconds),
+              ),
+            ),
+            _p(
+              l.guideBuffFree(
+                '${buffs.freeWaitSeconds}',
+                hours(buffs.freeCooldownSeconds),
+                '${buffs.freeDaily}',
+                '${buffs.jellyActivate}',
+              ),
+            ),
+          ],
+        ),
+      if (skill != null)
+        _Section(
+          icon: Icons.auto_awesome_rounded,
+          title: l.guideSkillTitle,
+          children: [
+            _p(
+              l.guideSkillBody(
+                '${skill.skills.length}',
+                '${skill.slotsByTier.isEmpty ? 0 : skill.slotsByTier.first}',
+                '${skill.maxSlots}',
+              ),
+            ),
+            _p(
+              l.guideSkillGrow(
+                '${skill.unlockShards}',
+                '${skill.gradeUpRatio}',
+              ),
+            ),
+            _p(
+              l.guideSkillGet(
+                '${skill.bossFirstKillShards}',
+                _pct(skill.bossRepeatChance),
+                _pct(skill.eliteShardChance),
+                '${skill.gachaFreePerDay}',
+                '${skill.gachaJellyCost}',
+                '${skill.gachaShards}',
+                '${skill.gachaPity}',
+                '${skill.sweepFreePerDay}',
+              ),
+            ),
+          ],
+        ),
+      if (dex != null)
+        _Section(
+          icon: Icons.menu_book_rounded,
+          title: l.guideDexTitle,
+          children: [
+            _p(l.guideDexBody('${dex.conquerLevel}')),
+            _p(
+              l.guideDexReward(
+                _pct(dex.attackPerConquer),
+                _pct(dex.hpPerConquer),
+                _pct(dex.rewardPerDiscover),
+                '${run == null ? 0 : run.zonesPerTier * run.zoneTiers.length}',
+              ),
+            ),
+          ],
+        ),
+      if (pet != null)
+        _Section(
+          icon: Icons.inventory_2_rounded,
+          title: l.guideStorageTitle,
+          children: [
+            _p(
+              l.guideStorageBody(
+                '$kDefaultStorageCapacity',
+                '${pet.storageExpandAmount}',
+                '${pet.storageSlotsMax}',
+              ),
+            ),
+            _p(l.guideStorageEssence),
+          ],
+        ),
+      if (fairy != null)
+        _Section(
+          icon: Icons.flutter_dash_rounded,
+          title: l.guideFairyTitle,
+          children: [
+            _p(l.guideFairyBody),
+            _p(
+              l.guideFairyEgg(
+                '${dur(fairy.hatchDuration(FairyGrade.common))} ~ '
+                    '${dur(fairy.hatchDuration(FairyGrade.legendary))}',
+                _pct(fairy.drops.eliteEggChance),
+                '${fairy.gachaJelly}',
+                '${fairy.gachaPity}',
+              ),
+            ),
+            _p(
+              l.guideFairyStone(
+                _pct(fairy.stoneChance),
+                '${fairy.rerollJelly}',
+                '${fairy.rerollDailyCap}',
+              ),
+            ),
+            _p(
+              l.guideFairyMerge(
+                '${fairy.mergeCount}',
+                '${fairy.mergeCountOf(FairyGrade.epic)}',
+                _pct(fairy.levelStatPerLevel),
+                [
+                  for (final g in FairyGrade.values) '${fairy.maxLevelOf(g)}',
+                ].join('/'),
+                _pct(fairy.mergeDustRefund),
+              ),
+            ),
+            _p(
+              l.guideFairyBox(
+                '${fairy.boxCap}',
+                '${fairy.boxExpandAmount}',
+                '${fairy.boxMax}',
+                '${fairy.dexMilestones.isEmpty ? 0 : fairy.dexMilestones.last.count}',
+              ),
+            ),
+          ],
+        ),
     ];
   }
 

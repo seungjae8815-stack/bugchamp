@@ -8122,4 +8122,162 @@ class AppLocalizationsKo extends AppLocalizations {
   @override
   String get whatsNew22Convenience2 =>
       '알 10회 뽑기 · 회복실 「모두 회복」 · 부화기 「좋은 알부터 넣기」 · 요정 레벨 한 번에 올리기 · 사냥 강화 「근성」 이름을 「체력」으로';
+
+  @override
+  String get guideRarityTitle => '곤충 희귀도 (일반~전설)';
+
+  @override
+  String guideRarityBody(String wild, String gacha) {
+    return '희귀도는 종이 아니라 곤충마다 정해져요. 같은 종이라도 일반부터 전설까지 있어요. 희귀도는 보석(◆) 색으로, 개체 등급은 이름표로 보여요.\n야생·짝짓기: $wild\n알 뽑기: $gacha';
+  }
+
+  @override
+  String guideRarityEffect(String hunt, String duel) {
+    return '희귀도가 높을수록 펫으로 장착했을 때 사냥 기여가 커지고($hunt), 결투·대회의 체력·공격·방어가 올라가요(전설 $duel). 정수로 바꿀 때 가치도 커지고, 부화·짝짓기 시간은 길어져요.';
+  }
+
+  @override
+  String guideRarityUp(String n) {
+    return '희귀도 올리기: 같은 종·같은 희귀도 곤충 $n마리를 재료로 쓰면 한 단계 올라가요(전설까지). 키운 능력치는 그대로예요. 장착·부화 중·훈련·잠금 곤충과 이색·키운 곤충은 재료로 쓰지 않아요.';
+  }
+
+  @override
+  String guidePotionCost(String costs, String max, String bonus) {
+    return '등급 올리기에 드는 그 종 정수: $costs(일반→고급부터 차례로). 성장물약을 한 번에 $max개까지 함께 쓰면 새로 굴린 능력치 품질에 1개당 +$bonus점이 더해져요(100점까지).';
+  }
+
+  @override
+  String guidePotionGet(
+    String jelly,
+    String daily,
+    String elite,
+    String bossFirst,
+    String bossChance,
+    String every,
+    String abyss,
+    String cap,
+    String mult,
+  ) {
+    return '성장물약은 젤리 $jelly개로 하루 $daily개까지 살 수 있어요. 무료로는 정예($elite), 보스 첫 처치($bossFirst개), 보스 다시 잡기($bossChance), 그날 첫 미션, 심연 $every층마다($abyss개)에서 얻어요. 정예·보스 확률 드롭은 하루 $cap개까지이고, 채집가의 손길이 켜져 있으면 확률이 ×$mult예요.';
+  }
+
+  @override
+  String get guideZoneTitle => '사냥터 · 보스 · 난이도 · 심연';
+
+  @override
+  String guideZoneBody(String zones, String kills, String mins) {
+    return '난이도(쉬움·보통·어려움·극한)마다 사냥터 $zones개와 최종 보스가 있어요. 사냥터에서 몬스터 $kills마리를 잡으면 보스 도전이 열리고, 보스를 잡으면 다음 사냥터로 가요. 사냥터를 처음 깨면 그 사냥터 $mins분치 골드를 받아요.';
+  }
+
+  @override
+  String get guideZoneFall =>
+      '보스 도전에 실패하면 그 사냥터 게이지가 비워져요. 지금 갈 수 있는 가장 높은 사냥터에서 일반 몬스터에게 쓰러지면 한 칸 아래로 물러나요(보스 도전이 열린 채로) — 그 보스를 다시 잡으면 올라가요. 사냥터 1에서는 게이지만 비워져요.';
+
+  @override
+  String guideZoneTier(String hours, String bonus) {
+    return '처음 가는 난이도에 들어서면 강화·레벨·골드·일반 재료가 처음부터 시작돼요(젤리·화석·곤충·장비·스킬·도감은 그대로). 한 번 가 본 난이도는 로드맵에서 자유롭게 오갈 수 있어요. 앱을 꺼 둔 동안에도 최대 $hours시간까지 사냥 보상이 쌓이고, 켜 두고 직접 잡은 골드에는 +$bonus가 더 붙어요.';
+  }
+
+  @override
+  String guideAbyssBody(String every, String fossil, String top) {
+    return '심연: 극한 최종 보스를 잡으면 열리는 끝없는 층이에요. 층마다 몬스터가 세지고 골드도 늘어요. $every층마다 처음 닿으면 화석 $fossil개·스킬 조각·결투석·성장물약을 받아요. 매주 월요일 오전 9시에 1층부터 다시 시작하고, 주간 순위 상위권은 젤리를 받아요(1위 $top개).';
+  }
+
+  @override
+  String get guideBuffTitle => '버프';
+
+  @override
+  String guideBuffBody(String dur, String max) {
+    return '한 번 켜면 $dur분씩 늘어나고 최대 $max시간까지 쌓여요. 앱을 꺼 둔 동안(방치 보상)에도 끝나는 시각까지 적용돼요.';
+  }
+
+  @override
+  String guideBuffFree(String wait, String cd, String daily, String jelly) {
+    return '무료로 켜기: $wait초 기다리면 켜져요. 같은 버프는 $cd시간 뒤에 다시 무료로 켤 수 있고, 무료는 하루 모두 합쳐 $daily번까지예요. 그 밖에는 젤리 $jelly개로 바로 켜요.';
+  }
+
+  @override
+  String get guideSkillTitle => '캐릭터 스킬';
+
+  @override
+  String guideSkillBody(String n, String first, String max) {
+    return '스킬은 $n가지(일반·희귀·영웅·전설)이고, 액티브·패시브가 같은 칸을 써요. 칸은 처음 $first칸이고, 새 난이도에 처음 갈 때마다 늘어나 최대 $max칸이에요. 스킬은 자동으로 발동하고, 직접 누르면 타이밍 보너스가 있어요. 사냥에만 쓰이고 결투·대회에는 들어가지 않아요.';
+  }
+
+  @override
+  String guideSkillGrow(String unlock, String ratio) {
+    return '그 스킬 조각 $unlock개로 해금하고, 조각과 시간을 들여 수련(레벨업)해요. 같은 등급 조각 $ratio개로 한 단계 위 등급 만능 조각 1개를 만드는 승급도 있어요. 만능 조각은 그 등급 스킬 어디에나 쓸 수 있어요.';
+  }
+
+  @override
+  String guideSkillGet(
+    String first,
+    String repeat,
+    String elite,
+    String freeDraw,
+    String jelly,
+    String shards,
+    String pity,
+    String freeSweep,
+  ) {
+    return '조각은 보스 첫 처치($first개 확정), 보스 다시 잡기($repeat 확률), 정예($elite 확률)에서 나와요. 스킬 뽑기는 하루 $freeDraw번 무료, 그 뒤 젤리 $jelly개로 한 스킬 조각 $shards개이고 $pity번째는 전설 확정이에요. 보스 소탕은 잡아 본 가장 높은 난이도 기준 조각을 확정으로 주고, 하루 $freeSweep번 무료예요.';
+  }
+
+  @override
+  String get guideDexTitle => '곤충 도감';
+
+  @override
+  String guideDexBody(String lv) {
+    return '종마다 발견(얻어 봄)·정복(수련 $lv레벨까지 키움)·이색(이색 개체를 얻음) 세 칸이 있고, 셋을 다 채우면 수집완료(👑)예요. 곤충을 분해하거나 정수로 바꿔도 기록은 남아요.';
+  }
+
+  @override
+  String guideDexReward(String atk, String hp, String gold, String bosses) {
+    return '발견·정복 종 수가 늘면 젤리·골드 보상을 받아요. 정복한 종마다 공격 +$atk·체력 +$hp, 발견한 종마다 골드 +$gold가 영구로 붙어요. 보스 수집은 난이도마다 따로 세고(모두 $bosses마리), 모을수록 젤리·화석을 받아요.';
+  }
+
+  @override
+  String get guideStorageTitle => '채집함 관리';
+
+  @override
+  String guideStorageBody(String base, String step, String max) {
+    return '채집함은 기본 $base칸이고 젤리로 $step칸씩 최대 $max칸까지 늘려요. 가득 차면 새 곤충이 들어오지 않아요(골드·재료는 그대로 받아요). 받을 희귀도를 정하면 그보다 낮은 곤충은 들어오지 않고 재료로 바뀌어요.';
+  }
+
+  @override
+  String get guideStorageEssence =>
+      '필요 없는 곤충은 분해(재료)하거나 정수로 바꿔요(애벌레 이상만). 정수는 그 종 등급 올리기에 쓰여요. 아끼는 곤충은 잠그면 분해·정수·희귀도 올리기 재료로 쓰이지 않아요. 장착·부화 중·훈련 중인 곤충도 바꿀 수 없어요.';
+
+  @override
+  String get guideFairyTitle => '요정';
+
+  @override
+  String get guideFairyBody =>
+      '요정은 사냥을 돕는 동반자예요. 동행 요정은 한 마리만 정할 수 있고, 그 요정의 기본·부가 능력치와 스킬이 사냥에 더해져요(스킬은 알아서 써요). 요정은 사냥에만 힘을 보태고 결투·대회·길드 보스에는 들어가지 않아요.';
+
+  @override
+  String guideFairyEgg(String hatch, String elite, String gacha, String pity) {
+    return '요정은 요정 알을 요정 둥지(한 칸)에서 부화시켜 얻어요. 부화 시간은 $hatch이고 가속기로 줄일 수 있어요. 알은 보스를 처음 잡을 때 확정, 정예를 잡을 때 $elite 확률로 나와요. 요정 알 뽑기(젤리 $gacha)는 $pity회 안에 전설 이상이 확정이에요. 알의 등급은 처음부터 정해져 있고, 종류·부가 능력치는 둥지에 넣을 때 정해져요.';
+  }
+
+  @override
+  String guideFairyStone(String stone, String reroll, String cap) {
+    return '알을 둥지에 넣을 때 속성석을 함께 넣으면 그 부가 능력치가 $stone 확률로 나와요. 이미 가진 요정은 재굴림(젤리 $reroll, 하루 $cap번)으로 부가 능력치와 품질을 다시 굴려요. 품질은 내려가지 않고, 마음에 들지 않으면 지금 값을 유지할 수 있어요.';
+  }
+
+  @override
+  String guideFairyMerge(
+    String merge,
+    String mergeEpic,
+    String level,
+    String maxLv,
+    String refund,
+  ) {
+    return '같은 종류·같은 등급 요정 $merge마리를 합성하면 한 등급 위 요정 1마리가 돼요(영웅 → 전설만 $mergeEpic마리). 재료가 모두 같은 부가 능력치면 그 부가가 이어져요. 레벨은 요정 가루로 올리고(레벨마다 능력치 +$level), 등급마다 최고 레벨($maxLv)이 달라요. 레벨을 올린 요정을 합성·분해하면 쓴 가루의 $refund를 돌려받아요.';
+  }
+
+  @override
+  String guideFairyBox(String base, String step, String max, String dex) {
+    return '요정함은 요정과 알을 합쳐 기본 $base칸이고, 젤리로 $step칸씩 최대 $max칸까지 늘려요. 가득 차면 새 알은 요정 가루로 바뀌어요. 필요 없는 요정과 알은 분해해 가루로 바꾸고, 알 자동 분해를 켜면 고른 등급 이하의 새 알이 바로 가루가 돼요. 요정 도감($dex칸)을 채울수록 가루·가속기·화석을 받아요.';
+  }
 }
