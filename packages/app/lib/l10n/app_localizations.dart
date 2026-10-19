@@ -3028,6 +3028,12 @@ abstract class AppLocalizations {
   /// **'Claimed today'**
   String get dailyClaimedToday;
 
+  /// No description provided for @dailyClaimMore.
+  ///
+  /// In en, this message translates to:
+  /// **'Claim again'**
+  String get dailyClaimMore;
+
   /// No description provided for @dailyLockedUntil.
   ///
   /// In en, this message translates to:

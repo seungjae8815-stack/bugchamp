@@ -5,6 +5,8 @@ import 'package:core_run/core_run.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../domain/red_dots.dart';
+import '../../ui/red_dot.dart';
 import '../../ui/sheet_close.dart';
 import '../../ui/toast.dart';
 import '../../data/game_data.dart';
@@ -180,11 +182,15 @@ class StorageScreen extends ConsumerWidget {
           // 애셋(ui/dex.webp)이 들어오면 자동으로 그림으로 바뀐다.
           IconButton(
             tooltip: l.dexTitle,
-            icon: gameImage(
-              'assets/images/ui/dex.webp',
-              width: 26,
-              height: 26,
-              fallback: const Icon(Icons.menu_book_rounded),
+            // 받을 마일스톤 보상이 있으면 빨간 점(2026-10-19).
+            icon: RedDotBadge(
+              show: ref.watch(redDotsProvider).dex,
+              child: gameImage(
+                'assets/images/ui/dex.webp',
+                width: 26,
+                height: 26,
+                fallback: const Icon(Icons.menu_book_rounded),
+              ),
             ),
             onPressed: () => Navigator.of(
               context,
@@ -891,10 +897,8 @@ class StorageScreen extends ConsumerWidget {
     SaveGame save,
   ) {
     if (data.petConfig == null) return const SizedBox.shrink();
-    final now = ref.read(clockProvider).now().toUtc();
     final used = save.breeding.length;
     final cap = save.breedingCapacity;
-    final ready = save.breeding.where((b) => !now.isBefore(b.endsAt)).length;
     return Material(
       color: const Color(0xFF15200D),
       child: Padding(
@@ -944,16 +948,10 @@ class StorageScreen extends ConsumerWidget {
                     ),
                   ),
                 ),
-                if (ready > 0) ...[
+                // 산란 끝 · 또는 빈 칸에 넣을 암수가 있음(2026-10-19 — 빈 칸도 손해다).
+                if (ref.watch(redDotsProvider).breeding) ...[
                   const SizedBox(width: 6),
-                  Container(
-                    width: 9,
-                    height: 9,
-                    decoration: const BoxDecoration(
-                      color: Color(0xFFFF5252),
-                      shape: BoxShape.circle,
-                    ),
-                  ),
+                  const RedDot(size: 9),
                 ],
               ],
             ),
@@ -1558,10 +1556,8 @@ class StorageScreen extends ConsumerWidget {
     SaveGame save,
   ) {
     if (data.petConfig == null) return const SizedBox.shrink();
-    final now = ref.read(clockProvider).now().toUtc();
     final used = save.incubating.length;
     final cap = save.incubatorCapacity;
-    final ready = save.incubating.values.where((e) => !now.isBefore(e)).length;
     return Material(
       color: const Color(0xFF15200D),
       child: Padding(
@@ -1611,16 +1607,10 @@ class StorageScreen extends ConsumerWidget {
                     ),
                   ),
                 ),
-                if (ready > 0) ...[
+                // 부화 끝 · 또는 빈 칸에 넣을 알이 있음(2026-10-19).
+                if (ref.watch(redDotsProvider).incubator) ...[
                   const SizedBox(width: 6),
-                  Container(
-                    width: 9,
-                    height: 9,
-                    decoration: const BoxDecoration(
-                      color: Color(0xFFFF5252),
-                      shape: BoxShape.circle,
-                    ),
-                  ),
+                  const RedDot(size: 9),
                 ],
               ],
             ),
@@ -3503,7 +3493,34 @@ class StorageScreen extends ConsumerWidget {
   }
 
   /// 아이콘 셀: 이미지 + 티어(★) + 성충 레벨 + 장착중. 등급색 테두리.
+  /// 곤충 칸 — 돌파가 끝나 받을 수 있으면 빨간 점(2026-10-19: 상세를 열어야만 보였다).
   Widget _bugCell(
+    BuildContext context,
+    WidgetRef ref,
+    GameData data,
+    IndividualBug bug,
+    LifeStage stage,
+    bool equipped,
+    double? duelPower, {
+    bool canRarityUp = false,
+  }) => RedDotBadge(
+    show: ref.watch(redDotsProvider).breakthroughBugs.contains(bug.id),
+    top: -2,
+    right: -2,
+    size: 9,
+    child: _bugCellBody(
+      context,
+      ref,
+      data,
+      bug,
+      stage,
+      equipped,
+      duelPower,
+      canRarityUp: canRarityUp,
+    ),
+  );
+
+  Widget _bugCellBody(
     BuildContext context,
     WidgetRef ref,
     GameData data,

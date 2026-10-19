@@ -17,6 +17,8 @@ import 'polish_dialog.dart';
 import 'forge_panel.dart';
 import 'skill_panel.dart';
 import '../../ui/colors.dart';
+import '../../domain/red_dots.dart';
+import '../../ui/red_dot.dart';
 
 const _honey = kHoney;
 
@@ -101,7 +103,14 @@ class _CharacterScreenState extends ConsumerState<CharacterScreen> {
 
   Widget _tabs(AppLocalizations l) => Row(
     children: [
-      _tab(l.charTabStats, 'stats', Icons.person_rounded, _Panel.stats),
+      // 공방 등급업·초월 · 장비 별 강화가 끝나 받을 수 있으면 빨간 점(2026-10-19).
+      _tab(
+        l.charTabStats,
+        'stats',
+        Icons.person_rounded,
+        _Panel.stats,
+        dot: ref.watch(redDotsProvider).stats,
+      ),
       const SizedBox(width: 6),
       _tab(l.charTabFairy, 'fairy', Icons.flutter_dash_rounded, _Panel.fairy),
       const SizedBox(width: 6),
@@ -110,14 +119,8 @@ class _CharacterScreenState extends ConsumerState<CharacterScreen> {
         'skills',
         Icons.auto_awesome_rounded,
         _Panel.skills,
-        // 놀고 있는 스킬 조각으로 승급할 수 있으면 빨간 점(2026-10-08).
-        dot: () {
-          final cfg = ref.watch(gameDataProvider).value?.skillConfig;
-          final save = ref.watch(saveControllerProvider).value;
-          return cfg != null &&
-              save != null &&
-              skillIdleGradeUps(cfg, save).isNotEmpty;
-        }(),
+        // 놀고 있는 조각으로 승급(2026-10-08) · 오늘 무료 뽑기·소탕 · 수련 끝(2026-10-19).
+        dot: ref.watch(redDotsProvider).skills,
       ),
     ],
   );
@@ -135,20 +138,7 @@ class _CharacterScreenState extends ConsumerState<CharacterScreen> {
         clipBehavior: Clip.none,
         children: [
           _tabBody(text, art, icon, p, on),
-          if (dot)
-            Positioned(
-              top: -3,
-              right: -2,
-              child: Container(
-                width: 10,
-                height: 10,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFF4D4D),
-                  shape: BoxShape.circle,
-                  border: Border.all(color: Colors.white, width: 1.2),
-                ),
-              ),
-            ),
+          if (dot) const Positioned(top: -3, right: -2, child: RedDot()),
         ],
       ),
     );

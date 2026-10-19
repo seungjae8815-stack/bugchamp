@@ -1684,6 +1684,9 @@ class AppLocalizationsKo extends AppLocalizations {
   String get dailyClaimedToday => '오늘 받음';
 
   @override
+  String get dailyClaimMore => '한 번 더 받기';
+
+  @override
   String dailyLockedUntil(int hour) {
     return '$hour시부터';
   }

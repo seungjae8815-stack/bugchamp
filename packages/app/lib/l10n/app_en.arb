@@ -967,6 +967,7 @@
   "dailyDinner": "Dinner reward",
   "dailyClaim": "Claim",
   "dailyClaimedToday": "Claimed today",
+  "dailyClaimMore": "Claim again",
   "dailyLockedUntil": "from {hour}:00",
   "@dailyLockedUntil": {
     "placeholders": {

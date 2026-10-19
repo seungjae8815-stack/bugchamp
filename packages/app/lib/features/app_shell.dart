@@ -36,6 +36,8 @@ import 'shop/craft_screen.dart';
 import 'title/title_screen.dart';
 import 'storage/storage_screen.dart';
 import '../ui/colors.dart';
+import '../domain/red_dots.dart';
+import '../ui/red_dot.dart';
 
 /// 하단 4탭 셸: 홈 · 채집함 · 전투 · 상점. 세이브 로드 완료 후 표시.
 class AppShell extends ConsumerStatefulWidget {
@@ -416,8 +418,19 @@ class _AppShellState extends ConsumerState<AppShell>
           ),
           bottomNavigationBar: _GameNavBar(
             index: index,
-            // 관리자인데 가입 신청이 쌓여 있으면 길드 아이콘에 빨간 점.
-            guildDot: ref.watch(guildHasRequestsProvider),
+            // 탭 안에 놓치면 손해인 것이 있으면 그 탭에 빨간 점(2026-10-19 — 예전엔 길드 가입 신청뿐이라
+            // 부화가 끝나도 채집함을 열기 전엔 몰랐다). 판정은 `red_dots.dart` 한 곳.
+            dots: () {
+              final d = ref.watch(redDotsProvider);
+              return {
+                if (d.guide) 0,
+                if (d.characterTab) 1,
+                if (d.storageTab) 2,
+                if (d.battleTab) 3,
+                // 관리자인데 가입 신청이 쌓여 있으면 길드 아이콘에 빨간 점.
+                if (ref.watch(guildHasRequestsProvider)) kGuildTabIndex,
+              };
+            }(),
             onTap: (i) {
               AudioService.instance.sfxTap();
               ref.read(tabIndexProvider.notifier).set(i);
@@ -657,12 +670,14 @@ class _GameNavBar extends StatelessWidget {
   const _GameNavBar({
     required this.index,
     required this.onTap,
-    this.guildDot = false,
+    this.dots = const {},
   });
 
   final int index;
   final ValueChanged<int> onTap;
-  final bool guildDot;
+
+  /// 빨간 점을 달 탭 번호.
+  final Set<int> dots;
 
   @override
   Widget build(BuildContext context) {
@@ -699,7 +714,7 @@ class _GameNavBar extends StatelessWidget {
                     icon: items[i].$2,
                     label: items[i].$3,
                     active: i == index,
-                    dot: guildDot && i == kGuildTabIndex,
+                    dot: dots.contains(i),
                     onTap: () => onTap(i),
                   ),
                 ),
@@ -754,14 +769,7 @@ class _NavTab extends StatelessWidget {
                 ),
               ),
               if (dot)
-                const Positioned(
-                  right: -3,
-                  top: -2,
-                  child: CircleAvatar(
-                    radius: 4.5,
-                    backgroundColor: Color(0xFFFF5252),
-                  ),
-                ),
+                const Positioned(right: -3, top: -2, child: RedDot(size: 9)),
             ],
           ),
           const SizedBox(height: 1),

@@ -1679,6 +1679,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get dailyClaimedToday => '本日受取済み';
 
   @override
+  String get dailyClaimMore => 'もう一度受け取る';
+
+  @override
   String dailyLockedUntil(int hour) {
     return '$hour時から';
   }

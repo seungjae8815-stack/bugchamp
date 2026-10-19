@@ -600,6 +600,7 @@
   "dailyDinner": "저녁 보상",
   "dailyClaim": "받기",
   "dailyClaimedToday": "오늘 받음",
+  "dailyClaimMore": "한 번 더 받기",
   "dailyLockedUntil": "{hour}시부터",
   "dailyRewardSnack": "일일보상을 받았어요!",
   "giftSectionTitle": "깜짝 선물 (3시간 내 수령)",

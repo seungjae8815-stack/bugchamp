@@ -73,6 +73,8 @@ import '../../domain/notice_service.dart';
 import '../../ui/tier_label.dart';
 import '../../ui/colors.dart';
 import '../../ui/avatar.dart';
+import '../../domain/red_dots.dart';
+import '../../ui/red_dot.dart';
 
 const _uuid = Uuid();
 const _honey = kHoney;
@@ -3443,9 +3445,11 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                                       ?.isNotEmpty ??
                                   false),
                         ),
+                        // 공략집(설정 안)을 이번 판까지 안 열어 봤으면 빨간 점(2026-10-19).
                         _iconBtn(
                           Icons.settings_rounded,
                           () => _showSettings(l),
+                          badge: !ref.watch(guideSeenProvider),
                         ),
                       ],
                     ),
@@ -3552,29 +3556,8 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                   ),
                 ),
                 if (!active)
-                  // 우상단 "!" 배지
-                  Positioned(
-                    right: -2,
-                    top: -2,
-                    child: Container(
-                      width: 10,
-                      height: 10,
-                      alignment: Alignment.center,
-                      decoration: const BoxDecoration(
-                        color: _honey,
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Text(
-                        '!',
-                        style: TextStyle(
-                          color: kHoneyInk,
-                          fontSize: 7.5,
-                          fontWeight: FontWeight.w900,
-                          height: 1.0,
-                        ),
-                      ),
-                    ),
-                  ),
+                  // 꺼진 버프 — 다른 점과 같은 빨간 점(2026-10-19, 예전 꿀색 "!").
+                  const Positioned(right: -2, top: -2, child: RedDot(size: 9)),
               ],
             ),
           ),
@@ -3789,6 +3772,11 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     final today = dailyDateKey(now);
     for (final rw in daily.rewards) {
       if (now.hour >= rw.hour && save.dailyClaimedDate(rw.id) != today) {
+        return true;
+      }
+      // 받았지만 "한 번 더 받기"(+1배)가 남았다 — 우편 줄에 버튼이 있다(2026-10-19).
+      if (save.dailyClaimedDate(rw.id) == today &&
+          save.dailyClaims[dailyBonusKey(rw.id)] != today) {
         return true;
       }
     }
@@ -5739,98 +5727,105 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
         onTap: claimable
             ? () => _claimMission(l, def)
             : (canSwap ? () => _swapMission(l, save, cfg, def) : null),
-        child: _PulseBox(
-          // ⚠️ 깜빡임은 **스스로** 돌아야 한다. 예전엔 부모(_tapHint)의 값을 읽어
-          //    계산했는데, 미션 목록은 바텀시트라 부모가 갱신돼도 다시 그려지지
-          //    않아 한 프레임 값에 멈춰 있었다(=깜빡이지 않았다).
-          // 오늘 젤리를 다 받은 젤리 미션은 깜빡이지 않는다 — 눌러도 빈손이다(2026-10-10 점검).
-          active: claimable && !jellyDone,
-          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 5),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  missionImage(
-                    def.type,
-                    size: 15,
-                    fallback: Icon(
-                      missionIcon(def.type),
-                      color: _honey,
-                      size: 11,
-                    ),
-                  ),
-                  const SizedBox(width: 4),
-                  Expanded(
-                    child: Text(
-                      missionLabel(l, def.type),
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: _onScene,
-                        fontWeight: FontWeight.w700,
-                        fontSize: 10.5,
-                      ),
-                    ),
-                  ),
-                  if (claimable)
-                    const Icon(Icons.card_giftcard, size: 12, color: _honey)
-                  else if (canSwap)
-                    Icon(
-                      Icons.swap_horiz_rounded,
-                      size: 12,
-                      color: impossible ? _honey : const Color(0x99FFFFFF),
-                    ),
-                ],
-              ),
-              const SizedBox(height: 3),
-              if (impossible)
-                Text(
-                  l.missionSwapFreeShort,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: _honey,
-                    fontSize: 8.5,
-                    fontWeight: FontWeight.w700,
-                  ),
-                )
-              else
+        // 받을 수 있으면 빨간 점도(2026-10-19 — 깜빡임만으로는 놓쳤다).
+        child: RedDotBadge(
+          show: claimable && !jellyDone,
+          top: -2,
+          right: -2,
+          size: 9,
+          child: _PulseBox(
+            // ⚠️ 깜빡임은 **스스로** 돌아야 한다. 예전엔 부모(_tapHint)의 값을 읽어
+            //    계산했는데, 미션 목록은 바텀시트라 부모가 갱신돼도 다시 그려지지
+            //    않아 한 프레임 값에 멈춰 있었다(=깜빡이지 않았다).
+            // 오늘 젤리를 다 받은 젤리 미션은 깜빡이지 않는다 — 눌러도 빈손이다(2026-10-10 점검).
+            active: claimable && !jellyDone,
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 5),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
                 Row(
                   children: [
-                    Expanded(
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(3),
-                        child: LinearProgressIndicator(
-                          value: (progress / goal).clamp(0.0, 1.0),
-                          minHeight: 4,
-                          backgroundColor: const Color(0x33FFFFFF),
-                          valueColor: const AlwaysStoppedAnimation(_honey),
-                        ),
+                    missionImage(
+                      def.type,
+                      size: 15,
+                      fallback: Icon(
+                        missionIcon(def.type),
+                        color: _honey,
+                        size: 11,
                       ),
                     ),
                     const SizedBox(width: 4),
-                    Text(
-                      '$progress/$goal',
-                      style: const TextStyle(
-                        color: Color(0xCCFFFFFF),
-                        fontSize: 8.5,
+                    Expanded(
+                      child: Text(
+                        missionLabel(l, def.type),
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: _onScene,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 10.5,
+                        ),
                       ),
                     ),
+                    if (claimable)
+                      const Icon(Icons.card_giftcard, size: 12, color: _honey)
+                    else if (canSwap)
+                      Icon(
+                        Icons.swap_horiz_rounded,
+                        size: 12,
+                        color: impossible ? _honey : const Color(0x99FFFFFF),
+                      ),
                   ],
                 ),
-              if (jellyDone)
-                Padding(
-                  padding: const EdgeInsets.only(top: 2),
-                  child: Text(
-                    l.missionJellyDoneShort,
+                const SizedBox(height: 3),
+                if (impossible)
+                  Text(
+                    l.missionSwapFreeShort,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
-                      color: Color(0x99FFFFFF),
-                      fontSize: 8,
+                      color: _honey,
+                      fontSize: 8.5,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  )
+                else
+                  Row(
+                    children: [
+                      Expanded(
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(3),
+                          child: LinearProgressIndicator(
+                            value: (progress / goal).clamp(0.0, 1.0),
+                            minHeight: 4,
+                            backgroundColor: const Color(0x33FFFFFF),
+                            valueColor: const AlwaysStoppedAnimation(_honey),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        '$progress/$goal',
+                        style: const TextStyle(
+                          color: Color(0xCCFFFFFF),
+                          fontSize: 8.5,
+                        ),
+                      ),
+                    ],
+                  ),
+                if (jellyDone)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 2),
+                    child: Text(
+                      l.missionJellyDoneShort,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: Color(0x99FFFFFF),
+                        fontSize: 8,
+                      ),
                     ),
                   ),
-                ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -6838,7 +6833,9 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
   ) {
     final claimedToday = save.dailyClaimedDate(rw.id) == today;
     final unlocked = now.hour >= rw.hour;
-    final claimable = unlocked && !claimedToday;
+    final claimable =
+        unlocked &&
+        (!claimedToday || save.dailyClaims[dailyBonusKey(rw.id)] != today);
     // 보상 요약 — 정액과 사냥 분치 중 큰 쪽(2026-10-08). 수령도 같은 값을 쓴다.
     final amt = r.read(saveControllerProvider.notifier).dailyRewardAmount(rw);
     final matSum = amt.materials.entries
@@ -6849,6 +6846,27 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
       if (rw.jelly > 0) '${l.curJelly} ${rw.jelly}',
       if (matSum > 0) '🧪${formatCompact(matSum)}',
     ];
+    // "한 번 더 받기"(+1배) — 받은 직후 제안 창에서, 또는 "나중에"를 눌렀으면 이 줄의 버튼에서(2026-10-19 —
+    // 예전엔 제안 창을 닫으면 그날 다시 받을 곳이 없었다).
+    final bonusLeft =
+        claimedToday && save.dailyClaims[dailyBonusKey(rw.id)] != today;
+    Future<void> claimBonus() async {
+      final notifier = r.read(saveControllerProvider.notifier);
+      if (!await watchAdForReward(ctx, r, l)) return;
+      if (!ctx.mounted) return;
+      if (!await notifier.claimDaily(rw, bonus: true)) return;
+      if (!ctx.mounted) return;
+      await showRewardPopup(
+        ctx,
+        title: l.giftDoubledSnack,
+        iconWidget: dialogIcon('reward'),
+        subtitle: l.rewardGained,
+        icon: Icons.play_circle_fill_rounded,
+        gold: amt.gold,
+        materials: amt.materials,
+      );
+    }
+
     // 그냥 받기(1배) → 수령 후 "광고 보고 한 번 더 받기" 제안 → 수락 시 +1배.
     Future<void> claimDailyThenOffer() async {
       final notifier = r.read(saveControllerProvider.notifier);
@@ -6887,21 +6905,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
           gameDialogButton(l.giftAdMoreYes, () => Navigator.pop(ctx, true)),
         ],
       );
-      if (more == true && ctx.mounted) {
-        if (!await watchAdForReward(ctx, r, l)) return;
-        if (!ctx.mounted) return;
-        if (!await notifier.claimDaily(rw, bonus: true)) return;
-        if (!ctx.mounted) return;
-        await showRewardPopup(
-          ctx,
-          title: l.giftDoubledSnack,
-          iconWidget: dialogIcon('reward'),
-          subtitle: l.rewardGained,
-          icon: Icons.play_circle_fill_rounded,
-          gold: amt.gold,
-          materials: amt.materials,
-        );
-      }
+      if (more == true && ctx.mounted) await claimBonus();
     }
 
     return Padding(
@@ -6950,7 +6954,29 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
             const SizedBox(width: 8),
             // 받음·잠김 문구도 **버튼과 같은 폭**을 차지한다 — 폭이 다르면
             // 왼쪽 보상 문구의 줄바꿈 지점이 카드마다 달라진다.
-            if (claimedToday)
+            if (bonusLeft)
+              SizedBox(
+                width: 104,
+                height: 40,
+                child: FilledButton(
+                  onPressed: claimBonus,
+                  style: FilledButton.styleFrom(
+                    backgroundColor: kHoney,
+                    foregroundColor: kHoneyInk,
+                    padding: EdgeInsets.zero,
+                    minimumSize: const Size(0, 40),
+                  ),
+                  child: Text(
+                    l.dailyClaimMore,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ),
+              )
+            else if (claimedToday)
               SizedBox(
                 width: 104,
                 height: 40,
@@ -7203,20 +7229,26 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
             const SizedBox(height: 8),
           ],
           // 공략집 — 오행·기질·특성 등 용어 설명(2026-10-01 사장님 요청).
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton.icon(
-              onPressed: () {
-                Navigator.pop(context);
-                Navigator.of(context).push(
-                  MaterialPageRoute<void>(builder: (_) => const GuideScreen()),
-                );
-              },
-              icon: const Icon(Icons.menu_book_rounded, size: 18),
-              label: Text(l.guideTitle),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: kHoney,
-                side: const BorderSide(color: Color(0x55EBA52F)),
+          RedDotBadge(
+            show: !ref.read(guideSeenProvider),
+            child: SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: () {
+                  ref.read(guideSeenProvider.notifier).markSeen();
+                  Navigator.pop(context);
+                  Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => const GuideScreen(),
+                    ),
+                  );
+                },
+                icon: const Icon(Icons.menu_book_rounded, size: 18),
+                label: Text(l.guideTitle),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: kHoney,
+                  side: const BorderSide(color: Color(0x55EBA52F)),
+                ),
               ),
             ),
           ),

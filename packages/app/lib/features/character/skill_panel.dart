@@ -18,6 +18,8 @@ import '../../ui/toast.dart';
 import 'skill_gacha_dialog.dart';
 import 'skill_grade_up_dialog.dart';
 import '../../ui/colors.dart';
+import '../../domain/red_dots.dart';
+import '../../ui/red_dot.dart';
 
 const _honey = kHoney;
 
@@ -128,18 +130,25 @@ class _SkillPanelState extends ConsumerState<SkillPanel> {
                 ),
               ),
               const SizedBox(width: 4),
-              _button(
-                l.skillGacha,
-                () => _open(SkillGachaDialog(cfg: cfg, locale: locale)),
-                accent: _honey,
-                art: 'gacha',
+              // 오늘 무료 뽑기·무료 소탕이 남았으면 빨간 점(2026-10-19 — 하루 무료를 모르고 지나갔다).
+              RedDotBadge(
+                show: ref.watch(redDotsProvider).skillDraw,
+                child: _button(
+                  l.skillGacha,
+                  () => _open(SkillGachaDialog(cfg: cfg, locale: locale)),
+                  accent: _honey,
+                  art: 'gacha',
+                ),
               ),
               const SizedBox(width: 5),
-              _button(
-                l.skillSweep,
-                () => _open(SkillSweepDialog(cfg: cfg, locale: locale)),
-                accent: const Color(0xFF4FC3F7),
-                art: 'sweep',
+              RedDotBadge(
+                show: ref.watch(redDotsProvider).skillSweep,
+                child: _button(
+                  l.skillSweep,
+                  () => _open(SkillSweepDialog(cfg: cfg, locale: locale)),
+                  accent: const Color(0xFF4FC3F7),
+                  art: 'sweep',
+                ),
               ),
               const SizedBox(width: 5),
               // 놀고 있는 조각으로 승급할 수 있으면 빨간 점(2026-10-08 사장님 — 최상위 유저도 몰라서 수천 개를 쌓아 뒀다).
@@ -153,7 +162,7 @@ class _SkillPanelState extends ConsumerState<SkillPanel> {
                     art: 'gradeup',
                   ),
                   if (skillIdleGradeUps(cfg, save).isNotEmpty)
-                    const Positioned(top: -3, right: -3, child: _RedDot()),
+                    const Positioned(top: -3, right: -3, child: RedDot()),
                 ],
               ),
             ],
@@ -936,22 +945,6 @@ class _SkillArt extends StatelessWidget {
       child: art,
     );
   }
-}
-
-/// 처리할 일이 있다는 빨간 점.
-class _RedDot extends StatelessWidget {
-  const _RedDot();
-
-  @override
-  Widget build(BuildContext context) => Container(
-    width: 10,
-    height: 10,
-    decoration: BoxDecoration(
-      color: const Color(0xFFFF4D4D),
-      shape: BoxShape.circle,
-      border: Border.all(color: Colors.white, width: 1.2),
-    ),
-  );
 }
 
 /// **놀고 있는 조각**(장착하지 않은 스킬의 조각 + 그 등급 만능 조각)으로 만들 수 있는 윗등급 만능 조각 수.

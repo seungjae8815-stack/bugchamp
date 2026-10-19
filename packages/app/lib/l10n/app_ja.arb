@@ -572,6 +572,7 @@
   "dailyDinner": "ディナー報酬",
   "dailyClaim": "受け取る",
   "dailyClaimedToday": "本日受取済み",
+  "dailyClaimMore": "もう一度受け取る",
   "dailyLockedUntil": "{hour}時から",
   "dailyRewardSnack": "デイリー報酬を受け取りました！",
   "giftSectionTitle": "サプライズギフト（3時間以内に受取）",

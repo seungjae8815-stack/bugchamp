@@ -1734,6 +1734,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get dailyClaimedToday => 'Claimed today';
 
   @override
+  String get dailyClaimMore => 'Claim again';
+
+  @override
   String dailyLockedUntil(int hour) {
     return 'from $hour:00';
   }

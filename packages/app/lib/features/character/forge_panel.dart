@@ -22,6 +22,8 @@ import '../../ui/toast.dart';
 import 'equip_widgets.dart';
 import 'polish_dialog.dart';
 import '../../ui/colors.dart';
+import '../../domain/red_dots.dart';
+import '../../ui/red_dot.dart';
 
 const _honey = kHoney;
 
@@ -401,13 +403,17 @@ class _ForgeBarState extends ConsumerState<ForgeBar> {
       children: [
         // 왼쪽 = 공방 등급. **좌우 폭을 같게** 두어야 모루가 진짜 가운데에
         // 온다(가장 자주 누르는 버튼이 엄지 정중앙이어야 한다).
-        _SquareButton(
-          icon: Icons.workspace_premium_rounded,
-          art: 'forge_grade',
-          label: l.forgeGradeButton,
-          sub: '${save.forgeLevel + 1}',
-          busy: save.forgeUpAt != null || save.forgeTranscendAt != null,
-          onTap: () => showForgeGrade(context, ref),
+        // 등급업·초월이 끝나 받을 수 있으면 빨간 점(2026-10-19 — 끝나도 모래시계만 보였다).
+        RedDotBadge(
+          show: ref.watch(redDotsProvider).forge,
+          child: _SquareButton(
+            icon: Icons.workspace_premium_rounded,
+            art: 'forge_grade',
+            label: l.forgeGradeButton,
+            sub: '${save.forgeLevel + 1}',
+            busy: save.forgeUpAt != null || save.forgeTranscendAt != null,
+            onTap: () => showForgeGrade(context, ref),
+          ),
         ),
         Expanded(
           child: Padding(

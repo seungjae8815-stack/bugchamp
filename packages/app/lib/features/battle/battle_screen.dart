@@ -40,6 +40,8 @@ import '../../ui/toast.dart';
 import '../../domain/server_sync.dart';
 import '../../ui/colors.dart';
 import '../../ui/avatar.dart';
+import '../../domain/red_dots.dart';
+import '../../ui/red_dot.dart';
 
 const _honey = kHoney;
 
@@ -259,11 +261,15 @@ class _TicketBarState extends ConsumerState<TicketBar> {
               SizedBox(
                 width: 96,
                 height: 44,
-                child: _chargeBtn(
-                  l.pvpTicketAdBtn(cfg.ticketAdGrant),
-                  l.pvpTicketAdLeft(adUsed, cfg.ticketAdDailyLimit),
-                  const Color(0xFF3E7D4F),
-                  () => _watchAd(l),
+                // 오늘 무료 충전이 남았으면 빨간 점(2026-10-19).
+                child: RedDotBadge(
+                  show: ref.watch(redDotsProvider).ticketFree,
+                  child: _chargeBtn(
+                    l.pvpTicketAdBtn(cfg.ticketAdGrant),
+                    l.pvpTicketAdLeft(adUsed, cfg.ticketAdDailyLimit),
+                    const Color(0xFF3E7D4F),
+                    () => _watchAd(l),
+                  ),
                 ),
               ),
               const SizedBox(width: 6),
@@ -661,10 +667,14 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
         titleSpacing: 12,
         // 지금 리그 · 남은 시간(누르면 리그 보상)이 앱바 전체 — '곤충 결투' 제목은 뺐다
         // (2026-09-30 사장님 요청: 탭 이름과 겹치고, 리그가 더 중요하다).
-        title: _LeagueClock(
-          league: pvpLeagueNow(save, battleCfg).id,
-          cfg: battleCfg,
-          onTap: () => _showLeagueRewards(l, data, save, battleCfg),
+        // 받지 않은 승급 보상이 있으면 빨간 점(2026-10-19).
+        title: RedDotBadge(
+          show: claimable,
+          child: _LeagueClock(
+            league: pvpLeagueNow(save, battleCfg).id,
+            cfg: battleCfg,
+            onTap: () => _showLeagueRewards(l, data, save, battleCfg),
+          ),
         ),
       ),
       // 결투장 로비 그림 — 장면은 위쪽 1/3(출정 칸 뒤), 아래는 어두워 순위표 글씨가 읽힌다.
@@ -747,14 +757,18 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
                     ),
                     const SizedBox(width: 10),
                     Expanded(
-                      child: _facilityButton(
-                        art: 'hub_training',
-                        icon: Icons.fitness_center_rounded,
-                        color: const Color(0xFFFFA24A),
-                        label: l.trainingCenter,
-                        onTap: () => Navigator.of(context).push(
-                          MaterialPageRoute<void>(
-                            builder: (_) => const TrainingScreen(),
+                      // 훈련 칸이 비었고 출정 곤충에게 찍을 포인트가 남았으면 빨간 점(2026-10-19).
+                      child: RedDotBadge(
+                        show: ref.watch(redDotsProvider).training,
+                        child: _facilityButton(
+                          art: 'hub_training',
+                          icon: Icons.fitness_center_rounded,
+                          color: const Color(0xFFFFA24A),
+                          label: l.trainingCenter,
+                          onTap: () => Navigator.of(context).push(
+                            MaterialPageRoute<void>(
+                              builder: (_) => const TrainingScreen(),
+                            ),
                           ),
                         ),
                       ),
@@ -1207,40 +1221,44 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
         ),
       );
     }
-    return SizedBox(
-      width: double.infinity,
-      height: 48,
-      child: FilledButton.icon(
-        style: FilledButton.styleFrom(
-          backgroundColor: const Color(0xFFEF5350),
-          foregroundColor: Colors.white,
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+    // 티켓이 가득 차 자연 충전이 멈췄으면 빨간 점(2026-10-19 — 그대로 두면 충전분이 버려진다).
+    return RedDotBadge(
+      show: ref.watch(redDotsProvider).ticketFull,
+      child: SizedBox(
+        width: double.infinity,
+        height: 48,
+        child: FilledButton.icon(
+          style: FilledButton.styleFrom(
+            backgroundColor: const Color(0xFFEF5350),
+            foregroundColor: Colors.white,
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
           ),
-        ),
-        onPressed: adults.isEmpty || _starting
-            ? null
-            : () => _startMatch(data, save, locale),
-        icon: _starting
-            ? const SizedBox(
-                width: 16,
-                height: 16,
-                child: CircularProgressIndicator(
-                  color: Colors.white,
-                  strokeWidth: 2.5,
+          onPressed: adults.isEmpty || _starting
+              ? null
+              : () => _startMatch(data, save, locale),
+          icon: _starting
+              ? const SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(
+                    color: Colors.white,
+                    strokeWidth: 2.5,
+                  ),
+                )
+              // 결투 티켓과 같은 표식 — 누르면 티켓 한 장이 나간다는 걸 그림으로.
+              : gameImage(
+                  'assets/images/ui/icon/duel_ticket.webp',
+                  width: 22,
+                  height: 22,
+                  fallback: const Text('⚔️', style: TextStyle(fontSize: 18)),
                 ),
-              )
-            // 결투 티켓과 같은 표식 — 누르면 티켓 한 장이 나간다는 걸 그림으로.
-            : gameImage(
-                'assets/images/ui/icon/duel_ticket.webp',
-                width: 22,
-                height: 22,
-                fallback: const Text('⚔️', style: TextStyle(fontSize: 18)),
-              ),
-        label: Text(
-          l.battleStart,
-          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
+          label: Text(
+            l.battleStart,
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
+          ),
         ),
       ),
     );
