@@ -5,6 +5,7 @@ import 'package:core_run/core_run.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../ui/sheet_close.dart';
 import '../../ui/toast.dart';
 import '../../data/game_data.dart';
 import '../../domain/audio_service.dart';
@@ -1269,6 +1270,8 @@ class StorageScreen extends ConsumerWidget {
       // 기본 높이 제한(화면 9/16)에 그리드가 걸려 RenderFlex 오버플로우가 나던
       // 문제 방지 — 시트가 내용 높이만큼 커지도록 한다.
       isScrollControlled: true,
+      // 꽉 차면 머리 줄의 닫기(X)가 아이폰 노치 밑으로 숨지 않게(안쪽 SafeArea 는 위쪽을 못 지킨다 — 시트가 지운다).
+      useSafeArea: true,
       backgroundColor: const Color(0xF2141F0E),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
@@ -1323,6 +1326,7 @@ class StorageScreen extends ConsumerWidget {
                             ),
                           ),
                         ),
+                        const SheetCloseButton(),
                       ],
                     ),
                     const SizedBox(height: 4),
@@ -3335,6 +3339,7 @@ class StorageScreen extends ConsumerWidget {
                           onPressed: () => ctrl.set(const StorageViewFilter()),
                           child: Text(l.storageViewReset),
                         ),
+                      const SheetCloseButton(),
                     ],
                   ),
                   Text(
@@ -4331,6 +4336,7 @@ class StorageScreen extends ConsumerWidget {
                         save.lockedBugIds.contains(bug.id),
                         bug.id,
                       ),
+                      const SheetCloseButton(),
                     ],
                   ),
                   if (species.desc != null) ...[

@@ -782,7 +782,12 @@ class _GachaCard extends ConsumerWidget {
       iconWidget: dialogAsset('assets/images/ui/gacha_card_back.webp'),
       barrierDismissible: false,
       content: _GachaPicker(cost: cfg.gachaJellyCost, hint: l.gachaPickHint),
-      actions: const [],
+      // 바깥을 눌러 닫히지 않는 창이라 아이폰(뒤로가기 없음)은 카드를 골라 젤리를 써야만 나갈 수 있었다
+      // (2026-10-19 점검). 젤리는 카드를 고른 뒤에 빠지므로 닫으면 아무것도 쓰지 않는다.
+      // 고른 카드가 떠오르는 0.9초 사이에 닫아도 창이 사라지며 연출이 멈춰 두 번 닫히지 않는다.
+      actions: [
+        gameDialogButton(l.actionClose, () => Navigator.pop(context, false)),
+      ],
     );
     if (picked != true || !context.mounted) return;
 

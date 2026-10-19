@@ -19,6 +19,7 @@ import 'buff_wait_dialog.dart';
 import '../shop/craft_screen.dart' show StoreProductCard;
 import '../../domain/store_iap_service.dart' show storePricesProvider;
 import '../character/fairy_panel.dart' show openFairyWindow;
+import '../../ui/sheet_close.dart';
 import '../../ui/toast.dart';
 import '../../app_version.dart';
 import '../../data/game_data.dart';
@@ -9055,6 +9056,8 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
       context: context,
       // 상품 카드가 맨 위에 들어가 키가 커졌다 — 작은 화면에서도 넘치지 않게 스크롤(2026-10-15).
       isScrollControlled: true,
+      // 꽉 차면 머리 줄의 닫기(X)가 아이폰 노치 밑으로 숨지 않게.
+      useSafeArea: true,
       backgroundColor: const Color(0xF2141F0E),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
@@ -9071,13 +9074,20 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      l.buffSheetTitle,
-                      style: const TextStyle(
-                        color: _onScene,
-                        fontWeight: FontWeight.w900,
-                        fontSize: 16,
-                      ),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            l.buffSheetTitle,
+                            style: const TextStyle(
+                              color: _onScene,
+                              fontWeight: FontWeight.w900,
+                              fontSize: 16,
+                            ),
+                          ),
+                        ),
+                        const SheetCloseButton(),
+                      ],
                     ),
                     // 버프는 꺼 둔 동안에도 돈다(2026-10-14) — 방치 정산이 만료 시각까지 입힌다.
                     const SizedBox(height: 4),

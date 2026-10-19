@@ -26,6 +26,7 @@ import '../../ui/format.dart';
 import '../../ui/game_dialog.dart';
 import '../../ui/labels.dart';
 import '../../ui/bug_grade.dart';
+import '../../ui/sheet_close.dart';
 import '../../ui/skin_badges.dart';
 import '../../ui/skins.dart';
 import 'board_preview.dart';
@@ -1865,6 +1866,8 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
     return showModalBottomSheet<_Candidate>(
       context: context,
       isScrollControlled: true,
+      // 꽉 차면 머리 줄의 닫기(X)가 아이폰 노치 밑으로 숨지 않게.
+      useSafeArea: true,
       backgroundColor: const Color(0xF22F333E),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
@@ -1877,13 +1880,20 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                l.opponentPickTitle,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 17,
-                  fontWeight: FontWeight.w900,
-                ),
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      l.opponentPickTitle,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 17,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ),
+                  const SheetCloseButton(),
+                ],
               ),
               // 경기장 오행(2026-10-16) — 고르기 전에 보여 준다(출정 곤충을 바꿀 수 있게. 경기를 치를 때까지 그대로).
               if (arena != null) ...[
