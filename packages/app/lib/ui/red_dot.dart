@@ -27,6 +27,7 @@ class RedDotBadge extends StatelessWidget {
     required this.child,
     this.top = -3,
     this.right = -3,
+    this.bottom,
     this.size = 10,
   });
 
@@ -34,6 +35,9 @@ class RedDotBadge extends StatelessWidget {
   final Widget child;
   final double top;
   final double right;
+
+  /// 값이 있으면 오른쪽 **아래**에 단다(위가 다른 것에 가려지는 자리 — 홈 미션 카드는 사냥터 이름표가 덮는다).
+  final double? bottom;
   final double size;
 
   @override
@@ -43,7 +47,8 @@ class RedDotBadge extends StatelessWidget {
       child,
       if (show)
         Positioned(
-          top: top,
+          top: bottom == null ? top : null,
+          bottom: bottom,
           right: right,
           child: IgnorePointer(child: RedDot(size: size)),
         ),

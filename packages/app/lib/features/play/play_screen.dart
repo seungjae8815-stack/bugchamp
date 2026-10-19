@@ -5730,7 +5730,8 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
         // 받을 수 있으면 빨간 점도(2026-10-19 — 깜빡임만으로는 놓쳤다).
         child: RedDotBadge(
           show: claimable && !jellyDone,
-          top: -2,
+          // 위 모서리는 사냥터 이름표가 덮는다(2026-10-20 에뮬 확인) — 아래 모서리에.
+          bottom: -2,
           right: -2,
           size: 9,
           child: _PulseBox(
