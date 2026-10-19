@@ -13827,6 +13827,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'The fairy box holds {base} fairies and eggs combined, expandable by {step} with jelly up to {max}. When it is full, new eggs become fairy dust. Disassemble unwanted fairies and eggs into dust, or turn on auto-disassemble so new eggs at or below the chosen grade become dust right away. Filling the fairy book ({dex} entries) rewards dust, accelerators and fossils.'**
   String guideFairyBox(String base, String step, String max, String dex);
+
+  /// No description provided for @whatsNew23RedDot.
+  ///
+  /// In en, this message translates to:
+  /// **'Red dots now point out what you would miss — free daily draws and sweeps, empty incubator and breeding slots, finished timers, rewards to claim and duel tickets'**
+  String get whatsNew23RedDot;
+
+  /// No description provided for @whatsNew23Guide.
+  ///
+  /// In en, this message translates to:
+  /// **'The guide now explains rarity, growth potions, zones and the Abyss, buffs, skills, the Bug Book, storage and fairies'**
+  String get whatsNew23Guide;
+
+  /// No description provided for @whatsNew23Mail.
+  ///
+  /// In en, this message translates to:
+  /// **'You can now claim the lunch and dinner \"Claim again\" bonus later from the mailbox'**
+  String get whatsNew23Mail;
+
+  /// No description provided for @whatsNew23Fix.
+  ///
+  /// In en, this message translates to:
+  /// **'Fixed some windows that could not be closed on iPhone (new close button). The Hall of Fame and next round notice stay visible after a contest ends'**
+  String get whatsNew23Fix;
 }
 
 class _AppLocalizationsDelegate

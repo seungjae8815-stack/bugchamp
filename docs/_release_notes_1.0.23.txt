@@ -1,0 +1,38 @@
+========================================
+ Google Play — 출시 노트 (1.0.23 / 20260951)
+========================================
+※ ⚠️ **아래 구분선 밑의 세 블록을 통째로** Play Console 한 칸에 붙여넣는다.
+※ ⚠️ **한도 500자는 세 언어 합계**다(언어당 아님). 태그 포함, 줄바꿈은 2자(CRLF).
+※ 재계산:
+   python -c "import io;s=io.open('docs/_release_notes_1.0.23.txt',encoding='utf-8').read();b=s.split('-'*40,1)[1].strip();print(len(b)+b.count(chr(10)))"
+※ 범위: 1.0.22(20260950) 이후 — 빨간 점 · 공략집 사냥 쪽 8항목 · 우편 "한 번 더 받기" 다시 받기 · 아이폰 닫기 버튼 ·
+   알 뽑기 창 닫기 · 대회가 끝나도 배너·명예의 전당. 서버 변경 없음(앱만).
+※ 유저에게 불리한 변경: 없음.
+----------------------------------------
+<ko-KR>
+🐞 편의 업데이트
+
+• 놓치면 손해인 것에 빨간 점
+• 공략집에 사냥·스킬·요정 등 8항목
+• 우편에서 '한 번 더 받기'
+• 아이폰 창 닫기 버튼
+• 대회 종료 뒤에도 명예의 전당
+</ko-KR>
+<en-US>
+🐞 Convenience update
+
+• Red dots for things you'd miss
+• 8 new guide topics
+• Claim again later in mail
+• Close buttons on iPhone
+• Hall of Fame after contests end
+</en-US>
+<ja-JP>
+🐞 便利アップデート
+
+• 逃すと損するものに赤い点
+• 攻略本に8項目を追加
+• 郵便で「もう一度受け取る」
+• iPhoneの閉じるボタン
+• 大会終了後も殿堂を表示
+</ja-JP>

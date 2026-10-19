@@ -1,0 +1,35 @@
+========================================
+ App Store — 새로운 기능 (1.0.23 / 20260951)
+========================================
+※ 이모지 금지(불릿 - 는 허용). 심사 1.1 지뢰 단어 금지(목록: flutter-release 스킬 references/store-text.md).
+※ 범위: 1.0.22(20260950) 이후. 주의: iOS 에 1.0.22 가 아직 안 나갔다면 1.0.22 문구(_appstore_whatsnew_1.0.22.txt)를 합친다.
+
+<ko-KR>
+더 편하게 즐길 수 있도록 다듬었어요
+
+- 놓치면 아쉬운 것에 빨간 점이 떠요. 오늘의 무료 뽑기와 소탕, 비어 있는 부화기와 짝짓기 칸, 끝난 수련과 공방, 받을 보상을 바로 알 수 있습니다
+- 공략집에 희귀도, 성장물약, 사냥터와 심연, 버프, 스킬, 도감, 채집함, 요정 설명을 더했어요
+- 점심과 저녁 보상의 "한 번 더 받기"를 나중에 우편에서도 받을 수 있어요
+- 아이폰에서 일부 창을 닫을 수 없던 문제를 고쳤어요. 창 위쪽에 닫기 버튼이 생겼습니다
+- 대회가 끝난 뒤에도 명예의 전당과 다음 회차 안내를 볼 수 있어요
+</ko-KR>
+
+<en-US>
+Smoother and easier to play
+
+- Red dots now point out what you would miss: free daily draws and sweeps, empty incubator and breeding slots, finished training and forge work, and rewards to claim
+- The guide now covers rarity, growth potions, zones and the Abyss, buffs, skills, the Bug Book, storage and fairies
+- The lunch and dinner "Claim again" bonus can now be claimed later from the mailbox
+- Fixed some windows that could not be closed on iPhone. A close button now sits at the top
+- The Hall of Fame and next round notice stay visible after a contest ends
+</en-US>
+
+<ja-JP>
+もっと遊びやすく整えました
+
+- 逃すと惜しいものに赤い点が付きます。今日の無料ガチャと掃討、空いている孵化器と交配枠、終わった修練と工房、受け取れる報酬がすぐ分かります
+- 攻略本に希少度、成長薬、狩場と深淵、バフ、スキル、図鑑、採集箱、妖精の説明を加えました
+- お昼と夕方の報酬の「もう一度受け取る」を後から郵便でも受け取れます
+- iPhoneで一部の画面を閉じられなかった問題を直しました。画面の上に閉じるボタンがあります
+- 大会が終わった後も殿堂と次回の案内を見られます
+</ja-JP>

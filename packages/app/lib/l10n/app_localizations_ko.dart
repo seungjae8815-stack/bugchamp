@@ -8280,4 +8280,19 @@ class AppLocalizationsKo extends AppLocalizations {
   String guideFairyBox(String base, String step, String max, String dex) {
     return '요정함은 요정과 알을 합쳐 기본 $base칸이고, 젤리로 $step칸씩 최대 $max칸까지 늘려요. 가득 차면 새 알은 요정 가루로 바뀌어요. 필요 없는 요정과 알은 분해해 가루로 바꾸고, 알 자동 분해를 켜면 고른 등급 이하의 새 알이 바로 가루가 돼요. 요정 도감($dex칸)을 채울수록 가루·가속기·화석을 받아요.';
   }
+
+  @override
+  String get whatsNew23RedDot =>
+      '놓치면 손해인 것에 빨간 점이 떠요 — 오늘 무료 뽑기·소탕, 빈 부화기·짝짓기 칸, 끝난 수련·공방·돌파, 받을 도감·리그 보상, 결투 티켓';
+
+  @override
+  String get whatsNew23Guide =>
+      '공략집에 희귀도·성장물약·사냥터와 심연·버프·스킬·도감·채집함·요정 설명이 생겼어요';
+
+  @override
+  String get whatsNew23Mail => '점심·저녁 보상의 \"한 번 더 받기\"를 나중에 우편에서도 받을 수 있어요';
+
+  @override
+  String get whatsNew23Fix =>
+      '아이폰에서 일부 창을 닫을 수 없던 문제를 고쳤어요(닫기 버튼). 대회가 끝난 뒤에도 명예의 전당과 다음 회차 안내를 볼 수 있어요';
 }

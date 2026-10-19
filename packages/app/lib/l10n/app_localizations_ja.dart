@@ -8268,4 +8268,18 @@ class AppLocalizationsJa extends AppLocalizations {
   String guideFairyBox(String base, String step, String max, String dex) {
     return '妖精箱は妖精と卵を合わせて基本$base枠で、ゼリーで$step枠ずつ最大$max枠まで広げられます。いっぱいになると新しい卵は妖精の粉に変わります。いらない妖精や卵は分解して粉に変え、卵の自動分解をオンにすると選んだ等級以下の新しい卵がすぐ粉になります。妖精図鑑（$dex枠）を埋めるほど粉・加速器・化石がもらえます。';
   }
+
+  @override
+  String get whatsNew23RedDot =>
+      '逃すと損するものに赤い点が付きます — 今日の無料ガチャ・掃討、空いた孵化器・交配枠、終わった修練・工房・突破、受け取れる図鑑・リーグ報酬、決闘チケット';
+
+  @override
+  String get whatsNew23Guide => '攻略本に希少度・成長薬・狩場と深淵・バフ・スキル・図鑑・採集箱・妖精の説明が加わりました';
+
+  @override
+  String get whatsNew23Mail => 'お昼・夕方の報酬の「もう一度受け取る」を後から郵便でも受け取れます';
+
+  @override
+  String get whatsNew23Fix =>
+      'iPhoneで一部の画面を閉じられなかった問題を直しました（閉じるボタン）。大会が終わった後も殿堂と次回の案内を見られます';
 }

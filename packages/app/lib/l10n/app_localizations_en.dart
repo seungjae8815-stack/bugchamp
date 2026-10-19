@@ -8462,4 +8462,20 @@ class AppLocalizationsEn extends AppLocalizations {
   String guideFairyBox(String base, String step, String max, String dex) {
     return 'The fairy box holds $base fairies and eggs combined, expandable by $step with jelly up to $max. When it is full, new eggs become fairy dust. Disassemble unwanted fairies and eggs into dust, or turn on auto-disassemble so new eggs at or below the chosen grade become dust right away. Filling the fairy book ($dex entries) rewards dust, accelerators and fossils.';
   }
+
+  @override
+  String get whatsNew23RedDot =>
+      'Red dots now point out what you would miss — free daily draws and sweeps, empty incubator and breeding slots, finished timers, rewards to claim and duel tickets';
+
+  @override
+  String get whatsNew23Guide =>
+      'The guide now explains rarity, growth potions, zones and the Abyss, buffs, skills, the Bug Book, storage and fairies';
+
+  @override
+  String get whatsNew23Mail =>
+      'You can now claim the lunch and dinner \"Claim again\" bonus later from the mailbox';
+
+  @override
+  String get whatsNew23Fix =>
+      'Fixed some windows that could not be closed on iPhone (new close button). The Hall of Fame and next round notice stay visible after a contest ends';
 }

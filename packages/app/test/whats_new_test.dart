@@ -73,23 +73,18 @@ void main() {
       ),
     );
 
-    testWidgets('1.0.22 8줄 — 곤충 희귀도·희귀도 올리기·경기장 오행·놓친 굴리기·다듬기·편의성 둘·전투력', (
+    testWidgets('1.0.23 4줄 — 빨간 점·공략집·우편 한 번 더 받기·아이폰 닫기·대회 배너', (
       tester,
     ) async {
       await tester.pumpWidget(host(const Locale('ko'), 300));
-      expect(kWhatsNewVersion, '1.0.22');
-      // 업데이트 전 곤충의 희귀도·패시브를 새로 굴린 것은 숨기지 않는다(사장님 확정 C안 — 공지만).
-      expect(find.textContaining('새로 정해졌어요'), findsOneWidget);
-      expect(find.textContaining('3마리로 한 단계'), findsOneWidget);
-      expect(find.textContaining('경기장에 오행'), findsOneWidget);
-      expect(find.textContaining('놓친 능력치 굴리기'), findsOneWidget);
-      expect(find.textContaining('늘 더 좋은 값'), findsOneWidget);
-      expect(find.textContaining('가득 찰 때까지만'), findsOneWidget);
-      expect(find.textContaining('전투력 숫자'), findsOneWidget);
-      expect(find.textContaining('알 10회 뽑기'), findsOneWidget);
+      expect(kWhatsNewVersion, '1.0.23');
+      expect(find.textContaining('빨간 점'), findsOneWidget);
+      expect(find.textContaining('공략집에'), findsOneWidget);
+      expect(find.textContaining('한 번 더 받기'), findsOneWidget);
+      expect(find.textContaining('닫기 버튼'), findsOneWidget);
       expect(
         whatsNewItems(lookupAppLocalizations(const Locale('ko'))),
-        hasLength(8),
+        hasLength(4),
       );
       expect(tester.takeException(), isNull);
     });

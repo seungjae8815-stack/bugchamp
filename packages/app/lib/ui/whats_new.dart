@@ -14,7 +14,7 @@ import 'game_dialog.dart';
 import 'popup_gate.dart';
 
 /// 이 빌드의 "업데이트 내용" 판. 내용([whatsNewItems])을 바꾸면 이 값도 바꾼다 — 기기마다 판마다 한 번 뜬다.
-const kWhatsNewVersion = '1.0.22';
+const kWhatsNewVersion = '1.0.23';
 
 /// 기기 플래그 — 마지막으로 보여 준 판(세이브가 아니라 기기 설정: 진행·보상과 무관한 안내라서).
 const kWhatsNewSeenKey = 'whatsNew.seen';
@@ -27,41 +27,16 @@ const _kFreshSave = Duration(minutes: 30);
 /// 그림이 없으면 [icon] 으로 그린다.
 typedef WhatsNewItem = ({IconData icon, String? image, String text});
 
-/// 1.0.22 업데이트 내용(2026-10-16 — 곤충마다 희귀도 · 희귀도 올리기 · 경기장 오행 · 놓친 능력치 굴리기 · 다듬기 v3 · 편의성).
-/// 업데이트 전 곤충의 희귀도·패시브 종류를 새로 굴린 것은 보상 없이 공지만 하기로 했다(사장님 확정 C안) — 첫 줄에 숨기지 않고 쓴다.
+/// 1.0.23 업데이트 내용(2026-10-19 — 빨간 점 · 공략집 사냥 쪽 8항목 · 우편 한 번 더 받기 · 아이폰 닫기 버튼 · 대회 배너).
 List<WhatsNewItem> whatsNewItems(AppLocalizations l) => [
   (
-    icon: Icons.auto_awesome_rounded,
-    image: 'star_up',
-    text: l.whatsNew22Rarity,
-  ),
-  (icon: Icons.upgrade_rounded, image: 'essence', text: l.whatsNew22RarityUp),
-  (icon: Icons.stadium_rounded, image: 'role_attack', text: l.whatsNew22Arena),
-  (
-    icon: Icons.casino_rounded,
-    image: 'train_level',
-    text: l.whatsNew22LegacyRoll,
-  ),
-  (
-    icon: Icons.construction_rounded,
-    image: 'equip_star',
-    text: l.whatsNew22Polish,
-  ),
-  (
-    icon: Icons.touch_app_rounded,
+    icon: Icons.notifications_active_rounded,
     image: 'boost',
-    text: l.whatsNew22Convenience,
+    text: l.whatsNew23RedDot,
   ),
-  (
-    icon: Icons.bolt_rounded,
-    image: 'incubator',
-    text: l.whatsNew22Convenience2,
-  ),
-  (
-    icon: Icons.trending_up_rounded,
-    image: 'combat_power',
-    text: l.whatsNew22Power,
-  ),
+  (icon: Icons.menu_book_rounded, image: 'dex_crown', text: l.whatsNew23Guide),
+  (icon: Icons.mail_rounded, image: 'growth', text: l.whatsNew23Mail),
+  (icon: Icons.close_rounded, image: null, text: l.whatsNew23Fix),
 ];
 
 /// 지금 세이브가 막 시작한 유저의 것인가.
