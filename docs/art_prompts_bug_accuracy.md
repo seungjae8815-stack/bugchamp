@@ -166,3 +166,4 @@ Use the first attached image only as the art style reference (painting style, ey
 - 3차(2026-10-21): 알비노 3장(왕사슴벌레·넓적·두점박이) 성공 — 시트 전체를 붙이고 "재질만"이면 자세·방향·생김새가 그대로 나온다.
   넓적 알비노는 1번 칸 큰턱 끝과 2번 칸 뒷다리가 가로로 겹쳐 세로 한 줄로 못 잘랐다 → 덩어리별로 떼어 간격을 벌린 시트로 배치
   (scratchpad `spread_sheet.py` — 같은 일이 잦으면 `place_bug_frames.py` 에 넣는다).
+- 4차(2026-10-21): 장수말벌 번데기 `stage_hornet_pupa.webp`(옛 덩어리 png 삭제) — 사진은 미국 농무부 ARS 장수말벌 번데기(퍼블릭 도메인).

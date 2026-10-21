@@ -44,6 +44,8 @@
 ## hornet (장수말벌)
 **stage_hornet_egg** — A single glossy white hornet egg — detailed painterly monster art, transparent background, single isolated object, no ground, no shadow, no text. --ar 1:1
 **stage_hornet_larva** — A single plump legless white hornet grub, gently curled — detailed painterly monster art, soft dark outline, transparent background, single isolated object, no ground, no shadow, no text. --ar 1:1
+> ⚠️ 2026-10-21 폐기 — 이 프롬프트는 형태 없는 덩어리를 만든다(실제 말벌 번데기는 다리·더듬이가 드러나는 나용). 현행: `art_prompts_bug_accuracy_round4_spec.py`.
+
 **stage_hornet_pupa** — A single pale cream closed opaque hornet pupa, smooth casing, interior not visible — detailed painterly monster art, transparent background, single isolated object, no ground, no shadow, no text. --ar 1:1
 
 ---
