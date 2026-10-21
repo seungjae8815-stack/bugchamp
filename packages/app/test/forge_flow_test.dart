@@ -244,7 +244,10 @@ void main() {
       );
       expect(r.error, isNull);
       var save = c.read(saveControllerProvider).requireValue;
-      expect(save.materialCount(MaterialKind.fossil), 3000 - 1000);
+      expect(
+        save.materialCount(MaterialKind.fossil),
+        3000 - 400,
+      ); // 호박 = 40 × 10(forge.json polishFossilPerTier)
       // 고르기 전: 이전 값 그대로, 정성만 올랐다.
       expect(save.equippedItems[EquipSlot.ring]!.options[0].value, 5);
       expect(save.equippedItems[EquipSlot.ring]!.options[0].polish, 1);

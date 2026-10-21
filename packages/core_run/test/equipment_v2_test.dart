@@ -64,14 +64,14 @@ void main() {
   });
 
   group('다듬기', () {
-    test('비용 — 화석 = 100 × (등급+1) · 젤리 15, 종류 지정은 ×3(젤리는 5 단위)', () {
+    test('비용 — 화석 = 40 × (등급+1) · 젤리 15, 종류 지정은 ×3(젤리는 5 단위)', () {
       expect(forge.polishCost(_amber, pickKind: false), (
-        fossils: 1000,
+        fossils: 400,
         jelly: 15,
       ));
-      expect(forge.polishCost(0, pickKind: false), (fossils: 100, jelly: 15));
+      expect(forge.polishCost(0, pickKind: false), (fossils: 40, jelly: 15));
       expect(forge.polishCost(_amber, pickKind: true), (
-        fossils: 3000,
+        fossils: 1200,
         jelly: 45,
       ));
       expect(forge.polishCost(_amber, pickKind: true).jelly % 5, 0);

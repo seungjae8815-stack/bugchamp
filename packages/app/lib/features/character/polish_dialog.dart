@@ -221,7 +221,8 @@ class _PolishBodyState extends ConsumerState<_PolishBody> {
         Text(
           l.polishStacks(
             '${cur.polish}',
-            '${items.polishMaxStacks}',
+            // n 번을 다듬은 뒤의 n+1 번째부터 그대로(비용 = 성장^min(다듬은 횟수, 상한)) — 공략집과 같은 값.
+            '${items.polishMaxStacks + 1}',
             '$floorPct',
           ),
           textAlign: TextAlign.center,

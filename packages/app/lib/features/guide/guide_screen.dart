@@ -489,7 +489,8 @@ class GuideScreen extends ConsumerWidget {
                 '${forge.polishKindMult}',
                 // 다듬기 v3(2026-10-16) — 같은 줄을 다듬을 때마다 비용 배율 · 몇 번째부터 그대로인지.
                 '${forge.polishCostGrowth}',
-                '${items.polishMaxStacks}',
+                // 횟수 n 번을 다듬은 뒤의 n+1 번째부터 그대로(비용 = 성장^min(다듬은 횟수, 상한)).
+                '${items.polishMaxStacks + 1}',
               ),
             ),
             _p(
