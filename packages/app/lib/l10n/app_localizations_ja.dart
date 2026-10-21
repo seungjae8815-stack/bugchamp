@@ -1757,6 +1757,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get settingsSfx => '効果音';
 
   @override
+  String get settingsHaptic => '振動';
+
+  @override
   String get chatNewBadge => 'NEW';
 
   @override

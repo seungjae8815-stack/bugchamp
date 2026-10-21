@@ -6,7 +6,6 @@ import 'package:core_models/core_models.dart';
 import 'package:core_run/core_run.dart';
 import 'package:flutter/foundation.dart' show kReleaseMode;
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -2582,7 +2581,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
       behavior: HitTestBehavior.opaque,
       onTap: () {
         // 손맛: 짧은 진동 + 화면 파동. 눌린 게 몸으로 느껴져야 계속 두드린다.
-        HapticFeedback.lightImpact();
+        AudioService.instance.hapticLight();
         setState(() {
           // 한 번에 오르는 폭은 부스트 업그레이드(boostBonus)에 비례한다.
           final stats = _stats(ref.read(saveControllerProvider).requireValue);
@@ -7072,6 +7071,27 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
               s.sfxVol,
               (v) => AudioService.instance.setSfxVol(v),
             ),
+            // 진동(2026-10-21) — 세기 조절이 없어 켜기/끄기만.
+            Row(
+              children: [
+                const Icon(Icons.vibration_rounded, color: kHoney, size: 18),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    l.settingsHaptic,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 13.5,
+                    ),
+                  ),
+                ),
+                Switch(
+                  value: s.hapticOn,
+                  onChanged: (v) => AudioService.instance.setHapticOn(v),
+                ),
+              ],
+            ),
           ],
         ),
       );
@@ -9594,12 +9614,12 @@ class _HoldBuyButtonState extends State<_HoldBuyButton> {
           ? () {
               // selectionClick 은 기기·설정에 따라 아예 안 느껴진다 —
               // 구매는 확실한 피드백이 필요하므로 lightImpact 로 쓴다.
-              HapticFeedback.lightImpact();
+              AudioService.instance.hapticLight();
               widget.onFire();
             }
           : null,
       onLongPressStart: (_) {
-        HapticFeedback.lightImpact();
+        AudioService.instance.hapticLight();
         _startHold();
       },
       onLongPressEnd: (_) => _stopHold(),

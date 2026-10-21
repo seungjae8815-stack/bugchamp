@@ -5,7 +5,6 @@ import 'package:core_battle/core_battle.dart';
 import 'package:core_models/core_models.dart' show Element;
 import 'package:flutter/material.dart' hide Element;
 import 'package:flutter/scheduler.dart';
-import 'package:flutter/services.dart';
 
 import '../../data/game_data.dart';
 import '../../domain/audio_service.dart';
@@ -178,13 +177,13 @@ class _BattleArenaScreenState extends State<BattleArenaScreen>
     }
     if (foeRestrained || selfRestrained) {
       _shake = 1;
-      HapticFeedback.mediumImpact();
+      AudioService.instance.hapticMedium();
     }
     // 쓰러지는 라운드는 **더 길게 멈춘다** — 한 마리가 끝나는 순간이 다른
     // 라운드와 같은 속도로 지나가면 무엇이 끝났는지 안 읽힌다.
     if (ev.aDown || ev.bDown) {
       _hitStop = 0.34;
-      HapticFeedback.heavyImpact();
+      AudioService.instance.hapticHeavy();
     } else if (foeRestrained || selfRestrained) {
       _hitStop = 0.13;
     } else if (dmgA >= 1 || dmgB >= 1) {

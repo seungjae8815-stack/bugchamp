@@ -1,10 +1,11 @@
 import 'dart:async';
 
 import 'package:audioplayers/audioplayers.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// 사운드 설정(로컬 저장). 배경음·효과음 각각 on/off + 볼륨(0~1).
+/// 사운드 설정(로컬 저장). 배경음·효과음 각각 on/off + 볼륨(0~1) + 진동 on/off(2026-10-21 사장님 요청).
 @immutable
 class AudioSettings {
   const AudioSettings({
@@ -12,23 +13,27 @@ class AudioSettings {
     this.sfxOn = true,
     this.bgmVol = 0.55,
     this.sfxVol = 0.8,
+    this.hapticOn = true,
   });
 
   final bool bgmOn;
   final bool sfxOn;
   final double bgmVol;
   final double sfxVol;
+  final bool hapticOn;
 
   AudioSettings copyWith({
     bool? bgmOn,
     bool? sfxOn,
     double? bgmVol,
     double? sfxVol,
+    bool? hapticOn,
   }) => AudioSettings(
     bgmOn: bgmOn ?? this.bgmOn,
     sfxOn: sfxOn ?? this.sfxOn,
     bgmVol: bgmVol ?? this.bgmVol,
     sfxVol: sfxVol ?? this.sfxVol,
+    hapticOn: hapticOn ?? this.hapticOn,
   );
 }
 
@@ -82,6 +87,7 @@ class AudioService {
         sfxOn: p.getBool('audio.sfxOn') ?? true,
         bgmVol: p.getDouble('audio.bgmVol') ?? 0.55,
         sfxVol: p.getDouble('audio.sfxVol') ?? 0.8,
+        hapticOn: p.getBool('audio.hapticOn') ?? true,
       );
       await _bgm.setReleaseMode(ReleaseMode.loop);
       // 배경음 일시정지/재개는 **여기서** 책임진다. 예전엔 AppShell 의 생명주기
@@ -103,6 +109,7 @@ class AudioService {
     await p.setBool('audio.sfxOn', s.sfxOn);
     await p.setDouble('audio.bgmVol', s.bgmVol);
     await p.setDouble('audio.sfxVol', s.sfxVol);
+    await p.setBool('audio.hapticOn', s.hapticOn);
   }
 
   /// 홈 진입/복귀 시 호출 — 배경음 시작(설정 on 일 때만).
@@ -189,6 +196,30 @@ class AudioService {
   Future<void> setSfxVol(double v) async {
     settings.value = settings.value.copyWith(sfxVol: v);
     await _persist();
+  }
+
+  Future<void> setHapticOn(bool v) async {
+    settings.value = settings.value.copyWith(hapticOn: v);
+    await _persist();
+    if (v) HapticFeedback.mediumImpact(); // 켜는 순간 미리 느끼기
+  }
+
+  // ── 진동 — 앱의 모든 진동은 여기를 거친다(설정이 꺼져 있으면 아무것도 안 한다) ──
+  // `HapticFeedback` 을 화면에서 직접 부르지 말 것: 진동 끄기가 그 자리만 새어 나간다.
+  void hapticLight() {
+    if (settings.value.hapticOn) HapticFeedback.lightImpact();
+  }
+
+  void hapticMedium() {
+    if (settings.value.hapticOn) HapticFeedback.mediumImpact();
+  }
+
+  void hapticHeavy() {
+    if (settings.value.hapticOn) HapticFeedback.heavyImpact();
+  }
+
+  void hapticSelection() {
+    if (settings.value.hapticOn) HapticFeedback.selectionClick();
   }
 
   /// 홍보 영상 촬영 모드(개발 빌드 `DuelCaptureScreen`)가 켠다 — 화면 녹화엔 소리가 안 담겨서

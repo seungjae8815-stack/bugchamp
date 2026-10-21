@@ -1012,6 +1012,7 @@
   "settingsSound": "Sound",
   "settingsBgm": "Music",
   "settingsSfx": "Sound effects",
+  "settingsHaptic": "Vibration",
   "chatNewBadge": "NEW",
   "avatarPickTitle": "Profile picture",
   "avatarPickHint": "Shown in chat, rankings, duels and the Bug King Trials",

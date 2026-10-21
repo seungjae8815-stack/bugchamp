@@ -1813,6 +1813,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsSfx => 'Sound effects';
 
   @override
+  String get settingsHaptic => 'Vibration';
+
+  @override
   String get chatNewBadge => 'NEW';
 
   @override

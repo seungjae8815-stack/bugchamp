@@ -6,7 +6,6 @@ import 'package:core_models/core_models.dart';
 import 'package:core_run/core_run.dart';
 import 'package:flutter/material.dart' hide Element;
 import 'package:flutter/scheduler.dart';
-import 'package:flutter/services.dart';
 
 import '../../data/game_data.dart';
 import '../../domain/audio_service.dart';
@@ -175,7 +174,7 @@ class _ManualBattleScreenState extends State<ManualBattleScreen>
     if (_phase != _Phase.input || _driver.done || _stepping) return;
     // 기력 부족 시 공격 외 선택 불가(엔진과 동일 규칙).
     if (_myEnergy < 1 && s != Stance.attack) return;
-    HapticFeedback.selectionClick();
+    AudioService.instance.hapticSelection();
 
     _stepping = true;
     final step = await _driver.step(s);
@@ -248,7 +247,7 @@ class _ManualBattleScreenState extends State<ManualBattleScreen>
     }
     if (foeRestrained || selfRestrained) {
       _shake = 1;
-      HapticFeedback.mediumImpact();
+      AudioService.instance.hapticMedium();
     }
   }
 

@@ -3172,6 +3172,12 @@ abstract class AppLocalizations {
   /// **'Sound effects'**
   String get settingsSfx;
 
+  /// No description provided for @settingsHaptic.
+  ///
+  /// In en, this message translates to:
+  /// **'Vibration'**
+  String get settingsHaptic;
+
   /// No description provided for @chatNewBadge.
   ///
   /// In en, this message translates to:

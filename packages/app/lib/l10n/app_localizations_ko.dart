@@ -1762,6 +1762,9 @@ class AppLocalizationsKo extends AppLocalizations {
   String get settingsSfx => '효과음';
 
   @override
+  String get settingsHaptic => '진동';
+
+  @override
   String get chatNewBadge => 'NEW';
 
   @override
