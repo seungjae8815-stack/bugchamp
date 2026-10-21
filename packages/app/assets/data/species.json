@@ -418,8 +418,8 @@
       "gradeScale": 2.66,
       "name": {
         "ko": "장수꽃무지",
-        "en": "Flower Chafer",
-        "ja": "オオハナムグリ"
+        "en": "Stag-horned Flower Chafer",
+        "ja": "シカハナムグリ"
       },
       "grade": "rare",
       "specialty": "strike",
@@ -433,9 +433,9 @@
       "sizeMinMm": 22,
       "sizeMaxMm": 38,
       "desc": {
-        "ko": "금속빛 초록·청동색으로 빛나는 꽃무지. 화려한 겉날개가 아름답다.",
-        "en": "A flower chafer shining in metallic green-bronze.",
-        "ja": "金属光沢の緑と銅色に輝くハナムグリ。華やかな前翅が美しい。"
+        "ko": "수컷은 머리 앞이 사슴뿔처럼 갈라져 뻗고 앞다리가 아주 긴 꽃무지. 그 뿔로 들이받는다.",
+        "en": "A flower chafer whose males bear antler-like horns on the head and very long forelegs.",
+        "ja": "オスは頭の先が鹿の角のように分かれて伸び、前脚がとても長いハナムグリ。"
       },
       "passive": {
         "stat": "bugFind",
@@ -521,9 +521,9 @@
       "sizeMinMm": 35,
       "sizeMaxMm": 68,
       "desc": {
-        "ko": "붉은 갈색 몸에 밝은 두 점이 박힌 사슴벌레.",
-        "en": "A reddish-brown stag beetle with two bright spots.",
-        "ja": "赤茶色の体に明るい二つの点があるクワガタ。"
+        "ko": "황갈색 몸에 앞가슴 양옆으로 검은 점이 하나씩 박힌 사슴벌레. 제주에만 산다.",
+        "en": "An amber-brown stag beetle with a black spot on each side of its pronotum. Found only on Jeju.",
+        "ja": "黄褐色の体で、前胸の両脇に黒い点が一つずつあるクワガタ。済州島だけにすむ。"
       },
       "passive": {
         "stat": "xp",

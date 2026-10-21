@@ -244,8 +244,17 @@ String bugFamily(String speciesId) {
   if (ortho.contains(speciesId)) return 'ortho';
   if (speciesId == 'water_bug_giant') return 'waterbug';
   if (speciesId == 'hornet_giant') return 'hornet';
-  return 'scarab'; // 사슴벌레·장수풍뎅이·꽃무지 등 기본
+  // 사슴벌레(사슴벌레과)와 장수풍뎅이·꽃무지(풍뎅이과)는 애벌레 생김새가 다르다(2026-10-20 문의).
+  // 그림이 없으면 예전 공통 세트(scarab)로 내려간다 — [bugFamilyFallback].
+  if (speciesId.startsWith('stag_')) return 'stag';
+  if (speciesId.startsWith('rhino_')) return 'rhino';
+  if (speciesId.startsWith('chafer_')) return 'chafer';
+  return 'scarab';
 }
+
+/// [bugFamily] 의 그림이 없을 때 쓰는 윗 그룹(없으면 null).
+String? bugFamilyFallback(String family) =>
+    const {'stag', 'rhino', 'chafer'}.contains(family) ? 'scarab' : null;
 
 /// 성충의 **전투 자세**. 프레임 시트에서 잘라 낸 순서 그대로다(§2b).
 ///
@@ -359,12 +368,17 @@ Widget bugStageImage(
     ];
   } else {
     final fam = bugFamily(speciesId);
+    final up = bugFamilyFallback(fam);
     final s = stage.key;
     paths = [
       'assets/images/bugs/${speciesId}_$s.webp',
       'assets/images/bugs/${speciesId}_$s.png',
       'assets/images/bugs/stage_${fam}_$s.webp',
       'assets/images/bugs/stage_${fam}_$s.png',
+      if (up != null) ...[
+        'assets/images/bugs/stage_${up}_$s.webp',
+        'assets/images/bugs/stage_${up}_$s.png',
+      ],
       'assets/images/bugs/stage_$s.webp',
       'assets/images/bugs/stage_$s.png',
     ];
