@@ -8298,4 +8298,15 @@ class AppLocalizationsKo extends AppLocalizations {
   @override
   String get whatsNew23Fix =>
       '아이폰에서 일부 창을 닫을 수 없던 문제를 고쳤어요(닫기 버튼). 대회가 끝난 뒤에도 명예의 전당과 다음 회차 안내를 볼 수 있어요';
+
+  @override
+  String get whatsNew24Art =>
+      '곤충 그림을 실제 생김새에 맞게 다시 그렸어요 — 왕사슴벌레·넓적사슴벌레·두점박이·외뿔장수풍뎅이·장수하늘소·톱하늘소·좀사마귀·방아깨비·장수꽃무지와 종마다 다른 애벌레·번데기, 스킨 4종';
+
+  @override
+  String get whatsNew24Polish =>
+      '장비 다듬기가 훨씬 싸졌어요 — 화석 비용 60% 인하, 같은 줄을 다듬을 때 오르는 폭도 줄였어요(7번째부터 그대로)';
+
+  @override
+  String get whatsNew24Haptic => '설정에서 진동을 끌 수 있어요';
 }

@@ -4831,5 +4831,8 @@
   "whatsNew23RedDot": "Red dots now point out what you would miss — free daily draws and sweeps, empty incubator and breeding slots, finished timers, rewards to claim and duel tickets",
   "whatsNew23Guide": "The guide now explains rarity, growth potions, zones and the Abyss, buffs, skills, the Bug Book, storage and fairies",
   "whatsNew23Mail": "You can now claim the lunch and dinner \"Claim again\" bonus later from the mailbox",
-  "whatsNew23Fix": "Fixed some windows that could not be closed on iPhone (new close button). The Hall of Fame and next round notice stay visible after a contest ends"
+  "whatsNew23Fix": "Fixed some windows that could not be closed on iPhone (new close button). The Hall of Fame and next round notice stay visible after a contest ends",
+  "whatsNew24Art": "Bug art redrawn to match the real insects — giant, flat and two-spotted stag beetles, lesser rhino beetle, relict and saw longhorns, jumping mantis, longheaded grasshopper, stag-horned chafer, species-specific grubs and pupae, and 4 skins",
+  "whatsNew24Polish": "Gear refining is much cheaper — fossil cost cut by 60% and the price rises less each time you refine the same line (flat from the 7th)",
+  "whatsNew24Haptic": "Vibration can now be turned off in Settings"
 }

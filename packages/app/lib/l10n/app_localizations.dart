@@ -13857,6 +13857,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Fixed some windows that could not be closed on iPhone (new close button). The Hall of Fame and next round notice stay visible after a contest ends'**
   String get whatsNew23Fix;
+
+  /// No description provided for @whatsNew24Art.
+  ///
+  /// In en, this message translates to:
+  /// **'Bug art redrawn to match the real insects — giant, flat and two-spotted stag beetles, lesser rhino beetle, relict and saw longhorns, jumping mantis, longheaded grasshopper, stag-horned chafer, species-specific grubs and pupae, and 4 skins'**
+  String get whatsNew24Art;
+
+  /// No description provided for @whatsNew24Polish.
+  ///
+  /// In en, this message translates to:
+  /// **'Gear refining is much cheaper — fossil cost cut by 60% and the price rises less each time you refine the same line (flat from the 7th)'**
+  String get whatsNew24Polish;
+
+  /// No description provided for @whatsNew24Haptic.
+  ///
+  /// In en, this message translates to:
+  /// **'Vibration can now be turned off in Settings'**
+  String get whatsNew24Haptic;
 }
 
 class _AppLocalizationsDelegate

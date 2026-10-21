@@ -8285,4 +8285,15 @@ class AppLocalizationsJa extends AppLocalizations {
   @override
   String get whatsNew23Fix =>
       'iPhoneで一部の画面を閉じられなかった問題を直しました（閉じるボタン）。大会が終わった後も殿堂と次回の案内を見られます';
+
+  @override
+  String get whatsNew24Art =>
+      '虫の絵を実物に合わせて描き直しました — オオクワガタ・ヒラタクワガタ・フタテンクワガタ・ヒメカブト・オオキバウスバカミキリ・ノコギリカミキリ・コカマキリ・ショウリョウバッタ・シカハナムグリ、種ごとに違う幼虫・蛹、スキン4種';
+
+  @override
+  String get whatsNew24Polish =>
+      '装備の研磨がずっと安くなりました — 化石コスト60%引き下げ、同じ行を磨くたびの値上がり幅も縮小（7回目から据え置き）';
+
+  @override
+  String get whatsNew24Haptic => '設定で振動をオフにできます';
 }

@@ -8481,4 +8481,15 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get whatsNew23Fix =>
       'Fixed some windows that could not be closed on iPhone (new close button). The Hall of Fame and next round notice stay visible after a contest ends';
+
+  @override
+  String get whatsNew24Art =>
+      'Bug art redrawn to match the real insects — giant, flat and two-spotted stag beetles, lesser rhino beetle, relict and saw longhorns, jumping mantis, longheaded grasshopper, stag-horned chafer, species-specific grubs and pupae, and 4 skins';
+
+  @override
+  String get whatsNew24Polish =>
+      'Gear refining is much cheaper — fossil cost cut by 60% and the price rises less each time you refine the same line (flat from the 7th)';
+
+  @override
+  String get whatsNew24Haptic => 'Vibration can now be turned off in Settings';
 }
