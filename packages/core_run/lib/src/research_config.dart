@@ -4,11 +4,13 @@ import 'package:meta/meta.dart';
 
 import 'jelly_cost.dart';
 
-/// 연구소 분야 3개(설계 `docs/superpowers/specs/2026-10-22-research-lab-design.md`).
+/// 연구소 분야 5개 — ⚠️ 새 분야는 **맨 뒤**에만(설계 §10: 장비·경제 추가)(설계 `docs/superpowers/specs/2026-10-22-research-lab-design.md`).
 enum ResearchBranch {
   hunt('hunt'),
   nurture('nurture'),
-  duel('duel');
+  duel('duel'),
+  gear('gear'),
+  economy('economy');
 
   const ResearchBranch(this.key);
   final String key;
@@ -19,7 +21,7 @@ enum ResearchBranch {
   );
 }
 
-/// 연구가 올리는 효과 14종. ⚠️ 열거 순서 = JSON 키 — 새 항목은 **맨 뒤**에만.
+/// 연구가 올리는 효과 29종(설계 §3.1 + §10). ⚠️ 열거 순서 = JSON 키 — 새 항목은 **맨 뒤**에만.
 enum ResearchEffect {
   huntAtk('huntAtk'),
   huntHpDef('huntHpDef'),
@@ -34,16 +36,48 @@ enum ResearchEffect {
   duelAtk('duelAtk'),
   duelDef('duelDef'),
   duelHp('duelHp'),
-  injuryTime('injuryTime');
+  injuryTime('injuryTime'),
+  // ── 2026-10-22 §10 추가 15종 ──
+  huntCritDmg('huntCritDmg'),
+  huntRegen('huntRegen'),
+  huntEvade('huntEvade'),
+  huntExp('huntExp'),
+  skillCooldown('skillCooldown'),
+  forgeTime('forgeTime'),
+  starTime('starTime'),
+  polishCost('polishCost'),
+  traitChance('traitChance'),
+  potionChance('potionChance'),
+  salvageMat('salvageMat'),
+  exchangeGain('exchangeGain'),
+  giftGold('giftGold'),
+  duelCrit('duelCrit'),
+  duelGrit('duelGrit');
 
   const ResearchEffect(this.key);
   final String key;
 
-  /// 시간 단축 효과(합이 [0, [kResearchTimeCutMax]] 로 잘린다).
+  /// 시간·비용 단축 효과(합이 [0, [kResearchTimeCutMax]] 로 잘린다).
   bool get isTimeCut => switch (this) {
-    hatchTime || breedTime || trainTime || researchTime || injuryTime => true,
+    hatchTime ||
+    breedTime ||
+    trainTime ||
+    researchTime ||
+    injuryTime ||
+    forgeTime ||
+    starTime ||
+    polishCost => true,
     _ => false,
   };
+
+  /// 효과 합의 상한(없으면 null) — 시간·비용 단축 0.5 · 회피·스킬 쿨타임은 **연구 몫** 0.2(설계 §10).
+  double? get cap => isTimeCut
+      ? kResearchTimeCutMax
+      : switch (this) {
+          huntEvade => kResearchEvadeMax,
+          skillCooldown => kResearchSkillCooldownMax,
+          _ => null,
+        };
 
   static ResearchEffect fromKey(String key) => values.firstWhere(
     (e) => e.key == key,
@@ -53,6 +87,12 @@ enum ResearchEffect {
 
 /// 시간 단축 효과 합의 상한(절반까지만 줄인다) — 기획 확정 규칙값.
 const double kResearchTimeCutMax = 0.5;
+
+/// 사냥 회피의 연구 몫 상한(%p) — 전체 회피 상한 40 → 60%(사장님 확정 2026-10-22, 설계 §10).
+const double kResearchEvadeMax = 0.2;
+
+/// 스킬·탈피 쿨타임 감소의 연구 몫 상한 — 장비 30% + 연구 20% = 최대 50%(사장님 확정 2026-10-22).
+const double kResearchSkillCooldownMax = 0.2;
 
 /// 연구 1종의 정의 (assets/data/research.json).
 @immutable
@@ -287,7 +327,7 @@ class ResearchConfig {
   }
 }
 
-/// 연구 레벨 합산 결과. 시간 단축 효과는 [0, 0.5] 로 잘려 있다.
+/// 연구 레벨 합산 결과. 상한 있는 효과([ResearchEffect.cap])는 잘려 있다.
 @immutable
 class ResearchEffects {
   const ResearchEffects(this._v);
@@ -306,9 +346,8 @@ ResearchEffects researchEffects(ResearchConfig c, Map<String, int> levels) {
     sum[d.effect] = (sum[d.effect] ?? 0) + c.effectAt(d, lv);
   }
   for (final e in sum.keys.toList()) {
-    if (e.isTimeCut) {
-      sum[e] = sum[e]!.clamp(0.0, kResearchTimeCutMax).toDouble();
-    }
+    final cap = e.cap;
+    if (cap != null) sum[e] = sum[e]!.clamp(0.0, cap).toDouble();
   }
   return ResearchEffects(sum);
 }

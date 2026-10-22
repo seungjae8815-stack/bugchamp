@@ -6,14 +6,14 @@
 //   dart run tool/research_table.dart --income=%TEMP%\income3h.txt          # 지금 research.json 을 잰다
 //   dart run tool/research_table.dart --income=%TEMP%\income3h.txt --fit    # 곡선을 다시 맞춰 JSON 조각을 찍는다
 //   dart run tool/research_table.dart --income=%TEMP%\income3h.txt --fit --write   # research.json 에 반영
-//   dart run tool/research_table.dart --income=%TEMP%\income3h.txt --fit --level-cap=0   # 한 레벨 상한(기본 540분) 없이
+//   dart run tool/research_table.dart --income=%TEMP%\income3h.txt --fit --level-cap=0   # 한 레벨 상한(기본 1,210분) 없이
 //
 // 맞추는 목표(사장님 확정 · 컨트롤러 판정):
 //  - 시간: 무과금 칸 곡선(1칸 → 어려움 도착일부터 2칸 → 극한 도착일부터 3칸)을 **쉬지 않고** 돌릴 때
-//    14개 × 전 레벨이 [_targetDays](180)일에 끝난다. Lv1 = [_firstSeconds](5분) · Lv10 = [_kneeSeconds](12시간).
+//    29개 × 전 레벨이 [_targetDays](180)일에 끝난다. Lv1 = [_firstSeconds](5분) · Lv10 = [_kneeSeconds](12시간).
 //  - 골드·재료: JSON 단위는 "가 본 최고 사냥터의 사냥 N분치"지만, 크기는 그날 **실제 활동 수입**
 //    (처치 + 선물·일일보상·미션, 방치 제외)의 180일 평균 50% 로 맞춘다(골드·재료 따로, 사장님 확정).
-//    한 레벨 상한(--level-cap, 기본 540분 — 회귀 테스트와 같다)에 걸리면 상한까지만 올리고 필요한 상한을 찍는다.
+//    한 레벨 상한(--level-cap, 기본 1,210분 ≈ 하루 실제 수입의 1/3 — 회귀 테스트와 같다, 사장님 A안)에 걸리면 상한까지만 올리고 필요한 상한을 찍는다.
 //  - 연구 표본: 하루 3시간 정예·보스 드롭. 시간이 병목이 되게 합계 비용 = 180일 수입의 [_sampleShare](90%).
 //    Lv1 = 표본 1개로 두고 정예 드롭 확률을 맞춘다.
 //  - 화석: 마지막 [_fossilLevels] 레벨에만. 합계 = 180일 활동 화석의 [_fossilShare](20%, 상한 30%).
@@ -31,7 +31,9 @@ import 'package:core_run/core_run.dart';
 
 // ── 설계 값(맞추지 않고 정하는 것) ─────────────────────────────────────
 const _targetDays = 180.0;
-const _maxLevel = 30;
+
+/// 연구마다 레벨 수 — `--levels=` 로 바꿔 본다.
+int _maxLevel = 30;
 const _firstSeconds = 300.0;
 const _kneeLevel = 10;
 const _kneeSeconds = 12 * 3600.0;
@@ -59,6 +61,22 @@ const _effectMax = <String, double>{
   'trainTime': 0.40,
   'researchTime': 0.30,
   'injuryTime': 0.40,
+  // §10 추가 — 회피·스킬 쿨타임은 연구 몫 상한(0.2)과 같게. 결투 둘은 자리값(결투 맞추기가 다시 정함).
+  'huntCritDmg': 0.40,
+  'huntRegen': 0.40,
+  'huntEvade': 0.20,
+  'huntExp': 0.30,
+  'skillCooldown': 0.20,
+  'forgeTime': 0.40,
+  'starTime': 0.40,
+  'polishCost': 0.30,
+  'traitChance': 0.50,
+  'potionChance': 0.30,
+  'salvageMat': 0.30,
+  'exchangeGain': 0.20,
+  'giftGold': 0.20,
+  'duelCrit': 0.05,
+  'duelGrit': 0.05,
 };
 
 /// 하루 활동 수입 한 줄(balance_sim `@research-income`).
@@ -348,8 +366,8 @@ Map<String, dynamic> _withCurves(
 }) {
   final out = jsonDecode(jsonEncode(raw)) as Map<String, dynamic>;
   out['_comment'] =
-      '연구소(설계 docs/superpowers/specs/2026-10-22-research-lab-design.md). 시간·비용 곡선 · eliteDropChance · bossFirstDrop · 사냥·육성 effect · fitBasis 는 '
-      'tool/research_table.dart --fit --write 가 뽑는다 — 손으로 한 칸씩 고치지 않는다(하루 3시간 켜 둔 무과금 · 골드·재료 = 3시간 켜 둔 날 실제 수입의 50% 목표, 단 한 레벨 540분 상한이 먼저 · 약 180일). '
+      '연구소(설계 docs/superpowers/specs/2026-10-22-research-lab-design.md). 시간·비용 곡선 · eliteDropChance · 사냥·육성·장비·경제 effect · fitBasis 는 '
+      'tool/research_table.dart --fit --write 가 뽑는다 — 손으로 한 칸씩 고치지 않는다(하루 3시간 켜 둔 무과금 · 골드·재료 = 3시간 켜 둔 날 실제 수입의 50% 목표, 한 레벨 상한 사냥 1,210분치 · 약 180일 · 사장님 A안). bossFirstDrop 25 는 사장님 확정값. '
       '시간·비용: Lv1 = first, 한 단계 오를 때마다 × (1 + (growth−1)·decay^(i−1)). kind = ResearchEffect 키. 결투 공격·방어·체력 effect 는 결투 80% 맞추기가 정한다.';
   if (eliteChance != null) out['eliteDropChance'] = eliteChance;
   for (final e in out['research'] as List) {
@@ -417,7 +435,7 @@ Map<String, dynamic> _fit(
   Map<String, dynamic> raw,
   List<IncomeDay> inc,
   FitBasis basis, {
-  double levelCap = 540,
+  double levelCap = 1210,
 }) {
   var elites = 0.0, bosses = 0.0;
   final fossilIncome = inc
@@ -487,7 +505,7 @@ Map<String, dynamic> _fit(
 
   /// 완료일이 [_targetDays] 가 되는 감쇠(클수록 후반이 길어 늦게 끝난다).
   double fitDecay(double alpha, int drop, {required bool ignoreSamples}) {
-    var lo = 0.5, hi = 0.999;
+    var lo = 0.2, hi = 0.999;
     for (var i = 0; i < 30; i++) {
       final mid = (lo + hi) / 2;
       final done = run(
@@ -504,7 +522,7 @@ Map<String, dynamic> _fit(
   }
 
   // 1) 시간 — 표본을 무한으로 두고 감쇠를 먼저 잡는다.
-  var drop = _cfg(raw).bossFirstDrop;
+  final drop = _cfg(raw).bossFirstDrop;
   final td0 = fitDecay(0.6, drop, ignoreSamples: true);
 
   // 2) 비용 모양 α — 10일 묶음 "골드 ÷ 실제 수입" 비율이 가장 고르게(변동계수 최소).
@@ -519,13 +537,8 @@ Map<String, dynamic> _fit(
     if (sd / mean < best.cv) best = (alpha: _round(a, 2), cv: sd / mean);
   }
 
-  // 3) 표본 — 정예 드롭은 사냥이 빨라지는 후반에 늘어 초반이 모자란다. 초반에 몰린 보스 첫 처치
-  //    몫을 키워 메운다: 표본을 기다리며 노는 칸이 1% 미만이 되는 가장 작은 값.
-  for (final d in const [5, 10, 15, 20, 25, 30, 40, 50]) {
-    drop = d;
-    final s = run(build(td0, best.alpha, d));
-    if (s.sampleWaitSlotDays / s.slotDays < 0.01) break;
-  }
+  // 3) 표본 — 보스 첫 처치 몫은 사장님 확정값(research.json bossFirstDrop, 설계 §10 — 25 확정)을 그대로 두고
+  //    정예 드롭 확률만 맞춘다(build). 초반엔 정예가 적어 보스 몫이 표본 대기를 메운다.
 
   // 4) 표본까지 넣고 감쇠를 다시 잡는다.
   final td = fitDecay(best.alpha, drop, ignoreSamples: false);
@@ -666,13 +679,14 @@ void _report(ResearchConfig c, List<IncomeDay> inc, FitBasis basis) {
 void main(List<String> args) {
   String? incomePath;
   var fit = false, write = false;
-  var levelCap = 540.0;
+  var levelCap = 1210.0;
   var jsonPath = '../app/assets/data/research.json';
   for (final a in args) {
     if (a.startsWith('--income=')) incomePath = a.substring(9);
     if (a == '--fit') fit = true;
     if (a == '--write') write = true;
     if (a.startsWith('--level-cap=')) levelCap = double.parse(a.substring(12));
+    if (a.startsWith('--levels=')) _maxLevel = int.parse(a.substring(9));
     if (a.startsWith('--json=')) jsonPath = a.substring(7);
   }
   if (incomePath == null) {

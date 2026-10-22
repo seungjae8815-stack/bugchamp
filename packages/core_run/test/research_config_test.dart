@@ -99,6 +99,17 @@ void main() {
       lessThanOrEqualTo(0.5),
     );
     expect(researchEffects(c, {}).of(ResearchEffect.gold), 0);
+    // 장비 시간·다듬기 비용도 시간 단축과 같은 0.5 · 회피·스킬 쿨타임은 연구 몫 0.2.
+    for (final e in [
+      ResearchEffect.forgeTime,
+      ResearchEffect.starTime,
+      ResearchEffect.polishCost,
+    ]) {
+      expect(researchEffects(big, all).of(e), 0.5, reason: e.key);
+    }
+    expect(researchEffects(big, all).of(ResearchEffect.huntEvade), 0.2);
+    expect(researchEffects(big, all).of(ResearchEffect.skillCooldown), 0.2);
+    expect(researchEffects(big, all).of(ResearchEffect.gold), greaterThan(0.5));
   });
 
   test('즉시 완료 젤리는 5 단위', () {
@@ -108,10 +119,20 @@ void main() {
     expect(c.instantJelly(Duration.zero), 0);
   });
 
-  test('실데이터: 14개, id 유일, 선행 유효, 분야별 6·4·4', () {
-    expect(c.defs.length, 14);
+  test('실데이터: 29개, id 유일, 효과 유일, 선행 유효, 분야별 11·7·6·3·2', () {
+    expect(c.defs.length, 29);
     final ids = c.defs.map((d) => d.id).toSet();
-    expect(ids.length, 14);
+    expect(ids.length, 29);
+    expect(c.defs.map((d) => d.effect).toSet(), ResearchEffect.values.toSet());
+    // 분야마다 첫 연구만 바로 열리고 나머지는 같은 분야 앞 연구 5레벨.
+    for (final b in ResearchBranch.values) {
+      final list = c.defs.where((d) => d.branch == b).toList();
+      expect(list.first.requires, isNull, reason: b.key);
+      for (var i = 1; i < list.length; i++) {
+        expect(list[i].requires?.id, list[i - 1].id, reason: list[i].id);
+        expect(list[i].requires?.level, 5, reason: list[i].id);
+      }
+    }
     for (final d in c.defs) {
       final r = d.requires;
       if (r != null) {
@@ -121,8 +142,10 @@ void main() {
       expect(d.name.keys, containsAll(['ko', 'en', 'ja']));
     }
     int n(ResearchBranch b) => c.defs.where((d) => d.branch == b).length;
-    expect(n(ResearchBranch.hunt), 6);
-    expect(n(ResearchBranch.nurture), 4);
-    expect(n(ResearchBranch.duel), 4);
+    expect(n(ResearchBranch.hunt), 11);
+    expect(n(ResearchBranch.nurture), 7);
+    expect(n(ResearchBranch.duel), 6);
+    expect(n(ResearchBranch.gear), 3);
+    expect(n(ResearchBranch.economy), 2);
   });
 }

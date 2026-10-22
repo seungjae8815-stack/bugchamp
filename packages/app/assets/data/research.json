@@ -1,5 +1,5 @@
 {
-  "_comment": "연구소(설계 docs/superpowers/specs/2026-10-22-research-lab-design.md). 시간·비용 곡선 · eliteDropChance · bossFirstDrop · 사냥·육성 effect · fitBasis 는 tool/research_table.dart --fit --write 가 뽑는다 — 손으로 한 칸씩 고치지 않는다(하루 3시간 켜 둔 무과금 · 골드·재료 = 3시간 켜 둔 날 실제 수입의 50% 목표, 단 한 레벨 540분 상한이 먼저 · 약 180일). 시간·비용: Lv1 = first, 한 단계 오를 때마다 × (1 + (growth−1)·decay^(i−1)). kind = ResearchEffect 키. 결투 공격·방어·체력 effect 는 결투 80% 맞추기가 정한다.",
+  "_comment": "연구소(설계 docs/superpowers/specs/2026-10-22-research-lab-design.md). 시간·비용 곡선 · eliteDropChance · 사냥·육성·장비·경제 effect · fitBasis 는 tool/research_table.dart --fit --write 가 뽑는다 — 손으로 한 칸씩 고치지 않는다(하루 3시간 켜 둔 무과금 · 골드·재료 = 3시간 켜 둔 날 실제 수입의 50% 목표, 한 레벨 상한 사냥 1,210분치 · 약 180일 · 사장님 A안). bossFirstDrop 25 는 사장님 확정값. 시간·비용: Lv1 = first, 한 단계 오를 때마다 × (1 + (growth−1)·decay^(i−1)). kind = ResearchEffect 키. 결투 공격·방어·체력 effect 는 결투 80% 맞추기가 정한다.",
   "instantJellyPerMinute": 1.0,
   "instantJellyExponent": 0.58,
   "slotsByTier": [
@@ -12,7 +12,7 @@
     100,
     300
   ],
-  "eliteDropChance": 0.0575,
+  "eliteDropChance": 0.0522,
   "eliteDropAmount": 1,
   "bossFirstDrop": 25,
   "bossRepeatDrop": 2,
@@ -36,17 +36,17 @@
       },
       "time": {
         "firstSeconds": 300.0,
-        "growth": 2.3652,
-        "decay": 0.8458
+        "growth": 2.8614,
+        "decay": 0.7674
       },
       "cost": {
         "samplesFirst": 1,
-        "goldMinutesFirst": 18.6099,
-        "materialMinutesFirst": 18.6099,
+        "goldMinutesFirst": 43.9894,
+        "materialMinutesFirst": 39.2901,
         "fossilFrom": 21,
-        "fossilFirst": 145.5,
-        "growth": 1.6007,
-        "decay": 0.8458
+        "fossilFirst": 74.3,
+        "growth": 1.6329,
+        "decay": 0.7674
       }
     },
     {
@@ -69,17 +69,17 @@
       },
       "time": {
         "firstSeconds": 300.0,
-        "growth": 2.3652,
-        "decay": 0.8458
+        "growth": 2.8614,
+        "decay": 0.7674
       },
       "cost": {
         "samplesFirst": 1,
-        "goldMinutesFirst": 18.6099,
-        "materialMinutesFirst": 18.6099,
+        "goldMinutesFirst": 43.9894,
+        "materialMinutesFirst": 39.2901,
         "fossilFrom": 21,
-        "fossilFirst": 145.5,
-        "growth": 1.6007,
-        "decay": 0.8458
+        "fossilFirst": 74.3,
+        "growth": 1.6329,
+        "decay": 0.7674
       }
     },
     {
@@ -102,17 +102,17 @@
       },
       "time": {
         "firstSeconds": 300.0,
-        "growth": 2.3652,
-        "decay": 0.8458
+        "growth": 2.8614,
+        "decay": 0.7674
       },
       "cost": {
         "samplesFirst": 1,
-        "goldMinutesFirst": 18.6099,
-        "materialMinutesFirst": 18.6099,
+        "goldMinutesFirst": 43.9894,
+        "materialMinutesFirst": 39.2901,
         "fossilFrom": 21,
-        "fossilFirst": 145.5,
-        "growth": 1.6007,
-        "decay": 0.8458
+        "fossilFirst": 74.3,
+        "growth": 1.6329,
+        "decay": 0.7674
       }
     },
     {
@@ -135,17 +135,17 @@
       },
       "time": {
         "firstSeconds": 300.0,
-        "growth": 2.3652,
-        "decay": 0.8458
+        "growth": 2.8614,
+        "decay": 0.7674
       },
       "cost": {
         "samplesFirst": 1,
-        "goldMinutesFirst": 18.6099,
-        "materialMinutesFirst": 18.6099,
+        "goldMinutesFirst": 43.9894,
+        "materialMinutesFirst": 39.2901,
         "fossilFrom": 21,
-        "fossilFirst": 145.5,
-        "growth": 1.6007,
-        "decay": 0.8458
+        "fossilFirst": 74.3,
+        "growth": 1.6329,
+        "decay": 0.7674
       }
     },
     {
@@ -168,17 +168,17 @@
       },
       "time": {
         "firstSeconds": 300.0,
-        "growth": 2.3652,
-        "decay": 0.8458
+        "growth": 2.8614,
+        "decay": 0.7674
       },
       "cost": {
         "samplesFirst": 1,
-        "goldMinutesFirst": 18.6099,
-        "materialMinutesFirst": 18.6099,
+        "goldMinutesFirst": 43.9894,
+        "materialMinutesFirst": 39.2901,
         "fossilFrom": 21,
-        "fossilFirst": 145.5,
-        "growth": 1.6007,
-        "decay": 0.8458
+        "fossilFirst": 74.3,
+        "growth": 1.6329,
+        "decay": 0.7674
       }
     },
     {
@@ -201,17 +201,182 @@
       },
       "time": {
         "firstSeconds": 300.0,
-        "growth": 2.3652,
-        "decay": 0.8458
+        "growth": 2.8614,
+        "decay": 0.7674
       },
       "cost": {
         "samplesFirst": 1,
-        "goldMinutesFirst": 18.6099,
-        "materialMinutesFirst": 18.6099,
+        "goldMinutesFirst": 43.9894,
+        "materialMinutesFirst": 39.2901,
         "fossilFrom": 21,
-        "fossilFirst": 145.5,
-        "growth": 1.6007,
-        "decay": 0.8458
+        "fossilFirst": 74.3,
+        "growth": 1.6329,
+        "decay": 0.7674
+      }
+    },
+    {
+      "id": "critStrike",
+      "branch": "hunt",
+      "kind": "huntCritDmg",
+      "maxLevel": 30,
+      "name": {
+        "ko": "치명 일격",
+        "en": "Critical Strike",
+        "ja": "会心の一撃"
+      },
+      "requires": {
+        "id": "idleEff",
+        "level": 5
+      },
+      "effect": {
+        "perLevel": 0.013333,
+        "growth": 1.0
+      },
+      "time": {
+        "firstSeconds": 300.0,
+        "growth": 2.8614,
+        "decay": 0.7674
+      },
+      "cost": {
+        "samplesFirst": 1,
+        "goldMinutesFirst": 43.9894,
+        "materialMinutesFirst": 39.2901,
+        "fossilFrom": 21,
+        "fossilFirst": 74.3,
+        "growth": 1.6329,
+        "decay": 0.7674
+      }
+    },
+    {
+      "id": "regen",
+      "branch": "hunt",
+      "kind": "huntRegen",
+      "maxLevel": 30,
+      "name": {
+        "ko": "재생",
+        "en": "Regeneration",
+        "ja": "再生"
+      },
+      "requires": {
+        "id": "critStrike",
+        "level": 5
+      },
+      "effect": {
+        "perLevel": 0.013333,
+        "growth": 1.0
+      },
+      "time": {
+        "firstSeconds": 300.0,
+        "growth": 2.8614,
+        "decay": 0.7674
+      },
+      "cost": {
+        "samplesFirst": 1,
+        "goldMinutesFirst": 43.9894,
+        "materialMinutesFirst": 39.2901,
+        "fossilFrom": 21,
+        "fossilFirst": 74.3,
+        "growth": 1.6329,
+        "decay": 0.7674
+      }
+    },
+    {
+      "id": "swiftFeet",
+      "branch": "hunt",
+      "kind": "huntEvade",
+      "maxLevel": 30,
+      "name": {
+        "ko": "날쌘 발",
+        "en": "Swift Feet",
+        "ja": "俊足"
+      },
+      "requires": {
+        "id": "regen",
+        "level": 5
+      },
+      "effect": {
+        "perLevel": 0.006667,
+        "growth": 1.0
+      },
+      "time": {
+        "firstSeconds": 300.0,
+        "growth": 2.8614,
+        "decay": 0.7674
+      },
+      "cost": {
+        "samplesFirst": 1,
+        "goldMinutesFirst": 43.9894,
+        "materialMinutesFirst": 39.2901,
+        "fossilFrom": 21,
+        "fossilFirst": 74.3,
+        "growth": 1.6329,
+        "decay": 0.7674
+      }
+    },
+    {
+      "id": "growthInstinct",
+      "branch": "hunt",
+      "kind": "huntExp",
+      "maxLevel": 30,
+      "name": {
+        "ko": "성장 본능",
+        "en": "Growth Instinct",
+        "ja": "成長本能"
+      },
+      "requires": {
+        "id": "swiftFeet",
+        "level": 5
+      },
+      "effect": {
+        "perLevel": 0.01,
+        "growth": 1.0
+      },
+      "time": {
+        "firstSeconds": 300.0,
+        "growth": 2.8614,
+        "decay": 0.7674
+      },
+      "cost": {
+        "samplesFirst": 1,
+        "goldMinutesFirst": 43.9894,
+        "materialMinutesFirst": 39.2901,
+        "fossilFrom": 21,
+        "fossilFirst": 74.3,
+        "growth": 1.6329,
+        "decay": 0.7674
+      }
+    },
+    {
+      "id": "skillMastery",
+      "branch": "hunt",
+      "kind": "skillCooldown",
+      "maxLevel": 30,
+      "name": {
+        "ko": "스킬 숙련",
+        "en": "Skill Mastery",
+        "ja": "スキル熟練"
+      },
+      "requires": {
+        "id": "growthInstinct",
+        "level": 5
+      },
+      "effect": {
+        "perLevel": 0.006667,
+        "growth": 1.0
+      },
+      "time": {
+        "firstSeconds": 300.0,
+        "growth": 2.8614,
+        "decay": 0.7674
+      },
+      "cost": {
+        "samplesFirst": 1,
+        "goldMinutesFirst": 43.9894,
+        "materialMinutesFirst": 39.2901,
+        "fossilFrom": 21,
+        "fossilFirst": 74.3,
+        "growth": 1.6329,
+        "decay": 0.7674
       }
     },
     {
@@ -231,17 +396,17 @@
       },
       "time": {
         "firstSeconds": 300.0,
-        "growth": 2.3652,
-        "decay": 0.8458
+        "growth": 2.8614,
+        "decay": 0.7674
       },
       "cost": {
         "samplesFirst": 1,
-        "goldMinutesFirst": 18.6099,
-        "materialMinutesFirst": 18.6099,
+        "goldMinutesFirst": 43.9894,
+        "materialMinutesFirst": 39.2901,
         "fossilFrom": 21,
-        "fossilFirst": 145.5,
-        "growth": 1.6007,
-        "decay": 0.8458
+        "fossilFirst": 74.3,
+        "growth": 1.6329,
+        "decay": 0.7674
       }
     },
     {
@@ -264,17 +429,17 @@
       },
       "time": {
         "firstSeconds": 300.0,
-        "growth": 2.3652,
-        "decay": 0.8458
+        "growth": 2.8614,
+        "decay": 0.7674
       },
       "cost": {
         "samplesFirst": 1,
-        "goldMinutesFirst": 18.6099,
-        "materialMinutesFirst": 18.6099,
+        "goldMinutesFirst": 43.9894,
+        "materialMinutesFirst": 39.2901,
         "fossilFrom": 21,
-        "fossilFirst": 145.5,
-        "growth": 1.6007,
-        "decay": 0.8458
+        "fossilFirst": 74.3,
+        "growth": 1.6329,
+        "decay": 0.7674
       }
     },
     {
@@ -297,17 +462,17 @@
       },
       "time": {
         "firstSeconds": 300.0,
-        "growth": 2.3652,
-        "decay": 0.8458
+        "growth": 2.8614,
+        "decay": 0.7674
       },
       "cost": {
         "samplesFirst": 1,
-        "goldMinutesFirst": 18.6099,
-        "materialMinutesFirst": 18.6099,
+        "goldMinutesFirst": 43.9894,
+        "materialMinutesFirst": 39.2901,
         "fossilFrom": 21,
-        "fossilFirst": 145.5,
-        "growth": 1.6007,
-        "decay": 0.8458
+        "fossilFirst": 74.3,
+        "growth": 1.6329,
+        "decay": 0.7674
       }
     },
     {
@@ -330,17 +495,116 @@
       },
       "time": {
         "firstSeconds": 300.0,
-        "growth": 2.3652,
-        "decay": 0.8458
+        "growth": 2.8614,
+        "decay": 0.7674
       },
       "cost": {
         "samplesFirst": 1,
-        "goldMinutesFirst": 18.6099,
-        "materialMinutesFirst": 18.6099,
+        "goldMinutesFirst": 43.9894,
+        "materialMinutesFirst": 39.2901,
         "fossilFrom": 21,
-        "fossilFirst": 145.5,
-        "growth": 1.6007,
-        "decay": 0.8458
+        "fossilFirst": 74.3,
+        "growth": 1.6329,
+        "decay": 0.7674
+      }
+    },
+    {
+      "id": "bloodline",
+      "branch": "nurture",
+      "kind": "traitChance",
+      "maxLevel": 30,
+      "name": {
+        "ko": "혈통 연구",
+        "en": "Bloodline Study",
+        "ja": "血統研究"
+      },
+      "requires": {
+        "id": "researchEff",
+        "level": 5
+      },
+      "effect": {
+        "perLevel": 0.016667,
+        "growth": 1.0
+      },
+      "time": {
+        "firstSeconds": 300.0,
+        "growth": 2.8614,
+        "decay": 0.7674
+      },
+      "cost": {
+        "samplesFirst": 1,
+        "goldMinutesFirst": 43.9894,
+        "materialMinutesFirst": 39.2901,
+        "fossilFrom": 21,
+        "fossilFirst": 74.3,
+        "growth": 1.6329,
+        "decay": 0.7674
+      }
+    },
+    {
+      "id": "herbalism",
+      "branch": "nurture",
+      "kind": "potionChance",
+      "maxLevel": 30,
+      "name": {
+        "ko": "약초학",
+        "en": "Herbalism",
+        "ja": "薬草学"
+      },
+      "requires": {
+        "id": "bloodline",
+        "level": 5
+      },
+      "effect": {
+        "perLevel": 0.01,
+        "growth": 1.0
+      },
+      "time": {
+        "firstSeconds": 300.0,
+        "growth": 2.8614,
+        "decay": 0.7674
+      },
+      "cost": {
+        "samplesFirst": 1,
+        "goldMinutesFirst": 43.9894,
+        "materialMinutesFirst": 39.2901,
+        "fossilFrom": 21,
+        "fossilFirst": 74.3,
+        "growth": 1.6329,
+        "decay": 0.7674
+      }
+    },
+    {
+      "id": "salvage",
+      "branch": "nurture",
+      "kind": "salvageMat",
+      "maxLevel": 30,
+      "name": {
+        "ko": "분해 기술",
+        "en": "Salvage Technique",
+        "ja": "分解技術"
+      },
+      "requires": {
+        "id": "herbalism",
+        "level": 5
+      },
+      "effect": {
+        "perLevel": 0.01,
+        "growth": 1.0
+      },
+      "time": {
+        "firstSeconds": 300.0,
+        "growth": 2.8614,
+        "decay": 0.7674
+      },
+      "cost": {
+        "samplesFirst": 1,
+        "goldMinutesFirst": 43.9894,
+        "materialMinutesFirst": 39.2901,
+        "fossilFrom": 21,
+        "fossilFirst": 74.3,
+        "growth": 1.6329,
+        "decay": 0.7674
       }
     },
     {
@@ -360,17 +624,17 @@
       },
       "time": {
         "firstSeconds": 300.0,
-        "growth": 2.3652,
-        "decay": 0.8458
+        "growth": 2.8614,
+        "decay": 0.7674
       },
       "cost": {
         "samplesFirst": 1,
-        "goldMinutesFirst": 18.6099,
-        "materialMinutesFirst": 18.6099,
+        "goldMinutesFirst": 43.9894,
+        "materialMinutesFirst": 39.2901,
         "fossilFrom": 21,
-        "fossilFirst": 145.5,
-        "growth": 1.6007,
-        "decay": 0.8458
+        "fossilFirst": 74.3,
+        "growth": 1.6329,
+        "decay": 0.7674
       }
     },
     {
@@ -393,17 +657,17 @@
       },
       "time": {
         "firstSeconds": 300.0,
-        "growth": 2.3652,
-        "decay": 0.8458
+        "growth": 2.8614,
+        "decay": 0.7674
       },
       "cost": {
         "samplesFirst": 1,
-        "goldMinutesFirst": 18.6099,
-        "materialMinutesFirst": 18.6099,
+        "goldMinutesFirst": 43.9894,
+        "materialMinutesFirst": 39.2901,
         "fossilFrom": 21,
-        "fossilFirst": 145.5,
-        "growth": 1.6007,
-        "decay": 0.8458
+        "fossilFirst": 74.3,
+        "growth": 1.6329,
+        "decay": 0.7674
       }
     },
     {
@@ -426,17 +690,17 @@
       },
       "time": {
         "firstSeconds": 300.0,
-        "growth": 2.3652,
-        "decay": 0.8458
+        "growth": 2.8614,
+        "decay": 0.7674
       },
       "cost": {
         "samplesFirst": 1,
-        "goldMinutesFirst": 18.6099,
-        "materialMinutesFirst": 18.6099,
+        "goldMinutesFirst": 43.9894,
+        "materialMinutesFirst": 39.2901,
         "fossilFrom": 21,
-        "fossilFirst": 145.5,
-        "growth": 1.6007,
-        "decay": 0.8458
+        "fossilFirst": 74.3,
+        "growth": 1.6329,
+        "decay": 0.7674
       }
     },
     {
@@ -459,17 +723,242 @@
       },
       "time": {
         "firstSeconds": 300.0,
-        "growth": 2.3652,
-        "decay": 0.8458
+        "growth": 2.8614,
+        "decay": 0.7674
       },
       "cost": {
         "samplesFirst": 1,
-        "goldMinutesFirst": 18.6099,
-        "materialMinutesFirst": 18.6099,
+        "goldMinutesFirst": 43.9894,
+        "materialMinutesFirst": 39.2901,
         "fossilFrom": 21,
-        "fossilFirst": 145.5,
-        "growth": 1.6007,
-        "decay": 0.8458
+        "fossilFirst": 74.3,
+        "growth": 1.6329,
+        "decay": 0.7674
+      }
+    },
+    {
+      "id": "vitalStrike",
+      "branch": "duel",
+      "kind": "duelCrit",
+      "maxLevel": 30,
+      "name": {
+        "ko": "급소 공략",
+        "en": "Vital Strike",
+        "ja": "急所狙い"
+      },
+      "requires": {
+        "id": "recovery",
+        "level": 5
+      },
+      "effect": {
+        "perLevel": 0.001667,
+        "growth": 1.0
+      },
+      "time": {
+        "firstSeconds": 300.0,
+        "growth": 2.8614,
+        "decay": 0.7674
+      },
+      "cost": {
+        "samplesFirst": 1,
+        "goldMinutesFirst": 43.9894,
+        "materialMinutesFirst": 39.2901,
+        "fossilFrom": 21,
+        "fossilFirst": 74.3,
+        "growth": 1.6329,
+        "decay": 0.7674
+      }
+    },
+    {
+      "id": "gritTraining",
+      "branch": "duel",
+      "kind": "duelGrit",
+      "maxLevel": 30,
+      "name": {
+        "ko": "근성 단련",
+        "en": "Grit Training",
+        "ja": "根性鍛錬"
+      },
+      "requires": {
+        "id": "vitalStrike",
+        "level": 5
+      },
+      "effect": {
+        "perLevel": 0.001667,
+        "growth": 1.0
+      },
+      "time": {
+        "firstSeconds": 300.0,
+        "growth": 2.8614,
+        "decay": 0.7674
+      },
+      "cost": {
+        "samplesFirst": 1,
+        "goldMinutesFirst": 43.9894,
+        "materialMinutesFirst": 39.2901,
+        "fossilFrom": 21,
+        "fossilFirst": 74.3,
+        "growth": 1.6329,
+        "decay": 0.7674
+      }
+    },
+    {
+      "id": "forgeLore",
+      "branch": "gear",
+      "kind": "forgeTime",
+      "maxLevel": 30,
+      "name": {
+        "ko": "제련 비법",
+        "en": "Forging Secrets",
+        "ja": "製錬の秘法"
+      },
+      "requires": null,
+      "effect": {
+        "perLevel": 0.013333,
+        "growth": 1.0
+      },
+      "time": {
+        "firstSeconds": 300.0,
+        "growth": 2.8614,
+        "decay": 0.7674
+      },
+      "cost": {
+        "samplesFirst": 1,
+        "goldMinutesFirst": 43.9894,
+        "materialMinutesFirst": 39.2901,
+        "fossilFrom": 21,
+        "fossilFirst": 74.3,
+        "growth": 1.6329,
+        "decay": 0.7674
+      }
+    },
+    {
+      "id": "starPolish",
+      "branch": "gear",
+      "kind": "starTime",
+      "maxLevel": 30,
+      "name": {
+        "ko": "별빛 연마",
+        "en": "Starlight Polish",
+        "ja": "星光研磨"
+      },
+      "requires": {
+        "id": "forgeLore",
+        "level": 5
+      },
+      "effect": {
+        "perLevel": 0.013333,
+        "growth": 1.0
+      },
+      "time": {
+        "firstSeconds": 300.0,
+        "growth": 2.8614,
+        "decay": 0.7674
+      },
+      "cost": {
+        "samplesFirst": 1,
+        "goldMinutesFirst": 43.9894,
+        "materialMinutesFirst": 39.2901,
+        "fossilFrom": 21,
+        "fossilFirst": 74.3,
+        "growth": 1.6329,
+        "decay": 0.7674
+      }
+    },
+    {
+      "id": "thriftPolish",
+      "branch": "gear",
+      "kind": "polishCost",
+      "maxLevel": 30,
+      "name": {
+        "ko": "절약 다듬기",
+        "en": "Thrifty Refining",
+        "ja": "節約仕上げ"
+      },
+      "requires": {
+        "id": "starPolish",
+        "level": 5
+      },
+      "effect": {
+        "perLevel": 0.01,
+        "growth": 1.0
+      },
+      "time": {
+        "firstSeconds": 300.0,
+        "growth": 2.8614,
+        "decay": 0.7674
+      },
+      "cost": {
+        "samplesFirst": 1,
+        "goldMinutesFirst": 43.9894,
+        "materialMinutesFirst": 39.2901,
+        "fossilFrom": 21,
+        "fossilFirst": 74.3,
+        "growth": 1.6329,
+        "decay": 0.7674
+      }
+    },
+    {
+      "id": "barter",
+      "branch": "economy",
+      "kind": "exchangeGain",
+      "maxLevel": 30,
+      "name": {
+        "ko": "교환 협상",
+        "en": "Barter",
+        "ja": "交換交渉"
+      },
+      "requires": null,
+      "effect": {
+        "perLevel": 0.006667,
+        "growth": 1.0
+      },
+      "time": {
+        "firstSeconds": 300.0,
+        "growth": 2.8614,
+        "decay": 0.7674
+      },
+      "cost": {
+        "samplesFirst": 1,
+        "goldMinutesFirst": 43.9894,
+        "materialMinutesFirst": 39.2901,
+        "fossilFrom": 21,
+        "fossilFirst": 74.3,
+        "growth": 1.6329,
+        "decay": 0.7674
+      }
+    },
+    {
+      "id": "giftSense",
+      "branch": "economy",
+      "kind": "giftGold",
+      "maxLevel": 30,
+      "name": {
+        "ko": "선물 감각",
+        "en": "Gift Sense",
+        "ja": "贈り物の勘"
+      },
+      "requires": {
+        "id": "barter",
+        "level": 5
+      },
+      "effect": {
+        "perLevel": 0.006667,
+        "growth": 1.0
+      },
+      "time": {
+        "firstSeconds": 300.0,
+        "growth": 2.8614,
+        "decay": 0.7674
+      },
+      "cost": {
+        "samplesFirst": 1,
+        "goldMinutesFirst": 43.9894,
+        "materialMinutesFirst": 39.2901,
+        "fossilFrom": 21,
+        "fossilFirst": 74.3,
+        "growth": 1.6329,
+        "decay": 0.7674
       }
     }
   ],

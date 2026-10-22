@@ -16,14 +16,15 @@ void main() {
   final raw = _raw();
   final c = ResearchConfig.fromJson(raw);
 
-  test('한 레벨의 골드·재료는 하루 3시간(180분) 수입의 3배(540분)를 넘지 않는다', () {
+  // 한 레벨 상한 = 사냥 1,210분치 ≈ 하루 3시간 켜 둔 날 실제 수입의 1/3(사장님 A안, 설계 §10).
+  test('한 레벨의 골드·재료는 사냥 1,210분치를 넘지 않는다', () {
     for (final d in c.defs) {
       for (var l = 1; l <= d.maxLevel; l++) {
         final cost = c.costAt(d, l);
-        expect(cost.goldMinutes, lessThanOrEqualTo(540), reason: '${d.id} $l');
+        expect(cost.goldMinutes, lessThanOrEqualTo(1210), reason: '${d.id} $l');
         expect(
           cost.materialMinutes,
-          lessThanOrEqualTo(540),
+          lessThanOrEqualTo(1210),
           reason: '${d.id} $l',
         );
       }
