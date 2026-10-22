@@ -486,4 +486,132 @@ void main() {
     expect(r2.isOk, isTrue, reason: r2.error);
     expect(r2.save!.researchLevels['jaw'], 2);
   });
+
+  test('환불 골드는 업로드 골드 허용치를 함께 쓴다 — 이월 창 안에서 되풀이해도 직접 올린 상한을 못 넘는다', () {
+    final barter = rc.byId('barter')!;
+    var s = stored().copyWith(
+      gold: 1000000,
+      goldCarry: 1 << 40,
+      goldCarryUntil: t0.add(const Duration(minutes: 4)),
+    );
+    for (var i = 1; i <= 3; i++) {
+      final t = t0.add(Duration(seconds: 60 * i));
+      final a = GameActions(config: cfg, now: () => t);
+      // 위조로 걸리는 업로드 — 골드는 그대로, 새 칸을 시작했다고 주장(환불 대상).
+      final forged = a
+          .mergeSave(
+            s,
+            s
+                .copyWith(
+                  researchLevels: {'jaw': 20},
+                  researchSlots: [
+                    ResearchSlot(
+                      id: 'barter',
+                      level: 1,
+                      endsAt: t.add(rc.timeAt(barter, 1)),
+                    ),
+                  ],
+                )
+                .toJson(),
+          )
+          .save!;
+      // 같은 저장본에서 골드를 직접 최대로 올린 업로드.
+      final direct = a.mergeSave(s, s.copyWith(gold: 1 << 60).toJson()).save!;
+      expect(
+        forged.gold + forged.goldCarry,
+        lessThanOrEqualTo(direct.gold + direct.goldCarry),
+        reason: '$i번째 업로드',
+      );
+      expect(forged.researchLevels['jaw'], isNull);
+      s = forged;
+    }
+  });
+
+  test('되돌려도 값을 치른 산 칸은 남고, 되돌린 즉시 완료 젤리는 돌려준다', () {
+    final s = stored(jelly: 1000);
+    final full = rc.timeAt(jaw, 1);
+    final finishJelly = rc.instantJelly(full - const Duration(seconds: 60));
+    final out = up(
+      s,
+      s
+          .copyWith(
+            researchSlotsBought: 1,
+            // 칸 값 + 즉시 완료 젤리를 냈다. 그런데 다른 줄(교환 협상 Lv20)이 위조로 걸린다.
+            materials: {
+              MaterialKind.jelly: 1000 - rc.slotJelly[0] - finishJelly,
+            },
+            researchLevels: {'jaw': 1, 'barter': 20},
+          )
+          .toJson(),
+    );
+    expect(out.researchLevels['barter'], isNull);
+    expect(out.researchLevels['jaw'], isNull);
+    expect(out.researchSlotsBought, 1);
+    expect(
+      out.materialCount(MaterialKind.jelly),
+      1000 - rc.slotJelly[0],
+      reason: '되돌린 레벨의 즉시 완료 젤리는 돌려받는다',
+    );
+  });
+
+  test('기기 시계가 3분 빠르면 저장본 칸의 자연 완료가 서버 시각보다 일찍 온다 — 인정', () {
+    final full = rc.timeAt(jaw, 5);
+    // 저장본 시각에 Lv5 칸이 10분 남았고, 7분 뒤(서버) 기기는 10분이 지났다고 본다.
+    final s = stored(
+      elapsed: const Duration(minutes: 7),
+      levels: {'jaw': 4},
+      slots: [
+        ResearchSlot(
+          id: 'jaw',
+          level: 5,
+          endsAt: t0
+              .subtract(const Duration(minutes: 7))
+              .add(const Duration(minutes: 10)),
+        ),
+      ],
+    );
+    expect(full, greaterThan(const Duration(minutes: 10)));
+    final out = up(
+      s,
+      s.copyWith(researchLevels: {'jaw': 5}, researchSlots: const []).toJson(),
+    );
+    expect(out.researchLevels['jaw'], 5);
+  });
+
+  test('연구 효율 단계가 먼저 끝나면 뒤에 시작한 단계는 줄어든 시간으로 잰다', () {
+    final eff = rc.byId('researchEff')!;
+    const jawLv = 8;
+    final cut = rc.effectAt(eff, 1);
+    final shortened = Duration(
+      milliseconds: (rc.timeAt(jaw, jawLv).inMilliseconds * (1 - cut)).round(),
+    );
+    // 차이가 여유(1분)보다 커야 의미 있는 검사다.
+    expect(
+      rc.timeAt(jaw, jawLv) - shortened,
+      greaterThan(const Duration(minutes: 2)),
+    );
+    // 저장본: 연구 효율 Lv1 칸이 저장본 시각에 끝남 · 그 뒤 턱 강화 Lv8 을 줄어든 시간으로 자연 완료.
+    final s = stored(
+      elapsed: shortened,
+      levels: {'jaw': jawLv - 1},
+      slots: [
+        ResearchSlot(
+          id: 'researchEff',
+          level: 1,
+          endsAt: t0.subtract(shortened),
+        ),
+      ],
+    );
+    final out = up(
+      s,
+      s
+          .copyWith(
+            researchLevels: {'jaw': jawLv, 'researchEff': 1},
+            researchSlots: const [],
+          )
+          .toJson(),
+    );
+    expect(out.researchLevels['jaw'], jawLv);
+    expect(out.researchLevels['researchEff'], 1);
+  });
 }
