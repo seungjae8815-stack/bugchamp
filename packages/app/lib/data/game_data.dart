@@ -66,6 +66,11 @@ class GameData {
   /// 연구소(research.json).
   final ResearchConfig? researchConfig;
 
+  /// 연구소 효과(레벨 → 효과 합). 설정이 없으면 효과 없음.
+  ResearchEffects researchFx(Map<String, int> levels) => researchConfig == null
+      ? ResearchEffects.none
+      : researchEffects(researchConfig!, levels);
+
   /// 미션 설정 (에셋 로드 시 채워짐. 일부 테스트에선 null).
   final MissionConfig? missionConfig;
 

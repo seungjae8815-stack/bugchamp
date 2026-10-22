@@ -231,6 +231,12 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen> {
 
   SaveController get _ctrl => ref.read(saveControllerProvider.notifier);
 
+  /// 연구소 훈련 시간 단축 — 표시 시간도 시작 때와 같은 값.
+  ResearchEffects _research() => ref
+      .read(gameDataProvider)
+      .requireValue
+      .researchFx(ref.read(saveControllerProvider).requireValue.researchLevels);
+
   TrainingConfig _cfg(GameData d) =>
       (d.battleConfig ?? const BattleConfig()).training;
 
@@ -857,7 +863,7 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen> {
     required int free,
     required bool jobBusy,
   }) {
-    final quote = trainPointQuote(rec, cfg, _rarityOf(bug, sp));
+    final quote = trainPointQuote(rec, cfg, _rarityOf(bug, sp), research: _research());
     // 다음 포인트가 생기는 조건.
     final k = cfg.levelsPerPoint;
     final cap = data.petConfig?.levelCap(bug.breakthroughTier);
@@ -1666,7 +1672,7 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen> {
         );
         return;
       }
-      final q = trainPointQuote(rec, cfg, _rarityOf(bug, sp));
+      final q = trainPointQuote(rec, cfg, _rarityOf(bug, sp), research: _research());
       if (kTrainingMaterials.any((k) => save.materialCount(k) < q.cost)) {
         showCenterToast(context, l.trainingNoMaterials);
         return;
@@ -1835,7 +1841,7 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen> {
               rec.freeRespec
                   ? l.trainRespecFreeBadge
                   : l.trainRespecWaitInfo(
-                      remainLabel(l, cfg.respecWait(rec.paid)),
+                      remainLabel(l, trainRespecWait(cfg, rec.paid, _research())),
                     ),
               style: const TextStyle(
                 color: _honey,
@@ -1859,7 +1865,7 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen> {
                 : rec.freeRespec
                 ? l.trainRespecFreeBadge
                 : l.trainRespecWaitInfo(
-                    remainLabel(l, cfg.respecWait(rec.paid)),
+                    remainLabel(l, trainRespecWait(cfg, rec.paid, _research())),
                   ),
             style: const TextStyle(
               color: _dim,
@@ -1927,7 +1933,7 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen> {
               rec.freeRespec
                   ? l.trainRespecAskFree
                   : l.trainRespecAskWait(
-                      remainLabel(l, cfg.respecWait(rec.paid)),
+                      remainLabel(l, trainRespecWait(cfg, rec.paid, _research())),
                     ),
               l.trainRespecApply,
               icon: Icons.restart_alt_rounded,

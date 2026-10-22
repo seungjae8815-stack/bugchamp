@@ -1981,7 +1981,13 @@ Handler buildHandler({
           if (sp == null) continue;
           preInjured[b.id] = tNow.add(
             Duration(
-              seconds: cfg.pet.injuryDuration(cfg.pet.rarityOf(bug!, sp)),
+              seconds: researchScaledSeconds(
+                cfg.pet.injuryDuration(cfg.pet.rarityOf(bug!, sp)),
+                cfg.research == null
+                    ? ResearchEffects.none
+                    : researchEffects(cfg.research!, startSave.researchLevels),
+                ResearchEffect.injuryTime,
+              ),
             ),
           );
         }

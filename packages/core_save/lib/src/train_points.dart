@@ -549,6 +549,22 @@ SaveGame _applyPointJob(SaveGame s, TrainPointJob job) {
   );
 }
 
+/// 연구소 훈련 단축을 건 시간(초) — 앱·서버 공용 `researchScaledSeconds` 한 곳.
+int _trainSecs(int secs, ResearchEffects? research) => research == null
+    ? secs
+    : researchScaledSeconds(secs, research, ResearchEffect.trainTime);
+
+/// 다시 찍기 대기 — 연구소 훈련 단축 반영(화면 표시와 시작이 같은 값).
+Duration trainRespecWait(
+  TrainingConfig cfg,
+  int paid,
+  ResearchEffects? research,
+) {
+  final w = cfg.respecWait(paid);
+  if (research == null || w <= Duration.zero) return w;
+  return Duration(seconds: _trainSecs(w.inSeconds, research));
+}
+
 /// [count]포인트를 칸 [slot] 에 찍는다.
 ///
 /// 재료를 이미 낸 포인트가 남아 있으면(다시 찍기로 뺀 몫) 그만큼은 **재료·시간 없이 바로** 찍고 끝난다
@@ -568,6 +584,8 @@ TrainOp allocTrainPoint(
   EnhanceConfig? enhance,
   // 곤충 희귀도(1.0.22, 호출자 `PetConfig.rarityOf`) — 없으면 종 희귀도.
   Grade? rarity,
+  // 연구소 훈련 시간 단축(`trainTime`) — 없으면 그대로.
+  ResearchEffects? research,
 }) {
   if (count < 1) return (save: null, error: 'count');
   s = finishTrainPointsIfDue(s, now);
@@ -615,7 +633,9 @@ TrainOp allocTrainPoint(
         bugId: bug.id,
         slot: slot,
         count: count,
-        until: now.toUtc().add(Duration(seconds: secs)),
+        until: now.toUtc().add(
+          Duration(seconds: _trainSecs(secs, research)),
+        ),
       ),
     ),
     error: null,
@@ -628,6 +648,7 @@ TrainOp allocTrainPoint(
   TrainingConfig cfg,
   Grade grade, {
   int count = 1,
+  ResearchEffects? research,
 }) {
   final free = math.max(0, rec.paid - rec.allocated);
   if (free >= count) return (cost: 0, time: Duration.zero);
@@ -637,7 +658,7 @@ TrainOp allocTrainPoint(
     cost += cfg.pointCost(rec.paid + k, grade);
     secs += cfg.pointTime(rec.paid + k).inSeconds;
   }
-  return (cost: cost, time: Duration(seconds: secs));
+  return (cost: cost, time: Duration(seconds: _trainSecs(secs, research)));
 }
 
 /// 젤리로 지금 포인트 찍기를 끝낸다. error: `none` · `jelly`.
@@ -674,6 +695,7 @@ TrainOp startTrainRespec(
   Map<TrainSlot, int> next,
   DateTime now, {
   EnhanceConfig? enhance,
+  ResearchEffects? research,
 }) {
   s = finishTrainPointsIfDue(s, now);
   if (!s.bugs.any((b) => b.id == bug.id)) return (save: null, error: 'no_bug');
@@ -706,7 +728,9 @@ TrainOp startTrainRespec(
       clean.length == rec.alloc.entries.where((e) => e.value > 0).length &&
       clean.entries.every((e) => rec.alloc[e.key] == e.value);
   if (same) return (save: null, error: 'same');
-  final wait = rec.freeRespec ? Duration.zero : cfg.respecWait(rec.paid);
+  final wait = rec.freeRespec
+      ? Duration.zero
+      : trainRespecWait(cfg, rec.paid, research);
   final updated = wait <= Duration.zero
       ? rec.copyWith(alloc: clean, freeRespec: false, clearPending: true)
       : rec.copyWith(pending: clean, respecUntil: now.toUtc().add(wait));

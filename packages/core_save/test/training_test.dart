@@ -180,6 +180,42 @@ void main() {
       expect(trainBusy(s, b.id, t0.add(const Duration(hours: 1))), isFalse);
     });
 
+    test('연구소 훈련 단축 — 찍기 until 과 다시 찍기 대기가 같은 비율로 줄어든다', () {
+      final b = bug();
+      const half = ResearchEffects({ResearchEffect.trainTime: 0.5});
+      final full = allocTrainPoint(rich([b]), cfg, b, sp, TrainSlot.attack, t0);
+      final cut = allocTrainPoint(
+        rich([b]),
+        cfg,
+        b,
+        sp,
+        TrainSlot.attack,
+        t0,
+        research: half,
+      );
+      final fullSecs = full.save!.trainPointJob!.until.difference(t0).inSeconds;
+      expect(
+        cut.save!.trainPointJob!.until.difference(t0).inSeconds,
+        (fullSecs / 2).ceil(),
+      );
+      expect(
+        trainRespecWait(cfg, 5, half).inSeconds,
+        (cfg.respecWait(5).inSeconds / 2).ceil(),
+      );
+      expect(trainRespecWait(cfg, 5, null), cfg.respecWait(5));
+      final q = trainPointQuote(
+        const BugTrain(),
+        cfg,
+        sp.grade,
+        research: half,
+      );
+      expect(
+        q.time.inSeconds,
+        (trainPointQuote(const BugTrain(), cfg, sp.grade).time.inSeconds / 2)
+            .ceil(),
+      );
+    });
+
     test('대기 최대 8시간 · 젤리로 당긴다', () {
       expect(cfg.respecWait(1000), const Duration(hours: 8));
       final b = bug();

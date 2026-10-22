@@ -2194,6 +2194,13 @@ class GameActions {
   }
 
   /// 연구 레벨 → 효과(연구 설정이 없으면 0).
+  /// 연구소 부상 시간 단축(`injuryTime`) — 앱 `save_controller` 와 같은 함수.
+  int _injurySecs(int secs, SaveGame save) => researchScaledSeconds(
+    secs,
+    _researchFx(save.researchLevels),
+    ResearchEffect.injuryTime,
+  );
+
   ResearchEffects _researchFx(Map<String, int> levels) {
     final cfg = config.research;
     if (cfg == null || levels.isEmpty) return ResearchEffects.none;
@@ -2734,7 +2741,10 @@ class GameActions {
       if (sp == null) continue;
       final until = t.add(
         Duration(
-          seconds: petConfig.injuryDuration(petConfig.rarityOf(bug, sp)),
+          seconds: _injurySecs(
+            petConfig.injuryDuration(petConfig.rarityOf(bug, sp)),
+            save,
+          ),
         ),
       );
       final prev = injured[koedId];
@@ -3071,7 +3081,10 @@ class GameActions {
       if (bug == null || sp == null) continue;
       injured[id] = t.add(
         Duration(
-          seconds: petConfig.injuryDuration(petConfig.rarityOf(bug, sp)),
+          seconds: _injurySecs(
+            petConfig.injuryDuration(petConfig.rarityOf(bug, sp)),
+            start,
+          ),
         ),
       );
     }
@@ -3128,7 +3141,10 @@ class GameActions {
         if (bug == null || sp == null) continue;
         final until = t.add(
           Duration(
-            seconds: petConfig.injuryDuration(petConfig.rarityOf(bug, sp)),
+            seconds: _injurySecs(
+              petConfig.injuryDuration(petConfig.rarityOf(bug, sp)),
+              save,
+            ),
           ),
         );
         final prev = injured[id];
@@ -3784,7 +3800,13 @@ class GameActions {
       mats[k] = save.materialCount(k) - matCost;
     }
     final endsAt = t.add(
-      Duration(seconds: petConfig.breakthroughDuration(tier)),
+      Duration(
+        seconds: researchScaledSeconds(
+          petConfig.breakthroughDuration(tier),
+          _researchFx(save.researchLevels),
+          ResearchEffect.trainTime,
+        ),
+      ),
     );
     final bugs = List<IndividualBug>.from(save.bugs);
     bugs[idx] = bug.copyWith(breakthroughEndsAt: endsAt);
@@ -4100,10 +4122,15 @@ class GameActions {
       // 스킨 계열 편의 보너스(산란 시간 −N%, 2026-10-08 — 시간만, 전투 스탯 아님). 앱과 같은 함수.
       endsAt: t.add(
         Duration(
-          seconds: config.iap.skinnedBreedSeconds(
-            petConfig.breedingDuration(petConfig.rarityOf(mother, sp)),
-            save.ownedSkins,
-            sp.id,
+          // 연구소 산란 단축(스킨 다음, 앱과 같은 함수).
+          seconds: researchScaledSeconds(
+            config.iap.skinnedBreedSeconds(
+              petConfig.breedingDuration(petConfig.rarityOf(mother, sp)),
+              save.ownedSkins,
+              sp.id,
+            ),
+            _researchFx(save.researchLevels),
+            ResearchEffect.breedTime,
           ),
         ),
       ),
@@ -5323,7 +5350,7 @@ class GameActions {
     final bug = save.bugs.firstWhere((b) => b.id == bugId);
     // 부상 시간은 곤충 희귀도(1.0.22 — 결투 부상과 같은 `rarityOf`). 종 grade 는 꺼졌을 때의 옛 값.
     final grade = petConfig.rarityOf(bug, speciesById[bug.speciesId]!);
-    final until = t.add(Duration(seconds: petConfig.injuryDuration(grade)));
+    final until = t.add(Duration(seconds: _injurySecs(petConfig.injuryDuration(grade), save)));
     final injured = Map<String, DateTime>.from(save.injured)..[bugId] = until;
     final eventInjured = save.prunedEventFatigue(t)..[bugId] = until;
     final roundId = cfg.roundIdAt(t);
@@ -5611,7 +5638,10 @@ class GameActions {
     final eventInjured = save.prunedEventFatigue(t);
     if (grade != null) {
       final full = petConfig.injuryDuration(grade);
-      final sec = (full * eventDuelSpec.injuryRatio(run.hpPct)).round();
+      final sec = _injurySecs(
+        (full * eventDuelSpec.injuryRatio(run.hpPct)).round(),
+        save,
+      );
       final until = t.add(Duration(seconds: sec));
       injured[bugId] = until;
       eventInjured[bugId] = until;

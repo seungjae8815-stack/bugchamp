@@ -1139,13 +1139,16 @@ class StorageScreen extends ConsumerWidget {
     if (sp == null) return const SizedBox.shrink();
     final ready = !now.isBefore(slot.endsAt);
     final remaining = slot.endsAt.difference(now);
-    final total =
-        data.iapConfig?.skinnedBreedSeconds(
+    final total = researchScaledSeconds(
+      data.iapConfig?.skinnedBreedSeconds(
+            cfg.breedingDuration(slot.motherRarity ?? sp.grade),
+            save.ownedSkins,
+            sp.id,
+          ) ??
           cfg.breedingDuration(slot.motherRarity ?? sp.grade),
-          save.ownedSkins,
-          sp.id,
-        ) ??
-        cfg.breedingDuration(slot.motherRarity ?? sp.grade);
+      data.researchFx(save.researchLevels),
+      ResearchEffect.breedTime,
+    );
     final fill = ready
         ? 1.0
         : (total > 0 ? (1 - remaining.inSeconds / total).clamp(0.0, 1.0) : 1.0);
@@ -1388,14 +1391,22 @@ class StorageScreen extends ConsumerWidget {
                                             l,
                                             Duration(
                                               // 산란 시간은 어미 희귀도(1.0.22 — 시작할 때와 같은 값).
-                                              seconds: data.petConfig!
-                                                  .breedingDuration(
-                                                    bugRarityOf(
-                                                      data,
-                                                      b,
-                                                      data.species(b.speciesId),
+                                              seconds: researchScaledSeconds(
+                                                data.petConfig!
+                                                    .breedingDuration(
+                                                      bugRarityOf(
+                                                        data,
+                                                        b,
+                                                        data.species(
+                                                          b.speciesId,
+                                                        ),
+                                                      ),
                                                     ),
-                                                  ),
+                                                data.researchFx(
+                                                  save.researchLevels,
+                                                ),
+                                                ResearchEffect.breedTime,
+                                              ),
                                             ),
                                           ),
                                         ),
@@ -1928,12 +1939,16 @@ class StorageScreen extends ConsumerWidget {
       // 끝까지 안 찬 채로 부화가 끝난다.
       final total = sp == null
           ? 1
-          : (data.iapConfig?.skinnedIncubateSeconds(
+          : researchScaledSeconds(
+              data.iapConfig?.skinnedIncubateSeconds(
+                    cfg.incubateDuration(bugRarityOf(data, bug!, sp)),
+                    save.ownedSkins,
+                    sp.id,
+                  ) ??
                   cfg.incubateDuration(bugRarityOf(data, bug!, sp)),
-                  save.ownedSkins,
-                  sp.id,
-                ) ??
-                cfg.incubateDuration(bugRarityOf(data, bug!, sp)));
+              data.researchFx(save.researchLevels),
+              ResearchEffect.hatchTime,
+            );
       final rem = occupant.value.difference(now);
       done = rem <= Duration.zero;
       fill = total > 0 ? (1 - rem.inSeconds / total).clamp(0.0, 1.0) : 1.0;
@@ -4193,12 +4208,16 @@ class StorageScreen extends ConsumerWidget {
     final cfg = data.petConfig!;
     // 부화 시간은 곤충 희귀도(1.0.22 — 꺼져 있으면 종 희귀도). 컨트롤러 `placeInIncubator` 와 같은 값.
     final g = bugRarityOf(data, bug, sp);
-    return data.iapConfig?.skinnedIncubateSeconds(
+    return researchScaledSeconds(
+      data.iapConfig?.skinnedIncubateSeconds(
+            cfg.incubateDuration(g),
+            save.ownedSkins,
+            sp.id,
+          ) ??
           cfg.incubateDuration(g),
-          save.ownedSkins,
-          sp.id,
-        ) ??
-        cfg.incubateDuration(g);
+      data.researchFx(save.researchLevels),
+      ResearchEffect.hatchTime,
+    );
   }
 
   static String _mmss(Duration d) =>
@@ -5238,7 +5257,7 @@ class StorageScreen extends ConsumerWidget {
                 _breakthroughCost(save, gold, mat),
                 const SizedBox(height: 2),
                 Text(
-                  '⏱${_remainLabel(l, Duration(seconds: cfg.breakthroughDuration(tier)))}',
+                  '⏱${_remainLabel(l, Duration(seconds: researchScaledSeconds(cfg.breakthroughDuration(tier), r.read(gameDataProvider).requireValue.researchFx(save.researchLevels), ResearchEffect.trainTime)))}',
                   style: _rowSub,
                 ),
               ],

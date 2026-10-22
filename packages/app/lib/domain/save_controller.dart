@@ -1744,7 +1744,13 @@ class SaveController extends AsyncNotifier<SaveGame> {
       final sp = bug == null ? null : data.speciesById[bug.speciesId];
       if (sp == null) continue;
       injured[id] = now.add(
-        Duration(seconds: cfg.injuryDuration(cfg.rarityOf(bug!, sp))),
+        Duration(
+          seconds: researchScaledSeconds(
+            cfg.injuryDuration(cfg.rarityOf(bug!, sp)),
+            data.researchFx(s.researchLevels),
+            ResearchEffect.injuryTime,
+          ),
+        ),
       );
     }
     await _commit(s.copyWith(injured: injured));
@@ -1778,7 +1784,13 @@ class SaveController extends AsyncNotifier<SaveGame> {
         if (sp == null) continue;
         // 이미 부상 중이면 더 늦은 회복 시각으로 갱신(중복 KO 방어).
         final until = now.add(
-          Duration(seconds: cfg.injuryDuration(cfg.rarityOf(bug, sp))),
+          Duration(
+            seconds: researchScaledSeconds(
+              cfg.injuryDuration(cfg.rarityOf(bug, sp)),
+              data.researchFx(s.researchLevels),
+              ResearchEffect.injuryTime,
+            ),
+          ),
         );
         final prev = injured[id];
         injured[id] = (prev != null && prev.isAfter(until)) ? prev : until;
@@ -2157,6 +2169,7 @@ class SaveController extends AsyncNotifier<SaveGame> {
       count: count,
       enhance: data.enhanceConfig,
       rarity: _rarityOf(bug),
+      research: data.researchFx(s.researchLevels),
     );
     if (r.save == null) return r.error;
     final startedJob = r.save!.trainPointJob != null && s.trainPointJob == null;
@@ -2219,6 +2232,7 @@ class SaveController extends AsyncNotifier<SaveGame> {
       next,
       ref.read(clockProvider).now().toUtc(),
       enhance: data.enhanceConfig,
+      research: data.researchFx(s.researchLevels),
     );
     if (r.save == null) return r.error;
     await _commit(r.save!);
@@ -3378,7 +3392,15 @@ class SaveController extends AsyncNotifier<SaveGame> {
     for (final k in _breakMats) {
       mats[k] = (mats[k] ?? 0) - matCost;
     }
-    final endsAt = now.add(Duration(seconds: cfg.breakthroughDuration(tier)));
+    final endsAt = now.add(
+      Duration(
+        seconds: researchScaledSeconds(
+          cfg.breakthroughDuration(tier),
+          ref.read(gameDataProvider).requireValue.researchFx(s.researchLevels),
+          ResearchEffect.trainTime,
+        ),
+      ),
+    );
     final bugs = List<IndividualBug>.from(s.bugs);
     bugs[idx] = bug.copyWith(breakthroughEndsAt: endsAt);
     await _commit(s.copyWith(gold: s.gold - gold, materials: mats, bugs: bugs));
@@ -3448,13 +3470,16 @@ class SaveController extends AsyncNotifier<SaveGame> {
     final sp = data.speciesById[bug.speciesId];
     if (sp == null) return false;
     // 스킨 계열 편의 보너스(§2.6 — 시간만, 전투 스탯 아님).
-    final sec =
-        data.iapConfig?.skinnedIncubateSeconds(
+    final sec = researchScaledSeconds(
+      data.iapConfig?.skinnedIncubateSeconds(
+            cfg.incubateDuration(cfg.rarityOf(bug, sp)),
+            s.ownedSkins,
+            bug.speciesId,
+          ) ??
           cfg.incubateDuration(cfg.rarityOf(bug, sp)),
-          s.ownedSkins,
-          bug.speciesId,
-        ) ??
-        cfg.incubateDuration(cfg.rarityOf(bug, sp));
+      data.researchFx(s.researchLevels),
+      ResearchEffect.hatchTime,
+    );
     final endsAt = now.add(Duration(seconds: sec));
     final inc = Map<String, DateTime>.from(s.incubating)..[bugId] = endsAt;
     await _commit(s.copyWith(incubating: inc));
@@ -4736,17 +4761,21 @@ class SaveController extends AsyncNotifier<SaveGame> {
       // 스킨 계열 편의 보너스(산란 시간 −N%, 2026-10-08). 서버와 같은 함수.
       endsAt: now.add(
         Duration(
-          seconds:
-              ref
-                  .read(gameDataProvider)
-                  .value
-                  ?.iapConfig
-                  ?.skinnedBreedSeconds(
-                    cfg.breedingDuration(cfg.rarityOf(mother, sp)),
-                    s.ownedSkins,
-                    sp.id,
-                  ) ??
-              cfg.breedingDuration(cfg.rarityOf(mother, sp)),
+          seconds: researchScaledSeconds(
+            ref
+                    .read(gameDataProvider)
+                    .value
+                    ?.iapConfig
+                    ?.skinnedBreedSeconds(
+                      cfg.breedingDuration(cfg.rarityOf(mother, sp)),
+                      s.ownedSkins,
+                      sp.id,
+                    ) ??
+                cfg.breedingDuration(cfg.rarityOf(mother, sp)),
+            ref.read(gameDataProvider).value?.researchFx(s.researchLevels) ??
+                ResearchEffects.none,
+            ResearchEffect.breedTime,
+          ),
         ),
       ),
       seed: seed,

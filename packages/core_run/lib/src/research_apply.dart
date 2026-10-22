@@ -68,3 +68,16 @@ CharacterStats applyResearchIdleStats(CharacterStats s, ResearchEffects e) {
 /// 방치 효율 = [base](run_config `offlineEfficiency`) × (1 + 방치 효율 연구) — 곤충학자 패스 골드 배율과도 곱(설계 §8).
 double researchOfflineEfficiency(double base, ResearchEffects e) =>
     base * (1 + e.of(ResearchEffect.offline));
+
+/// 연구소 **시간 단축**(설계 §3.7) — `seconds × (1 − v)` 올림, 최소 1초. v=0 이면 그대로(앱·서버 공용).
+/// 스킨 단축 결과에 **곱**한다(스킨 먼저, 연구 나중).
+int researchScaledSeconds(
+  int seconds,
+  ResearchEffects e,
+  ResearchEffect kind,
+) {
+  final v = e.of(kind);
+  if (v <= 0 || seconds <= 0) return seconds;
+  final scaled = (seconds * (1 - v)).ceil();
+  return scaled < 1 ? 1 : scaled;
+}
