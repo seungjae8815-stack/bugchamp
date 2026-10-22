@@ -177,6 +177,18 @@
 - [ ] **Step 5:** 테스트 PASS · `dart test`(server) PASS
 - [ ] **Step 6:** 커밋 `feat(research): 결투·대회 공격/방어/체력 (다 찍은 쪽 80%대)`
 
+### Task 6b: 추가 연구 15종 효과 연결 (스펙 §10)
+
+**Files:** 효과마다 그 수치를 계산하는 기존 함수 한 곳(앱·서버·시뮬 공용인 곳)에 `researchEffects` 를 곱한다. 찾을 곳(구현자가 확인):
+치명 피해·재생·경험치 = `huntStatsUncapped` 의 `applyResearchStats`(Task 4) 확장 · 회피 = 회피 예산(`evadeBudget*`, run_config) 에 `evadeBudgetResearch` 0.20 추가 · 스킬 쿨 = `skillCooldownBudgetGear` 옆 `skillCooldownBudgetResearch` 0.20 ·
+제련/초월 시간 = forge_config 시간 함수 · 별 강화 시간 = 별 강화 시간 함수 · 다듬기 비용 = polish 비용 함수 · 혈통 = `BreedingSlot.hatch()` 의 `breedingTraitNew` · 약초학 = `rollPotionDrop` 의 확률(한도 그대로) ·
+분해 = 분해·방생 재료 함수(젤리 제외) · 교환 = `exchangeOutput` · 선물·일일 = `huntMinutesReward` 를 부르는 선물·일일보상 지급(젤리 제외) · 결투 치명 = `_buildDuelTeam`(Task 6) `withTraining(crit:)` · 근성 = 같은 곳 `grit` 또는 탭 문턱.
+서버 허용치: `_huntRewardAllowance`·`_exchangeAllowance`·`_enforceGrade`·재료 상한에 같은 배율.
+- [ ] Step 1: 효과마다 "연구 0 이면 그대로 · 최대면 기대 배율" 테스트 + 서버 허용치 테스트(연구 최대 계정의 정당 수입이 안 잘림)
+- [ ] Step 2: FAIL → Step 3: 구현 → Step 4: 전 패키지 테스트 PASS
+- [ ] Step 5: `balance_sim --tiers=4 --no-fairy --research` 재측정(회피 60% 포함) — 극한 일수 보고
+- [ ] Step 6: 커밋 `feat(research): 추가 연구 15종 효과`
+
 ### Task 7: 연구 재화 드롭 — 온라인 + 패스 방치
 
 **Files:**
