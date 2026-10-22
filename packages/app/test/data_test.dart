@@ -444,6 +444,20 @@ void main() {
     });
   });
 
+  test('research.json 로드 · 효과 키 · 선행 유효', () {
+    final raw = _readJson('assets/data/research.json');
+    final cfg = ResearchConfig.fromJson(raw); // 모르는 분야·효과 키는 throw
+    expect(cfg.defs.length, 14);
+    final ids = cfg.defs.map((d) => d.id).toSet();
+    for (final d in cfg.defs) {
+      expect(ids, contains(d.requires?.id ?? d.id), reason: d.id);
+    }
+    expect(
+      {for (final d in cfg.defs) d.effect}.length,
+      ResearchEffect.values.length,
+    );
+  });
+
   group('장비·공방·스킬 (신규)', () {
     final items = ItemConfig.fromJson(_readJson('assets/data/items.json'));
     final forge = ForgeConfig.fromJson(_readJson('assets/data/forge.json'));

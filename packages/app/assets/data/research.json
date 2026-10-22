@@ -1,0 +1,448 @@
+{
+  "_comment": "연구소(2026-10-22 설계 docs/superpowers/specs/2026-10-22-research-lab-design.md). 곡선 숫자는 임시 — Task 3 이 다시 채운다. kind = ResearchEffect 키.",
+  "instantJellyPerMinute": 1.0,
+  "instantJellyExponent": 0.58,
+  "slotsByTier": [
+    1,
+    1,
+    2,
+    3
+  ],
+  "slotJelly": [
+    100,
+    300
+  ],
+  "eliteDropChance": 0.01,
+  "eliteDropAmount": 1,
+  "bossFirstDrop": 5,
+  "bossRepeatDrop": 2,
+  "bossRepeatChance": 0.1,
+  "duelCap": 0.1,
+  "research": [
+    {
+      "id": "jaw",
+      "branch": "hunt",
+      "kind": "huntAtk",
+      "maxLevel": 10,
+      "name": {
+        "ko": "턱 강화",
+        "en": "Jaw Training",
+        "ja": "顎の強化"
+      },
+      "requires": null,
+      "effect": {
+        "perLevel": 0.03,
+        "growth": 1.0
+      },
+      "time": {
+        "firstSeconds": 1800,
+        "growth": 1.5
+      },
+      "cost": {
+        "samplesFirst": 3,
+        "goldMinutesFirst": 20,
+        "materialMinutesFirst": 10,
+        "fossilFrom": 6,
+        "fossilFirst": 20,
+        "growth": 1.4
+      }
+    },
+    {
+      "id": "shell",
+      "branch": "hunt",
+      "kind": "huntHpDef",
+      "maxLevel": 10,
+      "name": {
+        "ko": "껍질 단련",
+        "en": "Shell Hardening",
+        "ja": "外殻の鍛錬"
+      },
+      "requires": {
+        "id": "jaw",
+        "level": 5
+      },
+      "effect": {
+        "perLevel": 0.03,
+        "growth": 1.0
+      },
+      "time": {
+        "firstSeconds": 1800,
+        "growth": 1.5
+      },
+      "cost": {
+        "samplesFirst": 3,
+        "goldMinutesFirst": 20,
+        "materialMinutesFirst": 10,
+        "fossilFrom": 6,
+        "fossilFirst": 20,
+        "growth": 1.4
+      }
+    },
+    {
+      "id": "instinct",
+      "branch": "hunt",
+      "kind": "find",
+      "maxLevel": 10,
+      "name": {
+        "ko": "채집 본능",
+        "en": "Gathering Instinct",
+        "ja": "採集本能"
+      },
+      "requires": {
+        "id": "shell",
+        "level": 5
+      },
+      "effect": {
+        "perLevel": 0.03,
+        "growth": 1.0
+      },
+      "time": {
+        "firstSeconds": 1800,
+        "growth": 1.5
+      },
+      "cost": {
+        "samplesFirst": 3,
+        "goldMinutesFirst": 20,
+        "materialMinutesFirst": 10,
+        "fossilFrom": 6,
+        "fossilFirst": 20,
+        "growth": 1.4
+      }
+    },
+    {
+      "id": "antenna",
+      "branch": "hunt",
+      "kind": "gold",
+      "maxLevel": 10,
+      "name": {
+        "ko": "더듬이 탐사",
+        "en": "Antenna Survey",
+        "ja": "触角探査"
+      },
+      "requires": {
+        "id": "instinct",
+        "level": 5
+      },
+      "effect": {
+        "perLevel": 0.03,
+        "growth": 1.0
+      },
+      "time": {
+        "firstSeconds": 1800,
+        "growth": 1.5
+      },
+      "cost": {
+        "samplesFirst": 3,
+        "goldMinutesFirst": 20,
+        "materialMinutesFirst": 10,
+        "fossilFrom": 6,
+        "fossilFirst": 20,
+        "growth": 1.4
+      }
+    },
+    {
+      "id": "bossHunter",
+      "branch": "hunt",
+      "kind": "bossDmg",
+      "maxLevel": 10,
+      "name": {
+        "ko": "대물 사냥",
+        "en": "Big Game Hunting",
+        "ja": "大物狩り"
+      },
+      "requires": {
+        "id": "antenna",
+        "level": 5
+      },
+      "effect": {
+        "perLevel": 0.03,
+        "growth": 1.0
+      },
+      "time": {
+        "firstSeconds": 1800,
+        "growth": 1.5
+      },
+      "cost": {
+        "samplesFirst": 3,
+        "goldMinutesFirst": 20,
+        "materialMinutesFirst": 10,
+        "fossilFrom": 6,
+        "fossilFirst": 20,
+        "growth": 1.4
+      }
+    },
+    {
+      "id": "idleEff",
+      "branch": "hunt",
+      "kind": "offline",
+      "maxLevel": 10,
+      "name": {
+        "ko": "휴식 효율",
+        "en": "Rest Efficiency",
+        "ja": "休息効率"
+      },
+      "requires": {
+        "id": "bossHunter",
+        "level": 5
+      },
+      "effect": {
+        "perLevel": 0.02,
+        "growth": 1.0
+      },
+      "time": {
+        "firstSeconds": 1800,
+        "growth": 1.5
+      },
+      "cost": {
+        "samplesFirst": 3,
+        "goldMinutesFirst": 20,
+        "materialMinutesFirst": 10,
+        "fossilFrom": 6,
+        "fossilFirst": 20,
+        "growth": 1.4
+      }
+    },
+    {
+      "id": "incubator",
+      "branch": "nurture",
+      "kind": "hatchTime",
+      "maxLevel": 10,
+      "name": {
+        "ko": "부화 연구",
+        "en": "Incubation Study",
+        "ja": "孵化研究"
+      },
+      "requires": null,
+      "effect": {
+        "perLevel": 0.03,
+        "growth": 1.0
+      },
+      "time": {
+        "firstSeconds": 1800,
+        "growth": 1.5
+      },
+      "cost": {
+        "samplesFirst": 3,
+        "goldMinutesFirst": 20,
+        "materialMinutesFirst": 10,
+        "fossilFrom": 6,
+        "fossilFirst": 20,
+        "growth": 1.4
+      }
+    },
+    {
+      "id": "nest",
+      "branch": "nurture",
+      "kind": "breedTime",
+      "maxLevel": 10,
+      "name": {
+        "ko": "산란 연구",
+        "en": "Nesting Study",
+        "ja": "産卵研究"
+      },
+      "requires": {
+        "id": "incubator",
+        "level": 5
+      },
+      "effect": {
+        "perLevel": 0.03,
+        "growth": 1.0
+      },
+      "time": {
+        "firstSeconds": 1800,
+        "growth": 1.5
+      },
+      "cost": {
+        "samplesFirst": 3,
+        "goldMinutesFirst": 20,
+        "materialMinutesFirst": 10,
+        "fossilFrom": 6,
+        "fossilFirst": 20,
+        "growth": 1.4
+      }
+    },
+    {
+      "id": "trainLore",
+      "branch": "nurture",
+      "kind": "trainTime",
+      "maxLevel": 10,
+      "name": {
+        "ko": "훈련 이론",
+        "en": "Training Theory",
+        "ja": "訓練理論"
+      },
+      "requires": {
+        "id": "nest",
+        "level": 5
+      },
+      "effect": {
+        "perLevel": 0.03,
+        "growth": 1.0
+      },
+      "time": {
+        "firstSeconds": 1800,
+        "growth": 1.5
+      },
+      "cost": {
+        "samplesFirst": 3,
+        "goldMinutesFirst": 20,
+        "materialMinutesFirst": 10,
+        "fossilFrom": 6,
+        "fossilFirst": 20,
+        "growth": 1.4
+      }
+    },
+    {
+      "id": "researchEff",
+      "branch": "nurture",
+      "kind": "researchTime",
+      "maxLevel": 10,
+      "name": {
+        "ko": "연구 효율",
+        "en": "Research Efficiency",
+        "ja": "研究効率"
+      },
+      "requires": {
+        "id": "trainLore",
+        "level": 5
+      },
+      "effect": {
+        "perLevel": 0.02,
+        "growth": 1.0
+      },
+      "time": {
+        "firstSeconds": 1800,
+        "growth": 1.5
+      },
+      "cost": {
+        "samplesFirst": 3,
+        "goldMinutesFirst": 20,
+        "materialMinutesFirst": 10,
+        "fossilFrom": 6,
+        "fossilFirst": 20,
+        "growth": 1.4
+      }
+    },
+    {
+      "id": "duelMuscle",
+      "branch": "duel",
+      "kind": "duelAtk",
+      "maxLevel": 10,
+      "name": {
+        "ko": "근육 단련",
+        "en": "Muscle Training",
+        "ja": "筋力鍛錬"
+      },
+      "requires": null,
+      "effect": {
+        "perLevel": 0.01,
+        "growth": 1.0
+      },
+      "time": {
+        "firstSeconds": 1800,
+        "growth": 1.5
+      },
+      "cost": {
+        "samplesFirst": 3,
+        "goldMinutesFirst": 20,
+        "materialMinutesFirst": 10,
+        "fossilFrom": 6,
+        "fossilFirst": 20,
+        "growth": 1.4
+      }
+    },
+    {
+      "id": "duelArmor",
+      "branch": "duel",
+      "kind": "duelDef",
+      "maxLevel": 10,
+      "name": {
+        "ko": "갑피 단련",
+        "en": "Carapace Training",
+        "ja": "甲殻鍛錬"
+      },
+      "requires": {
+        "id": "duelMuscle",
+        "level": 5
+      },
+      "effect": {
+        "perLevel": 0.01,
+        "growth": 1.0
+      },
+      "time": {
+        "firstSeconds": 1800,
+        "growth": 1.5
+      },
+      "cost": {
+        "samplesFirst": 3,
+        "goldMinutesFirst": 20,
+        "materialMinutesFirst": 10,
+        "fossilFrom": 6,
+        "fossilFirst": 20,
+        "growth": 1.4
+      }
+    },
+    {
+      "id": "duelVigor",
+      "branch": "duel",
+      "kind": "duelHp",
+      "maxLevel": 10,
+      "name": {
+        "ko": "체력 단련",
+        "en": "Vigor Training",
+        "ja": "体力鍛錬"
+      },
+      "requires": {
+        "id": "duelArmor",
+        "level": 5
+      },
+      "effect": {
+        "perLevel": 0.01,
+        "growth": 1.0
+      },
+      "time": {
+        "firstSeconds": 1800,
+        "growth": 1.5
+      },
+      "cost": {
+        "samplesFirst": 3,
+        "goldMinutesFirst": 20,
+        "materialMinutesFirst": 10,
+        "fossilFrom": 6,
+        "fossilFirst": 20,
+        "growth": 1.4
+      }
+    },
+    {
+      "id": "recovery",
+      "branch": "duel",
+      "kind": "injuryTime",
+      "maxLevel": 10,
+      "name": {
+        "ko": "회복 연구",
+        "en": "Recovery Study",
+        "ja": "回復研究"
+      },
+      "requires": {
+        "id": "duelVigor",
+        "level": 5
+      },
+      "effect": {
+        "perLevel": 0.03,
+        "growth": 1.0
+      },
+      "time": {
+        "firstSeconds": 1800,
+        "growth": 1.5
+      },
+      "cost": {
+        "samplesFirst": 3,
+        "goldMinutesFirst": 20,
+        "materialMinutesFirst": 10,
+        "fossilFrom": 6,
+        "fossilFirst": 20,
+        "growth": 1.4
+      }
+    }
+  ]
+}

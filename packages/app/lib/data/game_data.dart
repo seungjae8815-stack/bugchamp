@@ -21,6 +21,7 @@ class GameData {
     this.skillConfig,
     this.fairyConfig,
     this.guildConfig = const GuildConfig(),
+    this.researchConfig,
     this.missionConfig,
     this.petConfig,
     this.dailyConfig,
@@ -61,6 +62,9 @@ class GameData {
 
   /// 길드 기본 규칙(guild.json) — 화면 안내용. 검사는 서버가 같은 파일로 한다.
   final GuildConfig guildConfig;
+
+  /// 연구소(research.json).
+  final ResearchConfig? researchConfig;
 
   /// 미션 설정 (에셋 로드 시 채워짐. 일부 테스트에선 null).
   final MissionConfig? missionConfig;
@@ -124,6 +128,7 @@ class GameData {
     Map<String, dynamic>? skillConfig,
     Map<String, dynamic>? fairyConfig,
     Map<String, dynamic>? guildConfig,
+    Map<String, dynamic>? researchConfig,
     Map<String, dynamic>? missionConfig,
     Map<String, dynamic>? petConfig,
     Map<String, dynamic>? dailyConfig,
@@ -171,6 +176,9 @@ class GameData {
           ? null
           : FairyConfig.fromJson(fairyConfig),
       guildConfig: GuildConfig.fromJson(guildConfig),
+      researchConfig: researchConfig == null
+          ? null
+          : ResearchConfig.fromJson(researchConfig),
       missionConfig: missionConfig == null
           ? null
           : MissionConfig.fromJson(missionConfig),
@@ -223,6 +231,7 @@ class GameData {
       read('event.json'),
       read('fairies.json'),
       read('guild.json'),
+      read('research.json'),
     ]);
     return GameData.fromDecoded(
       species: results[0],
@@ -248,6 +257,7 @@ class GameData {
       eventConfig: results[20],
       fairyConfig: results[21],
       guildConfig: results[22],
+      researchConfig: results[23],
     );
   }
 }
