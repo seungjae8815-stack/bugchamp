@@ -86,6 +86,8 @@ DuelBug duelBugFor(
 ) {
   final sp = data.species(bug.speciesId);
   final t = _trainOf(bug, data, save);
+  // 연구소 결투 분야(설계 §9) — 서버 `_buildDuelTeam` 과 같은 자리(등급 보정 뒤 · 오라 앞)에서 곱한다.
+  final fx = data.researchFx(save.researchLevels);
   return DuelBug.fromBattleBug(
         battleBugFor(bug, data, save, locale),
         speciesId: bug.speciesId,
@@ -109,6 +111,11 @@ DuelBug duelBugFor(
         grit: t.grit,
       )
       .withGradeMods(data.petConfig, bug, sp)
+      .withTraining(
+        atkMult: 1 + fx.of(ResearchEffect.duelAtk),
+        defMult: 1 + fx.of(ResearchEffect.duelDef),
+        hpMult: 1 + fx.of(ResearchEffect.duelHp),
+      )
       .withAuraOf(bug, sp, data, save);
 }
 
@@ -181,13 +188,14 @@ extension on DuelBug {
 /// 결투 탭·순위표와 같은 값이다(새 공식 아님). 단계와 무관하게 다 계산해 두고, 성충만 보여 주는 건 화면 몫이다.
 ///
 /// 그리드가 50~100마리라 같은 입력이면 다시 계산하지 않는다 — 전투력이 보는 세이브 칸(곤충 목록·훈련 포인트·
-/// 옛 훈련 단계)과 게임 데이터가 **같은 객체**면 지난 결과를 그대로 돌려준다(세이브는 불변이라 바뀌면 새 객체다).
+/// 옛 훈련 단계·연구 레벨)과 게임 데이터가 **같은 객체**면 지난 결과를 그대로 돌려준다(세이브는 불변이라 바뀌면 새 객체다).
 Map<String, double> duelPowersOf(SaveGame save, GameData data) {
   final c = _powerCache;
   if (c != null &&
       identical(c.bugs, save.bugs) &&
       identical(c.trainPoints, save.trainPoints) &&
       identical(c.duelTraining, save.duelTraining) &&
+      identical(c.researchLevels, save.researchLevels) &&
       identical(c.data, data)) {
     return c.result;
   }
@@ -200,6 +208,7 @@ Map<String, double> duelPowersOf(SaveGame save, GameData data) {
     bugs: save.bugs,
     trainPoints: save.trainPoints,
     duelTraining: save.duelTraining,
+    researchLevels: save.researchLevels,
     data: data,
     result: result,
   );
@@ -210,6 +219,7 @@ Map<String, double> duelPowersOf(SaveGame save, GameData data) {
   Object bugs,
   Object trainPoints,
   Object duelTraining,
+  Object researchLevels,
   GameData data,
   Map<String, double> result,
 })?

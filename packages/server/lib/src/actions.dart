@@ -2908,6 +2908,12 @@ class GameActions {
     }
     final byId = {for (final b in save.bugs) b.id: b};
     final tr = config.battle.training;
+    // 연구소 결투 분야(설계 §9) — 이 세이브의 연구(방어팀이면 상대 세이브)로 공격·방어·체력에 곱한다.
+    // 리그·방어팀·길드전·대회(`teamSize: 1`)가 모두 이 길을 탄다. 앱 `duelBugFor` 와 같은 배율.
+    final fx = _researchFx(save.researchLevels);
+    final rAtk = 1 + fx.of(ResearchEffect.duelAtk);
+    final rDef = 1 + fx.of(ResearchEffect.duelDef);
+    final rHp = 1 + fx.of(ResearchEffect.duelHp);
     return (
       team: [
         for (var i = 0; i < bugIds.length; i++)
@@ -2974,6 +2980,7 @@ class GameActions {
                   recovery: m.recovery,
                   pushMult: m.push,
                 )
+                .withTraining(atkMult: rAtk, defMult: rDef, hpMult: rHp)
                 .withAura(aura.role, aura.value);
           }(),
       ],

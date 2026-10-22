@@ -153,7 +153,9 @@ Future<void> main(List<String> args) async {
         a == '--team-fit' ||
         a == '--team-eval' ||
         a == '--event-fit' ||
-        a == '--rarity-fit',
+        a == '--rarity-fit' ||
+        a == '--research-fit' ||
+        a.startsWith('--research-a='),
   )) {
     _teamFit(actions, cfg, species, t0, args);
     return;
@@ -936,6 +938,26 @@ void _teamFit(
   }
 
   var scale = Map<String, double>.from(s0);
+  final resA = [
+    for (final a in args)
+      if (a.startsWith('--research-a='))
+        [for (final x in a.substring(13).split(',')) double.parse(x)],
+  ].firstOrNull;
+  if (resA != null || args.contains('--research-fit')) {
+    _researchTables(
+      actions,
+      cfg,
+      species,
+      args,
+      resA,
+      base: base,
+      team: (picks) => team(picks, scale, 'b'),
+      play: play,
+      opt: opt,
+      optD: optD,
+    );
+    return;
+  }
   if (args.contains('--rarity-fit')) {
     // 곤충 희귀도 결투 배율(1.0.22, pets.json → bugRarity.duelMult, 2026-10-16 사장님 확정 "전설 대 일반 65%").
     // 같은 종·같은 기질·같은 훈련의 3마리 팀끼리(거울) 한쪽만 체력·공격·방어 ×f — 승률이 목표가 되는 f 를 찾는다.
@@ -1121,4 +1143,160 @@ void _teamFit(
       '  ${row(s)} ${e0[s.id]!.toStringAsFixed(1)} → ${e1[s.id]!.toStringAsFixed(1)}',
     );
   }
+}
+
+/// 연구소 결투 분야(설계 §9) — 다 찍은 쪽(A) 대 안 찍은 쪽(B), 다른 조건(종·기질·훈련)은 같다.
+///
+///   dart run tool/duel_build_sim.dart --research-a=0.15,0.15,0.15     # A 공격·방어·체력 +15% — 3마리·1마리·대회·전투력
+///   dart run tool/duel_build_sim.dart --research-fit --research-goal=0.82   # 셋 같은 배율로 3마리 승률 목표 찾기
+///   --rm=3000(3마리 경기 수) · --n1=2000(1마리 판 수) · --ev=4(대회 회차)
+///
+/// 3마리 경기는 같은 무작위 팀 거울(오라 켬 — 연구는 오라 앞에 곱한다, 서버 `_buildDuelTeam` 과 같은 순서).
+void _researchTables(
+  GameActions actions,
+  GameConfig cfg,
+  List<Species> species,
+  List<String> args,
+  List<double>? resA, {
+  required Map<String, Map<Temperament, DuelBug>> base,
+  required List<DuelBug> Function(List<(Species, Temperament)>) team,
+  required double Function(List<DuelBug>, List<DuelBug>, int) play,
+  required int Function(String, int) opt,
+  required double Function(String, double) optD,
+}) {
+  final p = actions.duelParams;
+  final aura = cfg.battle.teamAura;
+  final temps = Temperament.values;
+  final games = opt('rm', 3000);
+  final n1 = opt('n1', 2000);
+  final evSeeds = opt('ev', 4);
+  String pct(double v) => '${(v * 100).toStringAsFixed(1)}%';
+  DuelBug up(DuelBug d, List<double> m) =>
+      d.withTraining(atkMult: 1 + m[0], defMult: 1 + m[1], hpMult: 1 + m[2]);
+
+  final rng0 = math.Random(2026);
+  (Species, Temperament) pick() => (
+    species[rng0.nextInt(species.length)],
+    temps[rng0.nextInt(temps.length)],
+  );
+  final picks = [
+    for (var i = 0; i < games; i++) [pick(), pick(), pick()],
+  ];
+
+  double rate3(List<double> m) {
+    var w = 0.0;
+    for (var i = 0; i < games; i++) {
+      final b = team(picks[i]);
+      // 오라를 벗기고(같은 팀이라 오라 크기·역할은 그대로) 연구를 곱한 뒤 다시 입힌다.
+      final raw = [
+        for (var k = 0; k < 3; k++)
+          up(base[picks[i][k].$1.id]![picks[i][k].$2]!, m),
+      ];
+      final a = aura.enabled
+          ? applyTeamAura(raw, capPerStat: aura.capPerStat)
+          : raw;
+      w += play(a, b, 7001 + i);
+    }
+    return w / games;
+  }
+
+  double rate1(List<double> m) {
+    final rng = math.Random(77);
+    var w = 0.0;
+    for (var g = 0; g < n1; g++) {
+      final sp = species[rng.nextInt(species.length)];
+      final t = temps[rng.nextInt(temps.length)];
+      final b = base[sp.id]![t]!.withAura(null, 0);
+      final a = up(b, m);
+      final flip = g.isOdd;
+      final bout = simulateBout(
+        seed: 300000 + g,
+        a: flip ? b : a,
+        b: flip ? a : b,
+        params: p,
+        arena: p.arenaOn ? duelArenaOf(300000 + g) : null,
+      );
+      final aWon = flip ? !bout.aWon : bout.aWon;
+      w += bout.winner < 0 ? 0.5 : (aWon ? 1.0 : 0.0);
+    }
+    return w / n1;
+  }
+
+  double waves(List<double> m) {
+    final spec = actions.eventDuelSpec;
+    final ep = actions.eventDuelParams;
+    var sum = 0, cnt = 0;
+    for (final sp in species) {
+      for (final t in temps) {
+        final me = up(base[sp.id]![t]!.withAura(null, 0), m);
+        for (var rs = 1; rs <= evSeeds; rs++) {
+          final roundSeed = rs * 9973;
+          var run = const EventDuelRun();
+          while (!run.over) {
+            run = eventDuelFight(
+              seed: roundSeed * 31 + 7,
+              run: run,
+              bug: me,
+              enemy: actions.eventDuelEnemyOf(
+                roundSeed,
+                run.wave,
+                cfg.speciesById,
+              ),
+              params: ep,
+              spec: spec,
+              roundSeed: roundSeed,
+            ).run;
+          }
+          sum += run.cleared;
+          cnt++;
+        }
+      }
+    }
+    return sum / cnt;
+  }
+
+  double powerRatio(List<double> m) {
+    var s = 0.0, c = 0;
+    for (final sp in species) {
+      for (final t in temps) {
+        final b = base[sp.id]![t]!;
+        s += up(b, m).powerIn(p) / b.powerIn(p);
+        c++;
+      }
+    }
+    return s / c;
+  }
+
+  var m = resA;
+  if (m == null) {
+    final goal = optD('research-goal', 0.82);
+    var lo = 0.0, hi = 1.0;
+    for (var it = 0; it < 12; it++) {
+      final mid = (lo + hi) / 2;
+      if (rate3([mid, mid, mid]) < goal) {
+        lo = mid;
+      } else {
+        hi = mid;
+      }
+    }
+    final f = (lo + hi) / 2;
+    stdout.writeln('연구 맞추기: 3마리 승률 ${pct(goal)} → 공격·방어·체력 각 +${pct(f)}');
+    m = [f, f, f];
+  }
+  stdout.writeln(
+    '연구 A: 공격 +${pct(m[0])} · 방어 +${pct(m[1])} · 체력 +${pct(m[2])} (B 연구 없음 · 같은 종·기질·훈련)',
+  );
+  stdout.writeln('  3마리 경기 A 승률 ${pct(rate3(m))} ($games경기 · 오라 켬)');
+  stdout.writeln('  1마리 한 판 A 승률 ${pct(rate1(m))} ($n1판)');
+  for (var k = 0; k < 3; k++) {
+    final one = [0.0, 0.0, 0.0]..[k] = m[k];
+    stdout.writeln(
+      '    ${['공격', '방어', '체력'][k]}만: 3마리 ${pct(rate3(one))} · 1마리 ${pct(rate1(one))}',
+    );
+  }
+  final w0 = waves(const [0, 0, 0]), w1 = waves(m);
+  stdout.writeln(
+    '  대회 평균 도달 웨이브(카드 없음 · 기질 5 × 회차 $evSeeds) ${w0.toStringAsFixed(1)} → ${w1.toStringAsFixed(1)} (+${(w1 - w0).toStringAsFixed(1)})',
+  );
+  stdout.writeln('  전투력 비(연구/없음) ×${powerRatio(m).toStringAsFixed(3)}');
 }
