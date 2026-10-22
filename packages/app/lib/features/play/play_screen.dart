@@ -7250,8 +7250,12 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
             const SizedBox(height: 8),
           ],
           // 공략집 — 오행·기질·특성 등 용어 설명(2026-10-01 사장님 요청).
+          // 버튼이 창 폭을 꽉 채워 바깥(-3)에 붙인 점이 창 가장자리에 잘렸다(2026-10-22 사장님) —
+          // 버튼 안쪽 오른쪽 위 끝에 둔다(버튼 둘레 터치 여백 4px 만큼 들인다).
           RedDotBadge(
             show: !ref.read(guideSeenProvider),
+            top: 6,
+            right: 6,
             child: SizedBox(
               width: double.infinity,
               child: OutlinedButton.icon(
