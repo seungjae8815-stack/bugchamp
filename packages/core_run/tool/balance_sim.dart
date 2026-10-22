@@ -1079,7 +1079,7 @@ void _printResearchIncome(_Player sim) {
   stdout.writeln('');
   for (final r in sim.incomeLog) {
     stdout.writeln(
-      '@research-income ${jsonEncode({'day': r.day, 'tier': r.tier, 'zone': r.zone, 'activeHours': _activeHoursPerDay, 'onlineGold': r.online, 'onlineMats': r.onlineMats, 'hourGold': r.hourGold, 'hourMats': r.hourMats, 'kills': r.onlineKills, 'elites': r.onlineKills * sim.config.eliteChance, 'bossKills': r.bossKills, 'fossil': fossilPerDay})}',
+      '@research-income ${jsonEncode({'day': r.day, 'tier': r.tier, 'zone': r.zone, 'activeHours': _activeHoursPerDay, 'onlineGold': r.online, 'onlineMats': r.onlineMats, 'hourGold': r.hourGold, 'hourMats': r.hourMats, 'offBattleGold': r.offBattleGold, 'offBattleMats': r.offBattleMats, 'toUpgrades': r.toUpgrades, 'kills': r.onlineKills, 'elites': r.onlineKills * sim.config.eliteChance, 'bossKills': r.bossKills, 'fossil': fossilPerDay})}',
     );
   }
   stdout.writeln('');
@@ -2082,10 +2082,13 @@ class _Player {
     double giftCount,
     double capGold,
     double capMats,
+    double gold,
+    double mats,
   })
   _addOffBattleIncome(double d) {
     final inc = _offBattleIncomeDay();
     gold += inc.gold * d;
+    _toUpgradesAcc += inc.gold * d;
     _goldEarned += inc.gold * d;
     for (final k in const [
       MaterialKind.chitin,
@@ -2096,6 +2099,8 @@ class _Player {
       earnedMaterials[k] = (earnedMaterials[k] ?? 0) + inc.mats * d;
     }
     return (
+      gold: inc.gold * d,
+      mats: inc.mats * d,
       giftGold: inc.giftGold * d,
       dailyGold: inc.dailyGold * d,
       giftEach: inc.giftEach,
@@ -2124,6 +2129,9 @@ class _Player {
       double bossKills,
       double hourGold,
       double hourMats,
+      double offBattleGold,
+      double offBattleMats,
+      double toUpgrades,
     })
   >
   incomeLog = [];
@@ -2134,6 +2142,9 @@ class _Player {
   /// 이번 날 활동 중 처치 수 · 활동 중 재료(종류당) · 잡은 사냥터 보스 수 — 연구소 표(`research_table`) 입력.
   double _onlineKillsAcc = 0, _onlineMatsAcc = 0, _bossKillsAcc = 0;
 
+  /// 이번 날 강화에 쓸 수 있게 들어온 골드(처치 − 공방 몫 + 전투 밖 + 사냥터 클리어) — 연구가 깎는 몫의 분모.
+  double _toUpgradesAcc = 0;
+
   void playDay() {
     // 전투 밖 보상(선물·일일·미션·결투) — 2026-10-08 부터 선물·일일보상은 **이 유저의 사냥 N분치**.
     final day = elapsedDays;
@@ -2143,6 +2154,7 @@ class _Player {
     _onlineKillsAcc = 0;
     _onlineMatsAcc = 0;
     _bossKillsAcc = 0;
+    _toUpgradesAcc = 0;
     // 접속 보너스는 **활동 구간에만** — 켜두는 쪽이 이득이어야 한다.
     // 선물·일일보상은 활동 구간 **한가운데** 능력치로 잰다 — 선물은 접속 중에 계속 나오고
     // 하루 시작 시점으로 재면 새 난이도 첫날(강화 0)이 0 에 가깝게 잡힌다.
@@ -2172,6 +2184,9 @@ class _Player {
       bossKills: _bossKillsAcc,
       hourGold: hour.gold,
       hourMats: hour.mats,
+      offBattleGold: inc.gold,
+      offBattleMats: inc.mats,
+      toUpgrades: _toUpgradesAcc,
     ));
   }
 
@@ -2564,7 +2579,10 @@ class _Player {
           // chapterClearHours 시간치). 빼고 재면 초반이 시뮬보다 빠르다.
           // 최종 사냥터는 앱이 스테이지를 옮기지 않아 클리어로 기록되지 않고,
           // 회차 전환이 골드를 0 으로 하므로 어차피 남지 않는다 — 주지 않는다.
-          if (!config.isFinalZone(z)) gold += zoneClearGold(z);
+          if (!config.isFinalZone(z)) {
+            gold += zoneClearGold(z);
+            _toUpgradesAcc += zoneClearGold(z);
+          }
           stage = config.isFinalZone(z)
               ? stage + config.worldSize
               : config.zoneStartStage(z + 1);
@@ -2801,6 +2819,7 @@ class _Player {
           : 0.0;
       forgeFund += toForge;
       gold += earned - toForge;
+      _toUpgradesAcc += earned - toForge;
       _goldEarned += earned;
       goldEarnedByDay[elapsedDays.floor()] = _goldEarned;
       _gainXp(prog.xp);

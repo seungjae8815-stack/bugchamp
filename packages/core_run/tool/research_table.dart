@@ -6,12 +6,14 @@
 //   dart run tool/research_table.dart --income=%TEMP%\income3h.txt          # 지금 research.json 을 잰다
 //   dart run tool/research_table.dart --income=%TEMP%\income3h.txt --fit    # 곡선을 다시 맞춰 JSON 조각을 찍는다
 //   dart run tool/research_table.dart --income=%TEMP%\income3h.txt --fit --write   # research.json 에 반영
+//   dart run tool/research_table.dart --income=%TEMP%\income3h.txt --fit --level-cap=0   # 한 레벨 상한(기본 540분) 없이
 //
 // 맞추는 목표(사장님 확정 · 컨트롤러 판정):
 //  - 시간: 무과금 칸 곡선(1칸 → 어려움 도착일부터 2칸 → 극한 도착일부터 3칸)을 **쉬지 않고** 돌릴 때
 //    14개 × 전 레벨이 [_targetDays](180)일에 끝난다. Lv1 = [_firstSeconds](5분) · Lv10 = [_kneeSeconds](12시간).
-//  - 골드·재료: 비용은 이미 "가 본 최고 사냥터의 사냥 N분치"라 분 단위로 맞춘다 — 180일 동안 하루 평균
-//    180분(3시간) × 50% = 90분치. 실제 활동 수입(버프·접속 보너스 포함) 대비 비율은 따로 보고만 한다.
+//  - 골드·재료: JSON 단위는 "가 본 최고 사냥터의 사냥 N분치"지만, 크기는 그날 **실제 활동 수입**
+//    (처치 + 선물·일일보상·미션, 방치 제외)의 180일 평균 50% 로 맞춘다(골드·재료 따로, 사장님 확정).
+//    한 레벨 상한(--level-cap, 기본 540분 — 회귀 테스트와 같다)에 걸리면 상한까지만 올리고 필요한 상한을 찍는다.
 //  - 연구 표본: 하루 3시간 정예·보스 드롭. 시간이 병목이 되게 합계 비용 = 180일 수입의 [_sampleShare](90%).
 //    Lv1 = 표본 1개로 두고 정예 드롭 확률을 맞춘다.
 //  - 화석: 마지막 [_fossilLevels] 레벨에만. 합계 = 180일 활동 화석의 [_fossilShare](20%, 상한 30%).
@@ -33,7 +35,10 @@ const _maxLevel = 30;
 const _firstSeconds = 300.0;
 const _kneeLevel = 10;
 const _kneeSeconds = 12 * 3600.0;
-const _goldMinutesPerDay = 90.0; // 180분 × 50%
+
+/// 연구 골드·재료 = 그날 **실제로 지갑에 들어온** 활동 수입(처치 + 선물·일일보상·미션 등 전투 밖)의 50%
+/// (사장님 확정 2026-10-22 — 사냥 분치의 50% 가 아니다). 방치(오프라인) 정산은 뺀다(설계 §8).
+const _incomeShare = 0.5;
 const _sampleShare = 0.9;
 const _fossilShare = 0.2;
 const _fossilLevels = 10;
@@ -63,6 +68,9 @@ class IncomeDay {
       tier = (j['tier'] as num).toInt(),
       onlineGold = (j['onlineGold'] as num).toDouble(),
       onlineMats = (j['onlineMats'] as num).toDouble(),
+      offBattleGold = (j['offBattleGold'] as num?)?.toDouble() ?? 0,
+      offBattleMats = (j['offBattleMats'] as num?)?.toDouble() ?? 0,
+      toUpgrades = (j['toUpgrades'] as num?)?.toDouble() ?? 0,
       hourGold = (j['hourGold'] as num).toDouble(),
       hourMats = (j['hourMats'] as num).toDouble(),
       elites = (j['elites'] as num).toDouble(),
@@ -73,6 +81,13 @@ class IncomeDay {
   final double day;
   final int tier;
   final double onlineGold, onlineMats, hourGold, hourMats;
+
+  /// 선물·일일보상·미션 등 전투 밖 골드 · 재료(종류당) · 그날 강화에 쓸 수 있게 들어온 골드 전부(방치 포함).
+  final double offBattleGold, offBattleMats, toUpgrades;
+
+  /// 하루 활동 실제 수입(처치 + 전투 밖) — 골드 · 재료(종류당).
+  double get actualGold => onlineGold + offBattleGold;
+  double get actualMats => onlineMats + offBattleMats;
   final double elites, bossKills, fossil, activeHours;
 }
 
@@ -327,13 +342,14 @@ Map<String, dynamic> _withCurves(
   required double cg,
   required double cd,
   required double goldFirst,
+  required double matFirst,
   required double fossilFirst,
   double? eliteChance,
 }) {
   final out = jsonDecode(jsonEncode(raw)) as Map<String, dynamic>;
   out['_comment'] =
       '연구소(설계 docs/superpowers/specs/2026-10-22-research-lab-design.md). 시간·비용 곡선 · eliteDropChance · bossFirstDrop · 사냥·육성 effect · fitBasis 는 '
-      'tool/research_table.dart --fit --write 가 뽑는다 — 손으로 한 칸씩 고치지 않는다(하루 3시간 켜 둔 무과금 · 골드·재료 = 3시간 사냥분치의 50% · 약 180일). '
+      'tool/research_table.dart --fit --write 가 뽑는다 — 손으로 한 칸씩 고치지 않는다(하루 3시간 켜 둔 무과금 · 골드·재료 = 3시간 켜 둔 날 실제 수입의 50% 목표, 단 한 레벨 540분 상한이 먼저 · 약 180일). '
       '시간·비용: Lv1 = first, 한 단계 오를 때마다 × (1 + (growth−1)·decay^(i−1)). kind = ResearchEffect 키. 결투 공격·방어·체력 effect 는 결투 80% 맞추기가 정한다.';
   if (eliteChance != null) out['eliteDropChance'] = eliteChance;
   for (final e in out['research'] as List) {
@@ -350,7 +366,7 @@ Map<String, dynamic> _withCurves(
     m['cost'] = {
       'samplesFirst': 1,
       'goldMinutesFirst': goldFirst,
-      'materialMinutesFirst': goldFirst,
+      'materialMinutesFirst': matFirst,
       'fossilFrom': _maxLevel - _fossilLevels + 1,
       'fossilFirst': fossilFirst,
       'growth': cg,
@@ -371,11 +387,38 @@ List<double> _blocks(ScheduleResult s, Map<int, double> m) => [
         10,
 ];
 
+double _mean(List<double> v) => v.reduce((a, b) => a + b) / v.length;
+
+/// 180일 날짜별 비율 — 연구 골드(그날 자리 사냥 60분치로 환산) ÷ 활동 실제 수입, 재료도 같이,
+/// 그리고 연구 골드 ÷ 그날 강화에 쓸 수 있던 골드 전부(방치 포함) = "강화 골드가 줄어든 몫".
+({List<double> gold, List<double> mats, List<double> upgrades}) _ratios(
+  ScheduleResult s,
+  List<IncomeDay> inc,
+) {
+  final g = <double>[], m = <double>[], u = <double>[];
+  for (final r in inc.where((r) => r.day.round() < _targetDays)) {
+    final dd = r.day.round();
+    final gold = (s.goldMin[dd] ?? 0) * r.hourGold / 60;
+    final mats = (s.matMin[dd] ?? 0) * r.hourMats / 60;
+    g.add(r.actualGold > 0 ? gold / r.actualGold : 0);
+    m.add(r.actualMats > 0 ? mats / r.actualMats : 0);
+    u.add(r.toUpgrades > 0 ? gold / r.toUpgrades : 0);
+  }
+  return (gold: g, mats: m, upgrades: u);
+}
+
+/// 날짜별 값을 10일 묶음 평균으로.
+List<double> _ratioBlocks(List<double> v) => [
+  for (var b = 0; b * 10 < v.length; b++)
+    _mean(v.sublist(b * 10, math.min(v.length, b * 10 + 10))),
+];
+
 Map<String, dynamic> _fit(
   Map<String, dynamic> raw,
   List<IncomeDay> inc,
-  FitBasis basis,
-) {
+  FitBasis basis, {
+  double levelCap = 540,
+}) {
   var elites = 0.0, bosses = 0.0;
   final fossilIncome = inc
       .where((r) => r.day < _targetDays)
@@ -388,8 +431,14 @@ Map<String, dynamic> _fit(
 
   // 감쇠 td · 비용 모양 α · 보스 첫 처치 표본 drop 이 정해지면 나머지는 모두 따라 나온다:
   //   시간 증가율 = Lv10 이 12시간이 되는 값 · 비용 증가율 = 1 + α(시간 증가율 − 1)(같은 감쇠)
-  //   골드 Lv1 = 180일 합계가 하루 90분 · 화석 첫 값 = 180일 활동 화석의 20% · 정예 확률 = 표본 합계 ÷ 90%.
-  Map<String, dynamic> build(double td, double alpha, int drop) {
+  //   골드·재료 Lv1 = 180일 평균 실제 수입 비율 50%(각각 따로) · 화석 첫 값 = 180일 활동 화석의 20% · 정예 확률 = 표본 합계 ÷ 90%.
+  Map<String, dynamic> build(
+    double td,
+    double alpha,
+    int drop, {
+    double goldFirst = 1,
+    double matFirst = 1,
+  }) {
     final tg = _round(_growthForKnee(td), 4);
     final cg = _round(1 + alpha * (tg - 1), 4);
     final unit = _cfg(
@@ -400,14 +449,14 @@ Map<String, dynamic> _fit(
         cg: cg,
         cd: td,
         goldFirst: 1,
+        matFirst: 1,
         fossilFirst: 1,
       ),
     );
-    var goldSum = 0.0, fossilShape = 0.0, sampleSum = 0.0;
+    var fossilShape = 0.0, sampleSum = 0.0;
     for (final d in unit.defs) {
       for (var l = 1; l <= d.maxLevel; l++) {
         final k = unit.costAt(d, l);
-        goldSum += k.goldMinutes;
         sampleSum += k.samples;
         if (l >= d.fossilFrom) {
           // 반올림 전 화석 모양(fossilFrom 레벨 = 1).
@@ -426,7 +475,8 @@ Map<String, dynamic> _fit(
       td: td,
       cg: cg,
       cd: td,
-      goldFirst: _round(_goldMinutesPerDay * _targetDays / goldSum, 4),
+      goldFirst: goldFirst,
+      matFirst: matFirst,
       fossilFirst: _round(fossilIncome * _fossilShare / fossilShape, 1),
       eliteChance: chance,
     )..['bossFirstDrop'] = drop;
@@ -457,11 +507,11 @@ Map<String, dynamic> _fit(
   var drop = _cfg(raw).bossFirstDrop;
   final td0 = fitDecay(0.6, drop, ignoreSamples: true);
 
-  // 2) 비용 모양 α — 10일 묶음 하루 골드 지출이 가장 고르게(변동계수 최소).
+  // 2) 비용 모양 α — 10일 묶음 "골드 ÷ 실제 수입" 비율이 가장 고르게(변동계수 최소).
   var best = (alpha: 1.0, cv: double.infinity);
-  for (var a = 0.40; a <= 1.0001; a += 0.02) {
+  for (var a = 0.30; a <= 1.2001; a += 0.02) {
     final s = run(build(td0, a, drop), ignoreSamples: true);
-    final b = _blocks(s, s.goldMin);
+    final b = _ratioBlocks(_ratios(s, inc).gold);
     final mean = b.reduce((x, y) => x + y) / b.length;
     final sd = math.sqrt(
       b.map((x) => (x - mean) * (x - mean)).reduce((x, y) => x + y) / b.length,
@@ -479,13 +529,39 @@ Map<String, dynamic> _fit(
 
   // 4) 표본까지 넣고 감쇠를 다시 잡는다.
   final td = fitDecay(best.alpha, drop, ignoreSamples: false);
-  final out = build(td, best.alpha, drop);
+
+  // 5) 크기 — 비율은 Lv1 값에 정비례하므로 1분일 때의 180일 평균 비율로 나눈다(골드·재료 따로).
+  //    한 레벨 상한([levelCap] 분, 회귀 테스트와 같은 값)을 넘으면 상한까지만 — 비율은 그만큼 낮아지고,
+  //    50% 에 필요한 상한을 함께 찍는다(상한을 바꿀지는 사장님 결정).
+  final unitCfg = build(td, best.alpha, drop);
+  final unitRatio = _ratios(run(unitCfg), inc);
+  var unitMax = 0.0;
+  final uc = _cfg(unitCfg);
+  for (final d in uc.defs) {
+    unitMax = math.max(unitMax, uc.costAt(d, d.maxLevel).goldMinutes);
+  }
+  var gf = _incomeShare / _mean(unitRatio.gold);
+  var mf = _incomeShare / _mean(unitRatio.mats);
+  stdout.writeln(
+    '  50% 에 필요한 한 레벨 최대: 골드 ${(gf * unitMax).toStringAsFixed(0)}분 · 재료 ${(mf * unitMax).toStringAsFixed(0)}분 (상한 ${levelCap > 0 ? levelCap.toStringAsFixed(0) : '없음'})',
+  );
+  if (levelCap > 0) {
+    gf = math.min(gf, levelCap / unitMax * 0.999);
+    mf = math.min(mf, levelCap / unitMax * 0.999);
+  }
+  final out = build(
+    td,
+    best.alpha,
+    drop,
+    goldFirst: _round(gf, 4),
+    matFirst: _round(mf, 4),
+  );
   final first = (out['research'] as List).first as Map<String, dynamic>;
   stdout.writeln(
     '  시간: Lv1 ${_firstSeconds ~/ 60}분 · Lv$_kneeLevel ${_kneeSeconds ~/ 3600}시간 · 증가율 ${first['time']['growth']} · 감쇠 $td (표본 무한 $td0)',
   );
   stdout.writeln(
-    '  골드·재료: 증가율 ${first['cost']['growth']}(α ${best.alpha}, 10일 묶음 변동 ${(best.cv * 100).toStringAsFixed(0)}%) · Lv1 ${first['cost']['goldMinutesFirst']}분',
+    '  골드·재료: 증가율 ${first['cost']['growth']}(α ${best.alpha}, 10일 묶음 비율 변동 ${(best.cv * 100).toStringAsFixed(0)}%) · Lv1 골드 ${first['cost']['goldMinutesFirst']}분 · 재료 ${first['cost']['materialMinutesFirst']}분',
   );
   stdout.writeln(
     '  표본: 정예 드롭 확률 ${out['eliteDropChance']} · 보스 첫 처치 $drop (180일 정예 ${elites.toStringAsFixed(0)} · 보스 ${bosses.toStringAsFixed(0)})',
@@ -538,16 +614,7 @@ void _report(ResearchConfig c, List<IncomeDay> inc, FitBasis basis) {
   for (final v in s.fossil.values) {
     fSum += v;
   }
-  // 실제 활동 수입 대비(그날 자리 사냥 60분치로 환산 · 버프·접속 보너스 포함 처치 골드).
-  var rg = 0.0, rm = 0.0, n = 0;
-  for (final r in s180) {
-    final dd = r.day.round();
-    final g = (s.goldMin[dd] ?? 0) * r.hourGold / 60;
-    final m = (s.matMin[dd] ?? 0) * r.hourMats / 60;
-    if (r.onlineGold > 0) rg += g / r.onlineGold;
-    if (r.onlineMats > 0) rm += m / r.onlineMats;
-    n++;
-  }
+  final ratio = _ratios(s, inc);
   final fossilIncome = s180.fold<double>(0, (a, r) => a + r.fossil);
   stdout.writeln('');
   stdout.writeln('── 무과금 일정(칸을 쉬지 않음) ──');
@@ -559,11 +626,21 @@ void _report(ResearchConfig c, List<IncomeDay> inc, FitBasis basis) {
     '  칸 시간 ${s.slotDays.toStringAsFixed(0)}칸·일 중 표본 대기 ${(s.sampleWaitSlotDays / s.slotDays * 100).toStringAsFixed(1)}% · 할 연구가 없어 논 칸 ${(s.idleSlotDays / s.slotDays * 100).toStringAsFixed(1)}%',
   );
   stdout.writeln(
-    '  골드: 하루 평균 ${(gSum / _targetDays).toStringAsFixed(1)}분치(목표 ${_goldMinutesPerDay.toStringAsFixed(0)} = 3시간 사냥분치의 ${(gSum / _targetDays / 180 * 100).toStringAsFixed(0)}%) · 재료 ${(mSum / _targetDays).toStringAsFixed(1)}분치',
+    '  사냥 분치: 하루 평균 골드 ${(gSum / _targetDays).toStringAsFixed(1)}분 · 재료 ${(mSum / _targetDays).toStringAsFixed(1)}분 (3시간 = 180분)',
   );
   stdout.writeln(
-    '  실제 활동 수입(버프·접속 보너스 포함) 대비 하루 평균: 골드 ${(rg / n * 100).toStringAsFixed(1)}% · 재료 ${(rm / n * 100).toStringAsFixed(1)}%',
+    '  ★ 실제 활동 수입(처치 + 선물·일일보상·미션, 방치 제외) 대비 180일 평균: 골드 ${(_mean(ratio.gold) * 100).toStringAsFixed(1)}% · 재료 ${(_mean(ratio.mats) * 100).toStringAsFixed(1)}% (목표 ${(_incomeShare * 100).toStringAsFixed(0)}%)',
   );
+  stdout.writeln(
+    '  ★ 강화에 쓸 골드(방치 포함 그날 들어온 골드 전부)가 줄어든 몫: 180일 평균 ${(_mean(ratio.upgrades) * 100).toStringAsFixed(1)}%',
+  );
+  String blocks(List<double> v) => [
+    for (final (i, x) in _ratioBlocks(v).indexed)
+      '${i * 10}~:${(x * 100).toStringAsFixed(0)}',
+  ].join(' ');
+  stdout.writeln('  10일 묶음 골드 ÷ 실제 수입(%): ${blocks(ratio.gold)}');
+  stdout.writeln('  10일 묶음 재료 ÷ 실제 수입(%): ${blocks(ratio.mats)}');
+  stdout.writeln('  10일 묶음 강화 골드 감소(%): ${blocks(ratio.upgrades)}');
   stdout.writeln(
     '  표본: 쓴 ${s.samplesSpent.toStringAsFixed(0)} / 번 ${s.samplesEarned.toStringAsFixed(0)} = ${(s.samplesSpent / s.samplesEarned * 100).toStringAsFixed(0)}% (하루 ${basis.samplesPerDay(c, 0).toStringAsFixed(1)} → ${basis.samplesPerDay(c, 170).toStringAsFixed(1)})',
   );
@@ -589,11 +666,13 @@ void _report(ResearchConfig c, List<IncomeDay> inc, FitBasis basis) {
 void main(List<String> args) {
   String? incomePath;
   var fit = false, write = false;
+  var levelCap = 540.0;
   var jsonPath = '../app/assets/data/research.json';
   for (final a in args) {
     if (a.startsWith('--income=')) incomePath = a.substring(9);
     if (a == '--fit') fit = true;
     if (a == '--write') write = true;
+    if (a.startsWith('--level-cap=')) levelCap = double.parse(a.substring(12));
     if (a.startsWith('--json=')) jsonPath = a.substring(7);
   }
   if (incomePath == null) {
@@ -618,7 +697,7 @@ void main(List<String> args) {
   final basis = FitBasis.fromIncome(inc);
   if (fit) {
     stdout.writeln('── 맞추기 ──');
-    raw = _fit(raw, inc, basis);
+    raw = _fit(raw, inc, basis, levelCap: levelCap);
     final frag = {
       'eliteDropChance': raw['eliteDropChance'],
       'bossFirstDrop': raw['bossFirstDrop'],

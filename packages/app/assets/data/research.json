@@ -1,5 +1,5 @@
 {
-  "_comment": "연구소(설계 docs/superpowers/specs/2026-10-22-research-lab-design.md). 시간·비용 곡선 · eliteDropChance · bossFirstDrop · 사냥·육성 effect · fitBasis 는 tool/research_table.dart --fit --write 가 뽑는다 — 손으로 한 칸씩 고치지 않는다(하루 3시간 켜 둔 무과금 · 골드·재료 = 3시간 사냥분치의 50% · 약 180일). 시간·비용: Lv1 = first, 한 단계 오를 때마다 × (1 + (growth−1)·decay^(i−1)). kind = ResearchEffect 키. 결투 공격·방어·체력 effect 는 결투 80% 맞추기가 정한다.",
+  "_comment": "연구소(설계 docs/superpowers/specs/2026-10-22-research-lab-design.md). 시간·비용 곡선 · eliteDropChance · bossFirstDrop · 사냥·육성 effect · fitBasis 는 tool/research_table.dart --fit --write 가 뽑는다 — 손으로 한 칸씩 고치지 않는다(하루 3시간 켜 둔 무과금 · 골드·재료 = 3시간 켜 둔 날 실제 수입의 50% 목표, 단 한 레벨 540분 상한이 먼저 · 약 180일). 시간·비용: Lv1 = first, 한 단계 오를 때마다 × (1 + (growth−1)·decay^(i−1)). kind = ResearchEffect 키. 결투 공격·방어·체력 effect 는 결투 80% 맞추기가 정한다.",
   "instantJellyPerMinute": 1.0,
   "instantJellyExponent": 0.58,
   "slotsByTier": [
@@ -12,7 +12,7 @@
     100,
     300
   ],
-  "eliteDropChance": 0.0752,
+  "eliteDropChance": 0.0575,
   "eliteDropAmount": 1,
   "bossFirstDrop": 25,
   "bossRepeatDrop": 2,
@@ -36,17 +36,17 @@
       },
       "time": {
         "firstSeconds": 300.0,
-        "growth": 2.3701,
-        "decay": 0.8449
+        "growth": 2.3652,
+        "decay": 0.8458
       },
       "cost": {
         "samplesFirst": 1,
-        "goldMinutesFirst": 1.6693,
-        "materialMinutesFirst": 1.6693,
+        "goldMinutesFirst": 18.6099,
+        "materialMinutesFirst": 18.6099,
         "fossilFrom": 21,
-        "fossilFirst": 144.9,
-        "growth": 1.6576,
-        "decay": 0.8449
+        "fossilFirst": 145.5,
+        "growth": 1.6007,
+        "decay": 0.8458
       }
     },
     {
@@ -69,17 +69,17 @@
       },
       "time": {
         "firstSeconds": 300.0,
-        "growth": 2.3701,
-        "decay": 0.8449
+        "growth": 2.3652,
+        "decay": 0.8458
       },
       "cost": {
         "samplesFirst": 1,
-        "goldMinutesFirst": 1.6693,
-        "materialMinutesFirst": 1.6693,
+        "goldMinutesFirst": 18.6099,
+        "materialMinutesFirst": 18.6099,
         "fossilFrom": 21,
-        "fossilFirst": 144.9,
-        "growth": 1.6576,
-        "decay": 0.8449
+        "fossilFirst": 145.5,
+        "growth": 1.6007,
+        "decay": 0.8458
       }
     },
     {
@@ -102,17 +102,17 @@
       },
       "time": {
         "firstSeconds": 300.0,
-        "growth": 2.3701,
-        "decay": 0.8449
+        "growth": 2.3652,
+        "decay": 0.8458
       },
       "cost": {
         "samplesFirst": 1,
-        "goldMinutesFirst": 1.6693,
-        "materialMinutesFirst": 1.6693,
+        "goldMinutesFirst": 18.6099,
+        "materialMinutesFirst": 18.6099,
         "fossilFrom": 21,
-        "fossilFirst": 144.9,
-        "growth": 1.6576,
-        "decay": 0.8449
+        "fossilFirst": 145.5,
+        "growth": 1.6007,
+        "decay": 0.8458
       }
     },
     {
@@ -135,17 +135,17 @@
       },
       "time": {
         "firstSeconds": 300.0,
-        "growth": 2.3701,
-        "decay": 0.8449
+        "growth": 2.3652,
+        "decay": 0.8458
       },
       "cost": {
         "samplesFirst": 1,
-        "goldMinutesFirst": 1.6693,
-        "materialMinutesFirst": 1.6693,
+        "goldMinutesFirst": 18.6099,
+        "materialMinutesFirst": 18.6099,
         "fossilFrom": 21,
-        "fossilFirst": 144.9,
-        "growth": 1.6576,
-        "decay": 0.8449
+        "fossilFirst": 145.5,
+        "growth": 1.6007,
+        "decay": 0.8458
       }
     },
     {
@@ -168,17 +168,17 @@
       },
       "time": {
         "firstSeconds": 300.0,
-        "growth": 2.3701,
-        "decay": 0.8449
+        "growth": 2.3652,
+        "decay": 0.8458
       },
       "cost": {
         "samplesFirst": 1,
-        "goldMinutesFirst": 1.6693,
-        "materialMinutesFirst": 1.6693,
+        "goldMinutesFirst": 18.6099,
+        "materialMinutesFirst": 18.6099,
         "fossilFrom": 21,
-        "fossilFirst": 144.9,
-        "growth": 1.6576,
-        "decay": 0.8449
+        "fossilFirst": 145.5,
+        "growth": 1.6007,
+        "decay": 0.8458
       }
     },
     {
@@ -201,17 +201,17 @@
       },
       "time": {
         "firstSeconds": 300.0,
-        "growth": 2.3701,
-        "decay": 0.8449
+        "growth": 2.3652,
+        "decay": 0.8458
       },
       "cost": {
         "samplesFirst": 1,
-        "goldMinutesFirst": 1.6693,
-        "materialMinutesFirst": 1.6693,
+        "goldMinutesFirst": 18.6099,
+        "materialMinutesFirst": 18.6099,
         "fossilFrom": 21,
-        "fossilFirst": 144.9,
-        "growth": 1.6576,
-        "decay": 0.8449
+        "fossilFirst": 145.5,
+        "growth": 1.6007,
+        "decay": 0.8458
       }
     },
     {
@@ -231,17 +231,17 @@
       },
       "time": {
         "firstSeconds": 300.0,
-        "growth": 2.3701,
-        "decay": 0.8449
+        "growth": 2.3652,
+        "decay": 0.8458
       },
       "cost": {
         "samplesFirst": 1,
-        "goldMinutesFirst": 1.6693,
-        "materialMinutesFirst": 1.6693,
+        "goldMinutesFirst": 18.6099,
+        "materialMinutesFirst": 18.6099,
         "fossilFrom": 21,
-        "fossilFirst": 144.9,
-        "growth": 1.6576,
-        "decay": 0.8449
+        "fossilFirst": 145.5,
+        "growth": 1.6007,
+        "decay": 0.8458
       }
     },
     {
@@ -264,17 +264,17 @@
       },
       "time": {
         "firstSeconds": 300.0,
-        "growth": 2.3701,
-        "decay": 0.8449
+        "growth": 2.3652,
+        "decay": 0.8458
       },
       "cost": {
         "samplesFirst": 1,
-        "goldMinutesFirst": 1.6693,
-        "materialMinutesFirst": 1.6693,
+        "goldMinutesFirst": 18.6099,
+        "materialMinutesFirst": 18.6099,
         "fossilFrom": 21,
-        "fossilFirst": 144.9,
-        "growth": 1.6576,
-        "decay": 0.8449
+        "fossilFirst": 145.5,
+        "growth": 1.6007,
+        "decay": 0.8458
       }
     },
     {
@@ -297,17 +297,17 @@
       },
       "time": {
         "firstSeconds": 300.0,
-        "growth": 2.3701,
-        "decay": 0.8449
+        "growth": 2.3652,
+        "decay": 0.8458
       },
       "cost": {
         "samplesFirst": 1,
-        "goldMinutesFirst": 1.6693,
-        "materialMinutesFirst": 1.6693,
+        "goldMinutesFirst": 18.6099,
+        "materialMinutesFirst": 18.6099,
         "fossilFrom": 21,
-        "fossilFirst": 144.9,
-        "growth": 1.6576,
-        "decay": 0.8449
+        "fossilFirst": 145.5,
+        "growth": 1.6007,
+        "decay": 0.8458
       }
     },
     {
@@ -330,17 +330,17 @@
       },
       "time": {
         "firstSeconds": 300.0,
-        "growth": 2.3701,
-        "decay": 0.8449
+        "growth": 2.3652,
+        "decay": 0.8458
       },
       "cost": {
         "samplesFirst": 1,
-        "goldMinutesFirst": 1.6693,
-        "materialMinutesFirst": 1.6693,
+        "goldMinutesFirst": 18.6099,
+        "materialMinutesFirst": 18.6099,
         "fossilFrom": 21,
-        "fossilFirst": 144.9,
-        "growth": 1.6576,
-        "decay": 0.8449
+        "fossilFirst": 145.5,
+        "growth": 1.6007,
+        "decay": 0.8458
       }
     },
     {
@@ -360,17 +360,17 @@
       },
       "time": {
         "firstSeconds": 300.0,
-        "growth": 2.3701,
-        "decay": 0.8449
+        "growth": 2.3652,
+        "decay": 0.8458
       },
       "cost": {
         "samplesFirst": 1,
-        "goldMinutesFirst": 1.6693,
-        "materialMinutesFirst": 1.6693,
+        "goldMinutesFirst": 18.6099,
+        "materialMinutesFirst": 18.6099,
         "fossilFrom": 21,
-        "fossilFirst": 144.9,
-        "growth": 1.6576,
-        "decay": 0.8449
+        "fossilFirst": 145.5,
+        "growth": 1.6007,
+        "decay": 0.8458
       }
     },
     {
@@ -393,17 +393,17 @@
       },
       "time": {
         "firstSeconds": 300.0,
-        "growth": 2.3701,
-        "decay": 0.8449
+        "growth": 2.3652,
+        "decay": 0.8458
       },
       "cost": {
         "samplesFirst": 1,
-        "goldMinutesFirst": 1.6693,
-        "materialMinutesFirst": 1.6693,
+        "goldMinutesFirst": 18.6099,
+        "materialMinutesFirst": 18.6099,
         "fossilFrom": 21,
-        "fossilFirst": 144.9,
-        "growth": 1.6576,
-        "decay": 0.8449
+        "fossilFirst": 145.5,
+        "growth": 1.6007,
+        "decay": 0.8458
       }
     },
     {
@@ -426,17 +426,17 @@
       },
       "time": {
         "firstSeconds": 300.0,
-        "growth": 2.3701,
-        "decay": 0.8449
+        "growth": 2.3652,
+        "decay": 0.8458
       },
       "cost": {
         "samplesFirst": 1,
-        "goldMinutesFirst": 1.6693,
-        "materialMinutesFirst": 1.6693,
+        "goldMinutesFirst": 18.6099,
+        "materialMinutesFirst": 18.6099,
         "fossilFrom": 21,
-        "fossilFirst": 144.9,
-        "growth": 1.6576,
-        "decay": 0.8449
+        "fossilFirst": 145.5,
+        "growth": 1.6007,
+        "decay": 0.8458
       }
     },
     {
@@ -459,17 +459,17 @@
       },
       "time": {
         "firstSeconds": 300.0,
-        "growth": 2.3701,
-        "decay": 0.8449
+        "growth": 2.3652,
+        "decay": 0.8458
       },
       "cost": {
         "samplesFirst": 1,
-        "goldMinutesFirst": 1.6693,
-        "materialMinutesFirst": 1.6693,
+        "goldMinutesFirst": 18.6099,
+        "materialMinutesFirst": 18.6099,
         "fossilFrom": 21,
-        "fossilFirst": 144.9,
-        "growth": 1.6576,
-        "decay": 0.8449
+        "fossilFirst": 145.5,
+        "growth": 1.6007,
+        "decay": 0.8458
       }
     }
   ],
