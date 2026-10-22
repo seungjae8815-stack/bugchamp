@@ -12,6 +12,7 @@
 //   dart run tool/balance_sim.dart --tiers=4 --no-fairy          # 요정을 뺀 90일 표와 비교
 //   dart run tool/balance_sim.dart --tiers=4 --fairy-kind=voltea --fairy-sub=critDamage
 //   dart run tool/balance_sim.dart --tiers=4 --abyss-weeks=12 --train-pet=0.25   # 훈련소 펫 보너스를 얹어 심연 도달 층 비교
+//   dart run tool/balance_sim.dart --tiers=4 --no-fairy --active-hours=3 --income --endgame-days=150   # 연구소 표(research_table)의 입력
 //
 // ⚠️ 근사인 지점(결과를 읽을 때 감안할 것):
 //  - 플레이어 구매 전략 = "지금 살 수 있는 것 중 가장 싼 업그레이드"를 반복.
@@ -29,8 +30,8 @@ import 'package:core_run/core_run.dart';
 
 import 'power_ceiling.dart';
 
-/// 하루 중 실제로 앱을 켜고 노는 시간.
-const _activeHoursPerDay = 2.0;
+/// 하루 중 실제로 앱을 켜고 노는 시간. `--active-hours=3` 으로 바꾼다(연구소 표 — 하루 3시간 켜 둔 유저).
+double _activeHoursPerDay = 2.0;
 
 /// 하루에 오프라인 보상으로 회수하는 시간(상한 8h — kMaxOfflineAccrual).
 const _offlineHoursPerDay = 8.0;
@@ -1044,6 +1045,43 @@ void _printIncomeLog(_Player sim) {
   stdout.writeln(
     '  서버 상한 여유 최저(전 기간, 지금 자리 기준): 골드 x${minG.toStringAsFixed(1)} · 재료 x${minM.toStringAsFixed(1)}',
   );
+  stdout.writeln('');
+  _printResearchIncome(sim);
+}
+
+/// 하루 **활동(앱 켜 둔) 시간** 수입 — 연구소 표(`tool/research_table.dart --income=`)가 읽는다.
+/// 사람용 요약 몇 줄 + 날짜마다 `@research-income {json}` 한 줄.
+///   onlineGold = 활동 중 처치 골드(버프·접속 보너스 포함 실제 수입) · onlineMats = 활동 중 재료(종류당)
+///   hourGold/hourMats = 그 자리 사냥 60분치(`huntMinutesReward` — 연구 비용 "N분치"의 단위)
+///   elites = 활동 처치 × eliteChance · bossKills = 그날 잡은 사냥터 보스 · fossil = 활동 중 화석
+void _printResearchIncome(_Player sim) {
+  final fossilPerDay =
+      _ceilingData.forge.fossilPerSecond * 3600 * _activeHoursPerDay;
+  stdout.writeln('── 연구소 입력: 하루 활동 ${_activeHoursPerDay}h 수입 ──');
+  stdout.writeln(
+    '  난이도·사냥터 | 누적일 | 활동 골드 | 사냥 60분치 골드 | 활동 재료(종류당) | 처치 | 정예 | 보스 | 화석',
+  );
+  for (var i = 0; i < sim.incomeLog.length; i++) {
+    final r = sim.incomeLog[i];
+    if (i % 10 != 0 && i != sim.incomeLog.length - 1) continue;
+    stdout.writeln(
+      '  ${r.tier}·${r.zone.toString().padLeft(2)}         |'
+      ' ${(r.day + 1).toStringAsFixed(0).padLeft(6)} |'
+      ' ${_short(r.online).padLeft(9)} |'
+      ' ${_short(r.hourGold).padLeft(16)} |'
+      ' ${_short(r.onlineMats).padLeft(17)} |'
+      ' ${r.onlineKills.toStringAsFixed(0).padLeft(5)} |'
+      ' ${(r.onlineKills * sim.config.eliteChance).toStringAsFixed(0).padLeft(4)} |'
+      ' ${r.bossKills.toStringAsFixed(0).padLeft(4)} |'
+      ' ${fossilPerDay.toStringAsFixed(0)}',
+    );
+  }
+  stdout.writeln('');
+  for (final r in sim.incomeLog) {
+    stdout.writeln(
+      '@research-income ${jsonEncode({'day': r.day, 'tier': r.tier, 'zone': r.zone, 'activeHours': _activeHoursPerDay, 'onlineGold': r.online, 'onlineMats': r.onlineMats, 'hourGold': r.hourGold, 'hourMats': r.hourMats, 'kills': r.onlineKills, 'elites': r.onlineKills * sim.config.eliteChance, 'bossKills': r.bossKills, 'fossil': fossilPerDay})}',
+    );
+  }
   stdout.writeln('');
 }
 
@@ -2081,6 +2119,11 @@ class _Player {
       double offline,
       double capGold,
       double capMats,
+      double onlineKills,
+      double onlineMats,
+      double bossKills,
+      double hourGold,
+      double hourMats,
     })
   >
   incomeLog = [];
@@ -2088,18 +2131,26 @@ class _Player {
   /// 이번 날 활동·오프라인 처치 골드(버프·접속 보너스 포함 실제 수입).
   double _onlineGoldAcc = 0, _offlineGoldAcc = 0;
 
+  /// 이번 날 활동 중 처치 수 · 활동 중 재료(종류당) · 잡은 사냥터 보스 수 — 연구소 표(`research_table`) 입력.
+  double _onlineKillsAcc = 0, _onlineMatsAcc = 0, _bossKillsAcc = 0;
+
   void playDay() {
     // 전투 밖 보상(선물·일일·미션·결투) — 2026-10-08 부터 선물·일일보상은 **이 유저의 사냥 N분치**.
     final day = elapsedDays;
     final z = config.zoneMode ? config.zoneOf(stage) : 0;
     _onlineGoldAcc = 0;
     _offlineGoldAcc = 0;
+    _onlineKillsAcc = 0;
+    _onlineMatsAcc = 0;
+    _bossKillsAcc = 0;
     // 접속 보너스는 **활동 구간에만** — 켜두는 쪽이 이득이어야 한다.
     // 선물·일일보상은 활동 구간 **한가운데** 능력치로 잰다 — 선물은 접속 중에 계속 나오고
     // 하루 시작 시점으로 재면 새 난이도 첫날(강화 0)이 0 에 가깝게 잡힌다.
     _online = true;
     _run(_activeHoursPerDay * 3600 / 2, 1.0);
     final inc = _addOffBattleIncome(1);
+    // 사냥 60분치(버프·접속 보너스 제외 — 연구 비용 "N분치"의 단위) — 활동 한가운데 자리.
+    final hour = _huntMinutes(huntStats, 60);
     _run(_activeHoursPerDay * 3600 / 2, 1.0);
     _online = false;
     _run(_offlineHoursPerDay * 3600, config.offlineEfficiency);
@@ -2116,6 +2167,11 @@ class _Player {
       offline: _offlineGoldAcc,
       capGold: inc.capGold,
       capMats: inc.capMats,
+      onlineKills: _onlineKillsAcc,
+      onlineMats: _onlineMatsAcc,
+      bossKills: _bossKillsAcc,
+      hourGold: hour.gold,
+      hourMats: hour.mats,
     ));
   }
 
@@ -2482,6 +2538,7 @@ class _Player {
         if (_zoneKills >= config.bossUnlockKills && _bossBeatable(stage)) {
           final z = config.zoneOf(stage);
           if (z <= config.zonesPerTier) {
+            _bossKillsAcc++; // 처음 잡는 사냥터 보스(최종 뒤 캠페인 끝 표시는 세지 않는다)
             if (z == config.zonesPerTier) {
               skillBossLog.add(skillBossShare());
               fairyBossLog.add(fairyBossShare());
@@ -2734,6 +2791,7 @@ class _Player {
           (_online ? 1 + config.onlineGoldBonus : 1.0);
       if (_online) {
         _onlineGoldAcc += earned;
+        _onlineKillsAcc += prog.habitatClears;
       } else {
         _offlineGoldAcc += earned;
       }
@@ -2770,6 +2828,7 @@ class _Player {
         materials[k] = (materials[k] ?? 0) + mats / 3;
         earnedMaterials[k] = (earnedMaterials[k] ?? 0) + mats / 3;
       }
+      _onlineMatsAcc += mats / 3;
       _buyUpgrades();
     }
   }
@@ -3120,6 +3179,11 @@ _Opts _parseArgs(List<String> args) {
     }
     if (a == '--income') {
       _printIncome = true;
+      continue;
+    }
+    final ah = RegExp(r'^--active-hours=(.+)$').firstMatch(a);
+    if (ah != null) {
+      _activeHoursPerDay = double.parse(ah.group(1)!);
       continue;
     }
     final tb = RegExp(r'^--boost=(.+)$').firstMatch(a);

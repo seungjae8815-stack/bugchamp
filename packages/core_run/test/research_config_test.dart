@@ -28,6 +28,48 @@ void main() {
     }
   });
 
+  test('증가율 감쇠(decay) — 1 이면 등비, 작으면 뒤로 갈수록 덜 커진다', () {
+    const geo = ResearchDef(
+      id: 'a',
+      branch: ResearchBranch.hunt,
+      effect: ResearchEffect.gold,
+      maxLevel: 10,
+      firstSeconds: 100,
+      timeGrowth: 2,
+      goldMinutesFirst: 10,
+      costGrowth: 2,
+      fossilFrom: 3,
+      fossilFirst: 5,
+    );
+    const cfg = ResearchConfig();
+    expect(cfg.timeAt(geo, 1).inSeconds, 100);
+    expect(cfg.timeAt(geo, 4).inSeconds, 800);
+    expect(cfg.costAt(geo, 4).goldMinutes, 80);
+    expect(cfg.costAt(geo, 4).fossil, 10);
+    final dec = ResearchDef.fromJson({
+      'id': 'b',
+      'branch': 'hunt',
+      'kind': 'gold',
+      'maxLevel': 10,
+      'time': {'firstSeconds': 100, 'growth': 2, 'decay': 0.5},
+      'cost': {
+        'goldMinutesFirst': 10,
+        'growth': 2,
+        'decay': 0.5,
+        'fossilFrom': 3,
+        'fossilFirst': 5,
+      },
+    });
+    // 단계 배율 = 1 + (2-1)×0.5^(i-1): ×2 · ×1.5 · ×1.25
+    expect(cfg.timeAt(dec, 2).inSeconds, 200);
+    expect(cfg.timeAt(dec, 3).inSeconds, 300);
+    expect(cfg.timeAt(dec, 4).inSeconds, 375);
+    expect(cfg.costAt(dec, 4).goldMinutes, closeTo(37.5, 1e-9));
+    // 화석은 fossilFrom 레벨이 fossilFirst, 그 뒤 같은 배율(3→4 ×1.25).
+    expect(cfg.costAt(dec, 3).fossil, 5);
+    expect(cfg.costAt(dec, 4).fossil, 6);
+  });
+
   test('칸 수', () {
     expect(c.slotsFor(0, 0), 1);
     expect(c.slotsFor(2, 0), 2);

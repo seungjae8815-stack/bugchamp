@@ -68,12 +68,14 @@ class ResearchDef {
     this.effectGrowth = 1,
     this.firstSeconds = 0,
     this.timeGrowth = 1,
+    this.timeDecay = 1,
     this.samplesFirst = 0,
     this.goldMinutesFirst = 0,
     this.materialMinutesFirst = 0,
     this.fossilFrom = 0,
     this.fossilFirst = 0,
     this.costGrowth = 1,
+    this.costDecay = 1,
   });
 
   final String id;
@@ -86,16 +88,21 @@ class ResearchDef {
   final Map<String, String> name;
 
   // 곡선(JSON): 누적 효과 = Σ perLevel × growth^(i-1).
+  // 시간·비용: Lv1 = first, 한 단계 오를 때마다 × (1 + (growth−1)·decay^(i−1)) — decay 1 = 등비.
+  // decay < 1 이면 앞 레벨은 가파르게(몇 분 → 몇 시간) 뒤 레벨은 완만하게(하루 남짓) 큰다
+  // (등비로는 "Lv1 몇 분 · 마지막 하루 남짓 · 합계 180일"을 함께 맞출 수 없다 — tool/research_table.dart).
   final double perLevel;
   final double effectGrowth;
   final double firstSeconds;
   final double timeGrowth;
+  final double timeDecay;
   final double samplesFirst;
   final double goldMinutesFirst;
   final double materialMinutesFirst;
   final int fossilFrom;
   final double fossilFirst;
   final double costGrowth;
+  final double costDecay;
 
   factory ResearchDef.fromJson(Map<String, dynamic> j) {
     Map<String, dynamic> m(String k) =>
@@ -122,12 +129,14 @@ class ResearchDef {
       effectGrowth: n(eff, 'growth', 1),
       firstSeconds: n(time, 'firstSeconds', 0),
       timeGrowth: n(time, 'growth', 1),
+      timeDecay: n(time, 'decay', 1),
       samplesFirst: n(cost, 'samplesFirst', 0),
       goldMinutesFirst: n(cost, 'goldMinutesFirst', 0),
       materialMinutesFirst: n(cost, 'materialMinutesFirst', 0),
       fossilFrom: (cost['fossilFrom'] as num?)?.toInt() ?? 0,
       fossilFirst: n(cost, 'fossilFirst', 0),
       costGrowth: n(cost, 'growth', 1),
+      costDecay: n(cost, 'decay', 1),
     );
   }
 }
@@ -199,20 +208,32 @@ class ResearchConfig {
     return sum;
   }
 
+  /// Lv1 → Lv [level] 까지의 배율 = Π_{i=1}^{level−1} (1 + (growth−1)·decay^(i−1)).
+  static double _scale(double growth, double decay, int level) {
+    var m = 1.0;
+    for (var i = 1; i < level; i++) {
+      m *= 1 + (growth - 1) * math.pow(decay, i - 1);
+    }
+    return m;
+  }
+
   /// Lv [level] **하나**에 걸리는 시간.
   Duration timeAt(ResearchDef d, int level) => Duration(
-    seconds: (d.firstSeconds * math.pow(d.timeGrowth, level - 1)).round(),
+    seconds: (d.firstSeconds * _scale(d.timeGrowth, d.timeDecay, level))
+        .round(),
   );
 
-  /// Lv [level] 하나의 비용.
+  /// Lv [level] 하나의 비용. 화석은 [ResearchDef.fossilFrom] 레벨이 fossilFirst 이고 그 뒤 같은 배율.
   ResearchCost costAt(ResearchDef d, int level) {
-    final g = math.pow(d.costGrowth, level - 1);
+    final g = _scale(d.costGrowth, d.costDecay, level);
     return ResearchCost(
       samples: (d.samplesFirst * g).round(),
       goldMinutes: d.goldMinutesFirst * g,
       materialMinutes: d.materialMinutesFirst * g,
       fossil: d.fossilFrom > 0 && level >= d.fossilFrom
-          ? (d.fossilFirst * math.pow(d.costGrowth, level - d.fossilFrom))
+          ? (d.fossilFirst *
+                    g /
+                    _scale(d.costGrowth, d.costDecay, d.fossilFrom))
                 .round()
           : 0,
     );
