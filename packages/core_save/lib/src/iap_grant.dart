@@ -118,15 +118,20 @@ SaveGame applyIapGrant(
     ownedSkins: p.skinId == null
         ? out.ownedSkins
         : {...out.ownedSkins, p.skinId!},
-    passExpiresAt: p.type == IapType.pass
+    passExpiresAt: (p.type == IapType.pass || p.type == IapType.allPass)
         ? extend(out.passExpiresAt, iap.passDurationDays)
         : out.passExpiresAt,
-    buffPassExpiresAt: p.type == IapType.buffPass
+    buffPassExpiresAt: (p.type == IapType.buffPass || p.type == IapType.allPass)
         ? extend(out.buffPassExpiresAt, iap.buffPassDurationDays)
         : out.buffPassExpiresAt,
-    growthPassExpiresAt: p.type == IapType.growthPass
+    growthPassExpiresAt:
+        (p.type == IapType.growthPass || p.type == IapType.allPass)
         ? extend(out.growthPassExpiresAt, iap.growthPassDurationDays)
         : out.growthPassExpiresAt,
+    researchPassExpiresAt:
+        (p.type == IapType.researchPass || p.type == IapType.allPass)
+        ? extend(out.researchPassExpiresAt, iap.researchPassDurationDays)
+        : out.researchPassExpiresAt,
     redeemedPurchases: purchaseId == null
         ? out.redeemedPurchases
         : {...out.redeemedPurchases, purchaseId},

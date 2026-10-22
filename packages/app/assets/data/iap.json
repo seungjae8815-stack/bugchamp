@@ -309,6 +309,42 @@
    "image": "growth_pass"
   },
   {
+   "id": "research_pass",
+   "kind": "timed",
+   "type": "researchPass",
+   "priceKrw": 5500,
+   "sort": 37,
+   "name": {
+    "ko": "연구 패스 (30일)",
+    "en": "Research Pass (30d)",
+    "ja": "研究パス（30日）"
+   },
+   "desc": {
+    "ko": "방치 중에도 연구 표본을 모아요",
+    "en": "Collect research samples while idle",
+    "ja": "放置中も研究標本が集まります"
+   },
+   "image": "research_pass"
+  },
+  {
+   "id": "all_pass",
+   "kind": "timed",
+   "type": "allPass",
+   "priceKrw": 16500,
+   "sort": 38,
+   "name": {
+    "ko": "올인원 패스 (30일)",
+    "en": "All-in-One Pass (30d)",
+    "ja": "オールインワンパス（30日）"
+   },
+   "desc": {
+    "ko": "곤충학자·무한 버프·성장·연구 패스를 한 번에 (40% 할인)",
+    "en": "Entomologist, Buff, Growth & Research passes in one (40% off)",
+    "ja": "昆虫学者・無限バフ・成長・研究パスをまとめて（40%オフ）"
+   },
+   "image": "all_pass"
+  },
+  {
    "id": "weekly_bundle",
    "kind": "consumable",
    "type": "weekly",
@@ -381,6 +417,7 @@
  "_iosIdComment": "iosId = App Store 전용 제품 ID. idle_pass 는 ASC 에 비소모품으로 잘못 생성돼 있어(유형 변경·ID 재사용 불가) iOS 만 소모품 신규 ID(idle_pass_c)를 쓴다. Play 는 기존 idle_pass 그대로.",
  "_passComment": "패스는 \"젤리를 싸게 사는 법\"이 아니라 \"편하게 노는 법\"이어야 한다. 일일 30젤리(₩11.0/젤리)일 땐 어떤 젤리 팩보다도 싸서 팩이 팔릴 수 없었다 — 매출 상한이 1인당 월 ₩9,900 에 묶였다(2026-09-09 jelly_sim 실측). 20 으로 낮춰 ₩16.5/젤리가 되면 소액은 패스가 유리하고 대량(xl·xxl ₩15.3/₩14.0)은 팩이 유리한 사다리가 된다. 낮춘 만큼은 젤리로 못 사는 편의로 돌린다(오프라인 12→16h, 방치 골드 1.2→1.3). ⚠️ 이 값을 다시 올릴 땐 core_run/tool/jelly_sim.dart 의 \"IAP 대비\" 표를 반드시 볼 것.",
  "growthPassDurationDays": 30,
+ "researchPassDurationDays": 30,
  "growthPassDaily": {
   "fairyDust": 20,
   "skillGradeShards": {

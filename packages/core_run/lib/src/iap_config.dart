@@ -25,7 +25,10 @@ enum IapType {
   // ── 2026-10 요정·스킬 상품(사장님 확정) ──
   oncePack('oncePack'), // 계정당 1회 묶음(요정·스킬 입문) — `SaveGame.boughtOnce`
   growthPass('growthPass'), // 요정·스킬 성장 패스(기간제 · 매일 지급)
-  weekly('weekly'); // 주 1회 묶음 — `SaveGame.weeklyBought`
+  weekly('weekly'), // 주 1회 묶음 — `SaveGame.weeklyBought`
+  // ── 2026-10 연구소 ──
+  researchPass('researchPass'), // 연구 패스(기간제 · 방치 중 표본 수집)
+  allPass('allPass'); // 올인원 패스 — 네 패스를 각자 기간만큼 한 번에
 
   const IapType(this.key);
   final String key;
@@ -280,6 +283,7 @@ class IapConfig {
     this.passIdleGoldMult = 1.2,
     this.buffPassDurationDays = 30,
     this.growthPassDurationDays = 30,
+    this.researchPassDurationDays = 30,
     this.growthPassDaily = const IapGrant(),
   });
 
@@ -372,6 +376,9 @@ class IapConfig {
   /// 요정·스킬 성장 패스 기간(일).
   final int growthPassDurationDays;
 
+  /// 연구 패스 기간(일).
+  final int researchPassDurationDays;
+
   /// 성장 패스 **매일** 지급 묶음(요정 가루·만능 조각·가속기). ⚠️ 젤리를 넣지 않는다 —
   /// 매일 도는 통로라 젤리 수도꼭지 규칙(§2.6)에 걸린다. 서버 업로드 검사 여유
   /// (가루 500 · 아이템 10 · 조각 급증)보다 한참 작아야 한다(`iap_grant_test`).
@@ -415,6 +422,8 @@ class IapConfig {
     buffPassDurationDays: (json['buffPassDurationDays'] as num?)?.toInt() ?? 30,
     growthPassDurationDays:
         (json['growthPassDurationDays'] as num?)?.toInt() ?? 30,
+    researchPassDurationDays:
+        (json['researchPassDurationDays'] as num?)?.toInt() ?? 30,
     growthPassDaily: json['growthPassDaily'] is Map<String, dynamic>
         ? IapGrant.fromJson(json['growthPassDaily'] as Map<String, dynamic>)
         : const IapGrant(),

@@ -211,4 +211,26 @@ void main() {
       expect(iap.skinnedBreedSeconds(1000, owned, 'stag_giant'), 1000);
     });
   });
+
+  group('연구 패스 · 올인원 패스', () {
+    test('연구 패스는 연구 만료일만 30일 잇는다', () {
+      var s = grant(base, 'research_pass', pid: 'R1');
+      expect(s.researchPassExpiresAt, t0.add(const Duration(days: 30)));
+      expect(s.passExpiresAt, isNull);
+      expect(s.growthPassExpiresAt, isNull);
+      s = grant(s, 'research_pass',
+          pid: 'R2', at: t0.add(const Duration(days: 10)));
+      expect(s.researchPassExpiresAt, t0.add(const Duration(days: 60)));
+    });
+
+    test('올인원은 네 만료일을 모두 남은 기간 위에 30일 잇는다', () {
+      var s = grant(base, 'growth_pass', pid: 'G1');
+      s = grant(s, 'all_pass', pid: 'A1', at: t0.add(const Duration(days: 10)));
+      expect(s.growthPassExpiresAt, t0.add(const Duration(days: 60)));
+      final fresh = t0.add(const Duration(days: 10, hours: 0));
+      expect(s.passExpiresAt, fresh.add(const Duration(days: 30)));
+      expect(s.buffPassExpiresAt, fresh.add(const Duration(days: 30)));
+      expect(s.researchPassExpiresAt, fresh.add(const Duration(days: 30)));
+    });
+  });
 }

@@ -122,6 +122,7 @@ void main(List<String> args) {
   final pets = PetConfig.fromJson(load('pets.json'));
   final buffs = BuffConfig.fromJson(load('buffs.json'));
   final iap = IapConfig.fromJson(load('iap.json'));
+  final research = ResearchConfig.fromJson(load('research.json'));
   final event = EventConfig.fromJson(load('event.json'));
   final dex = DexConfig.fromJson(load('dex.json'));
   final roadmap = RoadmapConfig.fromJson(load('roadmap.json'));
@@ -430,6 +431,20 @@ void main(List<String> args) {
       '패스 ₩${passUnit.toStringAsFixed(1)}/젤리 → $verdict',
     );
   }
+  // 올인원 패스: 네 패스를 묶은 상품. 젤리는 곤충학자 패스의 일일 젤리뿐이라
+  // 젤리당 가격을 팩 사다리와 직접 견준다(나머지 패스 가치는 젤리가 아니라 덤).
+  final all = iap.byId('all_pass');
+  if (all != null && cheapestPack != null) {
+    final per = iap.passDurationDays * iap.passDailyJelly;
+    if (per > 0) {
+      final unit = all.priceKrw / per;
+      stdout.writeln(
+        '  all_pass: ₩${all.priceKrw} / $per젤리 → ₩${unit.toStringAsFixed(1)}/젤리'
+        ' vs 최저가 팩 ₩${cheapestPack.toStringAsFixed(1)}/젤리 → '
+        '${unit < cheapestPack ? '⚠️ 팩보다 싸다' : 'OK — 팩보다 비싸다(젤리 외 3패스 덤)'}',
+      );
+    }
+  }
   stdout.writeln('');
 
   // ── 소비처 — 하루 수입이 주요 소비처를 몇 개나 덮는가.
@@ -446,6 +461,11 @@ void main(List<String> args) {
   sink('짝짓기 슬롯 확장 1회', pets.breedingExpandJelly);
   sink('채집함 +10칸', pets.storageExpandJelly);
   sink('결투 티켓 만땅', battle.ticketRefillJelly);
+  // 연구 칸(영구 소비처 — 무과금도 하루 수입으로 닿는다). 연구 즉시완료는 시간만
+  // 파는 소모성이라 무과금 기준 0(수입 장부에 연구 지급처가 젤리를 주지 않는다).
+  for (var i = 0; i < research.slotJelly.length; i++) {
+    sink('연구 칸 ${i + 2}번째', research.slotJelly[i]);
+  }
   stdout.writeln('');
 
   // ── 영구 소비처 = **한 번 사면 끝나는 것**들의 총합.

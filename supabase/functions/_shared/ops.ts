@@ -26,6 +26,8 @@ export const PRICE_KRW: Record<string, number> = {
   fairy_starter: 4400,
   skill_starter: 4400,
   growth_pass: 5500,
+  research_pass: 5500,
+  all_pass: 16500,
   weekly_bundle: 2200,
   remove_ads: 0,
 }

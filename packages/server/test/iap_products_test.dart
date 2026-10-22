@@ -360,4 +360,26 @@ void main() {
       expect(skillGrades.containsAll(g.skillGradeShards.keys), isTrue);
     }
   });
+
+  group('연구 패스 · 올인원 패스', () {
+    test('서버 지급 — 연구 패스 단독, 올인원 네 개 연장', () {
+      final r = actions.grantPurchase(
+        base,
+        productId: 'research_pass',
+        purchaseId: 'GPA-R1',
+      );
+      expect(r.save!.researchPassExpiresAt, t0.add(const Duration(days: 30)));
+      expect(r.save!.passExpiresAt, isNull);
+      final a = actions.grantPurchase(
+        base,
+        productId: 'all_pass',
+        purchaseId: 'GPA-A1',
+      );
+      final end = t0.add(const Duration(days: 30));
+      expect(a.save!.passExpiresAt, end);
+      expect(a.save!.buffPassExpiresAt, end);
+      expect(a.save!.growthPassExpiresAt, end);
+      expect(a.save!.researchPassExpiresAt, end);
+    });
+  });
 }
