@@ -98,7 +98,7 @@ double? displayCombatPower(SaveGame save, GameData? data, DateTime now) {
 
 /// 사냥 능력치 — 플레이 화면의 실제 능력치에서 **버프·지속형 액티브만 뺀** 값(치명 상한 전).
 ///
-/// 펫 → 장비 → 종 패시브 → 스킬 패시브 → 동행 요정 → 길드 → 도감 순으로 얹는다. 플레이 화면(`_stats`)이
+/// 펫 → 장비 → 종 패시브 → 스킬 패시브 → 동행 요정 → 길드 → 연구 → 도감 순으로 얹는다. 플레이 화면(`_stats`)이
 /// 이 위에 버프·액티브를 얹고 치명 상한을 씌운다 — 층을 두 벌로 들면 교환소가 화면 사냥과 어긋난다.
 CharacterStats huntStatsUncapped(
   SaveGame save,
@@ -131,6 +131,11 @@ CharacterStats huntStatsUncapped(
     fairy == null ? const {} : fairyCompanionBonus(save.fairy, fairy),
   );
   s = applyGuildStats(s, guildBonus);
+  // 연구소 사냥 분야(공격·체력방어·찾기·골드·보스) — 적응형 기준(permanentStatsOf) 밖.
+  final research = data.researchConfig;
+  if (research != null && save.researchLevels.isNotEmpty) {
+    s = applyResearchStats(s, researchEffects(research, save.researchLevels));
+  }
   final dex = data.dexConfig;
   if (dex != null) {
     s = dex.apply(

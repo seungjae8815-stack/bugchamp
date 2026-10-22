@@ -64,6 +64,8 @@ class _Cfg implements GameConfigLike {
   @override
   final BuffConfig? buffs = null;
   @override
+  final ResearchConfig? research = null;
+  @override
   List<Species> get speciesList => [testSpecies];
 }
 

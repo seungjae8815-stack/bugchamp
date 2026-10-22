@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:app/data/game_data.dart';
 import 'package:app/data/save_repository.dart';
+import 'package:app/domain/combat_power.dart';
 import 'package:app/domain/providers.dart';
 import 'package:app/domain/save_controller.dart';
 import 'package:core_models/core_models.dart';
@@ -31,7 +32,11 @@ Map<String, dynamic> _readJson(String rel) =>
 
 Map<String, dynamic> _name(String s) => {'ko': s, 'en': s, 'ja': s};
 
-GameData _data({bool pets = false, bool buffs = false}) => GameData.fromDecoded(
+GameData _data({
+  bool pets = false,
+  bool buffs = false,
+  bool research = false,
+}) => GameData.fromDecoded(
   species: {
     'species': [
       {
@@ -68,6 +73,7 @@ GameData _data({bool pets = false, bool buffs = false}) => GameData.fromDecoded(
   buffConfig: buffs ? _readJson('assets/data/buffs.json') : null,
   fairyConfig: buffs ? _readJson('assets/data/fairies.json') : null,
   battleConfig: buffs ? _readJson('assets/data/battle.json') : null,
+  researchConfig: research ? _readJson('assets/data/research.json') : null,
 );
 
 void main() {
@@ -101,6 +107,71 @@ void main() {
     expect(after.gold, greaterThan(goldAtStart));
     expect(ctrl.pendingOffline, isNotNull);
     expect(ctrl.pendingOffline!.accrued, const Duration(hours: 2));
+  });
+
+  // 연구소(설계 §8): 방치 정산은 골드·방치 효율 연구를 곱한다 — 서버 `sync` 와 같은 배율.
+  test('연구 골드·방치 효율을 다 찍으면 방치 골드가 (1+골드)×(1+방치) 배', () async {
+    Future<int> earned(Map<String, int> levels) async {
+      final clock = FixedClock(t0);
+      final seed = SaveGame.initial(createdAt: t0).copyWith(
+        lastSeen: t0,
+        // 처치당 골드가 커야 정수 반올림이 비율을 흐리지 않는다(쉬움 사냥터 1 은 처치당 몇 골드).
+        stageNumber: 701,
+        difficultyTier: 2,
+        maxTierReached: 2,
+        level: 5,
+        researchLevels: levels,
+      );
+      final c = ProviderContainer(
+        overrides: [
+          gameDataProvider.overrideWith((ref) => _data(research: true)),
+          saveRepositoryProvider.overrideWithValue(_FakeRepo(seed)),
+          clockProvider.overrideWithValue(clock),
+        ],
+      );
+      addTearDown(c.dispose);
+      await c.read(saveControllerProvider.future);
+      final before = c.read(saveControllerProvider).requireValue.gold;
+      clock.advance(const Duration(hours: 2));
+      await c.read(saveControllerProvider.notifier).settleOffline();
+      return c.read(saveControllerProvider).requireValue.gold - before;
+    }
+
+    final base = await earned(const {});
+    final maxed = await earned({'antenna': 30, 'idleEff': 30});
+    final rc = ResearchConfig.fromJson(_readJson('assets/data/research.json'));
+    final fx = researchEffects(rc, {'antenna': 30, 'idleEff': 30});
+    final mult =
+        (1 + fx.of(ResearchEffect.gold)) * (1 + fx.of(ResearchEffect.offline));
+    expect(base, greaterThan(0));
+    expect(maxed / base, closeTo(mult, 0.01));
+  });
+
+  test('사냥 능력치(huntStatsUncapped)에 연구 공격·체력이 곱으로 실린다', () {
+    final data = _data(research: true);
+    final save = SaveGame.initial(createdAt: t0);
+    final none = huntStatsUncapped(save, data, t0, guildBonus: const {});
+    final up = huntStatsUncapped(
+      save.copyWith(researchLevels: {'jaw': 30, 'shell': 30}),
+      data,
+      t0,
+      guildBonus: const {},
+    );
+    final fx = researchEffects(data.researchConfig!, {'jaw': 30, 'shell': 30});
+    expect(
+      up.attack / none.attack,
+      closeTo(1 + fx.of(ResearchEffect.huntAtk), 1e-9),
+    );
+    expect(
+      up.maxHp / none.maxHp,
+      closeTo(1 + fx.of(ResearchEffect.huntHpDef), 1e-9),
+    );
+    // 적응형 기준(영구 능력치)에는 안 들어간다.
+    expect(
+      permanentStatsOf(save.copyWith(researchLevels: {'jaw': 30}), data, t0)
+          .attack,
+      permanentStatsOf(save, data, t0).attack,
+    );
   });
 
   test('잠깐 다녀온 정도(1분 이하)는 정산하지 않는다', () async {

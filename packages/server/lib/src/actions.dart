@@ -1413,7 +1413,10 @@ class GameActions {
     var elapsed = t.difference(stored.lastSeen);
     if (elapsed.isNegative) elapsed = Duration.zero;
 
-    final stats = _envelopeStats(stored);
+    final stats = _envelopeStats(
+      stored,
+      researchLevels: _envelopeResearchLevels(stored, clientJson),
+    );
     // 봉투는 **올라온 세이브가 있는 자리**로 잰다(2026-09-15). 가 본 난이도로는
     // 자유롭게 오갈 수 있어서(B안), 저장본이 쉬움인데 클라가 극한 사냥터 11 에
     // 올라가 60초를 놀면 저장본 기준 봉투(쉬움)로는 극한 수입이 100배라 잘린다.
@@ -2156,12 +2159,21 @@ class GameActions {
 
   /// 봉투 능력치 — 강화만 아는 전력에 공격 [_saveBoundAttackMult] 배(펫·장비·버프가 빠진 것을 덮는다).
   /// 업로드 골드 상한·교환소·선물·일일보상 상한이 같은 능력치를 쓴다.
-  CharacterStats _envelopeStats(SaveGame stored) {
-    final bare = deriveStats(
-      config.run,
-      upgradeLevels: stored.upgradeLevels,
-      characterLevel: stored.level,
-      bugsCollected: stored.bugBuffCount,
+  ///
+  /// 연구소 사냥 분야(골드·찾기·공격…)도 곱한다(설계 §8 — 안 넣으면 정당한 수입이 1분 뒤 되돌아간다).
+  /// [researchLevels] 를 주면 그 레벨로(업로드 상한은 저장본·클라 중 큰 쪽 [_envelopeResearchLevels]), 없으면 저장본 레벨.
+  CharacterStats _envelopeStats(
+    SaveGame stored, {
+    Map<String, int>? researchLevels,
+  }) {
+    final bare = applyResearchStats(
+      deriveStats(
+        config.run,
+        upgradeLevels: stored.upgradeLevels,
+        characterLevel: stored.level,
+        bugsCollected: stored.bugBuffCount,
+      ),
+      _researchFx(researchLevels ?? stored.researchLevels),
     );
     return CharacterStats(
       attack: bare.attack * _saveBoundAttackMult,
@@ -2179,6 +2191,33 @@ class GameActions {
       evade: bare.evade,
       boostBonus: bare.boostBonus,
     );
+  }
+
+  /// 연구 레벨 → 효과(연구 설정이 없으면 0).
+  ResearchEffects _researchFx(Map<String, int> levels) {
+    final cfg = config.research;
+    if (cfg == null || levels.isEmpty) return ResearchEffects.none;
+    return researchEffects(cfg, levels);
+  }
+
+  /// 업로드 상한 봉투의 연구 레벨 = 연구마다 max(저장본, 클라) — 최대 레벨로 자른다.
+  /// 레벨 급증(위조)은 연구 레벨 검사가 따로 자른다 — 여기서 저장본만 쓰면 레벨이 막 오른 업로드의 정당한
+  /// 수입이 그 한 번 잘린다. 클라 값은 최대 레벨까지만 믿으므로 봉투가 무한히 커지지는 않는다.
+  Map<String, int> _envelopeResearchLevels(
+    SaveGame stored,
+    Map<String, dynamic> clientJson,
+  ) {
+    final cfg = config.research;
+    if (cfg == null) return stored.researchLevels;
+    final raw = clientJson['rsL'];
+    final client = raw is Map ? raw : const {};
+    return {
+      for (final d in cfg.defs)
+        d.id: max(
+          stored.researchLevels[d.id] ?? 0,
+          (client[d.id] as num?)?.toInt() ?? 0,
+        ).clamp(0, d.maxLevel).toInt(),
+    };
   }
 
   /// 사냥 [minutes]분치 보상(선물·일일보상)의 **상한**(2026-10-08) — 앱은 `huntStatsOf` 로 계산한 금액을
@@ -3334,11 +3373,16 @@ class GameActions {
     }
 
     final run = config.run;
-    final stats = deriveStats(
-      run,
-      upgradeLevels: save.upgradeLevels,
-      characterLevel: save.level,
-      bugsCollected: save.bugBuffCount,
+    // 연구소: 골드·찾기 배율 + 방치 효율 — 앱 `_applyOffline` 과 같은 함수(core_run `research_apply.dart`).
+    final research = _researchFx(save.researchLevels);
+    final stats = applyResearchIdleStats(
+      deriveStats(
+        run,
+        upgradeLevels: save.upgradeLevels,
+        characterLevel: save.level,
+        bugsCollected: save.bugBuffCount,
+      ),
+      research,
     );
 
     // 곤충학자 패스: 오프라인 상한 연장 + 방치 골드 배율(앱과 동일).
@@ -3355,7 +3399,7 @@ class GameActions {
       startStage: save.stageNumber,
       stats: stats,
       elapsed: elapsed,
-      efficiency: run.offlineEfficiency,
+      efficiency: researchOfflineEfficiency(run.offlineEfficiency, research),
       maxAccrual: maxAccrual,
       tier: save.difficultyTier,
       // 심연이면 층 배율(앱 `_applyOffline` 과 같은 규칙).
@@ -5984,6 +6028,9 @@ abstract interface class GameConfigLike {
 
   /// 버프 — 업로드의 희귀 드롭 허용치(채집꾼 배율)에만 쓴다. 없으면 배율 1.
   BuffConfig? get buffs;
+
+  /// 연구소 — 방치 정산 배율(`sync`)·업로드 골드 상한 봉투에 쓴다. 없으면 연구 효과 0.
+  ResearchConfig? get research;
 
   /// 드롭 롤 대상 종 목록.
   List<Species> get speciesList;

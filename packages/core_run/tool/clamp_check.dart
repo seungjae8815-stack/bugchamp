@@ -10,6 +10,8 @@
 // `--passive-gold` : 펫 골드 패시브 최대(3마리 × pets.json passiveV2 reward) · 도감 전 종 발견 골드를 실제 유저 쪽에
 //             **곱으로** 얹는다(2026-10-14 — 가산이던 시절엔 강화로 자란 골드 배율에 묽어져 거의 0 이었다).
 //             서버 봉투에는 없다(서버는 펫·도감을 안 본다). 비교용으로 예전 가산일 때 배율도 함께 찍는다.
+// `--research` : 연구소 사냥 분야를 **다 찍은** 계정(research.json 최대 레벨 — 공격·골드·찾기…).
+//             실제 유저와 서버 봉투(`_envelopeStats` 가 연구 배율을 곱한다) **양쪽**에 얹는다(설계 §8).
 import 'dart:convert';
 import 'dart:io';
 import 'package:core_run/core_run.dart';
@@ -55,6 +57,19 @@ void main(List<String> args) {
       '→ 곱 x${_passiveGoldMul.toStringAsFixed(2)} (예전 가산이면 골드 배율에 +${passiveAdd.toStringAsFixed(2)})',
     );
   }
+  if (args.contains('--research')) {
+    final rc = ResearchConfig.fromJson(
+      jsonDecode(File('$dir/research.json').readAsStringSync())
+          as Map<String, dynamic>,
+    );
+    _research = researchEffects(rc, {
+      for (final d in rc.defs) d.id: d.maxLevel,
+    });
+    print(
+      '연구 최대: 공격 x${(1 + _research.of(ResearchEffect.huntAtk)).toStringAsFixed(2)} · '
+      '골드 x${(1 + _research.of(ResearchEffect.gold)).toStringAsFixed(2)} (실제 유저·서버 봉투 양쪽)',
+    );
+  }
   // 예전 가산 규칙이었다면 이 골드 배율에서 몇 배였나(비교용).
   double addGain(double reward) =>
       reward <= 0 ? 1.0 : (reward + passiveAdd) / reward;
@@ -80,11 +95,14 @@ void main(List<String> args) {
       for (final k in UpgradeKind.values) k: (stage * 0.9).round(),
     };
     // 서버가 상한을 계산할 때 쓰는 스탯: 펫·버프 없음.
-    final serverStats = deriveStats(
-      run,
-      upgradeLevels: levels,
-      characterLevel: 1 + stage ~/ 5,
-      bugsCollected: 50,
+    final serverStats = applyResearchStats(
+      deriveStats(
+        run,
+        upgradeLevels: levels,
+        characterLevel: 1 + stage ~/ 5,
+        bugsCollected: 50,
+      ),
+      _research,
     );
     final bound =
         goldSanityFloor +
@@ -106,6 +124,7 @@ void main(List<String> args) {
     final perKill = hp / dps + 0.6 / speedMul;
     final goldPerKill =
         rewardGold(run, depth, goldRush) *
+        (1 + _research.of(ResearchEffect.gold)) *
         (1 + run.onlineGoldBonus) *
         guildGold *
         _passiveGoldMul;
@@ -136,11 +155,14 @@ void main(List<String> args) {
         for (final e in run.upgrades.entries)
           e.key: ((e.value.maxLevel ?? 100) * fill[tier]).round(),
       };
-      final serverStats = deriveStats(
-        run,
-        upgradeLevels: levels,
-        characterLevel: 30,
-        bugsCollected: 50,
+      final serverStats = applyResearchStats(
+        deriveStats(
+          run,
+          upgradeLevels: levels,
+          characterLevel: 30,
+          bugsCollected: 50,
+        ),
+        _research,
       );
       final bound =
           goldSanityFloor +
@@ -194,11 +216,14 @@ void main(List<String> args) {
         for (final e in run.upgrades.entries)
           e.key: ((e.value.maxLevel ?? 100) * fill[tier]).round(),
       };
-      final serverStats = deriveStats(
-        run,
-        upgradeLevels: levels,
-        characterLevel: 30,
-        bugsCollected: 50,
+      final serverStats = applyResearchStats(
+        deriveStats(
+          run,
+          upgradeLevels: levels,
+          characterLevel: 30,
+          bugsCollected: 50,
+        ),
+        _research,
       );
       final server = exchangeOutput(
         run,
@@ -231,6 +256,9 @@ void main(List<String> args) {
     }
   }
 }
+
+/// `--research` 의 연구 최대 효과(없으면 0).
+var _research = ResearchEffects.none;
 
 /// `--passive-gold` 의 골드 곱(펫 골드 패시브 3마리 × 도감 발견). 없으면 1.
 var _passiveGoldMul = 1.0;

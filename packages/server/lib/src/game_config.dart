@@ -30,6 +30,7 @@ class GameConfig implements GameConfigLike {
     this.skill,
     this.fairy,
     this.buffs,
+    this.research,
     this.guild = const GuildConfig(),
     this.chatRules = const ChatRules(),
     this.speciesById = const {},
@@ -70,6 +71,8 @@ class GameConfig implements GameConfigLike {
   final FairyConfig? fairy;
   @override
   final BuffConfig? buffs;
+  @override
+  final ResearchConfig? research;
 
   /// 길드 기본 규칙(guild.json). 파일이 없으면 기본값.
   final GuildConfig guild;
@@ -138,6 +141,7 @@ class GameConfig implements GameConfigLike {
     final skillJson = await readOpt('skills.json');
     final fairyJson = await readOpt('fairies.json');
     final buffJson = await readOpt('buffs.json');
+    final researchJson = await readOpt('research.json');
     final guildJson = await readOpt('guild.json');
     final chatJson = await readOpt('chat.json');
 
@@ -163,6 +167,9 @@ class GameConfig implements GameConfigLike {
       skill: skillJson == null ? null : SkillConfig.fromJson(skillJson),
       fairy: fairyJson == null ? null : FairyConfig.fromJson(fairyJson),
       buffs: buffJson == null ? null : BuffConfig.fromJson(buffJson),
+      research: researchJson == null
+          ? null
+          : ResearchConfig.fromJson(researchJson),
       guild: GuildConfig.fromJson(guildJson),
       chatRules: chatJson == null
           ? const ChatRules()

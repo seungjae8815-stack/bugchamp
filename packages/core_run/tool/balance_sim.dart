@@ -29,9 +29,18 @@ import 'package:core_models/core_models.dart'
 import 'package:core_run/core_run.dart';
 
 import 'power_ceiling.dart';
+import 'research_table.dart' show FitBasis, scheduleResearch;
 
 /// 하루 중 실제로 앱을 켜고 노는 시간. `--active-hours=3` 으로 바꾼다(연구소 표 — 하루 3시간 켜 둔 유저).
 double _activeHoursPerDay = 2.0;
+
+/// `--research` : 연구소(research.json)를 무과금 3시간 유저의 일정(`research_table.dart` `scheduleResearch` —
+/// json `fitBasis` 의 칸 곡선)대로 찍는다. 사냥 분야 6종(공격·체력방어·찾기·골드·보스·방치) 효과를 날짜별 레벨로
+/// 입히고, 레벨을 **시작한 날** 비용(골드·재료 "사냥 N분치" × 그날 자리의 사냥 60분치 ÷ 60)을 강화 골드·재료에서 뺀다.
+/// `--research=full` 은 첫날부터 다 찍은 효과(비용 없음 — 상한 확인용).
+/// ⚠️ 근사: 일정은 연구가 없는 3시간 유저의 도착일로 짠 것이라 연구로 느려져도 칸이 늘어나는 날은 그대로 ·
+/// 화석·연구 표본은 빼지 않는다 · 골드가 모자라도 연구는 일정대로 시작한다(빚 — 강화를 그만큼 못 산다).
+String? _researchMode;
 
 /// 하루에 오프라인 보상으로 회수하는 시간(상한 8h — kMaxOfflineAccrual).
 const _offlineHoursPerDay = 8.0;
@@ -396,8 +405,9 @@ void main(List<String> args) {
         sim.levels.clear();
         sim.level = 1;
         sim.xp = 0;
-        sim.gold = 0;
-        sim.materials.clear();
+        // 연구 빚(`--research` — 일정대로 시작한 연구 비용)은 회차를 넘어도 남긴다.
+        sim.gold = math.min(0.0, sim.gold);
+        sim.materials.removeWhere((_, v) => v >= 0);
       }
       final from = day;
       earnedBefore = sim.earnedMaterials.values.fold<double>(
@@ -494,6 +504,15 @@ void main(List<String> args) {
     }
     stdout.writeln('');
     stdout.writeln('  ★ 전 회차 합계: $total일');
+    if (_researchMode != null) {
+      stdout.writeln(
+        '  연구(${_researchMode == 'full' ? '첫날부터 다 찍음 · 비용 없음' : '무과금 일정 · 비용 차감'}): '
+        '공격 +${(sim._research.of(ResearchEffect.huntAtk) * 100).toStringAsFixed(1)}% · '
+        '골드 +${(sim._research.of(ResearchEffect.gold) * 100).toStringAsFixed(1)}% · '
+        '방치 +${(sim._research.of(ResearchEffect.offline) * 100).toStringAsFixed(1)}% (끝 시점) · '
+        '쓴 골드 ${_short(sim.researchGoldSpent)} · 재료(종류당) ${_short(sim.researchMatSpent)}',
+      );
+    }
     // 회피(옛 이동속도 칸, 2026-10-09) — 강화가 회차마다 초기화되므로 회차 안에서 0 → 상한으로 자란다.
     stdout.writeln(
       '  회피(활동 중 평균): ${[for (final e in sim.evadeLog.entries)
@@ -1213,7 +1232,7 @@ class _Player {
       _addOffBattleIncome(d);
       _run(_activeHoursPerDay * 3600 * d / 2, 1.0);
       _online = false;
-      _run(_offlineHoursPerDay * 3600 * d, config.offlineEfficiency);
+      _run(_offlineHoursPerDay * 3600 * d, _offlineEff);
       _forgeDays(d);
     }
   }
@@ -1568,6 +1587,7 @@ class _Player {
     s = _applySkills(s, activeAvg: activeAvg);
     s = _applyFairy(s, activeAvg: activeAvg);
     s = _applyGuild(s);
+    s = applyResearchStats(s, _research);
     return capCritChance(s, config.critChanceMax);
   }
 
@@ -2145,6 +2165,85 @@ class _Player {
   /// 이번 날 강화에 쓸 수 있게 들어온 골드(처치 − 공방 몫 + 전투 밖 + 사냥터 클리어) — 연구가 깎는 몫의 분모.
   double _toUpgradesAcc = 0;
 
+  // ── 연구소(`--research`) ──
+  /// 지금 날짜까지 끝난 연구 레벨의 효과(하루마다 [_researchTick] 이 갱신).
+  ResearchEffects _research = ResearchEffects.none;
+
+  /// 연구 일정 — (id, 레벨, 끝나는 날) 과 날짜별 비용(사냥 분).
+  ({
+    List<({String id, int level, double end})> ends,
+    Map<int, double> goldMin,
+    Map<int, double> matMin,
+  })?
+  _researchPlan;
+  ResearchConfig? _researchConfig;
+
+  /// 연구에 쓴 골드·재료(종류당) 누계 — 보고용.
+  double researchGoldSpent = 0, researchMatSpent = 0;
+
+  double get _offlineEff =>
+      researchOfflineEfficiency(config.offlineEfficiency, _research);
+
+  void _researchInit() {
+    if (_researchMode == null || _researchConfig != null) return;
+    final raw =
+        jsonDecode(File('../app/assets/data/research.json').readAsStringSync())
+            as Map<String, dynamic>;
+    final rc = ResearchConfig.fromJson(raw);
+    _researchConfig = rc;
+    if (_researchMode == 'full') {
+      _research = researchEffects(rc, {
+        for (final d in rc.defs) d.id: d.maxLevel,
+      });
+      return;
+    }
+    final basis = FitBasis.fromJson(raw['fitBasis'] as Map<String, dynamic>);
+    final s = scheduleResearch(rc, basis);
+    _researchPlan = (
+      ends: [
+        for (final st in s.starts)
+          (id: st.id, level: st.level, end: st.day + st.seconds / 86400),
+      ],
+      goldMin: s.goldMin,
+      matMin: s.matMin,
+    );
+  }
+
+  /// 날짜가 바뀐 뒤 끝난 레벨을 반영한다.
+  void _researchTick() {
+    _researchInit();
+    final plan = _researchPlan;
+    final rc = _researchConfig;
+    if (plan == null || rc == null) return;
+    final levels = <String, int>{};
+    for (final e in plan.ends) {
+      if (e.end <= elapsedDays && e.level > (levels[e.id] ?? 0)) {
+        levels[e.id] = e.level;
+      }
+    }
+    _research = researchEffects(rc, levels);
+  }
+
+  /// [day] 날 시작한 연구 레벨의 비용을 낸다 — 사냥 N분치 = [hour] × N ÷ 60(그날 활동 한가운데 자리).
+  void _payResearch(double day, ({double gold, double mats}) hour) {
+    _researchInit();
+    final plan = _researchPlan;
+    if (plan == null || fitting) return;
+    final d = day.floor();
+    final g = (plan.goldMin[d] ?? 0) * hour.gold / 60;
+    final m = (plan.matMin[d] ?? 0) * hour.mats / 60;
+    gold -= g;
+    researchGoldSpent += g;
+    researchMatSpent += m;
+    for (final k in const [
+      MaterialKind.chitin,
+      MaterialKind.mineral,
+      MaterialKind.sap,
+    ]) {
+      materials[k] = (materials[k] ?? 0) - m;
+    }
+  }
+
   void playDay() {
     // 전투 밖 보상(선물·일일·미션·결투) — 2026-10-08 부터 선물·일일보상은 **이 유저의 사냥 N분치**.
     final day = elapsedDays;
@@ -2163,10 +2262,12 @@ class _Player {
     final inc = _addOffBattleIncome(1);
     // 사냥 60분치(버프·접속 보너스 제외 — 연구 비용 "N분치"의 단위) — 활동 한가운데 자리.
     final hour = _huntMinutes(huntStats, 60);
+    _payResearch(day, hour);
     _run(_activeHoursPerDay * 3600 / 2, 1.0);
     _online = false;
-    _run(_offlineHoursPerDay * 3600, config.offlineEfficiency);
+    _run(_offlineHoursPerDay * 3600, _offlineEff);
     _forgeDays(1);
+    _researchTick();
     incomeLog.add((
       tier: _tier,
       zone: z,
@@ -2438,7 +2539,7 @@ class _Player {
     final need = config.bossUnlockKills.toDouble();
     final budgetSec =
         days *
-        (_activeHoursPerDay + _offlineHoursPerDay * config.offlineEfficiency) *
+        (_activeHoursPerDay + _offlineHoursPerDay * _offlineEff) *
         3600;
     var used = 0.0;
     var floor = 1;
@@ -3198,6 +3299,10 @@ _Opts _parseArgs(List<String> args) {
     }
     if (a == '--income') {
       _printIncome = true;
+      continue;
+    }
+    if (a == '--research' || a.startsWith('--research=')) {
+      _researchMode = a == '--research' ? 'schedule' : a.substring(11);
       continue;
     }
     final ah = RegExp(r'^--active-hours=(.+)$').firstMatch(a);

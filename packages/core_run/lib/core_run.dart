@@ -35,6 +35,7 @@ export 'src/monster_config.dart';
 export 'src/pet_attack.dart';
 export 'src/passive_v2_config.dart';
 export 'src/pet_config.dart';
+export 'src/research_apply.dart';
 export 'src/research_config.dart';
 export 'src/run_config.dart';
 export 'src/run_math.dart';

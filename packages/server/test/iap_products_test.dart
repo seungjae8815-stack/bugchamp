@@ -48,6 +48,8 @@ class _Cfg implements GameConfigLike {
   @override
   final BuffConfig? buffs = BuffConfig.fromJson(_data('buffs.json'));
   @override
+  final ResearchConfig? research = null;
+  @override
   List<Species> get speciesList => const [];
 }
 

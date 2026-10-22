@@ -450,11 +450,18 @@ class SaveController extends AsyncNotifier<SaveGame> {
     final elapsed = now.difference(save.lastSeen);
     if (elapsed.inSeconds <= 60) return save;
 
-    final stats = deriveStats(
-      config,
-      upgradeLevels: save.upgradeLevels,
-      characterLevel: save.level,
-      bugsCollected: save.bugBuffCount,
+    // 연구소: 골드·찾기 배율 + 방치 효율(설계 §8 — 서버 `sync` 와 같은 규칙, core_run `research_apply.dart`).
+    final research = data.researchConfig == null
+        ? ResearchEffects.none
+        : researchEffects(data.researchConfig!, save.researchLevels);
+    final stats = applyResearchIdleStats(
+      deriveStats(
+        config,
+        upgradeLevels: save.upgradeLevels,
+        characterLevel: save.level,
+        bugsCollected: save.bugBuffCount,
+      ),
+      research,
     );
     // 곤충학자 패스: 오프라인 상한 연장 + 방치 골드 배율(iap.json §6).
     final iap = data.iapConfig;
@@ -477,7 +484,7 @@ class SaveController extends AsyncNotifier<SaveGame> {
       abyssFloor: activeAbyssFloor(save),
       // 끝에 눌러앉으면 방치 수입도 깎인다(온라인과 같은 규칙).
       finalStage: data.roadmapConfig?.finalStage,
-      efficiency: config.offlineEfficiency,
+      efficiency: researchOfflineEfficiency(config.offlineEfficiency, research),
     );
     final actual = plan(offlineBuffSpans(save, save.lastSeen, accrued));
     // 길드 버프 골드(1.0.15) — 방치가 주 플레이라 오프라인에도 건다(사장님 확정).
