@@ -33,7 +33,7 @@ const int kSaveSchemaVersion = 18;
 /// 27(2026-10-16, 1.0.22): 곤충 희귀도 — 곤충 `ry` · 짝짓기 슬롯 `mr`(어미 희귀도, 표시 전용).
 ///    `ry` 는 버전과 상관없이 서버가 같은 id 면 저장본 값으로 지킨다(`guardGradeBugFields`) · `mr` 은 떨궈도 종 희귀도로 보일 뿐이다.
 ///    곤충 `lru`(놓친 능력치 굴리기 사용 횟수) — 서버가 줄지 않게(큰 쪽) 지킨다.
-const int kSaveFeatureLevel = 27;
+const int kSaveFeatureLevel = 28;
 
 /// 프로필 그림 id 형식(2026-10-10) — `assets/data/avatars.json` 의 id 꼴이자 Supabase `profiles.avatar` 의 SQL 검사와 같다.
 /// 서버는 이 꼴이 아닌 값을 받지 않는다(긴 문자열이 상대의 결투 후보 응답·세션에 그대로 실려 나갔다 — 2026-10-10 점검).
@@ -567,6 +567,32 @@ Set<String> keepBugIds(
 }
 
 /// 저장 루트 (버전드 JSON 스냅샷). v2: 횡스크롤 런 진행 상태 포함.
+/// 진행 중인 연구 한 칸(연구소, 2026-10-22). JSON `{i,l,e}` — 레벨 [level] 을 [endsAt] 에 마친다.
+@immutable
+class ResearchSlot {
+  const ResearchSlot({
+    required this.id,
+    required this.level,
+    required this.endsAt,
+  });
+
+  final String id;
+  final int level;
+  final DateTime endsAt;
+
+  factory ResearchSlot.fromJson(Map<String, dynamic> j) => ResearchSlot(
+    id: j['i'] as String,
+    level: (j['l'] as num).toInt(),
+    endsAt: DateTime.parse(j['e'] as String).toUtc(),
+  );
+
+  Map<String, dynamic> toJson() => {
+    'i': id,
+    'l': level,
+    'e': endsAt.toUtc().toIso8601String(),
+  };
+}
+
 class SaveGame {
   const SaveGame({
     required this.schemaVersion,
@@ -638,6 +664,11 @@ class SaveGame {
     this.skillLevels = const {},
     this.equippedSkills = const [],
     this.skillShards = const {},
+    this.researchLevels = const {},
+    this.researchSlots = const [],
+    this.researchSamples = 0,
+    this.researchSlotsBought = 0,
+    this.researchPassExpiresAt,
     this.skillGradeShards = const {},
     this.essence = const {},
     this.growthPotions = 0,
@@ -1295,6 +1326,25 @@ class SaveGame {
   /// 크래시가 났다 — 별도 필드면 구버전은 필드째 무시한다.
   final Map<String, int> skillShards;
 
+  /// 연구소(2026-10-22) — 연구 id → 완료 레벨. 새 `MaterialKind` 가 아니라 별도 필드(구버전 크래시 방지).
+  final Map<String, int> researchLevels;
+
+  /// 진행 중인 연구 칸들.
+  final List<ResearchSlot> researchSlots;
+
+  /// 연구 표본(연구 재료).
+  final int researchSamples;
+
+  /// 젤리로 산 연구 칸 수.
+  final int researchSlotsBought;
+
+  /// 연구 패스 만료 시각.
+  final DateTime? researchPassExpiresAt;
+
+  /// [now] 에 연구 패스가 켜져 있는가.
+  bool researchPassActive(DateTime now) =>
+      researchPassExpiresAt != null && now.isBefore(researchPassExpiresAt!);
+
   /// 곤충 정수(종 id → 개수) — 개체 등급 올리기 재료(2026-10-11, docs/design_individual_grade.md).
   /// 애벌레 이상 곤충을 정수로 바꿔 모은다. ⚠️ 새 `MaterialKind` 가 아니다(구버전 크래시, skillShards 와 같은 이유).
   final Map<String, int> essence;
@@ -1683,6 +1733,11 @@ class SaveGame {
     Map<String, int>? skillLevels,
     List<String>? equippedSkills,
     Map<String, int>? skillShards,
+    Map<String, int>? researchLevels,
+    List<ResearchSlot>? researchSlots,
+    int? researchSamples,
+    int? researchSlotsBought,
+    DateTime? researchPassExpiresAt,
     Map<String, int>? skillGradeShards,
     Map<String, int>? essence,
     int? growthPotions,
@@ -1831,6 +1886,11 @@ class SaveGame {
     skillLevels: skillLevels ?? this.skillLevels,
     equippedSkills: equippedSkills ?? this.equippedSkills,
     skillShards: skillShards ?? this.skillShards,
+    researchLevels: researchLevels ?? this.researchLevels,
+    researchSlots: researchSlots ?? this.researchSlots,
+    researchSamples: researchSamples ?? this.researchSamples,
+    researchSlotsBought: researchSlotsBought ?? this.researchSlotsBought,
+    researchPassExpiresAt: researchPassExpiresAt ?? this.researchPassExpiresAt,
     skillGradeShards: skillGradeShards ?? this.skillGradeShards,
     essence: essence ?? this.essence,
     growthPotions: growthPotions ?? this.growthPotions,
@@ -2145,6 +2205,18 @@ class SaveGame {
     skillShards: _intMapFromJson(
       json['skillShards'] as Map<String, dynamic>? ?? const {},
     ),
+    researchLevels: _intMapFromJson(
+      json['rsL'] as Map<String, dynamic>? ?? const {},
+    ),
+    researchSlots: [
+      for (final v in (json['rsS'] as List? ?? const []))
+        ResearchSlot.fromJson((v as Map).cast<String, dynamic>()),
+    ],
+    researchSamples: (json['rsC'] as num?)?.toInt() ?? 0,
+    researchSlotsBought: (json['rsB'] as num?)?.toInt() ?? 0,
+    researchPassExpiresAt: json['researchPassExpiresAt'] == null
+        ? null
+        : DateTime.tryParse('${json['researchPassExpiresAt']}')?.toUtc(),
     essence: _intMapFromJson(
       json['essence'] as Map<String, dynamic>? ?? const {},
     ),
@@ -2377,6 +2449,15 @@ class SaveGame {
     if (skillLevels.isNotEmpty) 'skillLevels': skillLevels,
     if (equippedSkills.isNotEmpty) 'equippedSkills': equippedSkills,
     if (skillShards.isNotEmpty) 'skillShards': skillShards,
+    if (researchLevels.isNotEmpty) 'rsL': researchLevels,
+    if (researchSlots.isNotEmpty)
+      'rsS': [for (final r in researchSlots) r.toJson()],
+    if (researchSamples != 0) 'rsC': researchSamples,
+    if (researchSlotsBought != 0) 'rsB': researchSlotsBought,
+    if (researchPassExpiresAt != null)
+      'researchPassExpiresAt': researchPassExpiresAt!
+          .toUtc()
+          .toIso8601String(),
     if (essence.isNotEmpty) 'essence': essence,
     if (growthPotions > 0) 'potions': growthPotions,
     if (potionBuyDay != null) 'potionBuyDay': potionBuyDay,

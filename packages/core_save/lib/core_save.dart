@@ -21,6 +21,7 @@ export 'src/individual_grade.dart';
 export 'src/mission_progress.dart';
 export 'src/offline_buffs.dart';
 export 'src/pvp_league.dart';
+export 'src/research_progress.dart';
 export 'src/save_game.dart';
 export 'src/save_migrations.dart';
 export 'src/skill_progress.dart';
