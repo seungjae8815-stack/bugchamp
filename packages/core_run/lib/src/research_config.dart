@@ -211,6 +211,7 @@ class ResearchConfig {
     this.bossFirstDrop = 0,
     this.bossRepeatDrop = 0,
     this.bossRepeatChance = 0,
+    this.clockSkewSeconds = 300,
   });
 
   final List<ResearchDef> defs;
@@ -227,6 +228,9 @@ class ResearchConfig {
   final int bossFirstDrop;
   final int bossRepeatDrop;
   final double bossRepeatChance;
+
+  /// 서버 업로드 검사 — 새 진행 칸 하나의 끝 시각에 봐 주는 기기 시계 어긋남(초). 칸의 끝 시각은 앱 시계로 적힌다.
+  final int clockSkewSeconds;
 
   /// 칸 수 최대(코드 상수 — 기획 확정 규칙값).
   static const int maxSlots = 3;
@@ -323,6 +327,8 @@ class ResearchConfig {
           (j['bossRepeatDrop'] as num?)?.toInt() ?? d.bossRepeatDrop,
       bossRepeatChance:
           (j['bossRepeatChance'] as num?)?.toDouble() ?? d.bossRepeatChance,
+      clockSkewSeconds:
+          (j['clockSkewSeconds'] as num?)?.toInt() ?? d.clockSkewSeconds,
     );
   }
 }

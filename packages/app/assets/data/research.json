@@ -17,6 +17,7 @@
   "bossFirstDrop": 25,
   "bossRepeatDrop": 2,
   "bossRepeatChance": 0.1,
+  "clockSkewSeconds": 300,
   "duelCap": 0.57,
   "research": [
     {

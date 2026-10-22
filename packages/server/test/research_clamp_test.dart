@@ -135,12 +135,17 @@ void main() {
       );
       expect(ok.save!.gold, withResearch.gold + gain, reason: '$tier·$zone');
 
-      // 저장본엔 연구가 없고 이번 업로드에서 처음 올라온 레벨도 봉투에 든다(max(저장본, 클라)).
+      // 이번 업로드에서 처음 올라온 레벨은 **시간 검사를 통과한 만큼만** 봉투에 든다 — 60초에 전부 최대는
+      // 위조라 저장본 레벨(연구 없음) 봉투로 잘린다(Task 8 검토: 위조 레벨로 봉투를 넓히지 못하게).
       final fresh = actions.mergeSave(
         bare,
         bare.copyWith(gold: bare.gold + gain, researchLevels: maxed).toJson(),
       );
-      expect(fresh.save!.gold, bare.gold + gain, reason: '$tier·$zone 새 레벨');
+      expect(
+        fresh.save!.gold,
+        noResearch.save!.gold,
+        reason: '$tier·$zone 새 레벨',
+      );
     }
   });
 

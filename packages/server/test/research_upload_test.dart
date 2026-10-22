@@ -112,14 +112,14 @@ void main() {
   });
 
   test('clock_forward — 끝나기 직전으로 위조한 진행 칸도 이미 흐른 몫을 센다', () {
-    final s = stored();
-    // 1분 경과인데 Lv1(5분) 칸이 1초 남았다 = 4분 59초가 흘렀다는 주장.
+    final s = stored(levels: {'jaw': 4});
+    // 1분 경과인데 Lv5 칸이 1초 남았다 = 그 레벨 시간이 다 흘렀다는 주장(시계 어긋남 여유로는 모자란다).
     final json = s
         .copyWith(
           researchSlots: [
             ResearchSlot(
               id: 'jaw',
-              level: 1,
+              level: 5,
               endsAt: t0.add(const Duration(seconds: 1)),
             ),
           ],
@@ -167,25 +167,93 @@ void main() {
     expect(out.researchLevels['jaw'], 1);
   });
 
-  test('jelly_finish_accepted — 줄어든 젤리로 즉시 완료한 만큼 인정, 젤리가 안 줄었으면 되돌림', () {
-    final need = timeSum(0, 3) - const Duration(seconds: 60);
-    final cost = rc.instantJelly(need);
-    final s = stored(jelly: 1000);
+  test('jelly_finish_accepted — 저장본 진행 칸 하나를 젤리로 끝낸 만큼 인정, 젤리가 안 줄었으면 되돌림', () {
+    // 저장본에 Lv3 진행 칸 — 60초 뒤 남은 몫을 젤리로 끝냈다.
+    final full = rc.timeAt(jaw, 3);
+    final s = stored(
+      levels: {'jaw': 2},
+      slots: [
+        ResearchSlot(
+          id: 'jaw',
+          level: 3,
+          endsAt: t0.subtract(const Duration(seconds: 60)).add(full),
+        ),
+      ],
+    );
+    final cost = rc.instantJelly(full - const Duration(seconds: 60));
+    final finished = s.copyWith(
+      researchLevels: {'jaw': 3},
+      researchSlots: const [],
+    );
     final ok = up(
+      s,
+      finished.copyWith(materials: {MaterialKind.jelly: 1000 - cost}).toJson(),
+    );
+    expect(ok.researchLevels['jaw'], 3);
+    final bad = up(s, finished.toJson());
+    expect(bad.researchLevels['jaw'], 2);
+  });
+
+  test('젤리 300 이 줄고 20 레벨 — 레벨마다 즉시 완료 값을 매겨 되돌림', () {
+    final s = stored(jelly: 1000);
+    final out = up(
       s,
       s
           .copyWith(
-            researchLevels: {'jaw': 3},
-            materials: {MaterialKind.jelly: 1000 - cost},
+            researchLevels: {'jaw': 20},
+            materials: const {MaterialKind.jelly: 700},
           )
           .toJson(),
     );
-    expect(ok.researchLevels['jaw'], 3);
-    final bad = up(s, s.copyWith(researchLevels: {'jaw': 3}).toJson());
-    expect(bad.researchLevels['jaw'], isNull);
+    expect(out.researchLevels['jaw'], isNull);
   });
 
-  test('칸 구매 — 젤리를 낸 만큼만, 2칸까지', () {
+  test('다른 곳(알 뽑기)에 쓴 젤리는 연구 즉시 완료에 다시 쓰지 못한다', () {
+    final full = rc.timeAt(jaw, 3);
+    final s = stored(
+      levels: {'jaw': 2},
+      slots: [
+        ResearchSlot(
+          id: 'jaw',
+          level: 3,
+          endsAt: t0.subtract(const Duration(seconds: 60)).add(full),
+        ),
+      ],
+    );
+    final cost = rc.instantJelly(full - const Duration(seconds: 60));
+    final price = cfg.pet.gachaJellyCost;
+    final eggs = (cost / price).ceil();
+    final gacha = [
+      for (var i = 0; i < eggs; i++)
+        IndividualBug(
+          id: 'g$i',
+          speciesId: 'stag_giant',
+          sizeMm: 50,
+          potential: 3,
+          temperament: Temperament.steadfast,
+          sex: Sex.male,
+          element: Element.wood,
+          stage: LifeStage.egg,
+          stageSince: t0,
+          fromGacha: true,
+        ),
+    ];
+    // 뽑기에 젤리를 다 쓰고, 연구도 젤리로 끝냈다고 주장.
+    final out = up(
+      s,
+      s
+          .copyWith(
+            bugs: gacha,
+            researchLevels: {'jaw': 3},
+            researchSlots: const [],
+            materials: {MaterialKind.jelly: 1000 - eggs * price},
+          )
+          .toJson(),
+    );
+    expect(out.researchLevels['jaw'], 2);
+  });
+
+  test('칸 구매 — 낸 젤리(+ 같은 업로드의 기기 젤리 수입)만큼, 2칸까지', () {
     final s = stored(jelly: 1000);
     final paid = up(
       s,
@@ -197,7 +265,19 @@ void main() {
           .toJson(),
     );
     expect(paid.researchSlotsBought, 1);
-    final free = up(s, s.copyWith(researchSlotsBought: 1).toJson());
+    // 같은 업로드에 미션 젤리 +5 — 순감소(95)가 칸 값(100)보다 작아도 산 칸은 남는다.
+    final withGain = up(
+      s,
+      s
+          .copyWith(
+            researchSlotsBought: 1,
+            materials: {MaterialKind.jelly: 1000 - rc.slotJelly[0] + 5},
+          )
+          .toJson(),
+    );
+    expect(withGain.researchSlotsBought, 1);
+    // 두 칸(400)을 젤리 없이 — 업로드 젤리 증가 허용치로도 설명이 안 된다.
+    final free = up(s, s.copyWith(researchSlotsBought: 2).toJson());
     expect(free.researchSlotsBought, 0);
     final over = up(
       s,
@@ -209,6 +289,100 @@ void main() {
           .toJson(),
     );
     expect(over.researchSlotsBought, lessThanOrEqualTo(rc.slotJelly.length));
+  });
+
+  test('되돌릴 때 이번 업로드에 시작한 단계의 시작 값을 돌려준다', () {
+    final barter = rc.byId('barter')!;
+    final c = rc.costAt(barter, 1);
+    final s = stored(samples: 50).copyWith(gold: 1000000);
+    // 정직하게 교환 협상 Lv1 을 시작해 값을 냈는데, 같은 업로드의 다른 칸이 위조로 걸렸다.
+    final json = s
+        .copyWith(
+          researchSamples: 50 - c.samples,
+          gold: 1000000 - 1000,
+          researchLevels: {'jaw': 20},
+          researchSlots: [
+            ResearchSlot(
+              id: 'barter',
+              level: 1,
+              endsAt: t0.add(rc.timeAt(barter, 1)),
+            ),
+          ],
+        )
+        .toJson();
+    final out = up(s, json);
+    expect(out.researchLevels['jaw'], isNull);
+    expect(out.researchSlots, isEmpty);
+    expect(out.researchSamples, greaterThanOrEqualTo(50));
+    expect(out.gold, greaterThanOrEqualTo(1000000 - 1000));
+  });
+
+  test('기기 시계가 3분 늦어도 새 진행 칸은 인정', () {
+    final s = stored();
+    final def = rc.byId('barter')!;
+    final skewed = t0.subtract(const Duration(minutes: 3));
+    final out = up(
+      s,
+      s
+          .copyWith(
+            researchSlots: [
+              ResearchSlot(
+                id: 'barter',
+                level: 1,
+                endsAt: skewed.add(rc.timeAt(def, 1)),
+              ),
+            ],
+          )
+          .toJson(),
+    );
+    expect(out.researchSlots.single.id, 'barter');
+  });
+
+  test('한 줄은 칸 하나 — 노는 칸의 시간을 빌려 한 연구를 두 배로 올리지 못한다', () {
+    final need = timeSum(0, 2);
+    // 극한까지 가 본 계정 = 3칸. 경과는 두 레벨 시간의 60% — 칸 셋을 합치면 넉넉하지만 한 줄로는 모자란다.
+    final s = stored(elapsed: need * 0.6).copyWith(maxTierReached: 3);
+    expect(rc.slotsFor(s.topTier, 0), 3);
+    final out = up(s, s.copyWith(researchLevels: {'jaw': 2}).toJson());
+    expect(out.researchLevels['jaw'], isNull);
+  });
+
+  test('끝 시각을 업로드마다 60초씩 당기면 결국 되돌린다', () {
+    final full = rc.timeAt(jaw, 5);
+    var s = stored(
+      levels: {'jaw': 4},
+      slots: [ResearchSlot(id: 'jaw', level: 5, endsAt: t0.add(full))],
+    ).copyWith(lastSeen: t0);
+    var clamped = false;
+    for (var i = 1; i <= 30 && !clamped; i++) {
+      final t = t0.add(Duration(minutes: i));
+      final a = GameActions(config: cfg, now: () => t);
+      final pulled = s.researchSlots.single.endsAt.subtract(
+        const Duration(seconds: 60),
+      );
+      final json = s
+          .copyWith(
+            researchSlots: [ResearchSlot(id: 'jaw', level: 5, endsAt: pulled)],
+          )
+          .toJson();
+      final next = a.mergeSave(s, json).save!;
+      if (next.researchSlots.single.endsAt != pulled) clamped = true;
+      s = next;
+    }
+    expect(clamped, isTrue);
+  });
+
+  test('위조한 최대 연구 레벨은 골드 상한 봉투를 넓히지 못한다', () {
+    final s = stored().copyWith(gold: 1000);
+    final maxed = {for (final d in rc.defs) d.id: d.maxLevel};
+    final plain = up(s, s.copyWith(gold: 1 << 50).toJson());
+    final forged = up(
+      s,
+      s.copyWith(gold: 1 << 50, researchLevels: maxed).toJson(),
+    );
+    expect(plain.gold, lessThan(1 << 50));
+    expect(forged.gold, plain.gold);
+    expect(forged.researchLevels.values.every((v) => v == 0), isTrue);
   });
 
   test('레벨이 줄면 저장본 · 모르는 연구는 버림 · 최대 레벨로 자름', () {
