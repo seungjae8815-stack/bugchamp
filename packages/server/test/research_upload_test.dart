@@ -527,19 +527,18 @@ void main() {
     }
   });
 
-  test('되돌려도 값을 치른 산 칸은 남고, 되돌린 즉시 완료 젤리는 돌려준다', () {
+  test('되돌려도 값을 치른 산 칸은 남고, 즉시 완료 젤리는 돌려주지 않는다(수도꼭지 규칙)', () {
     final s = stored(jelly: 1000);
     final full = rc.timeAt(jaw, 1);
     final finishJelly = rc.instantJelly(full - const Duration(seconds: 60));
+    final uploaded = 1000 - rc.slotJelly[0] - finishJelly;
     final out = up(
       s,
       s
           .copyWith(
             researchSlotsBought: 1,
             // 칸 값 + 즉시 완료 젤리를 냈다. 그런데 다른 줄(교환 협상 Lv20)이 위조로 걸린다.
-            materials: {
-              MaterialKind.jelly: 1000 - rc.slotJelly[0] - finishJelly,
-            },
+            materials: {MaterialKind.jelly: uploaded},
             researchLevels: {'jaw': 1, 'barter': 20},
           )
           .toJson(),
@@ -547,11 +546,49 @@ void main() {
     expect(out.researchLevels['barter'], isNull);
     expect(out.researchLevels['jaw'], isNull);
     expect(out.researchSlotsBought, 1);
-    expect(
-      out.materialCount(MaterialKind.jelly),
-      1000 - rc.slotJelly[0],
-      reason: '되돌린 레벨의 즉시 완료 젤리는 돌려받는다',
+    expect(out.materialCount(MaterialKind.jelly), uploaded);
+  });
+
+  test('다른 곳에 젤리를 쓰고 rsL 을 위조해도 젤리가 올라온 값보다 늘지 않는다', () {
+    // 교환소·부화 즉시 완료 등(연구 검사가 세지 않는 소비처)에 젤리 200 을 썼다 + 위조 레벨.
+    var s = stored(jelly: 1000);
+    for (var i = 1; i <= 3; i++) {
+      final t = t0.add(Duration(seconds: 60 * i));
+      final a = GameActions(config: cfg, now: () => t);
+      final uploaded = s.materialCount(MaterialKind.jelly) - 200;
+      final out = a
+          .mergeSave(
+            s,
+            s
+                .copyWith(
+                  researchLevels: {'jaw': 25},
+                  materials: {MaterialKind.jelly: uploaded},
+                )
+                .toJson(),
+          )
+          .save!;
+      expect(out.researchLevels['jaw'], isNull);
+      expect(out.materialCount(MaterialKind.jelly), uploaded, reason: '$i');
+      s = out;
+    }
+  });
+
+  test('위조한 최고 난이도로 연구 칸·시간 풀을 늘리지 못한다(저장본 +1 까지)', () {
+    // 쉬움만 가 본 계정(1칸). 경과는 두 연구 Lv1 을 동시에 돌린 만큼 — 2칸이어야 설명된다.
+    final lv1 = rc.timeAt(jaw, 1);
+    final s = stored(elapsed: lv1);
+    final json = s
+        .copyWith(maxTierReached: 3, researchLevels: {'jaw': 1, 'barter': 1})
+        .toJson();
+    final out = up(s, json);
+    expect(out.researchLevels['barter'], isNull);
+    // 극한을 정말 가 본 저장본이면 3칸이라 인정.
+    final real = stored(elapsed: lv1).copyWith(maxTierReached: 3);
+    final ok = up(
+      real,
+      real.copyWith(researchLevels: {'jaw': 1, 'barter': 1}).toJson(),
     );
+    expect(ok.researchLevels['barter'], 1);
   });
 
   test('기기 시계가 3분 빠르면 저장본 칸의 자연 완료가 서버 시각보다 일찍 온다 — 인정', () {

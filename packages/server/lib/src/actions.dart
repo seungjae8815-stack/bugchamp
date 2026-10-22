@@ -1729,9 +1729,6 @@ class GameActions {
         goldCap: maxGain,
         materialCap: materialAllow,
         fossilCap: fossilAllowOut,
-        jellyCap:
-            _jellySanityFloor +
-            _dexJellyAllowance(stored, clientJson, parsed: early),
       );
       if (!identical(rs, capped)) clampReasons.add('research');
       capped = rs;
@@ -2409,13 +2406,16 @@ class GameActions {
   ///    시간으로 덮고, 남은 몫은 **레벨마다** `instantJelly` 로 매겨 합이 [jelly] `levels`(칸 구매 몫 뺌)를 넘으면 안 된다.
   ///    레벨 시간의 연구 시간 단축은 앱 규칙처럼 **먼저 끝난 단계가 뒤 단계에 실린다**고 본다 — 연구 효율 자기 레벨은 그 아래
   ///    레벨까지의 단축, 다른 연구는 이번 업로드에 오른 연구 효율까지(연구 효율 단계는 자기 값을 따로 치르므로 공짜가 아니다).
-  ///    시계 어긋남 = `clockSkewSeconds`(칸 끝 시각은 앱 시계로 적힌다 — 늦은 시계는 새 칸, 빠른 시계는 저장본 칸의 자연 완료).
+  ///    시계 어긋남 = `clockSkewSeconds` 의 반씩(칸 끝 시각은 앱 시계로 적힌다 — 늦은 시계는 새 칸, 빠른 시계는 저장본 칸의 자연 완료.
+  ///    한 단계가 양쪽을 다 지나므로 합쳐 한 번 몫).
   /// 4. **표본**(`rsC`) — 증가가 새 보스 × 첫 처치 드롭 + 드롭 여유 + (연구 패스가 켜진 동안이면) 경과 시간 방치 몫을
   ///    넘으면 저장본 + 허용치로. 쓰는 것(감소)은 자유.
   ///
   /// 시간에서 걸리면 레벨·진행 칸을 저장본으로 되돌리고 **환불**한다(정직한 유저가 오판으로 재화를 잃지 않게):
-  /// 이번 업로드에 시작한 단계(저장본 진행 칸이 아닌 오른 레벨 + 새 진행 칸)의 시작 값(표본·화석·골드·재료)과
-  /// 되돌린 레벨의 즉시 완료 젤리(실제로 줄어든 연구 젤리까지). 표본은 여기서, 나머지는 [_applyResearch] 가 상한과 함께 입힌다.
+  /// 이번 업로드에 시작한 단계(저장본 진행 칸이 아닌 오른 레벨 + 새 진행 칸)의 시작 값(표본·화석·골드·재료).
+  /// 표본은 여기서, 나머지는 [_applyResearch] 가 상한과 함께 입힌다.
+  /// ❌ 즉시 완료 젤리는 **돌려주지 않는다**(§2.6 수도꼭지 규칙) — 줄어든 젤리는 한 덩어리라 다른 소비처(교환·부화·칸 확장…)에
+  /// 쓴 젤리까지 섞여 있어서, 돌려주면 "젤리를 쓰고 rsL 을 위조"하는 업로드마다 그 젤리가 되살아났다. 오판으로 몇 젤리 잃는 것은 감수한다.
   ///
   /// 위조를 완전히 막지는 못한다(기기 권위) — 결투에 쓰는 레벨이 경과 시간·젤리로 묶이는 것이 방어선이다.
   /// 앱(Task 11)은 칸 끝 시각을 **서버 보정 시계**로 적어야 한다(어긋남 여유는 칸마다 `clockSkewSeconds` 뿐).
@@ -2459,10 +2459,13 @@ class GameActions {
       bought = stored.researchSlotsBought;
       slotCost = 0;
     }
-    final open = cfg.slotsFor(max(stored.topTier, client.topTier), bought);
+    // 가 본 최고 난이도는 저장본 +1 까지만 믿는다(동기화·허용치와 같은 규칙) — 위조한 극한으로 칸·시간 풀을 늘리지 못하게.
+    final tier = max(stored.topTier, min(client.topTier, stored.topTier + 1));
+    final open = cfg.slotsFor(tier, bought);
 
     // 3. 시간.
-    final skew = max(0, cfg.clockSkewSeconds);
+    // 시계 어긋남은 한 단계에 두 번 실릴 수 있다(시작 때 새 칸 + 끝날 때 저장본 칸) — 양쪽에 반씩만 봐준다.
+    final skew = max(0, cfg.clockSkewSeconds) ~/ 2;
     final cutNow = researchEffects(cfg, levels).of(ResearchEffect.researchTime);
     // 연구 효율 자기 단계는 그 아래 레벨까지의 단축(앱: 시작할 때의 레벨로 값을 매긴다).
     double cutFor(ResearchDef d, int lv) =>
@@ -2587,7 +2590,6 @@ class GameActions {
       refundGold: pGold,
       refundMaterialsEach: pMats,
       refundFossil: pFossil,
-      refundJelly: min(jellyNeed, jellyHave),
     );
   }
 
@@ -2599,7 +2601,7 @@ class GameActions {
   /// 판정([_judgeResearch])을 병합 세이브에 입힌다. 걸린 판정이면 환불까지 —
   /// 골드는 업로드 골드 허용치([goldCap] = mergeSave 의 maxGain) 안에서만 돌려주고, 돌려준 만큼 **허용치 이월(`gC`)을 줄인다**
   /// (안 줄이면 이월 창 안에서 위조 → 환불을 되풀이해 골드를 찍어 낼 수 있었다 — 직접 올린 골드와 같은 허용치를 쓴다).
-  /// 재료·화석·젤리는 각 업로드 허용치 안에서. 바뀐 게 없으면 [capped] 를 그대로 돌려준다.
+  /// 재료·화석은 각 업로드 허용치 안에서(젤리는 돌려주지 않는다). 바뀐 게 없으면 [capped] 를 그대로 돌려준다.
   SaveGame _applyResearch(
     SaveGame stored,
     SaveGame capped,
@@ -2607,7 +2609,6 @@ class GameActions {
     required int goldCap,
     required int materialCap,
     required int fossilCap,
-    required int jellyCap,
   }) {
     bool sameLevels(Map<String, int> a, Map<String, int> b) =>
         a.length == b.length && a.entries.every((e) => b[e.key] == e.value);
@@ -2639,12 +2640,6 @@ class GameActions {
       v.refundFossil,
       stored.materialCount(MaterialKind.fossil),
       fossilCap,
-    );
-    mats[MaterialKind.jelly] = _refundTo(
-      out.materialCount(MaterialKind.jelly),
-      v.refundJelly,
-      stored.materialCount(MaterialKind.jelly),
-      jellyCap,
     );
     final gold = _refundTo(out.gold, v.refundGold, stored.gold, goldCap);
     out = out.copyWith(gold: gold, materials: mats);
@@ -6570,7 +6565,7 @@ String _shortAmount(int v) {
 }
 
 /// 연구 업로드 판정 한 번의 결과([GameActions._judgeResearch]) — 봉투와 병합이 같이 쓴다.
-/// [ok] 가 거짓이면 [levels]·[slots] 는 저장본 값이고, refund* 는 되돌린 단계의 시작 값·즉시 완료 젤리(상한은 입힐 때).
+/// [ok] 가 거짓이면 [levels]·[slots] 는 저장본 값이고, refund* 는 되돌린 단계의 시작 값(상한은 입힐 때). 젤리는 돌려주지 않는다.
 class _ResearchVerdict {
   const _ResearchVerdict({
     required this.ok,
@@ -6581,7 +6576,6 @@ class _ResearchVerdict {
     this.refundGold = 0,
     this.refundMaterialsEach = 0,
     this.refundFossil = 0,
-    this.refundJelly = 0,
   });
 
   final bool ok;
@@ -6592,5 +6586,4 @@ class _ResearchVerdict {
   final int refundGold;
   final int refundMaterialsEach;
   final int refundFossil;
-  final int refundJelly;
 }
