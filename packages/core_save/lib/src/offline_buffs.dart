@@ -367,6 +367,31 @@ IdleRareDrops rollIdleRareDrops(
   );
 }
 
+/// 방치 중 연구 표본(연구 재화) — **연구 패스가 켜진 구간만**(설계 §9). 패스 만료 시각으로 자른
+/// [from]~[from]+[accrued] 구간의 비율만큼의 정예 처치 [eliteKills] 에서 `eliteDropChance` 로 굴린 기댓값을
+/// 정수 + 소수 몫 베르누이 1번으로 준다(처치마다 굴리지 않는다). 패스가 없으면 0 이고 [rng] 를 건드리지 않는다.
+/// ⚠️ [rng] 는 다른 방치 드롭과 **따로** 넘긴다 — 패스 유무로 다른 드롭의 난수열이 갈리면 안 된다.
+int idleResearchSamples(
+  SaveGame s,
+  ResearchConfig cfg, {
+  required DateTime from,
+  required Duration accrued,
+  required int eliteKills,
+  required math.Random rng,
+}) {
+  final exp = s.researchPassExpiresAt;
+  if (exp == null || eliteKills <= 0 || accrued <= Duration.zero) return 0;
+  final covered = exp.difference(from);
+  if (covered <= Duration.zero) return 0;
+  final frac = covered >= accrued
+      ? 1.0
+      : covered.inMicroseconds / accrued.inMicroseconds;
+  final expected =
+      eliteKills * frac * cfg.eliteDropChance * cfg.eliteDropAmount;
+  final whole = expected.floor();
+  return whole + (rng.nextDouble() < expected - whole ? 1 : 0);
+}
+
 // ── 서버 업로드 허용치 ──────────────────────────────────────────────
 
 /// 희귀 드롭 허용치의 처치 속도 상한(초당) — 온라인 최상위 계정(한 방·걷기 0.12초)도 넘기 어려운 값.

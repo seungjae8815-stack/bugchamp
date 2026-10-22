@@ -561,6 +561,23 @@ class SaveController extends AsyncNotifier<SaveGame> {
       duelStones += r.duelStones.values.fold(0, (a, b) => a + b);
       potions += r.potions;
     }
+    // 연구 표본 — 연구 패스가 켜진 구간만(설계 §9). 다른 방치 드롭 난수와 **따로** 굴려 패스 유무가 그 열을 바꾸지 않게 한다.
+    final researchCfg = data.researchConfig;
+    if (researchCfg != null && save.researchPassExpiresAt != null) {
+      var eliteKills = 0.0;
+      for (final n in rolls) {
+        eliteKills += n * config.eliteChance;
+      }
+      final n = idleResearchSamples(
+        save,
+        researchCfg,
+        from: save.lastSeen,
+        accrued: accrued,
+        eliteKills: eliteKills.round(),
+        rng: math.Random(),
+      );
+      rareSave = grantResearchSamples(rareSave, n);
+    }
     // 팝업의 "버프로 더 받았어요 / 놓쳤어요" — 기댓값 비교(난수를 또 굴리지 않는다).
     OfflineGain expect(OfflinePlan p) => expectedOfflineGain(
       p,
@@ -646,6 +663,9 @@ class SaveController extends AsyncNotifier<SaveGame> {
       duelStones: identical(rareSave.duelStones, save.duelStones)
           ? null
           : rareSave.duelStones,
+      researchSamples: rareSave.researchSamples == save.researchSamples
+          ? null
+          : rareSave.researchSamples,
       growthPotions: rareSave.growthPotions == save.growthPotions
           ? null
           : rareSave.growthPotions,
@@ -1084,6 +1104,20 @@ class SaveController extends AsyncNotifier<SaveGame> {
       );
       next = po.save;
       lastPotions = po.got;
+    }
+    // 연구 표본 — 첫 처치 확정 · 재처치 확률(되찾기 제외). 물약 뒤에 굴린다.
+    final researchCfg = data?.researchConfig;
+    if (researchCfg != null && (firstKill || !reclaim)) {
+      next = grantResearchSamples(
+        next,
+        rollResearchDrop(
+          researchCfg,
+          rng ?? math.Random(),
+          firstKill
+              ? ResearchDropSource.bossFirst
+              : ResearchDropSource.bossRepeat,
+        ),
+      );
     }
     // 요정 — 보스 **첫 처치**면 난이도별 알 1개 확정 + 속성석(§2.8 무료 경로, design_fairy.md §1.4).
     // 스킬 조각 뒤에 굴린다(rng 소비 순서를 바꾸면 같은 seed 의 조각이 달라진다).
@@ -4715,8 +4749,18 @@ class SaveController extends AsyncNotifier<SaveGame> {
           .researchFx(st.save.researchLevels),
     );
     lastPotions = po.got;
-    if (shards.isEmpty && st.got.isEmpty && po.got == 0) return const {};
-    await _commit(po.save);
+    // 연구 표본(정예 확률) — 물약 **뒤에** 굴린다(앞의 드롭 난수열을 바꾸지 않게).
+    var finalSave = po.save;
+    var samples = 0;
+    final rc = ref.read(gameDataProvider).value?.researchConfig;
+    if (rc != null) {
+      samples = rollResearchDrop(rc, r, ResearchDropSource.elite);
+      finalSave = grantResearchSamples(finalSave, samples);
+    }
+    if (shards.isEmpty && st.got.isEmpty && po.got == 0 && samples == 0) {
+      return const {};
+    }
+    await _commit(finalSave);
     return shards;
   }
 
