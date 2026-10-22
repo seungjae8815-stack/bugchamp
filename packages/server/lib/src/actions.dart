@@ -149,6 +149,8 @@ class GameActions {
     // (2026-09-01 실기: /admin/grant 로 줬는데 적용 안 됨).
     // 유저가 스스로 얻는 경로가 없는(=결제 전용) 필드는 전부 서버 소유다.
     'buffPassExpiresAt',
+    // 연구 패스(2026-10-22, 결제 전용) — 방치 중 연구 표본. 지우거나 늘리면 공짜 패스.
+    'researchPassExpiresAt',
     // 닉네임 변경 요구(2026-09-02). 닉네임 자체는 서버 소유가 아니라서,
     // 이 플래그를 서버가 쥐고 있어야 앱이 옛 이름을 다시 올려도 요구가 남는다.
     'renameRequired',
@@ -292,6 +294,8 @@ class GameActions {
     25: ['ftAt'],
     // 패시브 재굴림 대기 결과(1.0.21, 2026-10-14) — 모르는 앱(1.0.20)이 올리면 저장본의 대기를 지킨다.
     26: ['pRr'],
+    // 연구소(2026-10-22) — 레벨·진행 칸·표본·산 칸. 모르는 앱(1.0.22 이하)이 올리면 저장본을 지킨다.
+    28: ['rsL', 'rsS', 'rsC', 'rsB'],
   };
 
   /// feat 20(1.0.18)에 생긴 **장비 옵션 키** — 그보다 낮은 앱은 모르고 빼고 올린다.
@@ -1408,7 +1412,10 @@ class GameActions {
   ActionResult mergeSave(SaveGame stored, Map<String, dynamic> incomingJson) {
     // 구버전 앱(1.0.13 이하)은 1.0.14 필드를 모른다 — 키 없이 올리면 기본값이 저장본을 덮어
     // 훈련소 기록·이번 주 심연 층이 사라졌다. 그 필드만 저장본 값으로 채워 넣고 진행한다.
-    final clientJson = _keepFieldsOldAppDoesNotKnow(stored, incomingJson);
+    // 연구 칸은 결투에 실린다 — 꼴이 틀린 값(숫자 아닌 레벨 등)은 먼저 걸러 봉투·파싱이 깨지지 않게.
+    final clientJson = _sanitizeResearchJson(
+      _keepFieldsOldAppDoesNotKnow(stored, incomingJson),
+    );
     final t = now().toUtc();
     var elapsed = t.difference(stored.lastSeen);
     if (elapsed.isNegative) elapsed = Duration.zero;
@@ -1685,6 +1692,22 @@ class GameActions {
       final sk = _enforceSkills(stored, capped, clientJson, skillCfg);
       if (!identical(sk, capped)) clampReasons.add('skill');
       capped = sk;
+    }
+    final researchCfg = config.research;
+    if (researchCfg != null) {
+      final rs = _enforceResearch(
+        stored,
+        capped,
+        elapsed,
+        max(
+          0,
+          stored.materialCount(MaterialKind.jelly) -
+              capped.materialCount(MaterialKind.jelly),
+        ),
+        researchCfg,
+      );
+      if (!identical(rs, capped)) clampReasons.add('research');
+      capped = rs;
     }
     {
       final gr = _enforceGrade(stored, capped, t);
@@ -2224,9 +2247,222 @@ class GameActions {
       for (final d in cfg.defs)
         d.id: max(
           stored.researchLevels[d.id] ?? 0,
-          (client[d.id] as num?)?.toInt() ?? 0,
+          _researchInt(client[d.id]) ?? 0,
         ).clamp(0, d.maxLevel).toInt(),
     };
+  }
+
+  /// 업로드 JSON 의 정수 하나 — 숫자가 아니거나(문자열·null·목록) 무한·터무니없이 큰 값이면 null.
+  static int? _researchInt(Object? v) {
+    if (v is int) return v;
+    if (v is double && v.isFinite && v.abs() < 1e15) return v.toInt();
+    return null;
+  }
+
+  /// 연구 칸(`rsL`·`rsS`·`rsC`·`rsB`)의 꼴이 틀린 값을 걸러 낸 사본(고칠 게 없으면 그대로).
+  /// 연구 레벨은 결투에 실려서 조작 업로드가 오기 쉽다 — 숫자 아닌 레벨 하나로 업로드가 500 이 나거나
+  /// `bad_save` 로 통째로 거부되지 않게, 틀린 칸만 버린다(줄거나 빠진 값은 [_enforceResearch] 가 저장본으로 되돌린다).
+  static Map<String, dynamic> _sanitizeResearchJson(Map<String, dynamic> j) {
+    Map<String, dynamic>? out;
+    Map<String, dynamic> w() => out ??= Map<String, dynamic>.from(j);
+    if (j.containsKey('rsL')) {
+      final raw = j['rsL'];
+      final clean = <String, dynamic>{
+        if (raw is Map)
+          for (final e in raw.entries)
+            if (e.key is String && _researchInt(e.value) != null)
+              e.key as String: _researchInt(e.value),
+      };
+      if (raw is! Map ||
+          clean.length != raw.length ||
+          clean.entries.any((e) => raw[e.key] != e.value)) {
+        w()['rsL'] = clean;
+      }
+    }
+    if (j.containsKey('rsS')) {
+      final raw = j['rsS'];
+      final clean = <Map<String, dynamic>>[];
+      if (raw is List) {
+        for (final v in raw) {
+          if (v is! Map) continue;
+          final id = v['i'], lv = _researchInt(v['l']), e = v['e'];
+          final at = e is String ? DateTime.tryParse(e) : null;
+          if (id is! String || lv == null || at == null) continue;
+          clean.add({'i': id, 'l': lv, 'e': at.toUtc().toIso8601String()});
+        }
+      }
+      if (raw is! List || clean.length != raw.length) w()['rsS'] = clean;
+    }
+    for (final k in const ['rsC', 'rsB']) {
+      if (j.containsKey(k) && j[k] != null && _researchInt(j[k]) == null) {
+        w().remove(k);
+      } else if (j[k] is double) {
+        w()[k] = _researchInt(j[k]);
+      }
+    }
+    return out ?? j;
+  }
+
+  /// 여유 — 시계·네트워크 지연(연구 레벨 검사).
+  static const _researchTimeSlack = Duration(minutes: 1);
+
+  /// 표본 드롭 여유(업로드 사이 온라인 처치 — 스킬 조각 [_skillDropSlack] 과 같은 결).
+  static const _researchDropSlack = 60;
+
+  /// 연구 업로드 검사(설계 §3.9) — 연구 레벨은 기기 세이브에 살지만 **결투에 실린다**(서버가 팀에 입힌다).
+  /// 훈련(`_enforceTrainV2`)·심연(`_enforceAbyss`)과 같은 결.
+  ///
+  /// 1. **정리** — 모르는 연구는 버리고 최대 레벨로 자른다 · 줄어든 레벨은 저장본(레벨은 줄지 않는다) ·
+  ///    진행 칸은 아는 연구의 다음 레벨(지금 + 1)만, 연구마다 하나.
+  /// 2. **산 칸**(`rsB`) — 줄지 않고 `slotJelly` 개수까지 · 늘어난 몫의 가격을 이번에 줄어든 젤리가 덮지 못하면 저장본.
+  /// 3. **시간** — 오른 레벨의 연구 시간(저장본 레벨의 연구 시간 단축 반영) + 새 진행 칸에서 이미 흐른 몫
+  ///    + 저장본 진행 칸이 경과 동안 쓴 몫 ≤ 경과 × 열린 칸 수 + 남은 젤리로 즉시 완료할 수 있던 시간 + 1분.
+  ///    저장본 진행 칸이 끝난 레벨은 저장본 시각에 남아 있던 몫만 센다. 넘치면 레벨·진행 칸·산 칸을 **모두** 저장본으로.
+  ///    칸 수가 열린 칸보다 많아도 같다.
+  /// 4. **표본**(`rsC`) — 증가가 새 보스 × 첫 처치 드롭 + 드롭 여유 + (연구 패스가 켜진 동안이면) 경과 시간 방치 몫을
+  ///    넘으면 저장본 + 허용치로. 쓰는 것(감소)은 자유.
+  ///
+  /// [jellySpent] = 저장본 젤리 − 올라온 젤리(0 이상). 다른 검사도 같은 감소를 따로 센다(넉넉한 쪽 — 스킬과 같다).
+  /// 위조를 완전히 막지는 못한다(기기 권위) — 결투에 쓰는 레벨이 경과 시간으로 묶이는 것이 방어선이다.
+  SaveGame _enforceResearch(
+    SaveGame stored,
+    SaveGame client,
+    Duration elapsed,
+    int jellySpent,
+    ResearchConfig cfg,
+  ) {
+    final t = client.lastSeen.toUtc();
+    final restoreAll = client.copyWith(
+      researchLevels: stored.researchLevels,
+      researchSlots: stored.researchSlots,
+      researchSlotsBought: stored.researchSlotsBought,
+    );
+
+    // 1. 정리.
+    final levels = <String, int>{};
+    for (final d in cfg.defs) {
+      final v = max(
+        stored.researchLevels[d.id] ?? 0,
+        (client.researchLevels[d.id] ?? 0).clamp(0, d.maxLevel).toInt(),
+      );
+      if (v > 0 || client.researchLevels.containsKey(d.id)) levels[d.id] = v;
+    }
+    final slots = <ResearchSlot>[];
+    for (final r in client.researchSlots) {
+      final d = cfg.byId(r.id);
+      if (d == null || r.level != (levels[r.id] ?? 0) + 1) continue;
+      if (r.level > d.maxLevel || slots.any((x) => x.id == r.id)) continue;
+      slots.add(r);
+    }
+
+    // 2. 산 칸.
+    var bought = client.researchSlotsBought
+        .clamp(stored.researchSlotsBought, cfg.slotJelly.length)
+        .toInt();
+    var slotCost = 0;
+    for (var i = stored.researchSlotsBought; i < bought; i++) {
+      slotCost += cfg.slotJelly[i];
+    }
+    if (slotCost > jellySpent) {
+      bought = stored.researchSlotsBought;
+      slotCost = 0;
+    }
+    final open = cfg.slotsFor(max(stored.topTier, client.topTier), bought);
+    if (slots.length > open) return restoreAll;
+
+    // 3. 시간.
+    final cut = researchEffects(
+      cfg,
+      stored.researchLevels,
+    ).of(ResearchEffect.researchTime);
+    final cutNow = researchEffects(cfg, levels).of(ResearchEffect.researchTime);
+    int secsOf(ResearchDef d, int lv, double c) =>
+        max(1, (cfg.timeAt(d, lv).inMilliseconds * (1 - c) / 1000).round());
+    int leftAtStored(ResearchSlot r) =>
+        max(0, r.endsAt.difference(stored.lastSeen).inSeconds);
+    var demand = 0;
+    for (final d in cfg.defs) {
+      final from = stored.researchLevels[d.id] ?? 0;
+      final to = levels[d.id] ?? 0;
+      for (var lv = from + 1; lv <= to; lv++) {
+        final ss = stored.researchSlots
+            .where((r) => r.id == d.id && r.level == lv)
+            .firstOrNull;
+        final full = secsOf(d, lv, cut);
+        demand += ss == null ? full : min(full, leftAtStored(ss));
+      }
+    }
+    for (final r in slots) {
+      final d = cfg.byId(r.id)!;
+      final ss = stored.researchSlots
+          .where((x) => x.id == r.id && x.level == r.level)
+          .firstOrNull;
+      if (ss != null && !r.endsAt.isBefore(ss.endsAt)) {
+        // 저장본에서 이어 돌고 있는 칸 — 경과 동안 칸 하나를 차지했다.
+        demand += min(elapsed.inSeconds, leftAtStored(ss));
+      } else {
+        // 새로 시작한(또는 끝 시각을 당긴) 칸 — 이미 흐른 몫.
+        final left = max(0, r.endsAt.difference(t).inSeconds);
+        demand += max(0, secsOf(d, r.level, cutNow) - left);
+      }
+    }
+    final jellyLeft = jellySpent - slotCost;
+    // 즉시 완료 젤리(`instantJelly` = perMinute × 분^exponent, 5·10 단위)의 역 — 반올림 여유 5젤리를 얹는다.
+    // 여러 칸을 따로 끝내면 젤리가 더 드므로(지수 < 1) 합을 한 번에 뒤집는 쪽이 넉넉하다.
+    final jellySecs =
+        jellyLeft <= 0 ||
+            cfg.instantJellyPerMinute <= 0 ||
+            cfg.instantJellyExponent <= 0
+        ? 0
+        : (pow(
+                    (jellyLeft + 5) / cfg.instantJellyPerMinute,
+                    1 / cfg.instantJellyExponent,
+                  ) *
+                  60)
+              .ceil();
+    final budget =
+        elapsed.inSeconds * open + jellySecs + _researchTimeSlack.inSeconds;
+    if (demand > budget) return restoreAll;
+
+    // 4. 표본.
+    var samples = max<int>(0, client.researchSamples);
+    final newBosses = max(0, client.bossDex.length - stored.bossDex.length);
+    int allow =
+        newBosses * cfg.bossFirstDrop +
+        _researchDropSlack * max<int>(cfg.eliteDropAmount, cfg.bossRepeatDrop);
+    if (stored.researchPassActive(stored.lastSeen) ||
+        stored.researchPassActive(t)) {
+      final e = elapsed > kRareDropAllowanceMaxElapsed
+          ? kRareDropAllowanceMaxElapsed
+          : elapsed;
+      allow +=
+          (e.inMilliseconds /
+                  1000.0 *
+                  kRareDropKillsPerSecondCap *
+                  config.run.eliteChance *
+                  cfg.eliteDropChance *
+                  cfg.eliteDropAmount *
+                  kRareDropAllowanceMargin)
+              .ceil();
+    }
+    if (samples - stored.researchSamples > allow) {
+      samples = stored.researchSamples + allow;
+    }
+
+    bool sameLevels(Map<String, int> a, Map<String, int> b) =>
+        a.length == b.length && a.entries.every((e) => b[e.key] == e.value);
+    if (sameLevels(levels, client.researchLevels) &&
+        slots.length == client.researchSlots.length &&
+        bought == client.researchSlotsBought &&
+        samples == client.researchSamples) {
+      return client;
+    }
+    return client.copyWith(
+      researchLevels: levels,
+      researchSlots: slots,
+      researchSlotsBought: bought,
+      researchSamples: samples,
+    );
   }
 
   /// 사냥 [minutes]분치 보상(선물·일일보상)의 **상한**(2026-10-08) — 앱은 `huntStatsOf` 로 계산한 금액을
@@ -3306,8 +3542,10 @@ class GameActions {
     if (ia >= session.myTeamBugIds.length || ib >= session.foe.length) {
       return (result: const ActionResult.fail('no_bout'), session: null);
     }
+    // 연구 레벨은 시작 때 값으로(세션 스냅샷) — 탭 반격 재계산이 멈춘 판과 같은 팀이 되게.
+    final snap = session.researchLevels;
     final mine = validateDuelTeam(
-      save,
+      snap == null ? save : save.copyWith(researchLevels: snap),
       session.myTeamBugIds,
       speciesById: speciesById,
       petConfig: petConfig,
@@ -5437,6 +5675,8 @@ class GameActions {
           'run': run.toJson(),
           'cards': const <String>[],
           'done': false,
+          // 시작 때의 연구 레벨 — 탭 반격 재계산·다음 웨이브가 같은 곤충으로 싸우게(결투 세션과 같은 이유).
+          'rsL': save.researchLevels,
         },
       },
     );
@@ -5551,8 +5791,9 @@ class GameActions {
     final spec = eventDuelSpec;
     final roundSeed = (session['roundSeed'] as num).toInt();
     final bugId = '${session['bugId']}';
+    final snap = researchLevelsSnapshot(session['rsL']);
     final v = validateDuelTeam(
-      save,
+      snap == null ? save : save.copyWith(researchLevels: snap),
       [bugId],
       speciesById: speciesById,
       petConfig: petConfig,

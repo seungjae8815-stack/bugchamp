@@ -28,6 +28,7 @@ class DuelSession {
     this.pendingLaunch,
     this.pendingIndex,
     this.arena,
+    this.researchLevels,
   });
 
   final String id;
@@ -76,6 +77,11 @@ class DuelSession {
   /// null = 옛 세션(경기장 효과 없음 — 그 시절 판정 그대로).
   final Element? arena;
 
+  /// 시작 때의 연구 레벨(2026-10-22 연구소) — 내 팀은 판마다 세이브에서 다시 만드는데, 시작과 탭 반격 사이에
+  /// 연구가 끝나면 같은 seed 로 다시 계산한 판이 멈춘 판과 갈린다. 경기 내내 이 값으로 입힌다.
+  /// null = 옛 세션(그때 세이브의 연구 레벨).
+  final Map<String, int>? researchLevels;
+
   /// 위기에서 멈춰 탭 점수를 기다리는 중인가.
   bool get clutchPending => pendingLaunch != null && pendingIndex != null;
 
@@ -114,6 +120,7 @@ class DuelSession {
     pendingLaunch: clearClutch ? null : pendingLaunch ?? this.pendingLaunch,
     pendingIndex: clearClutch ? null : pendingIndex ?? this.pendingIndex,
     arena: arena,
+    researchLevels: researchLevels,
   );
 
   Map<String, dynamic> toJson() => {
@@ -138,6 +145,7 @@ class DuelSession {
     'pendLaunch': ?pendingLaunch,
     'pendIdx': ?pendingIndex,
     'arena': ?arena?.key,
+    'rsL': ?researchLevels,
   };
 
   static bool isDuel(Map<String, dynamic> j) => j['kind'] == 'duel';
@@ -177,6 +185,7 @@ class DuelSession {
     arena: j['arena'] is String
         ? Element.fromKeyOrNull(j['arena'] as String)
         : null,
+    researchLevels: researchLevelsSnapshot(j['rsL']),
   );
 }
 
@@ -188,3 +197,11 @@ Map<String, dynamic> duelClutchJson(DuelClutchPending p, int bout) => {
   'bout': bout,
   'tick': p.tick,
 };
+
+/// 세션에 찍어 둔 연구 레벨(`rsL`) — 꼴이 틀린 칸은 버린다. 맵이 아니면 null(옛 세션).
+Map<String, int>? researchLevelsSnapshot(Object? raw) => raw is Map
+    ? {
+        for (final e in raw.entries)
+          if (e.value is num) '${e.key}': (e.value as num).toInt(),
+      }
+    : null;

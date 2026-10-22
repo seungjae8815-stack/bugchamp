@@ -4,6 +4,7 @@ import 'dart:math' as math;
 
 import 'package:core_battle/core_battle.dart';
 import 'package:core_models/core_models.dart';
+import 'package:core_run/core_run.dart';
 import 'package:core_save/core_save.dart';
 import 'package:server/src/actions.dart';
 import 'package:server/src/duel_session.dart';
@@ -292,6 +293,53 @@ void main() {
         expect(a.result.extra.toString(), b.result.extra.toString());
         expect(a.session!.toJson().toString(), b.session!.toJson().toString());
       }
+    });
+  });
+
+  group('연구 레벨 스냅샷(연구소)', () {
+    // 내 팀은 판마다 세이브에서 다시 만든다 — 시작과 탭 반격 사이에 결투 연구가 끝나면 같은 seed 로 다시 계산한
+    // 판이 멈춘 판과 갈렸다. 세션에 찍어 둔 시작 때 연구 레벨로 입힌다.
+    test('멈춘 뒤 결투 연구가 올라도 탭 반격 재계산의 앞부분 궤적이 같다', () {
+      final s = myBase();
+      final maxed = {
+        for (final d in cfgOn.research!.defs)
+          if (d.branch == ResearchBranch.duel) d.id: d.maxLevel,
+      };
+      final grown = s.copyWith(researchLevels: maxed);
+      DuelSession withSnap(DuelSession x, Map<String, int>? snap) =>
+          DuelSession.fromJson({...x.toJson()..remove('rsL'), 'rsL': ?snap});
+      for (var seed = 1; seed < 400; seed++) {
+        final sess = withSnap(sessionOf(seed, foeOf(3)), s.researchLevels);
+        final r = throwWith(on, s, sess, clutch: true);
+        if (r.result.extra['clutch'] == null) continue;
+        final paused = DuelBout.fromJson(
+          r.result.extra['bout'] as Map<String, dynamic>,
+        );
+        // 세션 JSON 왕복(DB) 뒤에도 스냅샷이 남는다.
+        final rt = DuelSession.fromJson(r.session!.toJson());
+        expect(rt.researchLevels, isNotNull);
+        final c = clutchWith(on, grown, rt, index: 0, score: 1.0);
+        expect(c.result.isOk, isTrue, reason: c.result.error);
+        final full = DuelBout.fromJson(
+          c.result.extra['bout'] as Map<String, dynamic>,
+        );
+        expect(
+          full.frames.take(paused.frames.length).toList().toString(),
+          paused.frames.toString(),
+        );
+        // 스냅샷이 없는 옛 세션은 그때 세이브의 연구로 — 다 찍은 결투 연구면 궤적이 갈린다(검사가 의미 있다는 확인).
+        final old = withSnap(r.session!, null);
+        final o = clutchWith(on, grown, old, index: 0, score: 1.0);
+        final oldFull = DuelBout.fromJson(
+          o.result.extra['bout'] as Map<String, dynamic>,
+        );
+        expect(
+          oldFull.frames.take(paused.frames.length).toList().toString(),
+          isNot(paused.frames.toString()),
+        );
+        return;
+      }
+      fail('400 seed 안에 위기가 없다');
     });
   });
 
