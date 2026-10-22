@@ -256,6 +256,35 @@ void main() {
     expect(run().take(20).toSet(), {0, 1});
   });
 
+  test('start_fails_stale_price_and_negative_price', () {
+    final s = rich();
+    final p = priceOf(s, 'a');
+    ResearchPrice with_({int? level, int? gold}) => ResearchPrice(
+      samples: p.samples,
+      gold: gold ?? p.gold,
+      materialsEach: p.materialsEach,
+      fossil: p.fossil,
+      time: p.time,
+      level: level ?? p.level,
+    );
+    final stale = startResearch(s, cfg, 'a', t, with_(level: 2));
+    expect(stale.error, 'stale_price');
+    expect(stale.save, isNull);
+    final neg = startResearch(s, cfg, 'a', t, with_(gold: -1000));
+    expect(neg.error, 'not_enough');
+    expect(neg.save, isNull);
+  });
+
+  test('finish_now_after_end_is_free', () {
+    final s = rich();
+    final n = startResearch(s, cfg, 'a', t, priceOf(s, 'a')).save!;
+    final late = n.researchSlots.single.endsAt.add(const Duration(seconds: 5));
+    final r = finishResearchNow(n, cfg, 'a', late);
+    expect(r.save!.materialCount(MaterialKind.jelly), 1000);
+    expect(r.save!.researchLevels['a'], 1);
+    expect(r.save!.researchSlots, isEmpty);
+  });
+
   test('grant_samples', () {
     expect(grantResearchSamples(rich(), 3).researchSamples, 53);
     expect(grantResearchSamples(rich(), 0).researchSamples, 50);

@@ -91,6 +91,7 @@ ResearchOp startResearch(
   if (def == null) return const ResearchOp.fail('unknown_research');
   final lv = s.researchLevels[id] ?? 0;
   if (lv >= def.maxLevel) return const ResearchOp.fail('max_level');
+  if (price.level != lv + 1) return const ResearchOp.fail('stale_price');
   final req = def.requires;
   if (req != null && (s.researchLevels[req.id] ?? 0) < req.level) {
     return const ResearchOp.fail('locked');
@@ -98,8 +99,15 @@ ResearchOp startResearch(
   if (s.researchSlots.any((r) => r.id == id)) {
     return const ResearchOp.fail('already_running');
   }
-  if (s.researchSlots.length >= cfg.slotsFor(s.topTier, s.researchSlotsBought)) {
+  if (s.researchSlots.length >=
+      cfg.slotsFor(s.topTier, s.researchSlotsBought)) {
     return const ResearchOp.fail('slots_full');
+  }
+  if (price.samples < 0 ||
+      price.gold < 0 ||
+      price.materialsEach < 0 ||
+      price.fossil < 0) {
+    return const ResearchOp.fail('not_enough');
   }
   if (s.researchSamples < price.samples ||
       s.gold < price.gold ||
@@ -112,8 +120,7 @@ ResearchOp startResearch(
     mats[m] = (mats[m] ?? 0) - price.materialsEach;
   }
   if (price.fossil > 0) {
-    mats[MaterialKind.fossil] =
-        (mats[MaterialKind.fossil] ?? 0) - price.fossil;
+    mats[MaterialKind.fossil] = (mats[MaterialKind.fossil] ?? 0) - price.fossil;
   }
   return ResearchOp.ok(
     s.copyWith(

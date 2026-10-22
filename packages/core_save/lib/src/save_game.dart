@@ -566,7 +566,6 @@ Set<String> keepBugIds(
   };
 }
 
-/// 저장 루트 (버전드 JSON 스냅샷). v2: 횡스크롤 런 진행 상태 포함.
 /// 진행 중인 연구 한 칸(연구소, 2026-10-22). JSON `{i,l,e}` — 레벨 [level] 을 [endsAt] 에 마친다.
 @immutable
 class ResearchSlot {
@@ -593,6 +592,7 @@ class ResearchSlot {
   };
 }
 
+/// 저장 루트 (버전드 JSON 스냅샷). v2: 횡스크롤 런 진행 상태 포함.
 class SaveGame {
   const SaveGame({
     required this.schemaVersion,
@@ -2455,9 +2455,7 @@ class SaveGame {
     if (researchSamples != 0) 'rsC': researchSamples,
     if (researchSlotsBought != 0) 'rsB': researchSlotsBought,
     if (researchPassExpiresAt != null)
-      'researchPassExpiresAt': researchPassExpiresAt!
-          .toUtc()
-          .toIso8601String(),
+      'researchPassExpiresAt': researchPassExpiresAt!.toUtc().toIso8601String(),
     if (essence.isNotEmpty) 'essence': essence,
     if (growthPotions > 0) 'potions': growthPotions,
     if (potionBuyDay != null) 'potionBuyDay': potionBuyDay,
