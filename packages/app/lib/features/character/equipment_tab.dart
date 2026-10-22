@@ -21,11 +21,33 @@ const _honey = kHoney;
 /// 장비 탭 — 옛 캐릭터 탭의 능력치 패널(2026-10-22 하단 탭 2쪽에서 탭 하나가 됐다).
 ///
 /// 위 → 아래: 메인 캐릭터와 곁에 선 곤충들 · 능력치 · 장비 8칸 · **제련/자동** · **공방 등급**.
-class EquipmentTab extends ConsumerWidget {
+class EquipmentTab extends ConsumerStatefulWidget {
   const EquipmentTab({super.key});
 
+  /// 장비 칸이 이보다 낮아지면 화면을 스크롤로 바꾼다(작은 폰 · 큰 글씨).
+  static const double minGridHeight = 170;
+
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<EquipmentTab> createState() => _EquipmentTabState();
+}
+
+class _EquipmentTabState extends ConsumerState<EquipmentTab> {
+  /// 화면 높이에 더 얹을 높이 — 장비 칸이 [EquipmentTab.minGridHeight] 에 못 미치는 만큼.
+  /// 0 이면 예전처럼 한 화면에 꼭 맞고 스크롤이 생기지 않는다.
+  double _extra = 0;
+
+  /// 장비 칸이 받은 높이를 보고 [_extra] 를 맞춘다(다음 프레임 — 레이아웃 중엔 setState 못 한다).
+  void _onGridHeight(double h) {
+    final natural = h - _extra;
+    final want = (EquipmentTab.minGridHeight - natural).clamp(0.0, 10000.0);
+    if ((want - _extra).abs() < 0.5) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) setState(() => _extra = want);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
     final save = ref.watch(saveControllerProvider).requireValue;
     final items = ref.watch(gameDataProvider).value?.itemConfig;
@@ -33,33 +55,49 @@ class EquipmentTab extends ConsumerWidget {
     // **한 화면에 담는다.** 스크롤을 넣으면 기기마다 잘리는 위치가 달라서
     // "내 폰에서만 공방이 안 보인다"가 된다. 대신 남는 높이를 장비 칸에
     // 몰아주고, 씬 높이는 화면에 비례시킨다 — 작은 폰은 알아서 낮아진다.
+    // 단 탭이 되며 앱바가 생겨, 작은 폰 + 큰 글씨에선 장비 칸이 145dp 까지 눌렸다(2026-10-22 검토) —
+    // 그때만 모자란 높이를 얹고 스크롤로 내린다.
     return Scaffold(
       appBar: AppBar(title: Text(l.navEquip)),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
           child: LayoutBuilder(
-            builder: (context, c) => Column(
-              children: [
-                SizedBox(
-                  height: (c.maxHeight * 0.19).clamp(84.0, 132.0),
-                  child: CharacterScene(save: save),
+            builder: (context, c) => SingleChildScrollView(
+              physics: _extra > 0
+                  ? const ClampingScrollPhysics()
+                  : const NeverScrollableScrollPhysics(),
+              child: SizedBox(
+                height: c.maxHeight + _extra,
+                child: Column(
+                  children: [
+                    SizedBox(
+                      height: (c.maxHeight * 0.19).clamp(84.0, 132.0),
+                      child: CharacterScene(save: save),
+                    ),
+                    const SizedBox(height: 8),
+                    _StatsPanel(save: save),
+                    const SizedBox(height: 8),
+                    if (items != null) ...[
+                      // 남는 높이를 전부 장비 칸이 가져간다 — 칸 모양은 자기가
+                      // 받은 높이로 정한다(작은 폰에선 납작해질 뿐 안 잘린다).
+                      Expanded(
+                        key: const Key('equipGrid'),
+                        child: LayoutBuilder(
+                          builder: (context, g) {
+                            _onGridHeight(g.maxHeight);
+                            return _EquipGrid(save: save, config: items);
+                          },
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      // 장비 **바로 밑** — 가운데 제련, 좌우에 공방 등급·필터/자동.
+                      const ForgeBar(),
+                    ] else
+                      const Spacer(),
+                  ],
                 ),
-                const SizedBox(height: 8),
-                _StatsPanel(save: save),
-                const SizedBox(height: 8),
-                if (items != null) ...[
-                  // 남는 높이를 전부 장비 칸이 가져간다 — 칸 모양은 자기가
-                  // 받은 높이로 정한다(작은 폰에선 납작해질 뿐 안 잘린다).
-                  Expanded(
-                    child: _EquipGrid(save: save, config: items),
-                  ),
-                  const SizedBox(height: 6),
-                  // 장비 **바로 밑** — 가운데 제련, 좌우에 공방 등급·필터/자동.
-                  const ForgeBar(),
-                ] else
-                  const Spacer(),
-              ],
+              ),
             ),
           ),
         ),
@@ -122,14 +160,22 @@ class _StatsPanel extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Expanded(
-            child: Column(
-              children: [for (final r in rows.take(half)) _row(r.$1, r.$2)],
+            child: LayoutBuilder(
+              builder: (context, c) => Column(
+                children: [
+                  for (final r in rows.take(half)) _row(r.$1, r.$2, c.maxWidth),
+                ],
+              ),
             ),
           ),
           const SizedBox(width: 14),
           Expanded(
-            child: Column(
-              children: [for (final r in rows.skip(half)) _row(r.$1, r.$2)],
+            child: LayoutBuilder(
+              builder: (context, c) => Column(
+                children: [
+                  for (final r in rows.skip(half)) _row(r.$1, r.$2, c.maxWidth),
+                ],
+              ),
             ),
           ),
         ],
@@ -137,7 +183,7 @@ class _StatsPanel extends ConsumerWidget {
     );
   }
 
-  Widget _row(String k, String v) => Padding(
+  Widget _row(String k, String v, double maxWidth) => Padding(
     padding: const EdgeInsets.symmetric(vertical: 2),
     child: Row(
       children: [
@@ -150,14 +196,20 @@ class _StatsPanel extends ConsumerWidget {
           ),
         ),
         const SizedBox(width: 4),
-        Text(
-          v,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: const TextStyle(
-            color: _honey,
-            fontWeight: FontWeight.w900,
-            fontSize: 11.5,
+        // 값은 줄 폭의 60% 까지 — 큰 글씨(1.3)에서 "12.5%·×2.40" 이 줄 밖으로 넘쳤다(2026-10-22). 넘치면 줄여 보인다.
+        ConstrainedBox(
+          constraints: BoxConstraints(maxWidth: maxWidth * 0.6),
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              v,
+              maxLines: 1,
+              style: const TextStyle(
+                color: _honey,
+                fontWeight: FontWeight.w900,
+                fontSize: 11.5,
+              ),
+            ),
           ),
         ),
       ],

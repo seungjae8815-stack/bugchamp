@@ -695,43 +695,47 @@ class _SquareButton extends StatelessWidget {
           borderRadius: BorderRadius.circular(10),
           border: Border.all(color: on ? Colors.white : _honey, width: 1.3),
         ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            if (art != null && !busy)
-              // 판 그림은 여백이 거의 없어 아이콘보다 크게 — 아래 숫자가 있으면 조금 작게.
-              gameImage(
-                'assets/images/ui/icon/$art.webp',
-                width: sub == null ? 30 : 24,
-                height: sub == null ? 30 : 24,
-                fallback: Icon(icon, color: fg, size: 18),
-              )
-            else
-              Icon(
-                busy ? Icons.hourglass_bottom_rounded : icon,
-                color: fg,
-                size: 18,
-              ),
-            Text(
-              label,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                color: fg,
-                fontSize: 9,
-                fontWeight: FontWeight.w900,
-              ),
-            ),
-            if (sub != null)
+        // 56×56 고정 칸이라 큰 글씨 설정(1.3)이면 라벨·숫자가 아래로 넘쳤다(2026-10-22 검토) — 칸 안 글씨만 배율 1 로 묶는다.
+        child: MediaQuery.withClampedTextScaling(
+          maxScaleFactor: 1.0,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              if (art != null && !busy)
+                // 판 그림은 여백이 거의 없어 아이콘보다 크게 — 아래 숫자가 있으면 조금 작게.
+                gameImage(
+                  'assets/images/ui/icon/$art.webp',
+                  width: sub == null ? 30 : 24,
+                  height: sub == null ? 30 : 24,
+                  fallback: Icon(icon, color: fg, size: 18),
+                )
+              else
+                Icon(
+                  busy ? Icons.hourglass_bottom_rounded : icon,
+                  color: fg,
+                  size: 18,
+                ),
               Text(
-                sub!,
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                   color: fg,
-                  fontSize: 10.5,
+                  fontSize: 9,
                   fontWeight: FontWeight.w900,
                 ),
               ),
-          ],
+              if (sub != null)
+                Text(
+                  sub!,
+                  style: TextStyle(
+                    color: fg,
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+            ],
+          ),
         ),
       ),
     );

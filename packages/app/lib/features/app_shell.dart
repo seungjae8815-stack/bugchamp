@@ -682,46 +682,51 @@ class GameNavBar extends ConsumerWidget {
       ref.read(tabIndexProvider.notifier).set(i);
     }
 
-    return Container(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [Color(0xFF1B2A12), Color(0xFF0E1608)],
+    // 6칸(320dp 폰이면 칸당 약 49dp)이라 큰 글씨 설정을 그대로 받으면 FittedBox 가 라벨을 8px 아래로 줄인다 —
+    // 하단 탭 줄만 글씨 배율을 1 로 묶는다(높이도 64 고정이라 넘친다).
+    return MediaQuery.withClampedTextScaling(
+      maxScaleFactor: 1.0,
+      child: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Color(0xFF1B2A12), Color(0xFF0E1608)],
+          ),
+          border: Border(top: BorderSide(color: Color(0x22FFFFFF))),
         ),
-        border: Border(top: BorderSide(color: Color(0x22FFFFFF))),
-      ),
-      child: SafeArea(
-        top: false,
-        child: SizedBox(
-          height: 64,
-          child: Row(
-            children: [
-              for (final i in kNavPages[page])
+        child: SafeArea(
+          top: false,
+          child: SizedBox(
+            height: 64,
+            child: Row(
+              children: [
+                for (final i in kNavPages[page])
+                  Expanded(
+                    child: _NavTab(
+                      image: (color) => _navArt(i, color),
+                      label: _navLabel(l, i),
+                      active: i == index,
+                      dot: dots.contains(i),
+                      onTap: () => tap(i),
+                    ),
+                  ),
                 Expanded(
                   child: _NavTab(
-                    image: (color) => _navArt(i, color),
-                    label: _navLabel(l, i),
-                    active: i == index,
-                    dot: dots.contains(i),
-                    onTap: () => tap(i),
+                    key: const Key('navSwitch'),
+                    image: (color) =>
+                        Icon(Icons.swap_horiz_rounded, color: color, size: 24),
+                    label: l.navSwitch,
+                    active: false,
+                    dot: otherNavPageHasDot(page, dots),
+                    onTap: () {
+                      AudioService.instance.sfxTap();
+                      ref.read(navPageProvider.notifier).toggle();
+                    },
                   ),
                 ),
-              Expanded(
-                child: _NavTab(
-                  key: const Key('navSwitch'),
-                  image: (color) =>
-                      Icon(Icons.swap_horiz_rounded, color: color, size: 24),
-                  label: l.navSwitch,
-                  active: false,
-                  dot: otherNavPageHasDot(page, dots),
-                  onTap: () {
-                    AudioService.instance.sfxTap();
-                    ref.read(navPageProvider.notifier).toggle();
-                  },
-                ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -730,7 +735,7 @@ class GameNavBar extends ConsumerWidget {
 
   static String _navLabel(AppLocalizations l, int i) => switch (i) {
     0 => l.navHome,
-    kStorageTabIndex => l.navStorage,
+    kStorageTabIndex => l.navStorageShort,
     kBattleTabIndex => l.navBattle,
     kGuildTabIndex => l.guildTitle,
     kShopTabIndex => l.navShop,
@@ -820,16 +825,14 @@ class _NavTab extends StatelessWidget {
           Stack(
             clipBehavior: Clip.none,
             children: [
-              Opacity(
-                opacity: active ? 1 : 0.62,
-                child: image(color),
-              ),
+              Opacity(opacity: active ? 1 : 0.62, child: image(color)),
               if (dot)
                 const Positioned(right: -3, top: -2, child: RedDot(size: 9)),
             ],
           ),
           const SizedBox(height: 1),
           // 6칸이라 칸이 좁다 — "コレクション"·"Character"(옛 탭)가 단어 중간에서 꺾였다(한 줄 · 칸에 맞게 줄임).
+          // ja 채집함은 탭 줄에서만 짧은 이름(navStorageShort 収集) — コレクション 은 320dp 에서 8px 까지 줄었다.
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 2),
             child: FittedBox(

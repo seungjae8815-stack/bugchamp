@@ -4,6 +4,7 @@
   "navHome": "홈",
   "navCollect": "채집",
   "navStorage": "채집함",
+  "navStorageShort": "채집함",
   "navBattle": "전투",
   "battleTitle": "곤충 결투",
   "battleTrophies": "트로피 {n}",

@@ -21,6 +21,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get navStorage => 'コレクション';
 
   @override
+  String get navStorageShort => '収集';
+
+  @override
   String get navBattle => '戦闘';
 
   @override

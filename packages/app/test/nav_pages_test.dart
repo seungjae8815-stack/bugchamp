@@ -13,10 +13,17 @@ Widget _bar(
   Set<int> dots = const {},
   Locale locale = const Locale('ko'),
   double width = 400,
+  double textScale = 1,
 }) => UncontrolledProviderScope(
   container: c,
   child: MaterialApp(
     locale: locale,
+    builder: (ctx, child) => MediaQuery(
+      data: MediaQuery.of(
+        ctx,
+      ).copyWith(textScaler: TextScaler.linear(textScale)),
+      child: child!,
+    ),
     localizationsDelegates: AppLocalizations.localizationsDelegates,
     supportedLocales: AppLocalizations.supportedLocales,
     home: Align(
@@ -126,6 +133,45 @@ void main() {
       );
       await tester.pump();
       expect(tester.takeException(), isNull, reason: 'page $page');
+    }
+  });
+
+  testWidgets('nav_label_320px_ja — 큰 글씨 1.3 에서도 라벨이 9px 아래로 안 줄어든다', (
+    tester,
+  ) async {
+    for (final page in [0, 1]) {
+      final c = ProviderContainer();
+      addTearDown(c.dispose);
+      c.read(navPageProvider.notifier).set(page);
+      await tester.pumpWidget(
+        _bar(c, locale: const Locale('ja'), width: 320, textScale: 1.3),
+      );
+      await tester.pump();
+      expect(tester.takeException(), isNull);
+      final labels = find.descendant(
+        of: find.byType(GameNavBar),
+        matching: find.byType(Text),
+      );
+      expect(labels, findsNWidgets(6));
+      for (final e in labels.evaluate()) {
+        final text = tester.widget<Text>(find.byWidget(e.widget));
+        final own = tester.getSize(find.byWidget(e.widget)).width;
+        final box = tester
+            .getSize(
+              find
+                  .ancestor(
+                    of: find.byWidget(e.widget),
+                    matching: find.byType(FittedBox),
+                  )
+                  .first,
+            )
+            .width;
+        final scaled =
+            text.style!.fontSize! *
+            (box / own).clamp(0.0, 1.0) *
+            MediaQuery.textScalerOf(e).scale(1);
+        expect(scaled, greaterThanOrEqualTo(9), reason: '${text.data} p$page');
+      }
     }
   });
 }

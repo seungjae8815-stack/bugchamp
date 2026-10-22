@@ -21,6 +21,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get navStorage => 'Storage';
 
   @override
+  String get navStorageShort => 'Storage';
+
+  @override
   String get navBattle => 'Battle';
 
   @override

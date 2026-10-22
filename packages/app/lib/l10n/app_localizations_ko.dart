@@ -21,6 +21,9 @@ class AppLocalizationsKo extends AppLocalizations {
   String get navStorage => '채집함';
 
   @override
+  String get navStorageShort => '채집함';
+
+  @override
   String get navBattle => '전투';
 
   @override

@@ -4,6 +4,7 @@
   "navHome": "ホーム",
   "navCollect": "採集",
   "navStorage": "コレクション",
+  "navStorageShort": "収集",
   "navBattle": "戦闘",
   "battleTitle": "虫の決闘",
   "battleTrophies": "トロフィー {n}",

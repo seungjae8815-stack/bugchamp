@@ -124,6 +124,12 @@ abstract class AppLocalizations {
   /// **'Storage'**
   String get navStorage;
 
+  /// No description provided for @navStorageShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Storage'**
+  String get navStorageShort;
+
   /// No description provided for @navBattle.
   ///
   /// In en, this message translates to:
