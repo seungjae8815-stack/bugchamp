@@ -8296,4 +8296,15 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get whatsNew24Haptic => '設定で振動をオフにできます';
+
+  @override
+  String get whatsNew25Polish =>
+      '装備オプションの値が小数第1位まで表示されます — 研磨で0.1上がったこともすぐ分かります（例：68.3/69）';
+
+  @override
+  String get whatsNew25Trait => '交配する虫を選ぶとき、血統特性（強靭・猛烈など）が名前で表示されます';
+
+  @override
+  String get whatsNew25Fix =>
+      '王虫選抜大会のバナーが長くなってずれる問題、決闘の無料チャージボタンの大きさ、設定の攻略本の赤い点が切れる問題を直しました';
 }

@@ -73,18 +73,15 @@ void main() {
       ),
     );
 
-    testWidgets('1.0.23 4줄 — 빨간 점·공략집·우편 한 번 더 받기·아이폰 닫기·대회 배너', (
-      tester,
-    ) async {
+    testWidgets('1.0.25 3줄 — 다듬기 소수점·짝짓기 특성 이름표·배너/버튼 정리', (tester) async {
       await tester.pumpWidget(host(const Locale('ko'), 300));
-      expect(kWhatsNewVersion, '1.0.23');
-      expect(find.textContaining('빨간 점'), findsOneWidget);
-      expect(find.textContaining('공략집에'), findsOneWidget);
-      expect(find.textContaining('한 번 더 받기'), findsOneWidget);
-      expect(find.textContaining('닫기 버튼'), findsOneWidget);
+      expect(kWhatsNewVersion, '1.0.25');
+      expect(find.textContaining('소수 한 자리'), findsOneWidget);
+      expect(find.textContaining('혈통 특성'), findsOneWidget);
+      expect(find.textContaining('무료 충전 버튼'), findsOneWidget);
       expect(
         whatsNewItems(lookupAppLocalizations(const Locale('ko'))),
-        hasLength(4),
+        hasLength(3),
       );
       expect(tester.takeException(), isNull);
     });

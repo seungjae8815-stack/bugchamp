@@ -8492,4 +8492,16 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get whatsNew24Haptic => 'Vibration can now be turned off in Settings';
+
+  @override
+  String get whatsNew25Polish =>
+      'Gear option values now show one decimal place, so a 0.1 gain from refining is visible right away (e.g. 68.3/69)';
+
+  @override
+  String get whatsNew25Trait =>
+      'Bloodline traits (Sturdy, Fierce and more) are shown by name when picking bugs to breed';
+
+  @override
+  String get whatsNew25Fix =>
+      'Fixed the contest banner stretching, the free ticket refill button size, and the red dot cut off on the Guide button in Settings';
 }

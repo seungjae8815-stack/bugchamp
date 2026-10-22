@@ -8309,4 +8309,15 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get whatsNew24Haptic => '설정에서 진동을 끌 수 있어요';
+
+  @override
+  String get whatsNew25Polish =>
+      '장비 옵션 값이 소수 한 자리까지 보여요 — 다듬기로 0.1 오른 것도 바로 보입니다(예: 68.3/69)';
+
+  @override
+  String get whatsNew25Trait => '짝짓기할 곤충을 고를 때 혈통 특성(강인·맹렬 등)이 이름으로 보여요';
+
+  @override
+  String get whatsNew25Fix =>
+      '왕충 선발대회 배너가 길어져 밀리던 것, 결투 무료 충전 버튼 크기, 설정 공략집 빨간 점이 잘리던 것을 고쳤어요';
 }

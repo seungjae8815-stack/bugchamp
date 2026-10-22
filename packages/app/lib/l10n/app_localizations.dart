@@ -13875,6 +13875,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Vibration can now be turned off in Settings'**
   String get whatsNew24Haptic;
+
+  /// No description provided for @whatsNew25Polish.
+  ///
+  /// In en, this message translates to:
+  /// **'Gear option values now show one decimal place, so a 0.1 gain from refining is visible right away (e.g. 68.3/69)'**
+  String get whatsNew25Polish;
+
+  /// No description provided for @whatsNew25Trait.
+  ///
+  /// In en, this message translates to:
+  /// **'Bloodline traits (Sturdy, Fierce and more) are shown by name when picking bugs to breed'**
+  String get whatsNew25Trait;
+
+  /// No description provided for @whatsNew25Fix.
+  ///
+  /// In en, this message translates to:
+  /// **'Fixed the contest banner stretching, the free ticket refill button size, and the red dot cut off on the Guide button in Settings'**
+  String get whatsNew25Fix;
 }
 
 class _AppLocalizationsDelegate
