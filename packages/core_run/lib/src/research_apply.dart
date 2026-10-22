@@ -139,3 +139,18 @@ double researchScaledChance(double p, ResearchEffects e, ResearchEffect kind) {
   if (v <= 0 || p <= 0) return p;
   return math.min(1.0, p * (1 + v));
 }
+
+/// 연구소 "선물 감각"(`giftGold`) — 깜짝선물·일일보상 **골드·재료 한 칸** × (1 + v)(설계 §10).
+/// 앱 지급(선물 생성·일일보상)과 서버 상한(`_capGift`·`claimDaily`·업로드 허용치)이 모두 이 함수를 쓴다.
+/// ⚠️ 젤리에는 쓰지 않는다(§2.6 젤리 수도꼭지). 미션 분치에도 쓰지 않는다(선물·일일보상만).
+int giftAmountScaled(int amount, ResearchEffects fx) =>
+    researchScaledAmount(amount, fx, ResearchEffect.giftGold);
+
+/// [giftAmountScaled] 를 (골드, 재료 종류당) 한 쌍에 — 사냥 분치 보상(`huntMinutesReward`) 결과에 그대로 씌운다.
+({int gold, int materialsEach}) giftRewardScaled(
+  ({int gold, int materialsEach}) r,
+  ResearchEffects fx,
+) => (
+  gold: giftAmountScaled(r.gold, fx),
+  materialsEach: giftAmountScaled(r.materialsEach, fx),
+);

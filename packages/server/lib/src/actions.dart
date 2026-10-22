@@ -2263,19 +2263,6 @@ class GameActions {
     );
   }
 
-  /// 연구소 "선물 감각"(`giftGold`) — 깜짝선물·일일보상 골드·재료 × (1 + v)(앱 지급과 같은 함수). 젤리는 아니다.
-  static ({int gold, int materialsEach}) _giftScaled(
-    ({int gold, int materialsEach}) c,
-    ResearchEffects research,
-  ) => (
-    gold: researchScaledAmount(c.gold, research, ResearchEffect.giftGold),
-    materialsEach: researchScaledAmount(
-      c.materialsEach,
-      research,
-      ResearchEffect.giftGold,
-    ),
-  );
-
   /// 선물 [g] 를 상한으로 자른다 — 선물은 앱이 만들어 세이브에 올리므로 금액을 믿을 수 없다.
   /// 상한은 선물에 적힌 분이 아니라 **설정의 가장 큰 분**(`huntMinutes`)으로 잰다(분도 앱이 적는다).
   GiftMail _capGift(SaveGame s, GiftMail g) {
@@ -2294,16 +2281,8 @@ class GameActions {
     // 앱은 정액·분치 중 큰 쪽에 선물 감각(연구)을 곱해 적는다 — 상한도 같은 배율.
     final fx = _researchFx(s.researchLevels);
     final cap = _huntCap(s, maxMin);
-    final goldCap = researchScaledAmount(
-      max(maxGold, cap.gold),
-      fx,
-      ResearchEffect.giftGold,
-    );
-    final matCap = researchScaledAmount(
-      max(maxMat, cap.materialsEach),
-      fx,
-      ResearchEffect.giftGold,
-    );
+    final goldCap = giftAmountScaled(max(maxGold, cap.gold), fx);
+    final matCap = giftAmountScaled(max(maxMat, cap.materialsEach), fx);
     if (g.gold <= goldCap &&
         g.chitin <= matCap &&
         g.mineral <= matCap &&
@@ -2373,7 +2352,7 @@ class GameActions {
         final id = key.endsWith('#2') ? key.substring(0, key.length - 2) : key;
         final reward = daily.rewards.where((r) => r.id == id).firstOrNull;
         if (reward == null || reward.huntMinutes <= 0) continue;
-        add(_giftScaled(_huntCap(stored, reward.huntMinutes), research));
+        add(giftRewardScaled(_huntCap(stored, reward.huntMinutes), research));
       }
     }
     final gift = config.gift;
@@ -2410,7 +2389,7 @@ class GameActions {
         final fresh = due && rescheduled ? 1 : 0;
         final mult = max(1, max(gift.adMultiplier, gift.adMultiplierMax));
         add(
-          _giftScaled(_huntCap(stored, maxMin), research),
+          giftRewardScaled(_huntCap(stored, maxMin), research),
           (gone + fresh) * mult,
         );
       }
@@ -3596,7 +3575,7 @@ class GameActions {
     final tier = cfg.rollTier(rng);
     // 선물 감각(연구) — 골드·재료만(젤리는 그대로, §2.6).
     final fx = _researchFx(save.researchLevels);
-    int up(int v) => researchScaledAmount(v, fx, ResearchEffect.giftGold);
+    int up(int v) => giftAmountScaled(v, fx);
     final gift = GiftMail(
       id: _uuid.v4(),
       expiry: t.add(Duration(hours: cfg.expiryHours)),
@@ -4065,16 +4044,17 @@ class GameActions {
     }
     // 앱 금액엔 선물 감각(연구)이 실린다 — 상한도 같은 배율(정액도 같은 배율, 앱과 같게).
     final fx = _researchFx(save.researchLevels);
-    final cap = _giftScaled(_huntCap(save, reward.huntMinutes), fx);
+    final cap = giftRewardScaled(_huntCap(save, reward.huntMinutes), fx);
     final gold = max(
-      researchScaledAmount(reward.gold, fx, ResearchEffect.giftGold),
+      giftAmountScaled(reward.gold, fx),
       min(max(clientGold, 0), cap.gold),
     );
     final each = min(max(clientMaterialsEach, 0), cap.materialsEach);
     final mats = Map<MaterialKind, int>.from(save.materials);
     final fixed = reward.materials;
     for (final k in kBreakthroughMaterials) {
-      final add = max(fixed[k] ?? 0, each);
+      // 정액 재료도 앱과 같은 배율(앱 = 선물 감각 × max(정액, 분치)).
+      final add = max(giftAmountScaled(fixed[k] ?? 0, fx), each);
       if (add > 0) mats[k] = (mats[k] ?? 0) + add;
     }
     if (reward.jelly > 0) {

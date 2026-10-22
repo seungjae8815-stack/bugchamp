@@ -164,10 +164,14 @@ void main() {
         research: r,
       );
       final a = g(none).potions, b = g(maxed).potions;
-      if (a < grade.potionDropDaily) {
-        expect(b, greaterThan(a));
-        expect(b, lessThanOrEqualTo(grade.potionDropDaily.toDouble() + 1e-9));
-      }
+      // 8시간 채집꾼이라 기댓값이 0 보다 크고 하루 한도엔 안 닿는다 — 먼저 확인해 조건 없이 비교한다.
+      expect(a, greaterThan(0));
+      expect(
+        b,
+        lessThan(grade.potionDropDaily.toDouble()),
+        reason: '한도에 닿으면 배율을 못 본다',
+      );
+      expect(b / a, closeTo(1 + maxed.of(ResearchEffect.potionChance), 1e-6));
     });
   });
 

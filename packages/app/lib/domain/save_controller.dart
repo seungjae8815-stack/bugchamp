@@ -1562,7 +1562,7 @@ class SaveController extends AsyncNotifier<SaveGame> {
           );
     // 연구소 "선물 감각"(`giftGold`) — 골드·재료 × (1 + v). 젤리는 그대로(§2.6). 서버 `_capGift` 가 같은 배율로 자른다.
     final fx = data?.researchFx(s.researchLevels) ?? ResearchEffects.none;
-    int up(int v) => researchScaledAmount(v, fx, ResearchEffect.giftGold);
+    int up(int v) => giftAmountScaled(v, fx);
     final gift = GiftMail(
       id: _devUuid.v4(),
       expiry: now.add(Duration(hours: cfg.expiryHours)),
@@ -2519,7 +2519,7 @@ class SaveController extends AsyncNotifier<SaveGame> {
     );
     // 연구소 "선물 감각"(`giftGold`) — 골드·재료 × (1 + v). 젤리는 그대로(§2.6).
     final fx = data.researchFx(s.researchLevels);
-    int up(int v) => researchScaledAmount(v, fx, ResearchEffect.giftGold);
+    int up(int v) => giftAmountScaled(v, fx);
     return (
       gold: up(math.max(reward.gold, hunt.gold)),
       materials: {

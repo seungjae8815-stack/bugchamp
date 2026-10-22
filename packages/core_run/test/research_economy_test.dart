@@ -180,6 +180,17 @@ void main() {
       (100 * (1 + v(ResearchEffect.giftGold))).round(),
     );
     expect(researchScaledAmount(0, maxed, ResearchEffect.giftGold), 0);
+    // 선물 감각 공용 함수(앱 지급·서버 상한 공용).
+    expect(giftRewardScaled((gold: 1000, materialsEach: 50), none), (
+      gold: 1000,
+      materialsEach: 50,
+    ));
+    final m = 1 + v(ResearchEffect.giftGold);
+    expect(giftRewardScaled((gold: 1000, materialsEach: 50), maxed), (
+      gold: (1000 * m).round(),
+      materialsEach: (50 * m).round(),
+    ));
+    expect(giftAmountScaled(1000, maxed), (1000 * m).round());
     expect(researchScaledChance(0.1, none, ResearchEffect.traitChance), 0.1);
     expect(
       researchScaledChance(0.1, maxed, ResearchEffect.traitChance),
