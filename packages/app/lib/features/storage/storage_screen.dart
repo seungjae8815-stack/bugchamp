@@ -1535,9 +1535,19 @@ class StorageScreen extends ConsumerWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   elementIcon(bug.element, size: 12),
+                  // 특성은 **이름으로**(2026-10-22 사장님 — 12px 아이콘은 "강인"인지 읽히지 않았다).
+                  // 채집함 칸과 같은 이름표. 칸 폭이 좁은 언어(영·일)는 줄이기만 한다(높이는 그대로).
                   if (!bug.trait.isNone) ...[
                     const SizedBox(width: 3),
-                    traitIcon(bug.trait, size: 12),
+                    Flexible(
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: _eggBadge(
+                          traitLabel(AppLocalizations.of(ctx), bug.trait),
+                          traitColor(bug.trait),
+                        ),
+                      ),
+                    ),
                   ],
                 ],
               ),
