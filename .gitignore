@@ -28,3 +28,5 @@ packages/app/supabase.env.json
 *.jks
 *.keystore
 __pycache__/
+
+.superpowers/
