@@ -645,10 +645,8 @@ class _DuelArenaScreenState extends State<DuelArenaScreen>
       target: p.clutchTapTarget,
       chance: math.min(uses, used + 1),
       chances: uses,
-      threshold: (p.clutchThreshold - grit * p.clutchThresholdPerGrit).clamp(
-        0.0,
-        1.0,
-      ),
+      // 근성 칸 + 연구 "근성 단련"(clutchEase) — 엔진 `tryClutch` 와 같은 함수.
+      threshold: _curA.clutchThresholdOf(p).clamp(0.0, 1.0),
       // 기기당 첫 위기는 안내 → 탭하면 시작(2026-10-09).
       tutorial: ClutchTutorial.needed,
       onTutorialDone: ClutchTutorial.markSeen,

@@ -238,11 +238,13 @@ class RunConfig {
     this.critBudgetUpgrade = 1.0,
     this.critBudgetGear = 1.0,
     this.critBudgetOther = 1.0,
-    this.evadeMax = 0.4,
+    this.evadeMax = 0.6,
     this.evadeBudgetUpgrade = 0.2,
     this.evadeBudgetGear = 0.1,
     this.skillCooldownBudgetGear = 0.3,
     this.evadeBudgetOther = 0.1,
+    this.evadeBudgetResearch = 0.2,
+    this.skillCooldownBudgetResearch = 0.2,
     this.walkSeconds = 0.12,
     this.levelStatPerLevel = 0.03,
     this.walkThreatMult = 0.0,
@@ -437,7 +439,8 @@ class RunConfig {
   final double critBudgetOther;
 
   /// 사냥 회피 확률의 **최종 상한**(2026-10-09). 출처별 예산([evadeBudgetUpgrade]·
-  /// [evadeBudgetGear]·[evadeBudgetOther])의 합과 같게 둔다 — 치명확률 예산과 같은 구조다.
+  /// [evadeBudgetGear]·[evadeBudgetOther]·[evadeBudgetResearch])의 합과 같게 둔다 — 치명확률 예산과 같은 구조다.
+  /// 2026-10-22 사장님 확정: 연구소 "날쌘 발" 몫 20% 를 새로 열어 40 → 60%(설계 §10).
   ///
   /// ⚠️ 회피는 적응형 위협 기준 **밖**(순수 이득)이라 크게 열면 "죽을 듯 말 듯"(한 대 12%)이
   /// 무너지고 보스 관문(버티는 시간)이 함께 쉬워진다 — 올릴 땐 balance_sim 의 체력 궤적·도착 직후
@@ -451,6 +454,12 @@ class RunConfig {
   /// 장비 옵션 "스킬 쿨타임 감소"의 합 상한(2026-10-14 사장님 확정 — 8부위가 다 굴려도 이만큼까지).
   final double skillCooldownBudgetGear;
   final double evadeBudgetOther;
+
+  /// 연구소 "날쌘 발"(사냥 회피 %p)이 더할 수 있는 회피의 상한(2026-10-22 사장님 확정, 설계 §10).
+  final double evadeBudgetResearch;
+
+  /// 연구소 "스킬 숙련"(스킬·탈피 쿨타임 감소)의 상한 — 장비 몫과 따로(장비 30% + 연구 20% = 최대 50%).
+  final double skillCooldownBudgetResearch;
 
   /// 몬스터 사이를 걷는 시간(초, 탭 부스트가 줄인다). 예전엔 0.6초 ÷ 이동속도 강화였다.
   ///
@@ -868,13 +877,17 @@ class RunConfig {
       critBudgetUpgrade: (json['critBudgetUpgrade'] as num?)?.toDouble() ?? 1.0,
       critBudgetGear: (json['critBudgetGear'] as num?)?.toDouble() ?? 1.0,
       critBudgetOther: (json['critBudgetOther'] as num?)?.toDouble() ?? 1.0,
-      evadeMax: (json['evadeMax'] as num?)?.toDouble() ?? 0.4,
+      evadeMax: (json['evadeMax'] as num?)?.toDouble() ?? 0.6,
       evadeBudgetUpgrade:
           (json['evadeBudgetUpgrade'] as num?)?.toDouble() ?? 0.2,
       evadeBudgetGear: (json['evadeBudgetGear'] as num?)?.toDouble() ?? 0.1,
       skillCooldownBudgetGear:
           (json['skillCooldownBudgetGear'] as num?)?.toDouble() ?? 0.3,
       evadeBudgetOther: (json['evadeBudgetOther'] as num?)?.toDouble() ?? 0.1,
+      evadeBudgetResearch:
+          (json['evadeBudgetResearch'] as num?)?.toDouble() ?? 0.2,
+      skillCooldownBudgetResearch:
+          (json['skillCooldownBudgetResearch'] as num?)?.toDouble() ?? 0.2,
       walkSeconds: (json['walkSeconds'] as num?)?.toDouble() ?? 0.12,
       levelStatPerLevel:
           (json['levelStatPerLevel'] as num?)?.toDouble() ?? 0.03,

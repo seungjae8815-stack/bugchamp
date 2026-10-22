@@ -1,5 +1,5 @@
 {
-  "_comment": "연구소(설계 docs/superpowers/specs/2026-10-22-research-lab-design.md). 시간·비용 곡선 · eliteDropChance · 사냥·육성·장비·경제 effect · fitBasis 는 tool/research_table.dart --fit --write 가 뽑는다 — 손으로 한 칸씩 고치지 않는다(하루 3시간 켜 둔 무과금 · 골드·재료 = 3시간 켜 둔 날 실제 수입의 50% 목표, 한 레벨 상한 사냥 1,210분치 · 약 180일 · 사장님 A안). bossFirstDrop 25 는 사장님 확정값. 시간·비용: Lv1 = first, 한 단계 오를 때마다 × (1 + (growth−1)·decay^(i−1)). kind = ResearchEffect 키. 결투 공격·방어·체력 effect 는 결투 80% 맞추기가 정한다(server tool/duel_build_sim.dart --research-fit — 각 +57% = 다 찍은 쪽 3마리 경기 82% · 1마리 71%, 치명·근성 6b 몫을 남김). duelCap 은 그 값(주석용).",
+  "_comment": "연구소(설계 docs/superpowers/specs/2026-10-22-research-lab-design.md). 시간·비용 곡선 · eliteDropChance · 사냥·육성·장비·경제 effect · fitBasis 는 tool/research_table.dart --fit --write 가 뽑는다 — 손으로 한 칸씩 고치지 않는다(하루 3시간 켜 둔 무과금 · 골드·재료 = 3시간 켜 둔 날 실제 수입의 50% 목표, 한 레벨 상한 사냥 1,210분치 · 약 180일 · 사장님 A안). bossFirstDrop 25 는 사장님 확정값. 시간·비용: Lv1 = first, 한 단계 오를 때마다 × (1 + (growth−1)·decay^(i−1)). kind = ResearchEffect 키. 결투 공격·방어·체력 effect 는 결투 80% 맞추기가 정한다(server tool/duel_build_sim.dart --research-fit — 각 +57% = 다 찍은 쪽 3마리 경기 82% · 1마리 71%, 치명·근성 6b 몫을 남김). 6b: 급소 공략(치명) 최대 +5%p · 근성 단련(탭 반격 문턱) 최대 −0.02 — 다 찍은 쪽 3마리 88.7% · 1마리 77.1%(--research-max, 근성 0.05 면 95.6% 로 95% 기준을 넘음). duelCap 은 그 값(주석용).",
   "instantJellyPerMinute": 1.0,
   "instantJellyExponent": 0.58,
   "slotsByTier": [
@@ -784,7 +784,7 @@
         "level": 5
       },
       "effect": {
-        "perLevel": 0.001667,
+        "perLevel": 0.000667,
         "growth": 1.0
       },
       "time": {

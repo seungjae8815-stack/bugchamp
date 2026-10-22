@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math' as math;
 
 import 'package:app/data/game_data.dart';
 import 'package:app/data/save_repository.dart';
@@ -168,10 +169,60 @@ void main() {
     );
     // 적응형 기준(영구 능력치)에는 안 들어간다.
     expect(
-      permanentStatsOf(save.copyWith(researchLevels: {'jaw': 30}), data, t0)
-          .attack,
+      permanentStatsOf(
+        save.copyWith(researchLevels: {'jaw': 30}),
+        data,
+        t0,
+      ).attack,
       permanentStatsOf(save, data, t0).attack,
     );
+  });
+
+  test('사냥 능력치 — 연구 치명 피해·재생·경험치 곱 · 회피 %p(연구 몫 0.2)', () {
+    final data = _data(research: true);
+    final save = SaveGame.initial(createdAt: t0);
+    final ids = {
+      for (final d in data.researchConfig!.defs)
+        if (const {
+          ResearchEffect.huntCritDmg,
+          ResearchEffect.huntRegen,
+          ResearchEffect.huntExp,
+          ResearchEffect.huntEvade,
+        }.contains(d.effect))
+          d.id: d.maxLevel,
+    };
+    expect(ids.length, 4);
+    final fx = researchEffects(data.researchConfig!, ids);
+    final none = huntStatsUncapped(save, data, t0, guildBonus: const {});
+    final up = huntStatsUncapped(
+      save.copyWith(researchLevels: ids),
+      data,
+      t0,
+      guildBonus: const {},
+    );
+    expect(
+      up.critDamage / none.critDamage,
+      closeTo(1 + fx.of(ResearchEffect.huntCritDmg), 1e-9),
+    );
+    expect(
+      up.hpRegen / none.hpRegen,
+      closeTo(1 + fx.of(ResearchEffect.huntRegen), 1e-9),
+    );
+    expect(
+      up.xpMultiplier / none.xpMultiplier,
+      closeTo(1 + fx.of(ResearchEffect.huntExp), 1e-9),
+    );
+    expect(
+      up.evade - none.evade,
+      closeTo(
+        math.min(
+          fx.of(ResearchEffect.huntEvade),
+          data.runConfig!.evadeBudgetResearch,
+        ),
+        1e-9,
+      ),
+    );
+    expect(up.attack, none.attack);
   });
 
   test('잠깐 다녀온 정도(1분 이하)는 정산하지 않는다', () async {

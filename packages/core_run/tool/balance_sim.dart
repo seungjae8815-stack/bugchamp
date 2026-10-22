@@ -1587,7 +1587,11 @@ class _Player {
     s = _applySkills(s, activeAvg: activeAvg);
     s = _applyFairy(s, activeAvg: activeAvg);
     s = _applyGuild(s);
-    s = applyResearchStats(s, _research);
+    s = applyResearchStats(
+      s,
+      _research,
+      evadeBudget: config.evadeBudgetResearch,
+    );
     return capCritChance(s, config.critChanceMax);
   }
 
@@ -1638,7 +1642,7 @@ class _Player {
     for (final id in equipped) {
       final def = cfg.byId(id);
       if (def == null || !def.isActive) continue;
-      final cd = def.cooldown.inMilliseconds / 1000 * (1 - _gearSkillCd);
+      final cd = def.cooldown.inMilliseconds / 1000 * _skillCdMult;
       if (cd <= 0) continue;
       final v = def.valueAt(lv);
       switch (def.effect) {
@@ -1712,7 +1716,7 @@ class _Player {
     final def = cfg.byId(f.kind);
     if (activeAvg && def != null) {
       final sk = def.skill;
-      final cd = sk.cooldown.inMilliseconds / 1000 * (1 - _gearSkillCd);
+      final cd = sk.cooldown.inMilliseconds / 1000 * _skillCdMult;
       final up = cd <= 0
           ? 0.0
           : (sk.duration.inMilliseconds / 1000 / cd).clamp(0.0, 1.0);
@@ -1812,7 +1816,7 @@ class _Player {
     for (final id in eq.equipped) {
       final def = cfg.byId(id);
       if (def?.effect != 'invulnerable' || !def!.isActive) continue;
-      final cd = def.cooldown.inMilliseconds / 1000 * (1 - _gearSkillCd);
+      final cd = def.cooldown.inMilliseconds / 1000 * _skillCdMult;
       final dur = def.durationAt(eq.levels[id] ?? eq.lv);
       if (cd > 0 && dur > 0) guard = (duration: dur, cooldown: cd);
     }
@@ -1826,7 +1830,7 @@ class _Player {
           ? null
           : (
               hpFraction: r.hpFraction,
-              cooldown: r.cooldown.inMilliseconds / 1000 * (1 - _gearSkillCd),
+              cooldown: r.cooldown.inMilliseconds / 1000 * _skillCdMult,
             ),
       guard: guard,
     );
@@ -1874,7 +1878,7 @@ class _Player {
     for (final id in eq.equipped) {
       final def = cfg.byId(id);
       if (def == null || !def.isActive) continue;
-      final cd = def.cooldown.inMilliseconds / 1000 * (1 - _gearSkillCd);
+      final cd = def.cooldown.inMilliseconds / 1000 * _skillCdMult;
       final dur = def.durationAt(eq.lv);
       final v = def.valueAt(eq.lv);
       // 0 초에 첫 발, 그 뒤 쿨마다.
@@ -1905,7 +1909,7 @@ class _Player {
     final def = f == null ? null : cfg?.byId(f.kind);
     if (cfg == null || f == null || def == null || sec <= 0) return 0;
     final sk = def.skill;
-    final cd = sk.cooldown.inMilliseconds / 1000 * (1 - _gearSkillCd);
+    final cd = sk.cooldown.inMilliseconds / 1000 * _skillCdMult;
     final dur = sk.duration.inMilliseconds / 1000;
     final v = cfg.skillValue(f);
     var extra = 0.0;
@@ -2183,6 +2187,10 @@ class _Player {
 
   double get _offlineEff =>
       researchOfflineEfficiency(config.offlineEfficiency, _research);
+
+  /// 스킬·탈피 쿨타임 배율 — 장비(`--gear-skill-cd`) + 연구 "스킬 숙련"(앱 사냥 화면 `_skillCdMult` 와 같은 함수).
+  double get _skillCdMult =>
+      skillCooldownMult(config, gearCut: _gearSkillCd, research: _research);
 
   void _researchInit() {
     if (_researchMode == null || _researchConfig != null) return;
@@ -2538,9 +2546,7 @@ class _Player {
     final st = stats;
     final need = config.bossUnlockKills.toDouble();
     final budgetSec =
-        days *
-        (_activeHoursPerDay + _offlineHoursPerDay * _offlineEff) *
-        3600;
+        days * (_activeHoursPerDay + _offlineHoursPerDay * _offlineEff) * 3600;
     var used = 0.0;
     var floor = 1;
     var perFloorMin = 0.0;

@@ -31,6 +31,7 @@ class DuelBug {
     this.pushMult = 1,
     this.tech = 0,
     this.grit = 0,
+    this.clutchEase = 0,
     this.sizeStatMult = 1,
     this.auraRole,
     this.aura = 0,
@@ -75,6 +76,10 @@ class DuelBug {
 
   /// 근성 칸(단계) — 탭 반격 성공 문턱·효과·횟수.
   final int grit;
+
+  /// 탭 반격 성공 문턱을 **이만큼 더** 낮춘다(점수 0~1) — 연구소 "근성 단련"(설계 §10, 2026-10-22).
+  /// 근성 칸과 달리 탭 힘·깨우기 체력·횟수는 안 건드린다(문턱만). JSON `ce`.
+  final double clutchEase;
 
   /// 이 곤충 스탯에 **이미 구워진** 사이즈 배율(`sizeToStatMultiplier`, 0.85~1.20). 1 = 모름/없음.
   /// 엔진이 결투에서만 그 몫을 `sizeStatExp` 로 덜어낸다 — 같은 종 크기 최대 대 최소가 스탯 ×1.41 로
@@ -134,6 +139,7 @@ class DuelBug {
     pushMult: pushMult,
     tech: tech,
     grit: grit,
+    clutchEase: clutchEase,
     sizeStatMult: sizeStatMult,
     auraRole: clearAuraRole ? null : (auraRole ?? this.auraRole),
     aura: aura ?? this.aura,
@@ -156,6 +162,7 @@ class DuelBug {
     double pushMult = 1,
     double tech = 0,
     int grit = 0,
+    double clutchEase = 0,
   }) => DuelBug(
     id: id,
     name: name,
@@ -175,6 +182,7 @@ class DuelBug {
     pushMult: this.pushMult * pushMult,
     tech: this.tech + tech,
     grit: this.grit + grit,
+    clutchEase: this.clutchEase + clutchEase,
     sizeStatMult: sizeStatMult,
     auraRole: auraRole,
     aura: aura,
@@ -240,6 +248,7 @@ class DuelBug {
     pushMult: pushMult,
     tech: tech,
     grit: grit,
+    clutchEase: clutchEase,
     sizeStatMult: sizeStatMult,
     auraRole: auraRole,
     aura: aura,
@@ -279,6 +288,10 @@ class DuelBug {
 
   /// 엔진이 쓰는 근성 단계(0 ~ `clutchGritMax`).
   int gritOf(DuelParams p) => grit.clamp(0, p.clutchGritMax);
+
+  /// 탭 반격 성공 문턱 = `clutchThreshold` − 근성 × `clutchThresholdPerGrit` − [clutchEase] (엔진·앱 게이지 공용).
+  double clutchThresholdOf(DuelParams p) =>
+      p.clutchThreshold - gritOf(p) * p.clutchThresholdPerGrit - clutchEase;
 
   /// 실전 전투력의 특징값 12개 — **엔진이 실제로 쓰는 값**(사이즈 몫을 덜어낸 능력치 · 회피·치명 상한).
   /// 순서는 [DuelParams.powerWeights] 와 같다. 맞춤 도구(`server/tool/duel_power_fit.dart`)도 이 함수를 쓴다.
@@ -338,6 +351,7 @@ class DuelBug {
     if (pushMult != 1) 'pm': pushMult,
     if (tech != 0) 'tech': tech,
     if (grit != 0) 'grit': grit,
+    if (clutchEase != 0) 'ce': clutchEase,
     if (sizeStatMult != 1) 'ssm': sizeStatMult,
     if (auraRole != null) 'ar': auraRole!.key,
     if (auraRole != null && aura > 0) 'av': aura,
@@ -365,6 +379,7 @@ class DuelBug {
     pushMult: (j['pm'] as num?)?.toDouble() ?? 1,
     tech: (j['tech'] as num?)?.toDouble() ?? 0,
     grit: (j['grit'] as num?)?.toInt() ?? 0,
+    clutchEase: (j['ce'] as num?)?.toDouble() ?? 0,
     sizeStatMult: (j['ssm'] as num?)?.toDouble() ?? 1,
     auraRole: DuelRole.fromKeyOrNull(
       j['ar'] is String ? j['ar'] as String : null,

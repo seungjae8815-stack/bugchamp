@@ -388,6 +388,55 @@ void main() {
       expect(outcome(5, 0.451), DuelEventKind.clutchSave);
     });
 
+    test('연구 "근성 단련"(clutchEase) — 문턱만 그만큼 낮춘다 · 0 이면 그대로 · JSON 왕복', () {
+      final s = _seedWithPlayerCrisis(a, b);
+      DuelEventKind outcome(double ease, double score, {int grit = 0}) {
+        final r = simulateBout(
+          seed: s,
+          a: a.withTraining(grit: grit, clutchEase: ease),
+          b: b,
+          params: _on,
+          clutchScores: [score],
+        );
+        return r.events
+            .firstWhere(
+              (e) =>
+                  e.who == 0 &&
+                  (e.kind == DuelEventKind.clutchSave ||
+                      e.kind == DuelEventKind.clutchFail),
+            )
+            .kind;
+      }
+
+      expect(outcome(0, 0.549), DuelEventKind.clutchFail);
+      expect(outcome(0.05, 0.501), DuelEventKind.clutchSave);
+      expect(outcome(0.05, 0.499), DuelEventKind.clutchFail);
+      // 근성 칸과 더해진다(0.55 − 5 × 0.02 − 0.05 = 0.40).
+      expect(outcome(0.05, 0.401, grit: 5), DuelEventKind.clutchSave);
+      expect(outcome(0.05, 0.399, grit: 5), DuelEventKind.clutchFail);
+      final eased = a.withTraining(clutchEase: 0.05);
+      expect(eased.clutchThresholdOf(_on), closeTo(0.50, 1e-12));
+      expect(a.clutchThresholdOf(_on), closeTo(0.55, 1e-12));
+      expect(DuelBug.fromJson(eased.toJson()).clutchEase, closeTo(0.05, 1e-12));
+      expect(a.toJson().containsKey('ce'), isFalse);
+      // 연구 0 이면 판이 그대로(근성 칸·다른 물리는 안 건드린다).
+      final r1 = simulateBout(
+        seed: s,
+        a: a,
+        b: b,
+        params: _on,
+        clutchScores: [0.3],
+      );
+      final r2 = simulateBout(
+        seed: s,
+        a: a.withTraining(clutchEase: 0),
+        b: b,
+        params: _on,
+        clutchScores: [0.3],
+      );
+      expect(jsonEncode(r1.toJson()), jsonEncode(r2.toJson()));
+    });
+
     test('버티기 대가(clutchHoldHpCost) — 장외·뒤집기를 버티면 체력을 잃지만 그것으로 쓰러지지는 않는다', () {
       const costly = DuelParams(clutchEnabled: true, clutchHoldHpCost: 0.36);
       var checked = 0;

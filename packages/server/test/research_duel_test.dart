@@ -67,9 +67,17 @@ void main() {
       expect(got[i].atk, closeTo(base[i].atk * a, 1e-6));
       expect(got[i].def, closeTo(base[i].def * d, 1e-6));
       expect(got[i].maxHp, closeTo(base[i].maxHp * h, 1e-6));
-      // 공격·방어·체력 말고는 그대로(치명·근성은 6b).
       expect(got[i].spd, base[i].spd);
-      expect(got[i].crit, base[i].crit);
+      // 급소 공략 = 치명 확률 %p 가산(엔진 critMax 그대로) · 근성 단련 = 탭 반격 문턱 낮춤.
+      expect(
+        got[i].crit,
+        closeTo(base[i].crit + fx.of(ResearchEffect.duelCrit), 1e-9),
+      );
+      expect(
+        got[i].clutchEase,
+        closeTo(base[i].clutchEase + fx.of(ResearchEffect.duelGrit), 1e-9),
+      );
+      expect(got[i].grit, base[i].grit);
     }
   }
 
@@ -80,11 +88,15 @@ void main() {
     expect(fx.of(ResearchEffect.duelAtk), greaterThan(0));
     expect(fx.of(ResearchEffect.duelDef), greaterThan(0));
     expect(fx.of(ResearchEffect.duelHp), greaterThan(0));
+    expect(fx.of(ResearchEffect.duelCrit), greaterThan(0));
+    expect(fx.of(ResearchEffect.duelGrit), greaterThan(0));
     // 연구 0 레벨 맵 = 연구 없음.
     final zero = team(saveWith({for (final k in maxed.keys) k: 0}));
     for (var i = 0; i < 3; i++) {
       expect(zero[i].atk, base[i].atk);
       expect(zero[i].maxHp, base[i].maxHp);
+      expect(zero[i].crit, base[i].crit);
+      expect(zero[i].clutchEase, 0);
     }
     expectScaled(team(saveWith(maxed)), base, fx);
   });

@@ -45,22 +45,29 @@ void main() {
       if (d.branch == ResearchBranch.duel) d.id: d.maxLevel,
   };
 
-  test('결투 연구를 다 찍으면 duelBugFor 의 공격·방어·체력 × (1 + 효과), 없으면 그대로', () {
-    final none = SaveGame.initial(createdAt: t0).copyWith(bugs: [bug]);
-    final full = none.copyWith(researchLevels: maxed);
-    final fx = data.researchFx(maxed);
-    final a = duelBugFor(bug, data, none, 'ko');
-    final b = duelBugFor(bug, data, full, 'ko');
-    expect(fx.of(ResearchEffect.duelAtk), greaterThan(0));
-    expect(b.atk, closeTo(a.atk * (1 + fx.of(ResearchEffect.duelAtk)), 1e-6));
-    expect(b.def, closeTo(a.def * (1 + fx.of(ResearchEffect.duelDef)), 1e-6));
-    expect(
-      b.maxHp,
-      closeTo(a.maxHp * (1 + fx.of(ResearchEffect.duelHp)), 1e-6),
-    );
-    expect(b.spd, a.spd);
-    expect(b.crit, a.crit);
-  });
+  test(
+    '결투 연구를 다 찍으면 duelBugFor 의 공격·방어·체력 × (1 + 효과) · 치명 + · 문턱 −, 없으면 그대로',
+    () {
+      final none = SaveGame.initial(createdAt: t0).copyWith(bugs: [bug]);
+      final full = none.copyWith(researchLevels: maxed);
+      final fx = data.researchFx(maxed);
+      final a = duelBugFor(bug, data, none, 'ko');
+      final b = duelBugFor(bug, data, full, 'ko');
+      expect(fx.of(ResearchEffect.duelAtk), greaterThan(0));
+      expect(b.atk, closeTo(a.atk * (1 + fx.of(ResearchEffect.duelAtk)), 1e-6));
+      expect(b.def, closeTo(a.def * (1 + fx.of(ResearchEffect.duelDef)), 1e-6));
+      expect(
+        b.maxHp,
+        closeTo(a.maxHp * (1 + fx.of(ResearchEffect.duelHp)), 1e-6),
+      );
+      expect(b.spd, a.spd);
+      // 급소 공략(치명 %p)·근성 단련(탭 반격 문턱) — 서버 `_buildDuelTeam` 과 같은 값.
+      expect(fx.of(ResearchEffect.duelCrit), greaterThan(0));
+      expect(b.crit, closeTo(a.crit + fx.of(ResearchEffect.duelCrit), 1e-9));
+      expect(a.clutchEase, 0);
+      expect(b.clutchEase, closeTo(fx.of(ResearchEffect.duelGrit), 1e-9));
+    },
+  );
 
   test('전투력 캐시는 연구 레벨이 바뀌면 다시 계산한다', () {
     final none = SaveGame.initial(createdAt: t0).copyWith(bugs: [bug]);

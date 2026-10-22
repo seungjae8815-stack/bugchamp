@@ -498,7 +498,7 @@ DuelBout simulateBout({
           (clutchRng[s.side].nextDouble() * 2 - 1) * p.clutchAutoSpread;
     }
     s.clutchLeft--;
-    final ok = score >= p.clutchThreshold - grit * p.clutchThresholdPerGrit;
+    final ok = score >= s.bug.clutchThresholdOf(p);
     // 살아나면 잠깐 무적 — 체력이 바닥일 때 오는 위기라, 무적이 없으면 살아나도 다음 한 대에 졌다
     // (같은 세기 상대에게도 성공 뒤 그 판을 이길 확률 장외 35% · 뒤집기 20% · 기절 35%).
     if (ok) s.invulUntil = tick + (p.clutchInvulSeconds * p.tickHz).round();

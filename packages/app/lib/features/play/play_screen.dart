@@ -1264,15 +1264,19 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
   bool get _isWorldGate =>
       _config.worldSize > 0 && _stage % _config.worldSize == 0;
 
-  /// 장비 옵션 "스킬 쿨타임 감소"(2026-10-14) — 스킬 쿨타임에 곱하는 값(1 − 감소, 장비 예산에서 잘림).
+  /// 장비 옵션 "스킬 쿨타임 감소"(2026-10-14) + 연구소 "스킬 숙련"(2026-10-22) — 스킬·탈피 쿨타임에 곱하는 값
+  /// (1 − 감소, 장비 30% · 연구 20% 를 따로 자른다 — [skillCooldownMult]).
   double get _skillCdMult {
     final save = ref.read(saveControllerProvider).value;
     if (save == null) return 1;
-    return 1 -
-        equipmentSkillCooldownCut(
-          equipmentBonus(save.equippedItems.values, _data.itemConfig),
-          budget: _config.skillCooldownBudgetGear,
-        );
+    return skillCooldownMult(
+      _config,
+      gearCut: equipmentSkillCooldownCut(
+        equipmentBonus(save.equippedItems.values, _data.itemConfig),
+        budget: _config.skillCooldownBudgetGear,
+      ),
+      research: _data.researchFx(save.researchLevels),
+    );
   }
 
   /// 장비 공격 배율(기준 밖·순수 이득) vs 권장치. 권장의 85% 미만이면 경고.

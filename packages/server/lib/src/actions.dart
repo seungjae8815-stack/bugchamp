@@ -2174,6 +2174,7 @@ class GameActions {
         bugsCollected: stored.bugBuffCount,
       ),
       _researchFx(researchLevels ?? stored.researchLevels),
+      evadeBudget: config.run.evadeBudgetResearch,
     );
     return CharacterStats(
       attack: bare.attack * _saveBoundAttackMult,
@@ -2908,12 +2909,15 @@ class GameActions {
     }
     final byId = {for (final b in save.bugs) b.id: b};
     final tr = config.battle.training;
-    // 연구소 결투 분야(설계 §9) — 이 세이브의 연구(방어팀이면 상대 세이브)로 공격·방어·체력에 곱한다.
+    // 연구소 결투 분야(설계 §9·§10) — 이 세이브의 연구(방어팀이면 상대 세이브)로 공격·방어·체력에 곱하고 치명·근성을 더한다.
     // 리그·방어팀·길드전·대회(`teamSize: 1`)가 모두 이 길을 탄다. 앱 `duelBugFor` 와 같은 배율.
     final fx = _researchFx(save.researchLevels);
     final rAtk = 1 + fx.of(ResearchEffect.duelAtk);
     final rDef = 1 + fx.of(ResearchEffect.duelDef);
     final rHp = 1 + fx.of(ResearchEffect.duelHp);
+    // 급소 공략 = 치명 확률 %p 가산(엔진 `critMax` 그대로 자른다) · 근성 단련 = 탭 반격 문턱 낮춤(`clutchEase`).
+    final rCrit = fx.of(ResearchEffect.duelCrit);
+    final rEase = fx.of(ResearchEffect.duelGrit);
     return (
       team: [
         for (var i = 0; i < bugIds.length; i++)
@@ -2980,7 +2984,13 @@ class GameActions {
                   recovery: m.recovery,
                   pushMult: m.push,
                 )
-                .withTraining(atkMult: rAtk, defMult: rDef, hpMult: rHp)
+                .withTraining(
+                  atkMult: rAtk,
+                  defMult: rDef,
+                  hpMult: rHp,
+                  crit: rCrit,
+                  clutchEase: rEase,
+                )
                 .withAura(aura.role, aura.value);
           }(),
       ],
@@ -5357,7 +5367,9 @@ class GameActions {
     final bug = save.bugs.firstWhere((b) => b.id == bugId);
     // 부상 시간은 곤충 희귀도(1.0.22 — 결투 부상과 같은 `rarityOf`). 종 grade 는 꺼졌을 때의 옛 값.
     final grade = petConfig.rarityOf(bug, speciesById[bug.speciesId]!);
-    final until = t.add(Duration(seconds: _injurySecs(petConfig.injuryDuration(grade), save)));
+    final until = t.add(
+      Duration(seconds: _injurySecs(petConfig.injuryDuration(grade), save)),
+    );
     final injured = Map<String, DateTime>.from(save.injured)..[bugId] = until;
     final eventInjured = save.prunedEventFatigue(t)..[bugId] = until;
     final roundId = cfg.roundIdAt(t);

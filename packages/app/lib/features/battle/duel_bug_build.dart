@@ -115,6 +115,9 @@ DuelBug duelBugFor(
         atkMult: 1 + fx.of(ResearchEffect.duelAtk),
         defMult: 1 + fx.of(ResearchEffect.duelDef),
         hpMult: 1 + fx.of(ResearchEffect.duelHp),
+        // 급소 공략(치명 %p, 엔진 critMax 그대로) · 근성 단련(탭 반격 문턱 낮춤).
+        crit: fx.of(ResearchEffect.duelCrit),
+        clutchEase: fx.of(ResearchEffect.duelGrit),
       )
       .withAuraOf(bug, sp, data, save);
 }

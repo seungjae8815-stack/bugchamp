@@ -34,6 +34,8 @@ import 'dart:math' as math;
 
 import 'package:core_battle/core_battle.dart';
 import 'package:core_models/core_models.dart';
+import 'package:core_run/core_run.dart'
+    show ResearchBranch, ResearchEffect, researchEffects;
 import 'package:core_save/core_save.dart';
 import 'package:server/src/actions.dart';
 import 'package:server/src/game_config.dart';
@@ -155,6 +157,7 @@ Future<void> main(List<String> args) async {
         a == '--event-fit' ||
         a == '--rarity-fit' ||
         a == '--research-fit' ||
+        a == '--research-max' ||
         a.startsWith('--research-a='),
   )) {
     _teamFit(actions, cfg, species, t0, args);
@@ -938,11 +941,29 @@ void _teamFit(
   }
 
   var scale = Map<String, double>.from(s0);
-  final resA = [
+  var resA = [
     for (final a in args)
       if (a.startsWith('--research-a='))
         [for (final x in a.substring(13).split(',')) double.parse(x)],
   ].firstOrNull;
+  // `--research-max` = research.json 결투 분야를 다 찍은 값(공격·방어·체력·치명·근성).
+  final rc = cfg.research;
+  if (resA == null && args.contains('--research-max') && rc != null) {
+    final fx = researchEffects(rc, {
+      for (final d in rc.defs)
+        if (d.branch == ResearchBranch.duel) d.id: d.maxLevel,
+    });
+    resA = [
+      for (final e in const [
+        ResearchEffect.duelAtk,
+        ResearchEffect.duelDef,
+        ResearchEffect.duelHp,
+        ResearchEffect.duelCrit,
+        ResearchEffect.duelGrit,
+      ])
+        fx.of(e),
+    ];
+  }
   if (resA != null || args.contains('--research-fit')) {
     _researchTables(
       actions,
@@ -1148,6 +1169,8 @@ void _teamFit(
 /// 연구소 결투 분야(설계 §9) — 다 찍은 쪽(A) 대 안 찍은 쪽(B), 다른 조건(종·기질·훈련)은 같다.
 ///
 ///   dart run tool/duel_build_sim.dart --research-a=0.15,0.15,0.15     # A 공격·방어·체력 +15% — 3마리·1마리·대회·전투력
+///   dart run tool/duel_build_sim.dart --research-a=0.57,0.57,0.57,0.05,0.05   # + 치명 %p · 탭 반격 문턱 낮춤(6b)
+///   dart run tool/duel_build_sim.dart --research-max   # research.json 결투 분야 최대(위 다섯 값)
 ///   dart run tool/duel_build_sim.dart --research-fit --research-goal=0.82   # 셋 같은 배율로 3마리 승률 목표 찾기
 ///   --rm=3000(3마리 경기 수) · --n1=2000(1마리 판 수) · --ev=4(대회 회차)
 ///
@@ -1171,8 +1194,14 @@ void _researchTables(
   final n1 = opt('n1', 2000);
   final evSeeds = opt('ev', 4);
   String pct(double v) => '${(v * 100).toStringAsFixed(1)}%';
-  DuelBug up(DuelBug d, List<double> m) =>
-      d.withTraining(atkMult: 1 + m[0], defMult: 1 + m[1], hpMult: 1 + m[2]);
+  // m = [공격, 방어, 체력, 치명 %p, 탭 반격 문턱 낮춤] — 뒤 둘은 생략 가능(0). 서버 `_buildDuelTeam` 과 같은 withTraining.
+  DuelBug up(DuelBug d, List<double> m) => d.withTraining(
+    atkMult: 1 + m[0],
+    defMult: 1 + m[1],
+    hpMult: 1 + m[2],
+    crit: m.length > 3 ? m[3] : 0,
+    clutchEase: m.length > 4 ? m[4] : 0,
+  );
 
   final rng0 = math.Random(2026);
   (Species, Temperament) pick() => (
@@ -1284,14 +1313,22 @@ void _researchTables(
     m = [f, f, f];
   }
   stdout.writeln(
-    '연구 A: 공격 +${pct(m[0])} · 방어 +${pct(m[1])} · 체력 +${pct(m[2])} (B 연구 없음 · 같은 종·기질·훈련)',
+    '연구 A: 공격 +${pct(m[0])} · 방어 +${pct(m[1])} · 체력 +${pct(m[2])}'
+    '${m.length > 3 ? ' · 치명 +${pct(m[3])}p' : ''}${m.length > 4 ? ' · 탭 반격 문턱 −${m[4].toStringAsFixed(3)}' : ''}'
+    ' (B 연구 없음 · 같은 종·기질·훈련)',
   );
   stdout.writeln('  3마리 경기 A 승률 ${pct(rate3(m))} ($games경기 · 오라 켬)');
   stdout.writeln('  1마리 한 판 A 승률 ${pct(rate1(m))} ($n1판)');
-  for (var k = 0; k < 3; k++) {
-    final one = [0.0, 0.0, 0.0]..[k] = m[k];
+  for (var k = 0; k < m.length; k++) {
+    final one = List<double>.filled(m.length, 0)..[k] = m[k];
     stdout.writeln(
-      '    ${['공격', '방어', '체력'][k]}만: 3마리 ${pct(rate3(one))} · 1마리 ${pct(rate1(one))}',
+      '    ${['공격', '방어', '체력', '치명', '근성'][k]}만: 3마리 ${pct(rate3(one))} · 1마리 ${pct(rate1(one))}',
+    );
+  }
+  if (m.length > 3) {
+    final atkDefHp = m.sublist(0, 3);
+    stdout.writeln(
+      '    공격·방어·체력만(치명·근성 없음): 3마리 ${pct(rate3(atkDefHp))} · 1마리 ${pct(rate1(atkDefHp))}',
     );
   }
   final w0 = waves(const [0, 0, 0]), w1 = waves(m);

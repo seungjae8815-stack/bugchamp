@@ -953,12 +953,17 @@ void _critCapTests() {
       );
       // 치명확률 예산과 같은 규칙 — 합이 작으면 절대 상한에 못 닿고, 크면 한 출처가 남의 자리를 먹는다.
       expect(
-        cfg.evadeBudgetUpgrade + cfg.evadeBudgetGear + cfg.evadeBudgetOther,
+        cfg.evadeBudgetUpgrade +
+            cfg.evadeBudgetGear +
+            cfg.evadeBudgetOther +
+            cfg.evadeBudgetResearch,
         closeTo(cfg.evadeMax, 1e-9),
       );
       expect(cfg.evadeBudgetGear, greaterThan(0));
-      // 회피는 기준 밖(순수 이득)이라 크게 열면 피격 리듬이 무너진다 — 절반을 넘기지 않는다.
-      expect(cfg.evadeMax, lessThanOrEqualTo(0.5));
+      // 회피는 기준 밖(순수 이득)이라 크게 열면 피격 리듬이 무너진다 — 연구 몫(2026-10-22 사장님 확정
+      // 40 → 60%)을 빼면 절반을 넘기지 않는다.
+      expect(cfg.evadeMax - cfg.evadeBudgetResearch, lessThanOrEqualTo(0.5));
+      expect(cfg.evadeMax, lessThanOrEqualTo(0.6));
       // 키는 옛 이동속도(moveSpeed) 그대로 — 기존 세이브의 레벨이 그대로 회피가 된다.
       final ev = cfg.upgrades[UpgradeKind.evade]!;
       expect(ev.kind.key, 'moveSpeed');

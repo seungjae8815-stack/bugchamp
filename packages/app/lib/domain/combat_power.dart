@@ -131,10 +131,14 @@ CharacterStats huntStatsUncapped(
     fairy == null ? const {} : fairyCompanionBonus(save.fairy, fairy),
   );
   s = applyGuildStats(s, guildBonus);
-  // 연구소 사냥 분야(공격·체력방어·찾기·골드·보스) — 적응형 기준(permanentStatsOf) 밖.
+  // 연구소 사냥 분야(공격·체력방어·찾기·골드·보스·치명 피해·재생·경험치·회피) — 적응형 기준(permanentStatsOf) 밖.
   final research = data.researchConfig;
   if (research != null && save.researchLevels.isNotEmpty) {
-    s = applyResearchStats(s, researchEffects(research, save.researchLevels));
+    s = applyResearchStats(
+      s,
+      researchEffects(research, save.researchLevels),
+      evadeBudget: config.evadeBudgetResearch,
+    );
   }
   final dex = data.dexConfig;
   if (dex != null) {

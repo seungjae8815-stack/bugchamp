@@ -61,7 +61,8 @@ const _effectMax = <String, double>{
   'trainTime': 0.40,
   'researchTime': 0.30,
   'injuryTime': 0.40,
-  // §10 추가 — 회피·스킬 쿨타임은 연구 몫 상한(0.2)과 같게. 결투 둘은 자리값(결투 맞추기가 다시 정함).
+  // §10 추가 — 회피·스킬 쿨타임은 연구 몫 상한(0.2)과 같게. 결투 치명 0.05 · 근성 0.02(6b 결투 맞추기 —
+  // duel_build_sim --research-max: 근성 0.05 면 다 찍은 쪽 3마리 95.6% 로 사장님 기준(95% 미만)을 넘었다 → 0.02 에서 88.7%).
   'huntCritDmg': 0.40,
   'huntRegen': 0.40,
   'huntEvade': 0.20,
@@ -76,7 +77,7 @@ const _effectMax = <String, double>{
   'exchangeGain': 0.20,
   'giftGold': 0.20,
   'duelCrit': 0.05,
-  'duelGrit': 0.05,
+  'duelGrit': 0.02,
 };
 
 /// 하루 활동 수입 한 줄(balance_sim `@research-income`).
