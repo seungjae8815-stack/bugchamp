@@ -521,6 +521,7 @@ class SaveController extends AsyncNotifier<SaveGame> {
           now: now,
           rng: rng,
           newId: _devUuid.v4,
+          research: data.researchFx(save.researchLevels),
         );
         newBugs.addAll(d.bugs);
         blocked += d.blocked;
@@ -553,6 +554,7 @@ class SaveController extends AsyncNotifier<SaveGame> {
         rareMult: actual.parts[i].rareMult,
         now: now,
         rng: rng,
+        research: data.researchFx(save.researchLevels),
       );
       rareSave = r.save;
       fairyStones += r.fairyStones;
@@ -571,6 +573,7 @@ class SaveController extends AsyncNotifier<SaveGame> {
       rarity: data.petConfig?.bugRarity,
       now: now,
       goldMult: goldMult,
+      research: data.researchFx(save.researchLevels),
     );
     final got = expect(actual);
     final none = expect(plan([BuffSpan(accrued, const <BuffKind>{})]));
@@ -818,7 +821,16 @@ class SaveController extends AsyncNotifier<SaveGame> {
     final forge = ref.read(gameDataProvider).value?.forgeConfig;
     if (forge == null) return 'not_max';
     final now = ref.read(clockProvider).now().toUtc();
-    final r = startForgeTranscend(state.requireValue, forge, now);
+    final s = state.requireValue;
+    final r = startForgeTranscend(
+      s,
+      forge,
+      now,
+      research: ref
+          .read(gameDataProvider)
+          .requireValue
+          .researchFx(s.researchLevels),
+    );
     if (r.save == null) return r.error;
     await _commit(r.save!);
     return null;
@@ -1065,6 +1077,10 @@ class SaveController extends AsyncNotifier<SaveGame> {
         firstKill: firstKill,
         now: ref.read(clockProvider).now(),
         rareMult: rareMult,
+        research: ref
+            .read(gameDataProvider)
+            .requireValue
+            .researchFx(next.researchLevels),
       );
       next = po.save;
       lastPotions = po.got;
@@ -1544,25 +1560,30 @@ class SaveController extends AsyncNotifier<SaveGame> {
             tier: s.difficultyTier,
             abyssFloor: activeAbyssFloor(s),
           );
+    // 연구소 "선물 감각"(`giftGold`) — 골드·재료 × (1 + v). 젤리는 그대로(§2.6). 서버 `_capGift` 가 같은 배율로 자른다.
+    final fx = data?.researchFx(s.researchLevels) ?? ResearchEffects.none;
+    int up(int v) => researchScaledAmount(v, fx, ResearchEffect.giftGold);
     final gift = GiftMail(
       id: _devUuid.v4(),
       expiry: now.add(Duration(hours: cfg.expiryHours)),
-      gold: hunt != null
-          ? math.max(t.gold, hunt.gold)
-          : run == null
-          ? t.gold
-          // 정액과 **지금 사냥터 분치** 중 큰 쪽(2026-09-18, 옛 데이터용).
-          : giftGold(
-              run,
-              s.stageNumber,
-              s.difficultyTier,
-              t.gold,
-              t.goldMinutes,
-            ),
+      gold: up(
+        hunt != null
+            ? math.max(t.gold, hunt.gold)
+            : run == null
+            ? t.gold
+            // 정액과 **지금 사냥터 분치** 중 큰 쪽(2026-09-18, 옛 데이터용).
+            : giftGold(
+                run,
+                s.stageNumber,
+                s.difficultyTier,
+                t.gold,
+                t.goldMinutes,
+              ),
+      ),
       jelly: t.jelly,
-      chitin: math.max(t.chitin, hunt?.materialsEach ?? 0),
-      mineral: math.max(t.mineral, hunt?.materialsEach ?? 0),
-      sap: math.max(t.sap, hunt?.materialsEach ?? 0),
+      chitin: up(math.max(t.chitin, hunt?.materialsEach ?? 0)),
+      mineral: up(math.max(t.mineral, hunt?.materialsEach ?? 0)),
+      sap: up(math.max(t.sap, hunt?.materialsEach ?? 0)),
       minutes: hunt == null ? 0 : t.huntMinutes,
     );
     await _commit(s.copyWith(gifts: [...alive, gift], nextGiftAt: reschedule));
@@ -2496,11 +2517,14 @@ class SaveController extends AsyncNotifier<SaveGame> {
       tier: s.difficultyTier,
       abyssFloor: activeAbyssFloor(s),
     );
+    // 연구소 "선물 감각"(`giftGold`) — 골드·재료 × (1 + v). 젤리는 그대로(§2.6).
+    final fx = data.researchFx(s.researchLevels);
+    int up(int v) => researchScaledAmount(v, fx, ResearchEffect.giftGold);
     return (
-      gold: math.max(reward.gold, hunt.gold),
+      gold: up(math.max(reward.gold, hunt.gold)),
       materials: {
         for (final k in kBreakthroughMaterials)
-          k: math.max(reward.materials[k] ?? 0, hunt.materialsEach),
+          k: up(math.max(reward.materials[k] ?? 0, hunt.materialsEach)),
         if (reward.jelly > 0) MaterialKind.jelly: reward.jelly,
       },
     );
@@ -3070,6 +3094,7 @@ class SaveController extends AsyncNotifier<SaveGame> {
       trades: trades,
       tier: s.difficultyTier,
       abyssFloor: activeAbyssFloor(s),
+      research: data.researchFx(s.researchLevels),
     );
     return (
       gold: wantGold ? out.gold : 0,
@@ -4032,6 +4057,10 @@ class SaveController extends AsyncNotifier<SaveGame> {
       items,
       cur,
       ref.read(clockProvider).now(),
+      research: ref
+          .read(gameDataProvider)
+          .requireValue
+          .researchFx(s.researchLevels),
     );
     if (next == null) return 'not_ready';
     await _commit(s.copyWith(equippedItems: {...s.equippedItems, slot: next}));
@@ -4108,6 +4137,10 @@ class SaveController extends AsyncNotifier<SaveGame> {
       target.tier,
       pickKind: kind != null,
       done: target.options[index].polish,
+      research: ref
+          .read(gameDataProvider)
+          .requireValue
+          .researchFx(s.researchLevels),
     );
     final payKind = payJelly ? MaterialKind.jelly : MaterialKind.fossil;
     final price = payJelly ? cost.jelly : cost.fossils;
@@ -4282,6 +4315,10 @@ class SaveController extends AsyncNotifier<SaveGame> {
                 forge.levelUpDuration(
                   s.forgeLevel,
                   transcend: forgeCostTranscend(s),
+                  research: ref
+                      .read(gameDataProvider)
+                      .requireValue
+                      .researchFx(s.researchLevels),
                 ),
               )
             : null,
@@ -4672,6 +4709,10 @@ class SaveController extends AsyncNotifier<SaveGame> {
       PotionSource.elite,
       now: ref.read(clockProvider).now(),
       rareMult: rareMult,
+      research: ref
+          .read(gameDataProvider)
+          .requireValue
+          .researchFx(st.save.researchLevels),
     );
     lastPotions = po.got;
     if (shards.isEmpty && st.got.isEmpty && po.got == 0) return const {};
@@ -4843,8 +4884,17 @@ class SaveController extends AsyncNotifier<SaveGame> {
     }
     // 롤 공식은 슬롯이 들고 있다 — 서버(`GameActions.collectBreeding`)와
     // **같은 함수**를 써야 같은 seed 에서 같은 자식이 나온다.
+    // 혈통 연구(연구소) — 수령하는 순간의 레벨(서버 `collectBreeding` 과 같게).
     final egg = slot
-        .hatch(id: _uuid.v4(), species: sp, cfg: cfg)
+        .hatch(
+          id: _uuid.v4(),
+          species: sp,
+          cfg: cfg,
+          research: ref
+              .read(gameDataProvider)
+              .requireValue
+              .researchFx(s.researchLevels),
+        )
         .copyWith(stageSince: now);
     final breeding = List<BreedingSlot>.from(s.breeding)..removeAt(idx);
     await _commit(
@@ -4979,11 +5029,17 @@ class SaveController extends AsyncNotifier<SaveGame> {
     final matGain = (cfg == null || grade == null)
         ? 0
         : data.iapConfig?.skinnedReleaseMaterial(
-                cfg.releaseMaterial(grade),
+                cfg.releaseMaterial(
+                  grade,
+                  research: data.researchFx(s.researchLevels),
+                ),
                 s.ownedSkins,
                 bug.speciesId,
               ) ??
-              cfg.releaseMaterial(grade);
+              cfg.releaseMaterial(
+                grade,
+                research: data.researchFx(s.researchLevels),
+              );
     final mats = Map<MaterialKind, int>.from(s.materials);
     if (reward > 0) {
       mats[MaterialKind.jelly] = (mats[MaterialKind.jelly] ?? 0) + reward;
@@ -5266,11 +5322,17 @@ class SaveController extends AsyncNotifier<SaveGame> {
       targets.add(b);
       gain +=
           data.iapConfig?.skinnedReleaseMaterial(
-            cfg.releaseMaterial(grade),
+            cfg.releaseMaterial(
+              grade,
+              research: data.researchFx(s.researchLevels),
+            ),
             s.ownedSkins,
             b.speciesId,
           ) ??
-          cfg.releaseMaterial(grade);
+          cfg.releaseMaterial(
+            grade,
+            research: data.researchFx(s.researchLevels),
+          );
     }
     if (targets.isEmpty) return empty;
 
@@ -5289,11 +5351,17 @@ class SaveController extends AsyncNotifier<SaveGame> {
       final grade = _rarityOf(b)!;
       final amount =
           data.iapConfig?.skinnedReleaseMaterial(
-            cfg.releaseMaterial(grade),
+            cfg.releaseMaterial(
+              grade,
+              research: data.researchFx(s.researchLevels),
+            ),
             s.ownedSkins,
             b.speciesId,
           ) ??
-          cfg.releaseMaterial(grade);
+          cfg.releaseMaterial(
+            grade,
+            research: data.researchFx(s.researchLevels),
+          );
       if (amount <= 0) continue;
       final kind = kRegularMaterials[rng.nextInt(kRegularMaterials.length)];
       mats[kind] = (mats[kind] ?? 0) + amount;

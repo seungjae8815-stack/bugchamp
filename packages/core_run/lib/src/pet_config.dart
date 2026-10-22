@@ -11,6 +11,8 @@ import 'package:meta/meta.dart';
 
 import 'character_stats.dart';
 import 'enums.dart';
+import 'research_apply.dart';
+import 'research_config.dart';
 
 /// 확장 비용 반올림 눈금의 기본값 — `[상한, 눈금]`, 상한 0 은 그 이상 전부.
 const kDefaultExpandCostRound = <List<int>>[
@@ -195,7 +197,16 @@ class PetConfig {
   final Map<Grade, int> releaseMaterialByGrade;
 
   /// 등급 [g] 곤충을 자동 방생했을 때 주는 재료 수(설정 없으면 0 = 보상 없음).
-  int releaseMaterial(Grade g) => releaseMaterialByGrade[g] ?? 0;
+  /// [research] = 연구소 "분해 기술"(`salvageMat`) — 분해·방생 재료 × (1 + v)(앱·서버·방치 정산 공용).
+  /// 젤리(분해 `disassembleJelly`)에는 붙이지 않는다(§2.6 수도꼭지). 스킨 계열 보너스는 이 값에 곱한다.
+  int releaseMaterial(
+    Grade g, {
+    ResearchEffects research = ResearchEffects.none,
+  }) => researchScaledAmount(
+    releaseMaterialByGrade[g] ?? 0,
+    research,
+    ResearchEffect.salvageMat,
+  );
 
   /// 레벨 1당 그 펫 기여의 증폭(0.06 = 레벨당 +6%p).
   final double levelBonus;

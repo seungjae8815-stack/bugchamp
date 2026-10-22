@@ -1413,10 +1413,10 @@ class GameActions {
     var elapsed = t.difference(stored.lastSeen);
     if (elapsed.isNegative) elapsed = Duration.zero;
 
-    final stats = _envelopeStats(
-      stored,
-      researchLevels: _envelopeResearchLevels(stored, clientJson),
-    );
+    final envResearch = _envelopeResearchLevels(stored, clientJson);
+    final stats = _envelopeStats(stored, researchLevels: envResearch);
+    // 연구소 선물 감각·교환 협상도 같은 레벨(연구마다 max(저장본, 클라), 최대 레벨까지)로 넓힌다.
+    final envFx = _researchFx(envResearch);
     // 봉투는 **올라온 세이브가 있는 자리**로 잰다(2026-09-15). 가 본 난이도로는
     // 자유롭게 오갈 수 있어서(B안), 저장본이 쉬움인데 클라가 극한 사냥터 11 에
     // 올라가 60초를 놀면 저장본 기준 봉투(쉬움)로는 극한 수입이 100배라 잘린다.
@@ -1455,13 +1455,14 @@ class GameActions {
       stage: envStage,
       tier: envTier,
       abyssFloor: abyss.inAbyss ? abyss.floor : 0,
+      research: envFx,
     );
     // 길드 버프(골드 최대 +10% · 공격 +8%, guild.json skills)는 봉투에 **넣지 않는다** — 여유에 흡수된다.
     // 측정(2026-10-05, `core_run/tool/clamp_check.dart --guild` — 펫 x4·장비 x3·광폭화·골드러시·접속 보너스
     // 위에 길드 최대치): 60초 상한 최소 여유 x6.09(극한 사냥터 1) · 교환소 1회 최소 x27.3.
     // 여유가 2배 아래로 내려가면 여기서 길드 버프를 봉투에 넣는다(서버 settle 이 길드를 조회해야 한다).
     // 깜짝선물·일일보상(사냥 분치) — 기기에서 받으므로 이번 업로드에서 새로 받은 몫을 따로 인정한다.
-    final hunt = _huntRewardAllowance(stored, clientJson, t);
+    final hunt = _huntRewardAllowance(stored, clientJson, t, research: envFx);
     final chapterGold = _chapterGrantAllowance(stored, clientJson);
     final dexGold = _dexGoldAllowance(stored, clientJson);
     // 지난 업로드에서 넘어온 방치 허용치([SaveGame.goldCarry]) — 기한 안에서만.
@@ -2262,6 +2263,19 @@ class GameActions {
     );
   }
 
+  /// 연구소 "선물 감각"(`giftGold`) — 깜짝선물·일일보상 골드·재료 × (1 + v)(앱 지급과 같은 함수). 젤리는 아니다.
+  static ({int gold, int materialsEach}) _giftScaled(
+    ({int gold, int materialsEach}) c,
+    ResearchEffects research,
+  ) => (
+    gold: researchScaledAmount(c.gold, research, ResearchEffect.giftGold),
+    materialsEach: researchScaledAmount(
+      c.materialsEach,
+      research,
+      ResearchEffect.giftGold,
+    ),
+  );
+
   /// 선물 [g] 를 상한으로 자른다 — 선물은 앱이 만들어 세이브에 올리므로 금액을 믿을 수 없다.
   /// 상한은 선물에 적힌 분이 아니라 **설정의 가장 큰 분**(`huntMinutes`)으로 잰다(분도 앱이 적는다).
   GiftMail _capGift(SaveGame s, GiftMail g) {
@@ -2277,9 +2291,19 @@ class GameActions {
     }
     // 사냥 분치 선물이 없는 설정(구 데이터)이면 예전처럼 그대로 둔다.
     if (maxMin <= 0) return g;
+    // 앱은 정액·분치 중 큰 쪽에 선물 감각(연구)을 곱해 적는다 — 상한도 같은 배율.
+    final fx = _researchFx(s.researchLevels);
     final cap = _huntCap(s, maxMin);
-    final goldCap = max(maxGold, cap.gold);
-    final matCap = max(maxMat, cap.materialsEach);
+    final goldCap = researchScaledAmount(
+      max(maxGold, cap.gold),
+      fx,
+      ResearchEffect.giftGold,
+    );
+    final matCap = researchScaledAmount(
+      max(maxMat, cap.materialsEach),
+      fx,
+      ResearchEffect.giftGold,
+    );
     if (g.gold <= goldCap &&
         g.chitin <= matCap &&
         g.mineral <= matCap &&
@@ -2322,11 +2346,13 @@ class GameActions {
   ///    선물 하나 = 가장 큰 분치 × 최대 배수(2배 받기 2~4배).
   ///  - 미션: `huntMinutes` 미션의 받은 횟수가 늘어났으면 업로드당 1개분 · 지금 자리 · 보상 종류대로(2026-10-10).
   /// 위조로 늘릴 수 있는 것은 "받았다고 적기"뿐이고, 그 몫도 선물 간격·슬롯 수로 묶인다(다른 상식 상한과 같은 수준).
+  ///  - 연구소 "선물 감각"([research] `giftGold`)은 일일보상·깜짝선물 몫에만 × (1 + v)(미션은 아니다).
   ({int gold, int materialsEach}) _huntRewardAllowance(
     SaveGame stored,
     Map<String, dynamic> clientJson,
-    DateTime t,
-  ) {
+    DateTime t, {
+    ResearchEffects research = ResearchEffects.none,
+  }) {
     var gold = 0, each = 0;
     void add(({int gold, int materialsEach}) c, [int times = 1]) {
       gold = addCurrency(gold, c.gold * times);
@@ -2347,7 +2373,7 @@ class GameActions {
         final id = key.endsWith('#2') ? key.substring(0, key.length - 2) : key;
         final reward = daily.rewards.where((r) => r.id == id).firstOrNull;
         if (reward == null || reward.huntMinutes <= 0) continue;
-        add(_huntCap(stored, reward.huntMinutes));
+        add(_giftScaled(_huntCap(stored, reward.huntMinutes), research));
       }
     }
     final gift = config.gift;
@@ -2383,7 +2409,10 @@ class GameActions {
             );
         final fresh = due && rescheduled ? 1 : 0;
         final mult = max(1, max(gift.adMultiplier, gift.adMultiplierMax));
-        add(_huntCap(stored, maxMin), (gone + fresh) * mult);
+        add(
+          _giftScaled(_huntCap(stored, maxMin), research),
+          (gone + fresh) * mult,
+        );
       }
     }
     // 미션(2026-10-10): `huntMinutes` 미션은 사냥 N분치를 준다 — 받은 횟수가 저장본보다 늘어난 미션 **1개분**만,
@@ -2419,6 +2448,7 @@ class GameActions {
     required int stage,
     required int tier,
     required int abyssFloor,
+    ResearchEffects research = ResearchEffects.none,
   }) {
     final per = config.run.exchangeJellyPerTrade;
     final mats = clientJson['materials'];
@@ -2435,6 +2465,7 @@ class GameActions {
       tier: tier,
       abyssFloor: abyssFloor,
       efficiency: _saveBoundEfficiency,
+      research: research,
     );
   }
 
@@ -3467,6 +3498,7 @@ class GameActions {
       now: t,
       rng: rng,
       newId: _uuid.v4,
+      research: _researchFx(save.researchLevels),
     );
     final newBugs = drops.bugs;
     final mats = drops.materials;
@@ -3562,21 +3594,26 @@ class GameActions {
       return (alive, rescheduled); // 가득 참 → 간격만 재예약
     }
     final tier = cfg.rollTier(rng);
+    // 선물 감각(연구) — 골드·재료만(젤리는 그대로, §2.6).
+    final fx = _researchFx(save.researchLevels);
+    int up(int v) => researchScaledAmount(v, fx, ResearchEffect.giftGold);
     final gift = GiftMail(
       id: _uuid.v4(),
       expiry: t.add(Duration(hours: cfg.expiryHours)),
       // 정액과 **지금 사냥터 분치** 중 큰 쪽 — 앱과 같은 함수(§4).
-      gold: giftGold(
-        config.run,
-        save.stageNumber,
-        save.difficultyTier,
-        tier.gold,
-        tier.goldMinutes,
+      gold: up(
+        giftGold(
+          config.run,
+          save.stageNumber,
+          save.difficultyTier,
+          tier.gold,
+          tier.goldMinutes,
+        ),
       ),
       jelly: tier.jelly,
-      chitin: tier.chitin,
-      mineral: tier.mineral,
-      sap: tier.sap,
+      chitin: up(tier.chitin),
+      mineral: up(tier.mineral),
+      sap: up(tier.sap),
     );
     return ([...alive, gift], rescheduled);
   }
@@ -4026,8 +4063,13 @@ class GameActions {
     if (bonus && save.dailyClaims[rewardId] != today) {
       return const ActionResult.fail('not_claimed');
     }
-    final cap = _huntCap(save, reward.huntMinutes);
-    final gold = max(reward.gold, min(max(clientGold, 0), cap.gold));
+    // 앱 금액엔 선물 감각(연구)이 실린다 — 상한도 같은 배율(정액도 같은 배율, 앱과 같게).
+    final fx = _researchFx(save.researchLevels);
+    final cap = _giftScaled(_huntCap(save, reward.huntMinutes), fx);
+    final gold = max(
+      researchScaledAmount(reward.gold, fx, ResearchEffect.giftGold),
+      min(max(clientGold, 0), cap.gold),
+    );
     final each = min(max(clientMaterialsEach, 0), cap.materialsEach);
     final mats = Map<MaterialKind, int>.from(save.materials);
     final fixed = reward.materials;
@@ -4202,8 +4244,14 @@ class GameActions {
 
     // 자식 롤 — 슬롯에 박힌 서버 시드로 결정론적으로 굴린다.
     // 공식은 슬롯이 들고 있다(앱과 **같은 함수**).
+    // 혈통 연구(연구소) — 수령하는 순간의 레벨(앱과 같은 세이브 레벨).
     final egg = slot
-        .hatch(id: _uuid.v4(), species: sp, cfg: petConfig)
+        .hatch(
+          id: _uuid.v4(),
+          species: sp,
+          cfg: petConfig,
+          research: _researchFx(save.researchLevels),
+        )
         .copyWith(stageSince: t);
 
     final breeding = List<BreedingSlot>.from(save.breeding)..removeAt(idx);
@@ -4265,7 +4313,10 @@ class GameActions {
     final matGain = grade == null
         ? 0
         : config.iap.skinnedReleaseMaterial(
-            petConfig.releaseMaterial(grade),
+            petConfig.releaseMaterial(
+              grade,
+              research: _researchFx(save.researchLevels),
+            ),
             save.ownedSkins,
             bug.speciesId,
           );

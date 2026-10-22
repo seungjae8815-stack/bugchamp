@@ -6,6 +6,8 @@ import 'package:core_models/core_models.dart';
 import 'package:meta/meta.dart';
 
 import 'item_config.dart';
+import 'research_apply.dart';
+import 'research_config.dart';
 
 /// 공방(제련) 설정 (assets/data/forge.json).
 @immutable
@@ -203,9 +205,17 @@ class ForgeConfig {
   final int transcendBaseHours;
   final int transcendStepHours;
 
-  /// 초월 [n] 단계 → [n]+1 에 걸리는 시간.
-  Duration transcendDuration(int n) => Duration(
-    hours: transcendBaseHours + transcendStepHours * n.clamp(0, transcendMax),
+  /// 초월 [n] 단계 → [n]+1 에 걸리는 시간. [research] = 연구소 "제련 비법"(`forgeTime`, 최대 −50%) — 앱·시뮬 공용.
+  Duration transcendDuration(
+    int n, {
+    ResearchEffects research = ResearchEffects.none,
+  }) => Duration(
+    seconds: researchScaledSeconds(
+      (transcendBaseHours + transcendStepHours * n.clamp(0, transcendMax)) *
+          3600,
+      research,
+      ResearchEffect.forgeTime,
+    ),
   );
 
   /// 초월 [n] 단계의 옵션 최대치 배율.
@@ -217,16 +227,25 @@ class ForgeConfig {
 
   /// 다듬기 1회 비용 — 화석으로 낼 때 / 젤리로 낼 때. [done] = 그 줄을 이미 다듬은 횟수(옵션 `p`).
   /// 횟수마다 ×[polishCostGrowth](젤리는 5·10 단위 가격표로 — `roundJellyCost`).
+  /// [research] = 연구소 "절약 다듬기"(`polishCost`, 최대 −50%) — 화석은 올림, 젤리는 5·10 단위 그대로.
   ({int fossils, int jelly}) polishCost(
     int tier, {
     required bool pickKind,
     int done = 0,
+    ResearchEffects research = ResearchEffects.none,
   }) {
     final m = pickKind ? polishKindMult : 1;
     final g = math.pow(polishCostGrowth, done.clamp(0, 99)).toDouble();
+    final fossils = polishFossilPerTier * (tier.clamp(0, 1 << 10) + 1) * m * g;
+    final cut = research.of(ResearchEffect.polishCost);
+    if (cut > 0) {
+      return (
+        fossils: (fossils * (1 - cut)).ceil(),
+        jelly: roundJellyCost(rerollJelly * m * g * (1 - cut)),
+      );
+    }
     return (
-      fossils: (polishFossilPerTier * (tier.clamp(0, 1 << 10) + 1) * m * g)
-          .round(),
+      fossils: fossils.round(),
       jelly: g == 1 ? rerollJelly * m : roundJellyCost(rerollJelly * m * g),
     );
   }
@@ -297,14 +316,25 @@ class ForgeConfig {
 
   /// 등급업에 걸리는 시간 — 현재 레벨 [level] → [level]+1. [transcend] = 초월 단계(진행 중 포함).
   /// t>0 이면 max(원래 시간, [levelUpTranscendTimeFloorHours]시간) × [levelUpTranscendTimeMult]^t.
-  Duration levelUpDuration(int level, {int transcend = 0}) {
+  /// [research] = 연구소 "제련 비법"(`forgeTime`, 최대 −50%) — 앱·시뮬 공용.
+  Duration levelUpDuration(
+    int level, {
+    int transcend = 0,
+    ResearchEffects research = ResearchEffects.none,
+  }) {
     var sec = levelUpBaseSeconds * math.pow(levelUpGrowth, level).toDouble();
     if (transcend > 0) {
       sec =
           math.max(sec, levelUpTranscendTimeFloorHours * 3600.0) *
           math.pow(levelUpTranscendTimeMult, transcend);
     }
-    return Duration(seconds: sec.round());
+    return Duration(
+      seconds: researchScaledSeconds(
+        sec.round(),
+        research,
+        ResearchEffect.forgeTime,
+      ),
+    );
   }
 
   /// 남은 시간 [remaining] 을 즉시 끝내는 젤리 값.
@@ -613,12 +643,18 @@ bool starReady(ItemConfig items, EquipItem target) =>
     target.starExp >= items.starNeedAt(target.stars);
 
 /// 재료가 다 모였으면 별 강화를 시작한다(끝나는 시각 = [now] + `starUpDuration`). 못 하면 null.
-EquipItem? startStarUp(ItemConfig items, EquipItem target, DateTime now) {
+/// [research] = 연구소 "별빛 연마"(`starTime`, 최대 −50%).
+EquipItem? startStarUp(
+  ItemConfig items,
+  EquipItem target,
+  DateTime now, {
+  ResearchEffects research = ResearchEffects.none,
+}) {
   if (target.stars >= items.starMax || target.starUntil != null) return null;
   if (target.starExp < items.starNeedAt(target.stars)) return null;
   return target.copyWith(
     starUntil: now.toUtc().add(
-      items.starUpDuration(target.stars, tier: target.tier),
+      items.starUpDuration(target.stars, tier: target.tier, research: research),
     ),
   );
 }

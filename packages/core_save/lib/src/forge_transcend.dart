@@ -14,12 +14,13 @@ import 'save_game.dart';
 typedef ForgeTranscendResult = ({SaveGame? save, String? error});
 
 /// 초월을 시작한다. 실패 이유: `in_progress`(이미 진행 중) · `not_max`(최대 레벨 아님 · 등급업 중) ·
-/// `maxed`(초월 끝) · `not_enough_fossil`.
+/// `maxed`(초월 끝) · `not_enough_fossil`. [research] = 연구소 "제련 비법"(`forgeTime`) — 초월 시간 단축.
 ForgeTranscendResult startForgeTranscend(
   SaveGame s,
   ForgeConfig forge,
-  DateTime now,
-) {
+  DateTime now, {
+  ResearchEffects research = ResearchEffects.none,
+}) {
   if (s.forgeTranscendAt != null) return (save: null, error: 'in_progress');
   if (s.forgeLevel < forge.maxLevel || s.forgeUpAt != null) {
     return (save: null, error: 'not_max');
@@ -30,7 +31,7 @@ ForgeTranscendResult startForgeTranscend(
   final cost = forge.transcendFossilCost(s.forgeTranscend);
   final have = s.materialCount(MaterialKind.fossil);
   if (have < cost) return (save: null, error: 'not_enough_fossil');
-  final d = forge.transcendDuration(s.forgeTranscend);
+  final d = forge.transcendDuration(s.forgeTranscend, research: research);
   final cleared = s.copyWith(
     forgeLevel: 0,
     forgeSteps: 0,

@@ -1457,7 +1457,10 @@ class _Player {
       final cost = forge.levelUpGold(forgeLevel).toDouble();
       if (forgeFund < cost) break;
       forgeFund -= cost;
-      forgeUpUntil = t + forge.levelUpDuration(forgeLevel).inSeconds / 86400;
+      forgeUpUntil =
+          t +
+          forge.levelUpDuration(forgeLevel, research: _research).inSeconds /
+              86400;
     }
 
     final acc = _targets.accumulation;
@@ -2005,6 +2008,8 @@ class _Player {
     ({double gold, double mats}) hunt(double m) =>
         cache.putIfAbsent(m, () => _huntMinutes(hs, m));
 
+    // 연구소 "선물 감각"(`--research`) — 선물·일일보상 골드·재료 × (1 + v)(게임 `researchScaledAmount` 와 같은 배율).
+    final giftResearch = 1 + _research.of(ResearchEffect.giftGold);
     var giftGold = 0.0, giftMats = 0.0, giftEach = 0.0, giftCount = 0.0;
     final gifts = _gifts;
     if (gifts != null && gifts.tiers.isNotEmpty) {
@@ -2034,8 +2039,8 @@ class _Player {
         }
         final avgMult = (gifts.adMultiplierMin + gifts.adMultiplierMax) / 2.0;
         final units = giftCount + gifts.freeDoubleDaily * (avgMult - 1);
-        giftGold = giftEach * units;
-        giftMats = eachMats * units;
+        giftGold = giftEach * units * giftResearch;
+        giftMats = eachMats * units * giftResearch;
       }
     }
 
@@ -2048,9 +2053,10 @@ class _Player {
         final minutes = o != null && i < o.length ? o[i] : r.huntMinutes;
         final h = hunt(minutes);
         // "한 번 더 받기" — 무료로 1배 더.
-        dailyGold += 2 * math.max(r.gold.toDouble(), h.gold);
+        dailyGold += 2 * math.max(r.gold.toDouble(), h.gold) * giftResearch;
         dailyMats +=
             2 *
+            giftResearch *
             (math.max(r.chitin.toDouble(), h.mats) +
                 math.max(r.mineral.toDouble(), h.mats) +
                 math.max(r.sap.toDouble(), h.mats)) /

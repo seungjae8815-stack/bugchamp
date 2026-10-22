@@ -123,3 +123,19 @@ int researchScaledSeconds(int seconds, ResearchEffects e, ResearchEffect kind) {
   final scaled = (seconds * (1 - v)).ceil();
   return scaled < 1 ? 1 : scaled;
 }
+
+/// 연구소 **수량 보너스**(설계 §10 — 분해 기술·교환 협상·선물 감각) — `base × (1 + v)` 반올림.
+/// v=0 이면 그대로(앱·서버·시뮬 공용). ⚠️ **젤리에는 쓰지 않는다**(§2.6 젤리 수도꼭지 — 무한 통로에 젤리를 붙이지 않는다).
+int researchScaledAmount(int base, ResearchEffects e, ResearchEffect kind) {
+  final v = e.of(kind);
+  if (v <= 0 || base <= 0) return base;
+  return (base * (1 + v)).round();
+}
+
+/// 연구소 **확률 보너스**(혈통 연구·약초학) — `p × (1 + v)`, 1 로 자른다. v=0 이면 그대로.
+/// 확률만 바꾼다 — 난수를 몇 번 쓰는지는 그대로라 같은 seed 의 다른 롤 순서가 안 바뀐다(§2.5).
+double researchScaledChance(double p, ResearchEffects e, ResearchEffect kind) {
+  final v = e.of(kind);
+  if (v <= 0 || p <= 0) return p;
+  return math.min(1.0, p * (1 + v));
+}

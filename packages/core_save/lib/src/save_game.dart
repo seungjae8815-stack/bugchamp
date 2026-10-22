@@ -267,11 +267,16 @@ class BreedingSlot {
   ///
   /// **앱과 서버가 같은 함수를 쓴다** — 공식이 두 벌이면 "앱에선 화 속성인데
   /// 서버가 준 건 수 속성"처럼 조용히 갈린다. 결정론: 같은 [seed] → 같은 자식.
+  ///
+  /// [research] = 연구소 "혈통 연구"(`traitChance`) — 혈통 특성이 **새로 열릴** 확률만 × (1 + v).
+  /// 난수 소비 순서는 그대로다(§2.5 — 확률 문턱만 바뀐다). 슬롯은 연구 레벨을 찍어 두지 않으므로
+  /// **수령하는 순간의 레벨**로 잰다(앱·서버 같은 세이브 레벨).
   IndividualBug hatch({
     required String id,
     required Species species,
     required PetConfig cfg,
-  }) => _breed(id: id, species: species, cfg: cfg).copyWith(
+    ResearchEffects research = ResearchEffects.none,
+  }) => _breed(id: id, species: species, cfg: cfg, research: research).copyWith(
     // 개체 등급이 켜진 뒤 생긴 곤충 표식(정수 가치 — `IndividualGradeConfig.essenceOf`). rng 와 무관.
     newGen: cfg.individualGrade.enabled,
   );
@@ -280,6 +285,7 @@ class BreedingSlot {
     required String id,
     required Species species,
     required PetConfig cfg,
+    required ResearchEffects research,
   }) => IndividualBug.breed(
     id: id,
     species: species,
@@ -301,7 +307,11 @@ class BreedingSlot {
     elementInheritChance: cfg.breedingElementInherit,
     temperamentInheritChance: cfg.breedingTemperamentInherit,
     traitInheritChance: cfg.breedingTraitInherit,
-    traitNewChance: cfg.breedingTraitNew,
+    traitNewChance: researchScaledChance(
+      cfg.breedingTraitNew,
+      research,
+      ResearchEffect.traitChance,
+    ),
     traitWeights: cfg.traitWeights,
     variantChance:
         (motherVariant != BugVariant.none || fatherVariant != BugVariant.none)

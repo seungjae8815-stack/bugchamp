@@ -104,6 +104,7 @@ class _PolishBodyState extends ConsumerState<_PolishBody> {
       item.tier,
       pickKind: _kind != null,
       done: cur.polish,
+      research: data!.researchFx(save?.researchLevels ?? const {}),
     );
     final fossils = save?.materialCount(MaterialKind.fossil) ?? 0;
     // 지금 값이 최대의 몇 %인지(다음 값은 늘 이보다 높다 — `polishOptionAt`).
@@ -545,7 +546,14 @@ class _StarUpPanelState extends ConsumerState<StarUpPanel> {
               l.starUpStart(
                 '${item.stars + 1}',
                 formatShortDuration(
-                  items.starUpDuration(item.stars, tier: item.tier),
+                  items.starUpDuration(
+                    item.stars,
+                    tier: item.tier,
+                    research: data!.researchFx(
+                      ref.watch(saveControllerProvider).value?.researchLevels ??
+                          const {},
+                    ),
+                  ),
                 ),
               ),
             ),

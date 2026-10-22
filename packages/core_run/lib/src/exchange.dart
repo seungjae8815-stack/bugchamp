@@ -1,4 +1,6 @@
 import 'character_stats.dart';
+import 'research_apply.dart';
+import 'research_config.dart';
 import 'run_config.dart';
 import 'run_math.dart';
 
@@ -14,6 +16,7 @@ import 'run_math.dart';
 /// 잡는 시간당 처치 수 × 처치 골드라 화면 사냥과 같은 식이다.
 /// ⚠️ 앱(지급)과 서버(골드·재료 상한 허용치)가 같은 함수를 쓴다. 서버는 [efficiency] 를 넉넉히 줘서
 /// 강화만 아는 전력으로도 정당한 교환이 잘리지 않게 한다(60초 골드 상한과 같은 봉투).
+/// [research] = 연구소 "교환 협상"(`exchangeGain`) — 받는 골드·재료 × (1 + v). 내는 젤리는 그대로.
 ({int gold, int materialsEach}) exchangeOutput(
   RunConfig c, {
   required CharacterStats stats,
@@ -22,6 +25,7 @@ import 'run_math.dart';
   int tier = 0,
   int abyssFloor = 0,
   double efficiency = 1.0,
+  ResearchEffects research = ResearchEffects.none,
 }) {
   if (trades <= 0) return (gold: 0, materialsEach: 0);
   final gold = _hunt(
@@ -43,8 +47,16 @@ import 'run_math.dart';
     c.exchangeMaterialHours,
   ).kills;
   return (
-    gold: (gold * trades).round(),
-    materialsEach: (_materialsEach(c, stats, stage, kills) * trades).round(),
+    gold: researchScaledAmount(
+      (gold * trades).round(),
+      research,
+      ResearchEffect.exchangeGain,
+    ),
+    materialsEach: researchScaledAmount(
+      (_materialsEach(c, stats, stage, kills) * trades).round(),
+      research,
+      ResearchEffect.exchangeGain,
+    ),
   );
 }
 

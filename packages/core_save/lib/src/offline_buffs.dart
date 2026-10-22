@@ -175,7 +175,7 @@ OfflinePlan planOffline({
 ///
 /// 곤충 = 처치 × 드롭 확률 × 받는 등급 몫(등급 필터), 채집함 여유분까지. 희귀 종 = 그중 희귀 이상.
 /// 재료 = 처치 × 재료 드롭 기댓값. 희귀 드롭 = 처치 × 정예 비율 × 확률 × 채집꾼 배율(물약은 오늘 남은 한도까지).
-/// [goldMult] — 패스·길드 골드 배율(실제 지급과 같은 값).
+/// [goldMult] — 패스·길드 골드 배율(실제 지급과 같은 값). [research] — 약초학(물약 확률, [rollIdleRareDrops] 와 같게).
 OfflineGain expectedOfflineGain(
   OfflinePlan plan, {
   required SaveGame save,
@@ -187,6 +187,7 @@ OfflineGain expectedOfflineGain(
   BugRarityConfig? rarity,
   required DateTime now,
   double goldMult = 1.0,
+  ResearchEffects research = ResearchEffects.none,
 }) {
   final share = _gradeShares(run, species, save, rarity: rarity);
   var bugs = 0.0, rare = 0.0, mats = 0.0;
@@ -215,7 +216,12 @@ OfflineGain expectedOfflineGain(
       }
     }
     if (grade != null && grade.enabled) {
-      potions += elites * math.min(1.0, grade.potionEliteChance * p.rareMult);
+      potions +=
+          elites *
+          math.min(
+            1.0,
+            potionDropChance(grade.potionEliteChance, research) * p.rareMult,
+          );
     }
   }
   final room = math.max(0, save.storageFree).toDouble();
@@ -306,6 +312,7 @@ IdleRareDrops rollIdleRareDrops(
   required double rareMult,
   required DateTime now,
   required math.Random rng,
+  ResearchEffects research = ResearchEffects.none,
 }) {
   if (rolls <= 0 || run.eliteChance <= 0 || !idleRareDropsOn(rareMult)) {
     return IdleRareDrops(save: save);
@@ -337,7 +344,8 @@ IdleRareDrops rollIdleRareDrops(
       }
     }
     if (grade != null && grade.enabled) {
-      if (rng.nextDouble() < grade.potionEliteChance * rareMult) {
+      if (rng.nextDouble() <
+          potionDropChance(grade.potionEliteChance, research) * rareMult) {
         potionRolls++;
       }
     }

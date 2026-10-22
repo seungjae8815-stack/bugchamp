@@ -231,17 +231,25 @@ enum PotionSource { elite, boss, abyssMilestone, mission }
   String? dayKey,
   DateTime? now,
   double rareMult = 1.0,
+  ResearchEffects research = ResearchEffects.none,
 }) {
   if (!cfg.enabled) return (save: s, got: 0);
   var got = 0;
   // [rareMult] — 채집꾼 버프의 희귀 드롭 배율(2026-10-14). 확률 드롭에만 곱한다(난수 소비 수는 그대로).
+  // [research] — 연구소 "약초학"(`potionChance`)도 확률 드롭에만 × (1 + v). 하루 한도 `potionDropDaily` 는 그대로.
   switch (src) {
     case PotionSource.elite:
-      if (rng.nextDouble() < cfg.potionEliteChance * rareMult) got = 1;
+      if (rng.nextDouble() <
+          potionDropChance(cfg.potionEliteChance, research) * rareMult) {
+        got = 1;
+      }
     case PotionSource.boss:
       got = firstKill
           ? cfg.potionBossFirst
-          : (rng.nextDouble() < cfg.potionBossChance * rareMult ? 1 : 0);
+          : (rng.nextDouble() <
+                    potionDropChance(cfg.potionBossChance, research) * rareMult
+                ? 1
+                : 0);
     case PotionSource.abyssMilestone:
       got = cfg.potionAbyss10;
     case PotionSource.mission:
@@ -268,6 +276,11 @@ enum PotionSource { elite, boss, abyssMilestone, mission }
   }
   return (save: grantPotions(s, got), got: got);
 }
+
+/// 성장물약 확률 드롭(정예·보스 재처치) 한 번의 확률 — 설정 확률 × (1 + 약초학). 온라인·방치 정산 공용.
+/// 확정 지급(보스 첫 처치·심연·미션)과 하루 한도(`potionDropDaily`)는 연구와 무관하다.
+double potionDropChance(double base, ResearchEffects research) =>
+    researchScaledChance(base, research, ResearchEffect.potionChance);
 
 /// 확률 드롭 물약 [count]개를 **서버 날짜(UTC) 하루 `potionDropDaily` 개** 한도 안에서 넣는다
 /// (정예·보스 재처치·방치 정예 공용 — 서버 업로드 검사 `psR` 과 같은 한도). 받은 수를 돌려준다.

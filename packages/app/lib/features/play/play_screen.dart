@@ -1948,14 +1948,15 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     // 자동으로 굴러가는 통로에 프리미엄 재화를 흘리면 IAP 가 무의미해진다.
     final petCfg = _data.petConfig;
     if (released != null && petCfg != null) {
-      // 스킨 계열 편의 보너스(§2.6 — 재료만).
+      // 분해 기술(연구) → 스킨 계열 편의 보너스(§2.6 — 재료만).
+      final salvageFx = _data.researchFx(save.researchLevels);
       final give =
           _data.iapConfig?.skinnedReleaseMaterial(
-            petCfg.releaseMaterial(released),
+            petCfg.releaseMaterial(released, research: salvageFx),
             save.ownedSkins,
             releasedSpeciesId ?? '',
           ) ??
-          petCfg.releaseMaterial(released);
+          petCfg.releaseMaterial(released, research: salvageFx);
       if (give > 0) {
         final kind = _regularMaterials[_rng.nextInt(_regularMaterials.length)];
         mats ??= {};

@@ -37,6 +37,7 @@ class IdleDrops {
 ///
 /// [bugFind]·[materialFind] 는 정산에 쓰는 능력치(강화만 — 펫·장비 밖, 온라인보다 낮다).
 /// [rng]·[newId] 는 바깥에서 주입한다(순수 패키지 — 전역 난수·uuid 를 모른다).
+/// [research] = 연구소 "분해 기술"(`salvageMat`) — 자동 방생 재료(젤리 없음)에만.
 IdleDrops rollIdleDrops({
   required SaveGame save,
   required int rolls,
@@ -49,6 +50,7 @@ IdleDrops rollIdleDrops({
   required DateTime now,
   required Random rng,
   required String Function() newId,
+  ResearchEffects research = ResearchEffects.none,
 }) {
   final newBugs = <IndividualBug>[];
   final mats = Map<MaterialKind, int>.from(save.materials);
@@ -82,7 +84,8 @@ IdleDrops rollIdleDrops({
         // 온라인과 같은 분포: rng*rng 라 고포텐셜이 드물다.
         final potential = pet.wildPotential(rng.nextDouble(), rng.nextDouble());
         if (!save.acceptsGrade(drop.rarity)) {
-          final base = pet.releaseMaterial(drop.rarity);
+          // 분해 기술(연구) → 스킨 계열 보너스 순(앱 손 분해·실시간 방생과 같다).
+          final base = pet.releaseMaterial(drop.rarity, research: research);
           final give = iap == null
               ? base
               : iap.skinnedReleaseMaterial(base, save.ownedSkins, sp.id);

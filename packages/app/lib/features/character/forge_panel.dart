@@ -1933,6 +1933,11 @@ class _GradeBodyState extends ConsumerState<_GradeBody> {
   Widget _transcendBox(AppLocalizations l, SaveGame save, SaveController ctrl) {
     final n = save.forgeTranscend;
     final pct = (forge.transcendStep * 100).round();
+    // 제련 비법(연구소) — 초월·등급업 시간 단축(컨트롤러와 같은 값).
+    final fx = ref
+        .read(gameDataProvider)
+        .requireValue
+        .researchFx(save.researchLevels);
     if (n >= forge.transcendMax) {
       return Text(
         l.forgeTranscendMaxed('${(forge.transcendStep * n * 100).round()}'),
@@ -1984,12 +1989,12 @@ class _GradeBodyState extends ConsumerState<_GradeBody> {
           const SizedBox(height: 4),
           Text(
             l.forgeTranscendTimeNote(
-              '${forge.transcendDuration(n).inHours}',
+              '${forge.transcendDuration(n, research: fx).inHours}',
               _mult(forge.levelUpTranscendGoldMult),
               _mult(forge.levelUpTranscendTimeMult),
               // 다음 단계(n+1)의 가장 싼 등급업 = 바닥 비용·바닥 시간.
               formatCompact(forge.levelUpGold(0, transcend: n + 1)),
-              '${forge.levelUpDuration(0, transcend: n + 1).inHours}',
+              '${forge.levelUpDuration(0, transcend: n + 1, research: fx).inHours}',
             ),
             style: const TextStyle(
               color: Color(0xCCFFFFFF),
@@ -2062,9 +2067,14 @@ class _GradeBodyState extends ConsumerState<_GradeBody> {
       ],
     );
     if (ok != true || !mounted) return;
+    final cur = ref.read(saveControllerProvider).requireValue;
     final hours = forge
         .transcendDuration(
-          ref.read(saveControllerProvider).requireValue.forgeTranscend,
+          cur.forgeTranscend,
+          research: ref
+              .read(gameDataProvider)
+              .requireValue
+              .researchFx(cur.researchLevels),
         )
         .inHours;
     final err = await ctrl.transcendForge();

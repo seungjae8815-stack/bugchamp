@@ -3,6 +3,9 @@ import 'dart:math' as math;
 import 'package:core_models/core_models.dart';
 import 'package:meta/meta.dart';
 
+import 'research_apply.dart';
+import 'research_config.dart';
+
 /// 등급 1단계 (풀잎~호박). **흔한 자연물 → 금속 → 곤충 소재 → 보석** 으로
 /// 한 방향으로만 귀해진다.
 @immutable
@@ -212,13 +215,24 @@ class ItemConfig {
   final double starTierTimeMin;
 
   /// 별 [stars] → +1 강화 시간. 등급 [tier] 가 낮을수록 짧다(호박 = [starUpMinutes] 그대로).
-  Duration starUpDuration(int stars, {required int tier}) {
+  /// [research] = 연구소 "별빛 연마"(`starTime`, 최대 −50%) — 앱·시뮬 공용.
+  Duration starUpDuration(
+    int stars, {
+    required int tier,
+    ResearchEffects research = ResearchEffects.none,
+  }) {
     if (starUpMinutes.isEmpty) return Duration.zero;
     final base = starUpMinutes[stars.clamp(0, starUpMinutes.length - 1)];
     final top = tierCount <= 1 ? 1 : tierCount - 1;
     final t = tier.clamp(0, top);
     final mult = starTierTimeMin + (1 - starTierTimeMin) * t / top;
-    return Duration(seconds: (base * 60 * mult).round());
+    return Duration(
+      seconds: researchScaledSeconds(
+        (base * 60 * mult).round(),
+        research,
+        ResearchEffect.starTime,
+      ),
+    );
   }
 
   /// 재료 장비 등급은 장착 장비 등급 − 이 값 이상이어야 한다.
