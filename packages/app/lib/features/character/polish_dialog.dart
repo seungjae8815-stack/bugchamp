@@ -156,7 +156,7 @@ class _PolishBodyState extends ConsumerState<_PolishBody> {
               ),
             ),
             Text(
-              '+${shown.toStringAsFixed(shown >= 10 ? 0 : 1)}%',
+              '+${fmtOptPct(shown)}%',
               style: TextStyle(
                 color: hi ? kHoney : const Color(0xFFC5E1A5),
                 fontSize: 13,
@@ -165,7 +165,7 @@ class _PolishBodyState extends ConsumerState<_PolishBody> {
             ),
             if (max != null && max > 0)
               Text(
-                '/${max.toStringAsFixed(max >= 10 || max == max.roundToDouble() ? 0 : 1)}',
+                '/${fmtOptPct(max)}',
                 style: const TextStyle(color: Color(0x66FFFFFF), fontSize: 11),
               ),
           ],

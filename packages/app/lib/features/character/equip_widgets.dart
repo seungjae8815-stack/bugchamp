@@ -44,6 +44,16 @@ Widget slotGhost(EquipSlot slot, {required double size, Color? tint}) {
   );
 }
 
+/// 장비 옵션 값(%) 표시 — 소수점이 있으면 한 자리까지, 없으면 정수.
+///
+/// ⚠️ 다듬기는 0.1 단위로 오른다(같은 종류면 "지금 + 0.1 이상"). 10 이상을 정수로 반올림하던 시절
+/// 68.0 → 68.3 이 계속 "68" 로 보여 "젤리만 쓰고 안 올랐다"는 문의가 왔다(2026-10-22 사장님).
+/// 반대로 68.6 은 "69/69" 로 보여 최대인데 또 다듬어지는 것처럼 보였다.
+String fmtOptPct(double v) {
+  final r = (v * 10).roundToDouble() / 10;
+  return r == r.roundToDouble() ? r.toStringAsFixed(0) : r.toStringAsFixed(1);
+}
+
 String slotLabel(AppLocalizations l, EquipSlot s) => switch (s) {
   EquipSlot.tool => l.slotTool,
   EquipSlot.hat => l.slotHat,
@@ -228,7 +238,7 @@ class ItemOptionList extends StatelessWidget {
               ),
             ),
           Text(
-            '+${value.toStringAsFixed(value >= 10 ? 0 : 1)}%',
+            '+${fmtOptPct(value)}%',
             style: TextStyle(
               color: valueColor,
               fontSize: dense ? 10.5 : 12,
@@ -239,8 +249,8 @@ class ItemOptionList extends StatelessWidget {
           // "23%" 가 좋은 건지 나쁜 건지 읽힌다.
           if (max != null && max > 0)
             Text(
-              // 10 미만 소수 최대치(회피 3.5 등)는 한 자리까지 — 반올림하면 3.5 롤이 "/4" 로 읽힌다.
-              '/${max.toStringAsFixed(max >= 10 || max == max.roundToDouble() ? 0 : 1)}',
+              // 소수 최대치(회피 3.5 등)는 한 자리까지 — 반올림하면 3.5 롤이 "/4" 로 읽힌다.
+              '/${fmtOptPct(max)}',
               style: TextStyle(
                 color: const Color(0x66FFFFFF),
                 fontSize: dense ? 9 : 10.5,
