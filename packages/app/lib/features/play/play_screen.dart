@@ -3183,9 +3183,9 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     if (st == null && cfg?.untilOpen(now) == null && tbd == null) {
       return const SizedBox.shrink();
     }
-    final title = tbd == null
-        ? l.eventTitle
-        : '${l.eventTitle} · ${l.eventBannerTbd(tbd)}';
+    // 제목은 "왕충 선발대회"만 — "N회차 추후 공지"를 붙였더니 배너가 길어져 아이콘 줄이 밀렸다(2026-10-22 사장님).
+    // 다음 회차 일정은 배너를 눌러 들어간 대회 화면(대기 중 안내)이 보여 준다.
+    final title = l.eventTitle;
     if (inHud) {
       // 아이콘 줄 아래 가로 배너 — 폭은 아이콘 줄에 맞춰 늘어난다(2026-10-01 사장님).
       return Padding(

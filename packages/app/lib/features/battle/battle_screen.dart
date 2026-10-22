@@ -261,14 +261,18 @@ class _TicketBarState extends ConsumerState<TicketBar> {
               SizedBox(
                 width: 96,
                 height: 44,
-                // 오늘 무료 충전이 남았으면 빨간 점(2026-10-19).
+                // 오늘 무료 충전이 남았으면 빨간 점(2026-10-19) — 버튼 오른쪽 위 끝.
+                // ⚠️ RedDotBadge(Stack)는 자식에게 느슨한 크기를 넘겨 버튼이 글자 크기로 줄었다(2026-10-22 사장님 —
+                // 옆 젤리 버튼과 크기가 달라 밀려 보였다). SizedBox.expand 로 96×44 를 그대로 채운다.
                 child: RedDotBadge(
                   show: ref.watch(redDotsProvider).ticketFree,
-                  child: _chargeBtn(
-                    l.pvpTicketAdBtn(cfg.ticketAdGrant),
-                    l.pvpTicketAdLeft(adUsed, cfg.ticketAdDailyLimit),
-                    const Color(0xFF3E7D4F),
-                    () => _watchAd(l),
+                  child: SizedBox.expand(
+                    child: _chargeBtn(
+                      l.pvpTicketAdBtn(cfg.ticketAdGrant),
+                      l.pvpTicketAdLeft(adUsed, cfg.ticketAdDailyLimit),
+                      const Color(0xFF3E7D4F),
+                      () => _watchAd(l),
+                    ),
                   ),
                 ),
               ),
