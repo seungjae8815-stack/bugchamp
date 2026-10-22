@@ -357,6 +357,11 @@
   "statusIdle": "Install a trap to start foraging",
   "navUpgrade": "Upgrade",
   "navShop": "Shop",
+  "navEquip": "Gear",
+  "navSkills": "Skills",
+  "navFairy": "Fairy",
+  "navResearch": "Lab",
+  "navSwitch": "More",
   "upgradeTitle": "Upgrades",
   "retreat": "Retreat!",
   "offlineReward": "Welcome back! +{gold} gold, +{xp} XP",
@@ -1823,7 +1828,6 @@
       }
     }
   },
-  "navCharacter": "Character",
   "slotTool": "Tool",
   "slotHat": "Hat",
   "slotTop": "Top",

@@ -1168,6 +1168,36 @@ abstract class AppLocalizations {
   /// **'Shop'**
   String get navShop;
 
+  /// No description provided for @navEquip.
+  ///
+  /// In en, this message translates to:
+  /// **'Gear'**
+  String get navEquip;
+
+  /// No description provided for @navSkills.
+  ///
+  /// In en, this message translates to:
+  /// **'Skills'**
+  String get navSkills;
+
+  /// No description provided for @navFairy.
+  ///
+  /// In en, this message translates to:
+  /// **'Fairy'**
+  String get navFairy;
+
+  /// No description provided for @navResearch.
+  ///
+  /// In en, this message translates to:
+  /// **'Lab'**
+  String get navResearch;
+
+  /// No description provided for @navSwitch.
+  ///
+  /// In en, this message translates to:
+  /// **'More'**
+  String get navSwitch;
+
   /// No description provided for @upgradeTitle.
   ///
   /// In en, this message translates to:
@@ -5367,12 +5397,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Team power {power}'**
   String teamPower(String power);
-
-  /// No description provided for @navCharacter.
-  ///
-  /// In en, this message translates to:
-  /// **'Character'**
-  String get navCharacter;
 
   /// No description provided for @slotTool.
   ///

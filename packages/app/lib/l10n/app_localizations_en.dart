@@ -606,6 +606,21 @@ class AppLocalizationsEn extends AppLocalizations {
   String get navShop => 'Shop';
 
   @override
+  String get navEquip => 'Gear';
+
+  @override
+  String get navSkills => 'Skills';
+
+  @override
+  String get navFairy => 'Fairy';
+
+  @override
+  String get navResearch => 'Lab';
+
+  @override
+  String get navSwitch => 'More';
+
+  @override
   String get upgradeTitle => 'Upgrades';
 
   @override
@@ -3089,9 +3104,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String teamPower(String power) {
     return 'Team power $power';
   }
-
-  @override
-  String get navCharacter => 'Character';
 
   @override
   String get slotTool => 'Tool';

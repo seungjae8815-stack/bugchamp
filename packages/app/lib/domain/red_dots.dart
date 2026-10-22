@@ -79,10 +79,31 @@ class RedDots {
 
   bool get skills => skillDraw || skillSweep || skillTraining || skillGradeUp;
   bool get stats => forge || starUp;
-  bool get characterTab => skills || stats;
+  /// 하단 탭 점(2026-10-22 — 옛 캐릭터 탭이 장비·스킬·요정 탭으로 나뉘었다).
+  bool get equipTab => stats;
+  bool get skillsTab => skills;
   bool get storageTab =>
       incubator || breeding || dex || breakthroughBugs.isNotEmpty;
   bool get battleTab => ticketFree || ticketFull || league || training;
+
+  /// 연구소 탭(연구 완료·칸 놀고 있음) — 연구소 화면이 들어오며 채운다.
+  bool get researchTab => false;
+
+  /// 빨간 점을 달 하단 탭 번호(길드 가입 신청은 길드 서비스가 따로 더한다).
+  Set<int> get tabDots => {
+    if (guide) 0,
+    if (storageTab) kStorageTabIndex,
+    if (battleTab) kBattleTabIndex,
+    if (equipTab) kEquipTabIndex,
+    if (skillsTab) kSkillTabIndex,
+    if (researchTab) kResearchTabIndex,
+  };
+}
+
+/// 지금 보이지 않는 쪽의 탭에 점이 있나 — ⇄ 전환 버튼의 점. 홈은 양쪽에 있어 세지 않는다.
+bool otherNavPageHasDot(int page, Set<int> dots) {
+  final other = kNavPages[1 - page];
+  return dots.any((i) => i != 0 && other.contains(i));
 }
 
 /// 시간이 지나 바뀌는 점(타이머 끝·날짜 바뀜)을 홈 밖에서도 띄우려는 30초 박자.

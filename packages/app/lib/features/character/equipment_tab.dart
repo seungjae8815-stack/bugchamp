@@ -12,35 +12,20 @@ import '../../ui/format.dart';
 import '../../ui/game_dialog.dart';
 import 'character_scene.dart';
 import 'equip_widgets.dart';
-import 'fairy_panel.dart';
 import 'polish_dialog.dart';
 import 'forge_panel.dart';
-import 'skill_panel.dart';
 import '../../ui/colors.dart';
-import '../../domain/red_dots.dart';
-import '../../ui/red_dot.dart';
 
 const _honey = kHoney;
 
-/// 상단 3버튼이 무엇을 보여줄지.
-enum _Panel { stats, fairy, skills }
-
-/// 캐릭터 탭 — **내 전력을 조립하는 곳**.
+/// 장비 탭 — 옛 캐릭터 탭의 능력치 패널(2026-10-22 하단 탭 2쪽에서 탭 하나가 됐다).
 ///
-/// 위 → 아래: [능력치][요정][스킬] 버튼 · 메인 캐릭터와 곁에 선 곤충들 ·
-/// 고른 패널 · 장비 8칸 · **제련/자동** · **공방 등급**.
-class CharacterScreen extends ConsumerStatefulWidget {
-  const CharacterScreen({super.key});
+/// 위 → 아래: 메인 캐릭터와 곁에 선 곤충들 · 능력치 · 장비 8칸 · **제련/자동** · **공방 등급**.
+class EquipmentTab extends ConsumerWidget {
+  const EquipmentTab({super.key});
 
   @override
-  ConsumerState<CharacterScreen> createState() => _CharacterScreenState();
-}
-
-class _CharacterScreenState extends ConsumerState<CharacterScreen> {
-  _Panel _panel = _Panel.stats;
-
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final l = AppLocalizations.of(context);
     final save = ref.watch(saveControllerProvider).requireValue;
     final items = ref.watch(gameDataProvider).value?.itemConfig;
@@ -49,142 +34,33 @@ class _CharacterScreenState extends ConsumerState<CharacterScreen> {
     // "내 폰에서만 공방이 안 보인다"가 된다. 대신 남는 높이를 장비 칸에
     // 몰아주고, 씬 높이는 화면에 비례시킨다 — 작은 폰은 알아서 낮아진다.
     return Scaffold(
-      appBar: AppBar(title: Text(l.navCharacter)),
+      appBar: AppBar(title: Text(l.navEquip)),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
           child: LayoutBuilder(
             builder: (context, c) => Column(
               children: [
-                _tabs(l),
+                SizedBox(
+                  height: (c.maxHeight * 0.19).clamp(84.0, 132.0),
+                  child: CharacterScene(save: save),
+                ),
                 const SizedBox(height: 8),
-                // 채집 씬은 **스킬 탭에서 뺀다** — 스킬은 재료·장착 칸·12종
-                // 목록이 다 들어가야 해서 씬이 100px 을 먹으면 목록이 두 줄만
-                // 보인다(실기 지적 2026-09-16). 요정 탭도 같은 이유로 뺀다. 능력치 탭만 씬을 둔다.
-                // 요정 탭도 요정함 칸이 들어가야 해서 씬을 뺀다(스킬 탭과 같은 이유).
-                if (_panel != _Panel.skills && _panel != _Panel.fairy) ...[
-                  SizedBox(
-                    height: (c.maxHeight * 0.19).clamp(84.0, 132.0),
-                    child: CharacterScene(save: save),
+                _StatsPanel(save: save),
+                const SizedBox(height: 8),
+                if (items != null) ...[
+                  // 남는 높이를 전부 장비 칸이 가져간다 — 칸 모양은 자기가
+                  // 받은 높이로 정한다(작은 폰에선 납작해질 뿐 안 잘린다).
+                  Expanded(
+                    child: _EquipGrid(save: save, config: items),
                   ),
-                  const SizedBox(height: 8),
-                ],
-                // 예전 "펫"(준비 중) 자리를 **요정**이 대신한다(2026-10-01 사장님 확정, 1.0.15).
-                // 스킬은 2026-09-15 에 열었다(§2.8).
-                //
-                // ⚠️ 장비·공방은 **능력치 탭에만** 붙인다. 요정·스킬 밑에 장비칸이
-                // 그대로 있으면 "요정인데 왜 장비가 있지"가 된다.
-                if (_panel == _Panel.skills)
-                  Expanded(child: SkillPanel(save: save))
-                else if (_panel == _Panel.fairy)
-                  const Expanded(child: FairyPanel())
-                else ...[
-                  _StatsPanel(save: save),
-                  const SizedBox(height: 8),
-                  if (items != null) ...[
-                    // 남는 높이를 전부 장비 칸이 가져간다 — 칸 모양은 자기가
-                    // 받은 높이로 정한다(작은 폰에선 납작해질 뿐 안 잘린다).
-                    Expanded(
-                      child: _EquipGrid(save: save, config: items),
-                    ),
-                    const SizedBox(height: 6),
-                    // 장비 **바로 밑** — 가운데 제련, 좌우에 공방 등급·필터/자동.
-                    const ForgeBar(),
-                  ] else
-                    const Spacer(),
-                ],
+                  const SizedBox(height: 6),
+                  // 장비 **바로 밑** — 가운데 제련, 좌우에 공방 등급·필터/자동.
+                  const ForgeBar(),
+                ] else
+                  const Spacer(),
               ],
             ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _tabs(AppLocalizations l) => Row(
-    children: [
-      // 공방 등급업·초월 · 장비 별 강화가 끝나 받을 수 있으면 빨간 점(2026-10-19).
-      _tab(
-        l.charTabStats,
-        'stats',
-        Icons.person_rounded,
-        _Panel.stats,
-        dot: ref.watch(redDotsProvider).stats,
-      ),
-      const SizedBox(width: 6),
-      _tab(l.charTabFairy, 'fairy', Icons.flutter_dash_rounded, _Panel.fairy),
-      const SizedBox(width: 6),
-      _tab(
-        l.charTabSkills,
-        'skills',
-        Icons.auto_awesome_rounded,
-        _Panel.skills,
-        // 놀고 있는 조각으로 승급(2026-10-08) · 오늘 무료 뽑기·소탕 · 수련 끝(2026-10-19).
-        dot: ref.watch(redDotsProvider).skills,
-      ),
-    ],
-  );
-
-  Widget _tab(
-    String text,
-    String art,
-    IconData icon,
-    _Panel p, {
-    bool dot = false,
-  }) {
-    final on = _panel == p;
-    return Expanded(
-      child: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          _tabBody(text, art, icon, p, on),
-          if (dot) const Positioned(top: -3, right: -2, child: RedDot()),
-        ],
-      ),
-    );
-  }
-
-  Widget _tabBody(String text, String art, IconData icon, _Panel p, bool on) {
-    return SizedBox(
-      child: InkWell(
-        onTap: () => setState(() => _panel = p),
-        borderRadius: BorderRadius.circular(10),
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 9),
-          decoration: BoxDecoration(
-            color: on ? const Color(0x33FFD54F) : const Color(0x33121A10),
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(
-              color: on ? _honey : const Color(0x22FFFFFF),
-              width: on ? 1.6 : 1,
-            ),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              // 아트(없으면 아이콘 폴백). 고르지 않은 탭은 흐리게.
-              Opacity(
-                opacity: on ? 1 : 0.6,
-                child: tabImage(
-                  art,
-                  size: 20,
-                  fallback: Icon(
-                    icon,
-                    size: 15,
-                    color: on ? _honey : Colors.white70,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 5),
-              Text(
-                text,
-                style: TextStyle(
-                  color: on ? _honey : Colors.white70,
-                  fontWeight: FontWeight.w800,
-                  fontSize: 12.5,
-                ),
-              ),
-            ],
           ),
         ),
       ),
@@ -222,7 +98,7 @@ class _StatsPanel extends ConsumerWidget {
     );
 
     // 8줄을 세로로 세우면 화면의 3분의 1을 먹는다 — **두 줄씩 좌우로** 접어
-    // 넣어 높이를 절반으로 줄인다. 캐릭터 탭이 한 화면에 들어와야 한다.
+    // 넣어 높이를 절반으로 줄인다. 장비 탭이 한 화면에 들어와야 한다.
     final rows = <(String, String)>[
       (l.statAttack, formatCompact(s.attack)),
       (l.statAttackSpeed, '×${s.attackSpeed.toStringAsFixed(2)}'),

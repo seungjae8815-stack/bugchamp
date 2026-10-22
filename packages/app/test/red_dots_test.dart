@@ -151,7 +151,7 @@ void main() {
       _dots(data, base.copyWith(skillTrainingEndsAt: _now)).skillTraining,
       isTrue,
     );
-    expect(_dots(data, base.copyWith(forgeUpAt: _now)).characterTab, isTrue);
+    expect(_dots(data, base.copyWith(forgeUpAt: _now)).equipTab, isTrue);
     expect(
       _dots(
         data,

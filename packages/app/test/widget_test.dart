@@ -150,6 +150,7 @@ void main() {
     expect(find.text('Home'), findsWidgets);
     expect(find.text('Storage'), findsWidgets);
     expect(find.text('Shop'), findsWidgets);
+    expect(find.text('More'), findsWidgets); // ⇄ 하단 탭 2쪽 전환
     expect(
       tester.widget<Text>(find.byKey(const Key('goldHud'))).data,
       '0',

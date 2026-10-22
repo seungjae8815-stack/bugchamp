@@ -595,6 +595,21 @@ class AppLocalizationsKo extends AppLocalizations {
   String get navShop => '상점';
 
   @override
+  String get navEquip => '장비';
+
+  @override
+  String get navSkills => '스킬';
+
+  @override
+  String get navFairy => '요정';
+
+  @override
+  String get navResearch => '연구소';
+
+  @override
+  String get navSwitch => '전환';
+
+  @override
   String get upgradeTitle => '능력치 강화';
 
   @override
@@ -3002,9 +3017,6 @@ class AppLocalizationsKo extends AppLocalizations {
   String teamPower(String power) {
     return '팀 전투력 $power';
   }
-
-  @override
-  String get navCharacter => '캐릭터';
 
   @override
   String get slotTool => '채집도구';

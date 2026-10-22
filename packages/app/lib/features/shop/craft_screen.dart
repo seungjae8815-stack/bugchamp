@@ -229,6 +229,8 @@ class StoreProductCard extends ConsumerWidget {
     IapType.oncePack => (Icons.redeem_rounded, kHoney),
     IapType.growthPass => (Icons.spa_rounded, const Color(0xFF8FE3A0)),
     IapType.weekly => (Icons.date_range_rounded, const Color(0xFF7FD3F5)),
+    IapType.researchPass => (Icons.science_rounded, const Color(0xFF8FC3FF)),
+    IapType.allPass => (Icons.all_inclusive_rounded, kHoney),
   };
 
   @override

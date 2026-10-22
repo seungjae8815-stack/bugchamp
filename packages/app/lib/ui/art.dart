@@ -489,8 +489,8 @@ Widget navImage(
   fallback: fallback,
 );
 
-/// 캐릭터 탭 안의 탭 아이콘. `assets/images/ui/tab/{name}.webp`
-/// (pets / skills / stats)
+/// 탭 아이콘(장비·스킬·요정 하단 탭 · 옛 캐릭터 탭 안 버튼). `assets/images/ui/tab/{name}.webp`
+/// (fairy / pets / skills / stats)
 Widget tabImage(
   String name, {
   required double size,

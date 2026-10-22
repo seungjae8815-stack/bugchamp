@@ -593,6 +593,21 @@ class AppLocalizationsJa extends AppLocalizations {
   String get navShop => 'ショップ';
 
   @override
+  String get navEquip => '装備';
+
+  @override
+  String get navSkills => 'スキル';
+
+  @override
+  String get navFairy => '妖精';
+
+  @override
+  String get navResearch => '研究所';
+
+  @override
+  String get navSwitch => '切替';
+
+  @override
   String get upgradeTitle => '能力強化';
 
   @override
@@ -2996,9 +3011,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String teamPower(String power) {
     return 'チーム戦力 $power';
   }
-
-  @override
-  String get navCharacter => 'キャラ';
 
   @override
   String get slotTool => '採集道具';

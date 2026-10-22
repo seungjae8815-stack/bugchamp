@@ -31,7 +31,10 @@ import '../ui/rank_popup.dart';
 import '../ui/whats_new.dart';
 import 'battle/battle_screen.dart';
 import 'play/play_screen.dart';
-import 'character/character_screen.dart';
+import 'character/equipment_tab.dart';
+import 'character/fairy_tab.dart';
+import 'character/skill_tab.dart';
+import 'research/research_screen.dart';
 import 'shop/craft_screen.dart';
 import 'title/title_screen.dart';
 import 'storage/storage_screen.dart';
@@ -39,7 +42,7 @@ import '../ui/colors.dart';
 import '../domain/red_dots.dart';
 import '../ui/red_dot.dart';
 
-/// 하단 4탭 셸: 홈 · 채집함 · 전투 · 상점. 세이브 로드 완료 후 표시.
+/// 하단 탭 셸(2쪽 · ⇄ 전환 — [kNavPages]). 세이브 로드 완료 후 표시.
 class AppShell extends ConsumerStatefulWidget {
   const AppShell({super.key});
 
@@ -377,14 +380,18 @@ class _AppShellState extends ConsumerState<AppShell>
               IndexedStack(
                 index: index,
                 children: [
+                  // 순서 = 탭 번호(providers.dart kNavPages). 1쪽 0~4 · 2쪽 5~8.
                   const PlayScreen(),
-                  // 홈과 채집함 사이 — **전력을 조립하는 곳**.
-                  const CharacterScreen(),
                   StorageScreen(save: save),
                   const BattleScreen(),
                   // 길드(1.0.15) — 하단 메뉴(2026-10-02 사장님). 열기 전엔 "준비 중" 화면.
                   kGuildOpen ? const GuildScreen() : const GuildComingSoon(),
                   const CraftScreen(),
+                  // 옛 캐릭터 탭의 세 패널이 각각 탭이 됐다(2026-10-22 사장님 — 능력치 패널 = 장비 탭).
+                  const EquipmentTab(),
+                  const SkillTab(),
+                  const FairyTab(),
+                  const ResearchScreen(),
                 ],
               ),
               // 연결이 끊기면 **게임 위를 통째로 덮는다.** 오프라인 플레이를
@@ -416,25 +423,17 @@ class _AppShellState extends ConsumerState<AppShell>
               ),
             ],
           ),
-          bottomNavigationBar: _GameNavBar(
-            index: index,
+          bottomNavigationBar: GameNavBar(
             // 탭 안에 놓치면 손해인 것이 있으면 그 탭에 빨간 점(2026-10-19 — 예전엔 길드 가입 신청뿐이라
             // 부화가 끝나도 채집함을 열기 전엔 몰랐다). 판정은 `red_dots.dart` 한 곳.
             dots: () {
               final d = ref.watch(redDotsProvider);
               return {
-                if (d.guide) 0,
-                if (d.characterTab) 1,
-                if (d.storageTab) 2,
-                if (d.battleTab) 3,
+                ...d.tabDots,
                 // 관리자인데 가입 신청이 쌓여 있으면 길드 아이콘에 빨간 점.
                 if (ref.watch(guildHasRequestsProvider)) kGuildTabIndex,
               };
             }(),
-            onTap: (i) {
-              AudioService.instance.sfxTap();
-              ref.read(tabIndexProvider.notifier).set(i);
-            },
           ),
         ),
       ),
@@ -666,32 +665,23 @@ class _AppShellState extends ConsumerState<AppShell>
   }
 }
 
-class _GameNavBar extends StatelessWidget {
-  const _GameNavBar({
-    required this.index,
-    required this.onTap,
-    this.dots = const {},
-  });
+/// 하단 탭 줄 — 지금 쪽([navPageProvider])의 탭 5개 + 맨 끝 ⇄ 전환 버튼.
+class GameNavBar extends ConsumerWidget {
+  const GameNavBar({super.key, this.dots = const {}});
 
-  final int index;
-  final ValueChanged<int> onTap;
-
-  /// 빨간 점을 달 탭 번호.
+  /// 빨간 점을 달 탭 번호(양쪽 모두). 다른 쪽에 있는 점은 ⇄ 버튼에 모아 단다.
   final Set<int> dots;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final l = AppLocalizations.of(context);
-    // (아트 이름, 아이콘 폴백, 라벨). 아트는 assets/images/ui/nav/{이름}.webp —
-    // 애셋이 없으면 예전 Material 아이콘으로 떨어진다(§6).
-    final items = <(String, IconData, String)>[
-      ('home', Icons.home_rounded, l.navHome),
-      ('character', Icons.person_rounded, l.navCharacter),
-      ('storage', Icons.menu_book_rounded, l.navStorage),
-      ('battle', Icons.sports_mma_rounded, l.navBattle),
-      ('guild', Icons.groups_rounded, l.guildTitle),
-      ('shop', Icons.storefront_rounded, l.navShop),
-    ];
+    final index = ref.watch(tabIndexProvider);
+    final page = ref.watch(navPageProvider);
+    void tap(int i) {
+      AudioService.instance.sfxTap();
+      ref.read(tabIndexProvider.notifier).set(i);
+    }
+
     return Container(
       decoration: const BoxDecoration(
         gradient: LinearGradient(
@@ -707,37 +697,107 @@ class _GameNavBar extends StatelessWidget {
           height: 64,
           child: Row(
             children: [
-              for (var i = 0; i < items.length; i++)
+              for (final i in kNavPages[page])
                 Expanded(
                   child: _NavTab(
-                    art: items[i].$1,
-                    icon: items[i].$2,
-                    label: items[i].$3,
+                    image: (color) => _navArt(i, color),
+                    label: _navLabel(l, i),
                     active: i == index,
                     dot: dots.contains(i),
-                    onTap: () => onTap(i),
+                    onTap: () => tap(i),
                   ),
                 ),
+              Expanded(
+                child: _NavTab(
+                  key: const Key('navSwitch'),
+                  image: (color) =>
+                      Icon(Icons.swap_horiz_rounded, color: color, size: 24),
+                  label: l.navSwitch,
+                  active: false,
+                  dot: otherNavPageHasDot(page, dots),
+                  onTap: () {
+                    AudioService.instance.sfxTap();
+                    ref.read(navPageProvider.notifier).toggle();
+                  },
+                ),
+              ),
             ],
           ),
         ),
       ),
     );
   }
+
+  static String _navLabel(AppLocalizations l, int i) => switch (i) {
+    0 => l.navHome,
+    kStorageTabIndex => l.navStorage,
+    kBattleTabIndex => l.navBattle,
+    kGuildTabIndex => l.guildTitle,
+    kShopTabIndex => l.navShop,
+    kEquipTabIndex => l.navEquip,
+    kSkillTabIndex => l.navSkills,
+    kFairyTabIndex => l.navFairy,
+    _ => l.navResearch,
+  };
+
+  /// 탭 아트 — 1쪽은 assets/images/ui/nav/{이름}.webp, 2쪽은 옛 캐릭터 탭 안 버튼 아트
+  /// (ui/tab/{stats,skills,fairy}.webp)를 다시 쓴다. 애셋이 없으면 Material 아이콘(§6). 연구소는 아직 아트가 없다.
+  static Widget _navArt(int i, Color color) {
+    Widget icon(IconData d) => Icon(d, color: color, size: 24);
+    return switch (i) {
+      0 => navImage('home', size: 28, fallback: icon(Icons.home_rounded)),
+      kStorageTabIndex => navImage(
+        'storage',
+        size: 28,
+        fallback: icon(Icons.menu_book_rounded),
+      ),
+      kBattleTabIndex => navImage(
+        'battle',
+        size: 28,
+        fallback: icon(Icons.sports_mma_rounded),
+      ),
+      kGuildTabIndex => navImage(
+        'guild',
+        size: 28,
+        fallback: icon(Icons.groups_rounded),
+      ),
+      kShopTabIndex => navImage(
+        'shop',
+        size: 28,
+        fallback: icon(Icons.storefront_rounded),
+      ),
+      kEquipTabIndex => tabImage(
+        'stats',
+        size: 28,
+        fallback: icon(Icons.person_rounded),
+      ),
+      kSkillTabIndex => tabImage(
+        'skills',
+        size: 28,
+        fallback: icon(Icons.auto_awesome_rounded),
+      ),
+      kFairyTabIndex => tabImage(
+        'fairy',
+        size: 28,
+        fallback: icon(Icons.flutter_dash_rounded),
+      ),
+      _ => icon(Icons.science_rounded),
+    };
+  }
 }
 
 class _NavTab extends StatelessWidget {
   const _NavTab({
-    required this.art,
-    required this.icon,
+    super.key,
+    required this.image,
     required this.label,
     required this.active,
     required this.onTap,
     this.dot = false,
   });
 
-  final String art;
-  final IconData icon;
+  /// 아이콘(아트 또는 폴백). 색은 고른 탭/아닌 탭에 따라 넘겨준다.
+  final Widget Function(Color color) image;
   final String label;
   final bool active;
   final VoidCallback onTap;
@@ -762,18 +822,14 @@ class _NavTab extends StatelessWidget {
             children: [
               Opacity(
                 opacity: active ? 1 : 0.62,
-                child: navImage(
-                  art,
-                  size: 28,
-                  fallback: Icon(icon, color: color, size: 24),
-                ),
+                child: image(color),
               ),
               if (dot)
                 const Positioned(right: -3, top: -2, child: RedDot(size: 9)),
             ],
           ),
           const SizedBox(height: 1),
-          // 6칸이라 칸이 좁다 — "コレクション"·"Character"가 단어 중간에서 꺾였다(한 줄 · 칸에 맞게 줄임).
+          // 6칸이라 칸이 좁다 — "コレクション"·"Character"(옛 탭)가 단어 중간에서 꺾였다(한 줄 · 칸에 맞게 줄임).
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 2),
             child: FittedBox(
