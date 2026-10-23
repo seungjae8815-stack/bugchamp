@@ -159,11 +159,49 @@ void main() {
     expect(btn.onPressed, isNull);
   });
 
-  testWidgets('연구 효율을 찍으면 칸 옆에 연구 속도가 보인다', (tester) async {
+  testWidgets('연구 효율을 찍으면 재화 줄 옆에 시트와 같은 연구 시간 −N% 가 보인다', (tester) async {
     await pump(tester, base);
-    expect(find.byKey(const Key('researchSpeed')), findsNothing);
+    expect(find.byKey(const Key('researchTimeCut')), findsNothing);
     await pump(tester, base.copyWith(researchLevels: {'researchEff': 5}));
-    expect(find.byKey(const Key('researchSpeed')), findsOneWidget);
+    final cfg = _data().researchConfig!;
+    final cut = cfg.effectAt(cfg.byId('researchEff')!, 5);
+    expect(find.text('연구 시간 −${fmtResearchPct(cut)}%'), findsOneWidget);
+  });
+
+  testWidgets('연구 중 — 카드에 남은 시간 · 칸 카드를 누르면 시트에서 젤리로 즉시 완료', (
+    tester,
+  ) async {
+    final c = await pump(
+      tester,
+      base.copyWith(
+        materials: {MaterialKind.jelly: 10000},
+        researchSlots: [
+          ResearchSlot(
+            id: 'jaw',
+            level: 1,
+            endsAt: t0.add(const Duration(hours: 2)),
+          ),
+        ],
+      ),
+    );
+    final time = tester.widget<Text>(
+      find.byKey(const Key('researchCardTime_jaw')),
+    );
+    expect(time.data, isNotEmpty);
+    expect(find.byKey(const Key('researchSlotBar_jaw')), findsOneWidget);
+    // 칸 카드 → 시트(시작 버튼 대신 남은 시간 + 즉시 완료).
+    await tester.tap(find.byKey(const Key('researchSlotCard_jaw')));
+    await settle(tester);
+    expect(find.byKey(const Key('researchSheet_jaw')), findsOneWidget);
+    expect(find.byKey(const Key('researchStart_jaw')), findsNothing);
+    await tester.tap(find.byKey(const Key('researchSheetInstant_jaw')));
+    await settle(tester);
+    await tester.tap(find.text('즉시 완료').last);
+    await settle(tester);
+    final s = c.read(saveControllerProvider).requireValue;
+    expect(s.researchLevels['jaw'], 1);
+    expect(s.researchSlots, isEmpty);
+    expect(s.materialCount(MaterialKind.jelly), lessThan(10000));
   });
 
   testWidgets('재화가 없으면 시작 버튼이 꺼지고 이유가 보인다', (tester) async {
@@ -238,6 +276,14 @@ void main() {
       }
       await tester.tap(find.byKey(const Key('researchTab_hunt')));
       await settle(tester);
+      // 재화·칸이 트리와 같이 스크롤된다 — 트리가 쓸 수 있는 높이가 320dp 이상.
+      final view = tester.getSize(find.byKey(const Key('researchTree_hunt')));
+      expect(view.height, greaterThanOrEqualTo(320));
+      // 진행 중 칸 카드는 낮게(≤ 70dp 남짓).
+      expect(
+        tester.getSize(find.byKey(const Key('researchSlotCard_jaw'))).height,
+        lessThanOrEqualTo(72),
+      );
       await tester.drag(
         find.byKey(const Key('researchTree_hunt')),
         const Offset(0, -2000),

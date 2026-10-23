@@ -8364,8 +8364,8 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String researchSpeed(String pct) {
-    return '研究速度 +$pct%';
+  String researchTimeCut(String pct) {
+    return '研究時間 −$pct%';
   }
 
   @override

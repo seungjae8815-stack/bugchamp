@@ -8377,8 +8377,8 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
-  String researchSpeed(String pct) {
-    return '연구 속도 +$pct%';
+  String researchTimeCut(String pct) {
+    return '연구 시간 −$pct%';
   }
 
   @override

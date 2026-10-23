@@ -2508,7 +2508,7 @@
   "researchSlotBuyBody": "ゼリーで研究枠を1つ追加します（永久）。",
   "researchSlotsTitle": "研究枠 {n}/{max}",
   "researchSlotItem": "{name} Lv{lv}",
-  "researchSpeed": "研究速度 +{pct}%",
+  "researchTimeCut": "研究時間 −{pct}%",
   "researchLevel": "Lv {lv}/{max}",
   "researchMaxed": "最大レベル",
   "researchStart": "研究",

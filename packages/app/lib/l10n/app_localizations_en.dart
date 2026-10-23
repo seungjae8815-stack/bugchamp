@@ -8564,8 +8564,8 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String researchSpeed(String pct) {
-    return 'Research speed +$pct%';
+  String researchTimeCut(String pct) {
+    return 'Research time −$pct%';
   }
 
   @override
