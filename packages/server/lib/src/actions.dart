@@ -899,6 +899,21 @@ class GameActions {
         jelly += max(0, ch.rewardJelly);
       }
     }
+    // 최종 보스를 잡고 **같은 업로드에** 다음 난이도로 넘어갔으면 올라온 난이도는 T + 1 이라 위 고리가 T 의 최종 사냥터
+    // 클리어(앱이 넘어가기 전에 T 키로 준다)를 못 본다 — 그 한 칸을 따로 본다(저장본에 없던 키 · 최종 보스 도감).
+    if (tier == storedTop + 1) {
+      final last = chapters.last;
+      final key = chapterClearKey(last.id, storedTop);
+      if (claimed.contains(key) &&
+          !already.contains(key) &&
+          bossDex.contains(
+            config.run.bossArtId(storedTop, config.run.zonesPerTier),
+          )) {
+        final now = chapterClearGold(config.run, last, storedTop);
+        sum += storedTop == 0 ? max(now, last.rewardGold) : now;
+        jelly += max(0, last.rewardJelly);
+      }
+    }
     return (gold: sum, jelly: jelly);
   }
 
@@ -1573,9 +1588,16 @@ class GameActions {
       (merged['bossDex'] as List?) ?? const [],
       t,
     );
-    final topNow = min(
-      max(stored.topTier, (merged['maxTierReached'] as num?)?.toInt() ?? 0),
-      tierCap,
+    // 지금 난이도만 올린 업로드(옛 앱)도 최고 난이도가 오른 것이다 — 둘 중 큰 쪽(`topTier` 와 같은 정의).
+    final topNow = max(
+      stored.topTier,
+      min(
+        max(
+          (merged['maxTierReached'] as num?)?.toInt() ?? 0,
+          (merged['difficultyTier'] as num?)?.toInt() ?? 0,
+        ),
+        tierCap,
+      ),
     );
     if (clientTop > tierCap) merged['maxTierReached'] = tierCap;
     final clientNowTier = (merged['difficultyTier'] as num?)?.toInt();
@@ -1589,6 +1611,18 @@ class GameActions {
           .map((e) => e.toString())
           .toSet();
       merged['bossDex'] = {...clientBoss, ...stored.bossDex}.toList();
+    }
+    // 받은 도감 마일스톤·사냥터 클리어 기록도 줄지 않는다(2026-10-23 점검) — 업로드 A 에서 지우고 B 에서 다시 넣으면
+    // 젤리·골드·화석 허용치(저장본에 없던 마일스톤·챕터만 센다)가 두 업로드마다 다시 열렸다. 앱은 더하기만 한다.
+    for (final (key, have) in [
+      ('claimedDex', stored.claimedDex),
+      ('clearedChapters', stored.clearedChapters),
+    ]) {
+      if (have.isEmpty) continue;
+      final client = ((merged[key] as List?) ?? const [])
+          .map((e) => e.toString())
+          .toSet();
+      merged[key] = {...client, ...have}.toList();
     }
 
     // 골드 상식 상한.
@@ -2548,6 +2582,8 @@ class GameActions {
   /// 가짜 5성을 넣었다(저장본이 됨) 지우는 반복을 하루 몫으로 묶는다. 정직한 대량 분해(옛 5성 정리)는 다음 날 이어서 인정된다.
   static const _salvageJellyDaily = 60;
 
+  /// 정수 바꾸기·등급 올리기 재료로 사라진 옛 5성도 분해처럼 세어 하루 기록(`jSN`)을 쓴다 — 사라진 이유를 서버가 가르지 않는다.
+  /// 그날 근거가 일찍 차는 것뿐이고(넘치는 젤리는 다음 날) 젤리를 더 주지는 않아 그대로 둔다.
   /// 이번 업로드의 분해 젤리 근거 — **저장본에 있던** 곤충이 사라졌으면 저장본 값으로 앱과 같은 `disassembleJelly`(문턱 5성).
   ///  - 개체 등급 이후 생긴(`ng`) 뽑기·결제 알이 아닌(`gc` 없음) 곤충은 태생 1성으로 본다 — 그 시대 야생·짝짓기는 늘 일반이라
   ///    근거 0(가짜 5성을 넣고 지우는 반복이 여기서 끊긴다). 뽑기·결제 알은 산 젤리가 [_jellyUsedElsewhere] 에 잡혀 그대로 센다.

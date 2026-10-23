@@ -217,6 +217,92 @@ void main() {
     expect(s3.materialCount(MaterialKind.jelly), 180 + 5 * per);
   });
 
+  // 여유를 먼저 다 쓴 저장본(근거만 보이게).
+  SaveGame drained(SaveGame s) =>
+      s.copyWith(jellySlackAt: t0.add(const Duration(minutes: 5)));
+
+  test('받은 도감 마일스톤을 지웠다 다시 넣어도 젤리 근거가 다시 열리지 않는다', () {
+    final run = cfg.run;
+    final ms = cfg.dex!.bossMilestones.first;
+    var s = drained(stored()).copyWith(
+      bossDex: {for (var z = 1; z <= 5; z++) run.bossArtId(0, z)},
+      claimedDex: {ms.id},
+    );
+    final t1 = t0.add(const Duration(minutes: 6));
+    // A: 기록을 뺀 채 올린다 — 서버는 저장본 기록을 남긴다.
+    s = upAt(t1, s, s.copyWith(claimedDex: const {}));
+    expect(s.claimedDex, contains(ms.id));
+    // B: 다시 넣고 마일스톤 젤리를 더한다 — 근거 0.
+    final t2 = t1.add(const Duration(seconds: 60));
+    s = upAt(t2, s, withJelly(s, 100 + ms.jelly).copyWith(claimedDex: {ms.id}));
+    expect(s.materialCount(MaterialKind.jelly), 100);
+  });
+
+  test('사냥터 클리어 기록을 지웠다 다시 넣어도 최종 클리어 젤리가 다시 열리지 않는다', () {
+    final run = cfg.run;
+    final roadmap = cfg.roadmap!;
+    final keys = {for (final ch in roadmap.chapters) chapterClearKey(ch.id, 0)};
+    var s = drained(stored()).copyWith(
+      stageNumber: run.zoneStartStage(run.zonesPerTier),
+      bestStage: run.zoneStartStage(run.zonesPerTier),
+      bossDex: {run.bossArtId(0, run.zonesPerTier)},
+      clearedChapters: keys,
+    );
+    final t1 = t0.add(const Duration(minutes: 6));
+    s = upAt(t1, s, s.copyWith(clearedChapters: const {}));
+    expect(s.clearedChapters, containsAll(keys));
+    final t2 = t1.add(const Duration(seconds: 60));
+    s = upAt(
+      t2,
+      s,
+      withJelly(
+        s,
+        100 + roadmap.chapters.last.rewardJelly,
+      ).copyWith(clearedChapters: keys),
+    );
+    expect(s.materialCount(MaterialKind.jelly), 100);
+  });
+
+  test('지금 난이도만 올린 업로드(옛 앱)도 최고 난이도에 들어선 시각을 적는다', () {
+    final run = cfg.run;
+    final base = stored();
+    final out = upAt(
+      t0,
+      base,
+      base.copyWith(
+        difficultyTier: 1,
+        bossDex: {run.bossArtId(0, run.zonesPerTier)},
+      ),
+    );
+    expect(out.topTier, 1);
+    expect(out.topTierAt, t0);
+  });
+
+  test('최종 보스를 잡고 같은 업로드에 다음 난이도로 — 앞 난이도 최종 클리어 젤리를 인정한다', () {
+    final run = cfg.run;
+    final roadmap = cfg.roadmap!;
+    final last = roadmap.chapters.last;
+    final base = drained(stored()).copyWith(
+      stageNumber: run.zoneStartStage(run.zonesPerTier),
+      bestStage: run.zoneStartStage(run.zonesPerTier),
+      clearedChapters: {
+        for (final ch in roadmap.chapters)
+          if (!identical(ch, last)) chapterClearKey(ch.id, 0),
+      },
+    );
+    final client = withJelly(base, 100 + last.rewardJelly).copyWith(
+      difficultyTier: 1,
+      maxTierReached: 1,
+      stageNumber: 1,
+      bestStage: 0,
+      bossDex: {run.bossArtId(0, run.zonesPerTier)},
+      clearedChapters: {...base.clearedChapters, chapterClearKey(last.id, 0)},
+    );
+    final out = upAt(t0.add(const Duration(minutes: 6)), base, client);
+    expect(out.maxTierReached, 1);
+    expect(out.materialCount(MaterialKind.jelly), 100 + last.rewardJelly);
+  });
+
   test('업로드 상한 노출값은 여유 최대치', () {
     expect(GameActions.uploadCapFor(MaterialKind.jelly), 20);
   });
