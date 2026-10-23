@@ -18,6 +18,7 @@
   "bossRepeatDrop": 2,
   "bossRepeatChance": 0.1,
   "clockSkewSeconds": 300,
+  "_clockSkewComment": "서버 업로드 검사가 연구 한 단계에 봐 주는 기기 시계 어긋남 **합계**(초) — 시작 때 새 칸(늦은 시계)과 끝날 때 저장본 칸(빠른 시계)에 반씩(150초씩). 앱은 기기 시계로 칸 끝 시각을 적는다.",
   "duelCap": 0.57,
   "research": [
     {

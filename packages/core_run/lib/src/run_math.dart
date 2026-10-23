@@ -507,7 +507,7 @@ double combatPower(CharacterStats s) {
       (1 + s.critChance * (s.critDamage - 1)) *
       s.bossDamage;
   // 생존력 = 방어로 늘어난 체력 + 회복 10초분, 회피만큼 덜 맞는다(2026-10-14 — 회피·회복력을 올려도 숫자가
-  // 그대로라 "죽은 강화"처럼 보였다). 회피는 최종 상한(evadeMax 0.4)을 넘지 않게 0.9 에서 자른다.
+  // 그대로라 "죽은 강화"처럼 보였다). 회피는 최종 상한(evadeMax 0.6)을 넘지 않게 0.9 에서 자른다.
   final effectiveHp =
       (s.maxHp * (1 + s.defense / 100) + s.hpRegen * 10) /
       (1 - s.evade.clamp(0.0, 0.9));
