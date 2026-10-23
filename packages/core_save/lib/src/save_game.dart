@@ -732,6 +732,8 @@ class SaveGame {
     this.abyssRankMark,
     this.abyssFloorAt,
     this.jellySlackAt,
+    this.salvageJellyDay,
+    this.salvageJellyCount = 0,
     this.topTierAt,
     this.goldCarry = 0,
     this.goldCarryUntil,
@@ -1046,6 +1048,11 @@ class SaveGame {
   /// 서버가 쓴 만큼 앞으로 민다([abyssFloorAt] 과 같은 결) — 업로드마다 정액(300)을 주던 시절엔 60초마다
   /// 올리는 세이브 편집이 하루 수십만 젤리가 됐다. null = 아직 쓴 적 없음(여유가 가득).
   final DateTime? jellySlackAt;
+
+  /// 분해 젤리 업로드 근거의 **서버 하루 기록**(서버 소유, 2026-10-23) — 날짜(`jSD`)와 그날 인정한 젤리(`jSN`).
+  /// 하루 상한을 넘는 분해 근거는 세지 않는다(새 곤충을 넣었다 지우는 반복을 하루 몫으로 묶는다).
+  final String? salvageJellyDay;
+  final int salvageJellyCount;
 
   /// 가 본 최고 난이도(`topTier`)에 **처음 들어선 시각**(서버 소유, 2026-10-23). 서버가 다음 난이도를
   /// 인정할 때 적고, 그 난이도를 깨는 데 걸리는 최소 시간을 이 시각부터 잰다. null = 기록 전(옛 세이브).
@@ -1721,6 +1728,8 @@ class SaveGame {
     String? abyssRankMark,
     DateTime? abyssFloorAt,
     DateTime? jellySlackAt,
+    String? salvageJellyDay,
+    int? salvageJellyCount,
     DateTime? topTierAt,
     int? goldCarry,
     DateTime? goldCarryUntil,
@@ -1873,6 +1882,8 @@ class SaveGame {
     abyssRankMark: abyssRankMark ?? this.abyssRankMark,
     abyssFloorAt: abyssFloorAt ?? this.abyssFloorAt,
     jellySlackAt: jellySlackAt ?? this.jellySlackAt,
+    salvageJellyDay: salvageJellyDay ?? this.salvageJellyDay,
+    salvageJellyCount: salvageJellyCount ?? this.salvageJellyCount,
     topTierAt: topTierAt ?? this.topTierAt,
     goldCarry: goldCarry ?? this.goldCarry,
     goldCarryUntil: goldCarryUntil ?? this.goldCarryUntil,
@@ -2157,6 +2168,8 @@ class SaveGame {
     abyssFloorAt: json['abyssFloorAt'] == null
         ? null
         : DateTime.tryParse(json['abyssFloorAt'] as String)?.toUtc(),
+    salvageJellyDay: json['jSD'] as String?,
+    salvageJellyCount: (json['jSN'] as num?)?.toInt() ?? 0,
     jellySlackAt: json['jSA'] is String
         ? DateTime.tryParse(json['jSA'] as String)?.toUtc()
         : null,
@@ -2441,6 +2454,8 @@ class SaveGame {
     if (abyssRankMark != null) 'abyRk': abyssRankMark,
     if (abyssFloorAt != null) 'abyssFloorAt': abyssFloorAt!.toIso8601String(),
     if (jellySlackAt != null) 'jSA': jellySlackAt!.toIso8601String(),
+    if (salvageJellyDay != null) 'jSD': salvageJellyDay,
+    if (salvageJellyCount > 0) 'jSN': salvageJellyCount,
     if (topTierAt != null) 'tTA': topTierAt!.toIso8601String(),
     if (goldCarry > 0) 'gC': goldCarry,
     if (passiveRerollBug != null && passiveRerollRoll != null)

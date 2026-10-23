@@ -157,6 +157,66 @@ void main() {
     expect(s.materialCount(MaterialKind.jelly), 120);
   });
 
+  test('개체 등급 시대(ng) 뽑기 아닌 5성을 넣었다 다음 업로드에 지우면 분해 근거 0', () {
+    // 여유를 먼저 다 쓴다.
+    var s = stored();
+    s = upAt(t0, s, withJelly(s, 120));
+    final t1 = t0.add(const Duration(seconds: 60));
+    final fake = [
+      for (var i = 0; i < 10; i++) five('f$i').copyWith(newGen: true),
+    ];
+    s = upAt(t1, s, s.copyWith(bugs: fake));
+    expect(s.bugs.length, 10);
+    final t2 = t1.add(const Duration(seconds: 60));
+    s = upAt(t2, s, withJelly(s, 150).copyWith(bugs: const []));
+    expect(s.materialCount(MaterialKind.jelly), 120);
+    // 뽑기 출신(gc)이면 산 젤리가 따로 잡히므로 그대로 센다.
+    final gacha = stored().copyWith(
+      bugs: [five('g1').copyWith(newGen: true, fromGacha: true)],
+    );
+    final out = upAt(
+      t0,
+      gacha,
+      withJelly(
+        gacha,
+        100 + cfg.pet.disassembleJelly(5),
+      ).copyWith(bugs: const []),
+    );
+    expect(
+      out.materialCount(MaterialKind.jelly),
+      100 + cfg.pet.disassembleJelly(5),
+    );
+  });
+
+  test('옛 5성 분해 근거는 서버 하루 60 까지 — 다음 날 다시', () {
+    final per = cfg.pet.disassembleJelly(5);
+    expect(per * 20, 60, reason: '상한 = 5성 20마리');
+    // 여유를 먼저 다 써서 분해 근거만 보이게 한다.
+    var s = stored().copyWith(bugs: [for (var i = 0; i < 30; i++) five('o$i')]);
+    s = upAt(t0, s, withJelly(s, 120));
+    final t1 = t0.add(const Duration(seconds: 60));
+    s = upAt(t1, s, withJelly(s, 120 + 30 * per).copyWith(bugs: const []));
+    expect(s.materialCount(MaterialKind.jelly), 180);
+    expect(s.salvageJellyCount, 60);
+    // 같은 날 더 분해해도 근거 0.
+    final more = s.copyWith(bugs: [for (var i = 0; i < 5; i++) five('m$i')]);
+    final t2 = t1.add(const Duration(seconds: 60));
+    final s2 = upAt(
+      t2,
+      more,
+      withJelly(more, 180 + 5 * per).copyWith(bugs: const []),
+    );
+    expect(s2.materialCount(MaterialKind.jelly), 180);
+    // 다음 날은 다시 센다.
+    final t3 = t1.add(const Duration(days: 1));
+    final s3 = upAt(
+      t3,
+      more.copyWith(jellySlackAt: t3),
+      withJelly(more, 180 + 5 * per).copyWith(bugs: const []),
+    );
+    expect(s3.materialCount(MaterialKind.jelly), 180 + 5 * per);
+  });
+
   test('업로드 상한 노출값은 여유 최대치', () {
     expect(GameActions.uploadCapFor(MaterialKind.jelly), 20);
   });

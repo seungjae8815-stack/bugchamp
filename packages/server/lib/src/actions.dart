@@ -201,6 +201,9 @@ class GameActions {
     // 젤리 시간 여유 기준 시각 · 최고 난이도에 들어선 시각(2026-10-23) — 앱이 고치면 여유가 늘 가득이고 난이도 시간 제한이 사라진다.
     'jSA',
     'tTA',
+    // 분해 젤리 근거의 서버 하루 기록(2026-10-23) — 지우면 하루 상한이 다시 찬다.
+    'jSD',
+    'jSN',
     // 골드 허용치 이월(2026-10-13) — 기기가 늘리면 이월 몫만큼 골드를 부풀린다.
     'gC',
     'gCU',
@@ -1653,6 +1656,12 @@ class GameActions {
       }
       // 여유를 쓴 만큼 기준 시각을 민다(서버 소유 `jSA`) — 근거로 설명되는 몫은 여유를 쓰지 않는다.
       final slackUsed = max(0, min(gain, jellyAllow) - ja.dex - ja.evidence);
+      // 분해 근거는 센 만큼 서버 하루 기록에 적는다(연구 즉시 완료에도 같은 근거가 실리므로 쓰였는지와 상관없이).
+      final sv = ja.salvage;
+      if (sv != null && sv.amount > 0) {
+        merged['jSD'] = sv.day;
+        merged['jSN'] = sv.usedToday + sv.amount;
+      }
       if (slackUsed > 0) {
         merged['jSA'] = ja.slackBase
             .add(Duration(seconds: slackUsed * 3600 ~/ _jellySlackPerHour))
@@ -2468,8 +2477,7 @@ class GameActions {
   ///  - 깜짝선물 그날 첫 2배 젤리: 2배 날짜가 앞으로 갔으면 `doubleJellyMax`.
   ///  - 곤충학자 패스 일일 젤리(`_iapDaily` 날짜가 앞으로 · 저장본 기준 패스 켜짐) · 일일보상 젤리(슬롯 날짜가 앞으로).
   ///  - 새로 받은 리그 승급 보상 · 시즌이 넘어갔으면 가장 큰 시즌 보상.
-  ///  - 분해 젤리 — **저장본에 있던** 곤충이 이번 업로드에서 사라졌으면 저장본의 태생 포텐셜(포텐셜 − 합성 단계)로
-  ///    앱과 같은 `disassembleJelly`(문턱 5성). 이번 업로드에만 있는 새 곤충은 세지 않는다(서버가 모르는 값).
+  ///  - 분해 젤리는 여기가 아니라 [_salvageJellyEvidence](서버 하루 상한)에서 센다.
   /// 미래 날짜(서버 UTC + 하루 뒤)는 받은 것으로 치지 않는다([_huntRewardAllowance] 와 같은 규칙).
   int _deviceJellyEvidence(SaveGame stored, SaveGame client, DateTime t) {
     final latestDay = dailyDateKey(t.toUtc().add(const Duration(days: 1)));
@@ -2533,13 +2541,34 @@ class GameActions {
       }
       sum += best;
     }
-    final kept = {for (final b in client.bugs) b.id};
-    for (final b in stored.bugs) {
-      if (!kept.contains(b.id)) {
-        sum += max(0, config.pet.disassembleJelly(b.bornPotential));
-      }
-    }
     return sum;
+  }
+
+  /// 분해 젤리 근거의 **서버 하루 상한**(2026-10-23) — 5성 20마리(5성 하나 3젤리)/일. 새 곤충의 태생 포텐셜은 기기 권위라
+  /// 가짜 5성을 넣었다(저장본이 됨) 지우는 반복을 하루 몫으로 묶는다. 정직한 대량 분해(옛 5성 정리)는 다음 날 이어서 인정된다.
+  static const _salvageJellyDaily = 60;
+
+  /// 이번 업로드의 분해 젤리 근거 — **저장본에 있던** 곤충이 사라졌으면 저장본 값으로 앱과 같은 `disassembleJelly`(문턱 5성).
+  ///  - 개체 등급 이후 생긴(`ng`) 뽑기·결제 알이 아닌(`gc` 없음) 곤충은 태생 1성으로 본다 — 그 시대 야생·짝짓기는 늘 일반이라
+  ///    근거 0(가짜 5성을 넣고 지우는 반복이 여기서 끊긴다). 뽑기·결제 알은 산 젤리가 [_jellyUsedElsewhere] 에 잡혀 그대로 센다.
+  ///  - 옛 곤충(`ng` 없음)·뽑기 곤충은 서버 날짜 하루 [_salvageJellyDaily] 까지(서버 소유 `jSD`·`jSN`).
+  /// 이번 업로드에만 있는 새 곤충은 세지 않는다(서버가 모르는 값).
+  ({int amount, String day, int usedToday}) _salvageJellyEvidence(
+    SaveGame stored,
+    SaveGame client,
+    DateTime t,
+  ) {
+    final day = dailyDateKey(t);
+    final used = stored.salvageJellyDay == day ? stored.salvageJellyCount : 0;
+    final kept = {for (final b in client.bugs) b.id};
+    var raw = 0;
+    for (final b in stored.bugs) {
+      if (kept.contains(b.id)) continue;
+      final born = b.newGen && !b.fromGacha ? 1 : b.bornPotential;
+      raw += max(0, config.pet.disassembleJelly(born));
+    }
+    final amount = min(raw, max(0, _salvageJellyDaily - used));
+    return (amount: amount, day: day, usedToday: used);
   }
 
   /// 한 난이도를 깨는 최소 시간(2026-10-23) — 사냥터 11개(몬스터 100마리 + 보스)를 지나야 한다. 처치 속도 상한
@@ -2576,15 +2605,26 @@ class GameActions {
   ///    업로드 간격과 상관없이 시간으로만 차오른다(60초마다 올려도, 1초씩 쪼개 올려도 하루 몫은 같다).
   ///  - `slackBase` 여유를 쓴 뒤 기준 시각을 밀 출발점(가득 찬 여유보다 오래된 시각은 당겨 온다).
   /// [client] 가 null(파싱 실패)이면 기기 수입 근거는 0 — 그 업로드는 어차피 bad_save 로 끝난다.
-  ({int dex, int evidence, int slack, DateTime slackBase}) _jellyAllowance(
+  ({
+    int dex,
+    int evidence,
+    int slack,
+    DateTime slackBase,
+    ({int amount, String day, int usedToday})? salvage,
+  })
+  _jellyAllowance(
     SaveGame stored,
     SaveGame? client,
     Map<String, dynamic> clientJson,
     DateTime t,
   ) {
     final dex = _dexJellyAllowance(stored, clientJson, parsed: client);
+    final salvage = client == null
+        ? null
+        : _salvageJellyEvidence(stored, client, t);
     final evidence =
         (client == null ? 0 : _deviceJellyEvidence(stored, client, t)) +
+        (salvage?.amount ?? 0) +
         _chapterGrants(stored, clientJson).jelly;
     final full = t.subtract(
       Duration(seconds: _jellySlackCap * 3600 ~/ _jellySlackPerHour),
@@ -2595,7 +2635,13 @@ class GameActions {
     final slack = (t.difference(base).inSeconds * _jellySlackPerHour ~/ 3600)
         .clamp(0, _jellySlackCap)
         .toInt();
-    return (dex: dex, evidence: evidence, slack: slack, slackBase: base);
+    return (
+      dex: dex,
+      evidence: evidence,
+      slack: slack,
+      slackBase: base,
+      salvage: salvage,
+    );
   }
 
   /// 연구 업로드 판정(설계 §3.9) — 연구 레벨은 기기 세이브에 살지만 **결투에 실린다**(서버가 팀에 입힌다).
