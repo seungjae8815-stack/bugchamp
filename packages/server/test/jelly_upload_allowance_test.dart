@@ -120,6 +120,43 @@ void main() {
     expect(out.jellySlackAt, isNull);
   });
 
+  IndividualBug five(String id) => IndividualBug(
+    id: id,
+    speciesId: 'stag_giant',
+    sizeMm: 60,
+    potential: 5,
+    temperament: Temperament.cunning,
+    sex: Sex.male,
+    stage: LifeStage.adult,
+  );
+
+  test('저장본에 있던 5성 10마리를 한 업로드에 분해하면 젤리를 다 받는다(여유와 따로)', () {
+    final per = cfg.pet.disassembleJelly(5);
+    expect(per, greaterThan(0));
+    final base = stored().copyWith(
+      bugs: [for (var i = 0; i < 10; i++) five('s$i')],
+    );
+    final client = withJelly(base, 100 + 10 * per).copyWith(bugs: const []);
+    final out = upAt(t0, base, client);
+    expect(out.materialCount(MaterialKind.jelly), 100 + 10 * per);
+    expect(out.jellySlackAt, isNull, reason: '근거로 설명되면 여유를 안 쓴다');
+  });
+
+  test('저장본에 없던 곤충(업로드 사이에만 있던 5성)은 분해 근거가 아니다', () {
+    // 여유를 먼저 다 쓴다.
+    var s = stored();
+    s = upAt(t0, s, withJelly(s, 120));
+    final t1 = t0.add(const Duration(seconds: 60));
+    // 업로드 사이에 5성을 만들어 분해했다고 젤리만 올린다 — 서버가 모르는 곤충이라 0.
+    s = upAt(t1, s, withJelly(s, 120 + 3 * cfg.pet.disassembleJelly(5)));
+    expect(s.materialCount(MaterialKind.jelly), 120);
+    // 이번 업로드에 새로 넣은 곤충도 이번 업로드에서는 분해 근거가 아니다.
+    final t2 = t1.add(const Duration(seconds: 60));
+    final withBug = withJelly(s, 130).copyWith(bugs: [five('new1')]);
+    s = upAt(t2, s, withBug);
+    expect(s.materialCount(MaterialKind.jelly), 120);
+  });
+
   test('업로드 상한 노출값은 여유 최대치', () {
     expect(GameActions.uploadCapFor(MaterialKind.jelly), 20);
   });

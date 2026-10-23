@@ -734,9 +734,8 @@ class GameActions {
   /// 하루 43만 젤리였고, 그 젤리가 결투 연구 즉시 완료(실물 경품 대회)를 산다. 이제 허용치 =
   /// 도감·보스 마일스톤([_dexJellyAllowance]) + 받은 흔적이 보이는 기기 수입([_deviceJellyEvidence] — 미션·선물 첫 2배·패스 일일·
   /// 일일보상·리그 승급·시즌·최종 사냥터 클리어) + 이 여유. 결제·순위·대회·우편 젤리는 서버가 저장본에 먼저 넣어 증가분에 안 잡힌다.
-  /// 여유가 덮는 것 = 흔적이 남지 않는 드문 기기 수입(5성 분해 3개 — `jelly_sim` 하루 0, 떠 있던 옛 젤리 선물).
-  /// 분해는 근거로 세지 않는다 — 새 id 곤충의 태생 포텐셜을 서버가 모르니 5성을 만들어 올리고 지우는 것을 되풀이하면 끝이 없었다.
-  /// 값: 시간당 2 · 최대 20 → 위조 상한 하루 48(순위권 밖 하루 수입 15~26 의 2~3배), 정직한 유저는 5성 6마리까지 한 번에.
+  /// 여유가 덮는 것 = 흔적이 남지 않는 드문 기기 수입(떠 있던 옛 젤리 선물 등). 분해 젤리는 저장본에 있던 곤충만 근거로 센다.
+  /// 값: 시간당 2 · 최대 20 → 위조 상한 하루 48(순위권 밖 하루 수입 15~26 의 2~3배).
   static const _jellySlackPerHour = 2;
   static const _jellySlackCap = 20;
 
@@ -2469,8 +2468,8 @@ class GameActions {
   ///  - 깜짝선물 그날 첫 2배 젤리: 2배 날짜가 앞으로 갔으면 `doubleJellyMax`.
   ///  - 곤충학자 패스 일일 젤리(`_iapDaily` 날짜가 앞으로 · 저장본 기준 패스 켜짐) · 일일보상 젤리(슬롯 날짜가 앞으로).
   ///  - 새로 받은 리그 승급 보상 · 시즌이 넘어갔으면 가장 큰 시즌 보상.
-  ///  - ❌ 분해 젤리는 세지 않는다(2026-10-23) — 새 id 곤충의 태생 포텐셜은 기기 권위라, 5성을 만들어 올리고 다음 업로드에
-  ///    지우면 매번 근거가 생겼다. 분해(5성 3개, 드묾)는 시간 여유([_jellySlackCap])가 덮는다.
+  ///  - 분해 젤리 — **저장본에 있던** 곤충이 이번 업로드에서 사라졌으면 저장본의 태생 포텐셜(포텐셜 − 합성 단계)로
+  ///    앱과 같은 `disassembleJelly`(문턱 5성). 이번 업로드에만 있는 새 곤충은 세지 않는다(서버가 모르는 값).
   /// 미래 날짜(서버 UTC + 하루 뒤)는 받은 것으로 치지 않는다([_huntRewardAllowance] 와 같은 규칙).
   int _deviceJellyEvidence(SaveGame stored, SaveGame client, DateTime t) {
     final latestDay = dailyDateKey(t.toUtc().add(const Duration(days: 1)));
@@ -2533,6 +2532,12 @@ class GameActions {
         best = max(best, battle.seasonRewardAt(i).jelly);
       }
       sum += best;
+    }
+    final kept = {for (final b in client.bugs) b.id};
+    for (final b in stored.bugs) {
+      if (!kept.contains(b.id)) {
+        sum += max(0, config.pet.disassembleJelly(b.bornPotential));
+      }
     }
     return sum;
   }
