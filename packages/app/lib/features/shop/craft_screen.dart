@@ -259,6 +259,21 @@ class StoreProductCard extends ConsumerWidget {
         save.buffPassActive(now) ? save.buffPassExpiresAt : null,
       IapType.growthPass =>
         save.growthPassActive(now) ? save.growthPassExpiresAt : null,
+      IapType.researchPass =>
+        save.researchPassActive(now) ? save.researchPassExpiresAt : null,
+      // 올인원은 네 패스를 함께 늘린다 — 넷 다 켜져 있을 때 가장 먼저 끝나는 날(하나라도 꺼졌으면 안 보인다).
+      IapType.allPass =>
+        save.passActive(now) &&
+                save.buffPassActive(now) &&
+                save.growthPassActive(now) &&
+                save.researchPassActive(now)
+            ? [
+                save.passExpiresAt!,
+                save.buffPassExpiresAt!,
+                save.growthPassExpiresAt!,
+                save.researchPassExpiresAt!,
+              ].reduce((a, b) => a.isBefore(b) ? a : b)
+            : null,
       _ => null,
     };
     // 남은 날은 **올림**(마지막 날이 "0일 남음"으로 보였다 — 2026-10-08 상점 점검).
