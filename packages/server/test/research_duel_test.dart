@@ -142,4 +142,46 @@ void main() {
       fx,
     );
   });
+
+  test('끝났지만 받지 않은 연구 칸도 방어팀에 실린다 · 세션 스냅샷은 그 뒤에 끝난 칸을 싣지 않는다', () {
+    final muscle = cfg.research!.defs.firstWhere(
+      (d) => d.effect == ResearchEffect.duelAtk,
+    );
+    final base = saveWith({muscle.id: 4});
+    final done = base.copyWith(
+      researchSlots: [
+        ResearchSlot(
+          id: muscle.id,
+          level: 5,
+          endsAt: t0.subtract(const Duration(minutes: 1)),
+        ),
+      ],
+    );
+    DuelBug first(SaveGame s) => actions
+        .defenderDuelTeam(
+          s,
+          speciesById: cfg.speciesById,
+          petConfig: cfg.pet,
+          enhance: cfg.enhance,
+        )!
+        .first;
+    final claimed = first(saveWith({muscle.id: 5}));
+    expect(first(done).atk, closeTo(claimed.atk, 1e-9));
+    expect(first(done).atk, greaterThan(first(base).atk));
+    expect(actions.duelResearchLevels(done)[muscle.id], 5);
+    // 아직 안 끝난 칸은 싣지 않는다.
+    final running = base.copyWith(
+      researchSlots: [
+        ResearchSlot(
+          id: muscle.id,
+          level: 5,
+          endsAt: t0.add(const Duration(minutes: 1)),
+        ),
+      ],
+    );
+    expect(first(running).atk, closeTo(first(base).atk, 1e-9));
+    // 스냅샷(레벨 4)으로 되살린 세이브는 끝난 칸이 있어도 4 그대로.
+    final snap = GameActions.researchSnapshotSave(done, {muscle.id: 4});
+    expect(first(snap).atk, closeTo(first(base).atk, 1e-9));
+  });
 }

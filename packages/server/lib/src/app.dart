@@ -2674,7 +2674,7 @@ Handler buildHandler({
           trophyPrepaid: started.extra['trophyPrepaid'] as int,
           winPoints: winPoints,
           // 연구 레벨 스냅샷 — 시작과 탭 반격 사이에 연구가 끝나도 같은 판이 되게.
-          researchLevels: save.researchLevels,
+          researchLevels: actions.duelResearchLevels(save),
           arena: offer['arena'] is String
               ? Element.fromKeyOrNull(offer['arena'] as String)
               : null,

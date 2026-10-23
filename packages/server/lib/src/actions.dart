@@ -1542,6 +1542,15 @@ class GameActions {
     if (stored.maxTierReached > clientTop) {
       merged['maxTierReached'] = stored.maxTierReached;
     }
+    // 위로는 저장본이 가 본 최고 난이도 **한 계단**까지만(클리어 보상·봉투·연구 칸과 같은 규칙) — 그대로 받으면
+    // 업로드마다 +1 씩 위조한 값이 쌓여 몇 분 만에 극한이 됐다(연구 칸·시간 풀이 이 값을 본다).
+    // 최종 보스를 깨고 넘어가는 건 한 번에 한 계단이라 정직한 진행은 잘리지 않는다. 지금 난이도도 같은 선.
+    final tierCap = stored.topTier + 1;
+    if (clientTop > tierCap) merged['maxTierReached'] = tierCap;
+    final clientNowTier = (merged['difficultyTier'] as num?)?.toInt();
+    if (clientNowTier != null && clientNowTier > tierCap) {
+      merged['difficultyTier'] = tierCap;
+    }
     if (stored.bossDex.isNotEmpty) {
       final clientBoss = ((merged['bossDex'] as List?) ?? const [])
           .map((e) => e.toString())
@@ -2242,7 +2251,6 @@ class GameActions {
     );
   }
 
-  /// 연구 레벨 → 효과(연구 설정이 없으면 0).
   /// 연구소 부상 시간 단축(`injuryTime`) — 앱 `save_controller` 와 같은 함수.
   int _injurySecs(int secs, SaveGame save) => researchScaledSeconds(
     secs,
@@ -2250,6 +2258,7 @@ class GameActions {
     ResearchEffect.injuryTime,
   );
 
+  /// 연구 레벨 → 효과(연구 설정이 없으면 0).
   ResearchEffects _researchFx(Map<String, int> levels) {
     final cfg = config.research;
     if (cfg == null || levels.isEmpty) return ResearchEffects.none;
@@ -2310,8 +2319,12 @@ class GameActions {
   /// 여유 — 시계·네트워크 지연(연구 레벨 검사, 연구마다 · 전체에 한 번씩).
   static const _researchTimeSlack = Duration(minutes: 1);
 
-  /// 표본 드롭 여유(업로드 사이 온라인 처치 — 스킬 조각 [_skillDropSlack] 과 같은 결).
-  static const _researchDropSlack = 60;
+  /// 표본 드롭 여유 — 경과 시간 몫 위에 남기는 가장 큰 드롭 횟수(운 좋은 정상 유저), [_researchDropSlackWindow] 동안 차오른다.
+  static const _researchDropSlack = 1;
+  static const _researchDropSlackWindow = Duration(minutes: 1);
+
+  /// 표본 온라인 드롭 몫에 세는 경과 시간 상한 — 온라인은 60초마다 올리므로 긴 공백은 앱을 꺼 둔 시간이다.
+  static const _researchOnlineMaxElapsed = Duration(minutes: 30);
 
   /// 이번 업로드에서 **연구가 아닌 곳**에 쓴 것으로 보이는 젤리(연구 즉시 완료 몫을 가를 때 뺀다).
   /// 무료로 설명되지 않는 스킬 조각 증가(뽑기·소탕) · 결투석 증가 · 새 알 뽑기 곤충. 줄어든 젤리는 한 덩어리라
@@ -2371,7 +2384,7 @@ class GameActions {
     return used;
   }
 
-  /// 연구 검사에 넘길 젤리 두 가지 — [levels] = 즉시 완료에 쓸 수 있었던 젤리(줄어든 젤리 + 근거 있는 도감 젤리 −
+  /// 연구 검사에 넘길 젤리 두 가지 — [levels] = 즉시 완료에 쓸 수 있었던 젤리(줄어든 젤리 + 근거 있는 도감 젤리 + 근거 있는 기기 수입(300 까지) −
   /// 다른 곳에 쓴 몫, 칸 구매 몫은 [_judgeResearch] 가 뺀다) · [slots] = 칸 구매에 쓸 수 있었던 젤리(저장본 + 업로드 젤리
   /// 증가 허용치 − 올라온 젤리 — 같은 업로드에 미션·선물 젤리가 들어와 순감소가 칸 값보다 작아도 산 칸이 지워지지 않게).
   ({int levels, int slots, int refundCap}) _researchJelly(
@@ -2385,10 +2398,17 @@ class GameActions {
     final now = client.materialCount(MaterialKind.jelly);
     final dex = _dexJellyAllowance(stored, clientJson, parsed: client);
     final evidence = _deviceJellyEvidence(stored, client, t);
+    // 즉시 완료도 같은 업로드에 받은 기기 젤리(패스 일일·미션·일일보상·선물 2배)를 쓸 수 있다 — 빼면 받자마자
+    // 연구를 젤리로 끝낸 정직한 유저가 레벨과 젤리를 함께 잃는다. 젤리 업로드 상한(300 + 도감)을 넘지 않게 자른다.
+    final income = min(evidence, _jellySanityFloor);
     return (
       levels: max(
         0,
-        have + dex - now - _jellyUsedElsewhere(stored, client, elapsed),
+        have +
+            dex +
+            income -
+            now -
+            _jellyUsedElsewhere(stored, client, elapsed),
       ),
       // 칸은 영구 상품이다 — 300 상식 여유(`_jellySanityFloor`)를 쓰면 젤리를 안 내고 3번째 칸(300)이 열렸다.
       // 근거가 보이는 기기 젤리 수입([_deviceJellyEvidence])만 더한다.
@@ -2430,11 +2450,13 @@ class GameActions {
         }
       }
     }
+    // 선물 2배 날짜는 서버의 **오늘까지만**(병합 `_mergeGiftDoubles` 와 같은 선) — 내일 날짜는 저장되지 않아
+    // 업로드마다 다시 "앞으로 갔다"로 보여 +doubleJellyMax 가 되풀이됐다.
     final gift = config.gift;
     final cDouble = client.giftDoubleDate;
     if (gift != null &&
         cDouble != null &&
-        cDouble.compareTo(latestDay) <= 0 &&
+        cDouble.compareTo(dailyDateKey(t)) <= 0 &&
         (stored.giftDoubleDate == null ||
             cDouble.compareTo(stored.giftDoubleDate!) > 0)) {
       sum += max(0, gift.doubleJellyMax);
@@ -2491,8 +2513,9 @@ class GameActions {
   ///    레벨까지의 단축, 다른 연구는 이번 업로드에 오른 연구 효율까지(연구 효율 단계는 자기 값을 따로 치르므로 공짜가 아니다).
   ///    시계 어긋남 = `clockSkewSeconds` 의 반씩(칸 끝 시각은 앱 시계로 적힌다 — 늦은 시계는 새 칸, 빠른 시계는 저장본 칸의 자연 완료.
   ///    한 단계가 양쪽을 다 지나므로 합쳐 한 번 몫).
-  /// 4. **표본**(`rsC`) — 증가가 새 보스 × 첫 처치 드롭 + 드롭 여유 + (연구 패스가 켜진 동안이면) 경과 시간 방치 몫을
-  ///    넘으면 저장본 + 허용치로. 쓰는 것(감소)은 자유.
+  /// 4. **표본**(`rsC`) — 증가가 새 보스 × 첫 처치 드롭 + 경과 시간 온라인 드롭 몫(+ 가장 큰 드롭 한 번) + (연구 패스가
+  ///    켜진 동안이면) 경과 시간 방치 몫을 넘으면 저장본 + 허용치로. 쓰는 것(감소)은 자유.
+  ///    이번 업로드에 시작한 단계의 표본 값은 줄어든 표본 + 그 허용치로 치러야 하고, 선행 연구가 열려 있어야 한다 — 아니면 걸린다.
   ///
   /// 시간에서 걸리면 레벨·진행 칸을 저장본으로 되돌리고 **환불**한다(정직한 유저가 오판으로 재화를 잃지 않게):
   /// 이번 업로드에 시작한 단계(저장본 진행 칸이 아닌 오른 레벨 + 새 진행 칸)의 시작 값(표본·화석·골드·재료).
@@ -2501,7 +2524,7 @@ class GameActions {
   /// 쓴 젤리까지 섞여 있어서, 돌려주면 "젤리를 쓰고 rsL 을 위조"하는 업로드마다 그 젤리가 되살아났다. 오판으로 몇 젤리 잃는 것은 감수한다.
   ///
   /// 위조를 완전히 막지는 못한다(기기 권위) — 결투에 쓰는 레벨이 경과 시간·젤리로 묶이는 것이 방어선이다.
-  /// 앱(Task 11)은 칸 끝 시각을 **서버 보정 시계**로 적어야 한다(어긋남 여유는 칸마다 `clockSkewSeconds` 뿐).
+  /// 앱은 칸 끝 시각을 **기기 시계**로 적는다 — 서버는 한 단계에 `clockSkewSeconds`(합계, 양쪽에 반씩)만큼만 어긋남을 봐준다.
   _ResearchVerdict _judgeResearch(
     SaveGame stored,
     SaveGame client, {
@@ -2647,26 +2670,54 @@ class GameActions {
     // 4. 표본.
     var samples = max<int>(0, client.researchSamples);
     final newBosses = max(0, client.bossDex.length - stored.bossDex.length);
-    int allow =
-        newBosses * cfg.bossFirstDrop +
-        _researchDropSlack * max<int>(cfg.eliteDropAmount, cfg.bossRepeatDrop);
+    // 온라인 드롭 몫은 경과 시간에 비례(`rareDropUploadAllowance` 와 같은 처치 속도 상한·여유) — 업로드마다 정액(120)이던
+    // 시절엔 1초씩 쪼개 올려도 매번 120 이 열렸다. 온라인은 60초마다 올리므로 긴 공백(앱을 껐다)은 30분까지만 센다
+    // (방치 몫은 연구 패스만 — 아래). 가장 큰 드롭 몇 번 몫(운 좋은 정상 유저)도 경과 1분에 걸쳐 차오른다.
+    // 합을 한 번에 내림해서, 1초 업로드를 되풀이해 올림 몫을 모으지 못하게 한다.
+    double secsUpTo(Duration cap) =>
+        (elapsed > cap ? cap : elapsed).inMilliseconds / 1000.0;
+    final eliteRate =
+        config.run.eliteChance * cfg.eliteDropChance * cfg.eliteDropAmount;
+    final bossRate =
+        cfg.bossRepeatChance *
+        cfg.bossRepeatDrop /
+        max(1, config.run.bossUnlockKills);
+    final onlineSecs = secsUpTo(_researchOnlineMaxElapsed);
+    var drops =
+        _researchDropSlack *
+            max<int>(cfg.eliteDropAmount, cfg.bossRepeatDrop) *
+            min(1.0, onlineSecs / _researchDropSlackWindow.inSeconds) +
+        onlineSecs *
+            kRareDropKillsPerSecondCap *
+            (eliteRate + bossRate) *
+            kRareDropAllowanceMargin;
     if (stored.researchPassActive(stored.lastSeen) ||
         stored.researchPassActive(t)) {
-      final e = elapsed > kRareDropAllowanceMaxElapsed
-          ? kRareDropAllowanceMaxElapsed
-          : elapsed;
-      allow +=
-          (e.inMilliseconds /
-                  1000.0 *
-                  kRareDropKillsPerSecondCap *
-                  config.run.eliteChance *
-                  cfg.eliteDropChance *
-                  cfg.eliteDropAmount *
-                  kRareDropAllowanceMargin)
-              .ceil();
+      // 방치 정산 몫(연구 패스가 켜진 동안만) — 24시간까지.
+      drops +=
+          secsUpTo(kRareDropAllowanceMaxElapsed) *
+          kRareDropKillsPerSecondCap *
+          eliteRate *
+          kRareDropAllowanceMargin;
     }
+    final int allow = newBosses * cfg.bossFirstDrop + drops.floor();
     if (samples - stored.researchSamples > allow) {
       samples = stored.researchSamples + allow;
+    }
+    // 이번 업로드에 시작한 단계의 표본 값 — 줄어든 표본 + 늘 수 있었던 몫으로 치러야 한다
+    // (표본을 그대로 두고 레벨만 올린 업로드가 시간·젤리만으로 통과하지 못하게).
+    final samplesNeed = started.fold<int>(
+      0,
+      (a, s) => a + max(0, cfg.costAt(s.d, s.lv).samples),
+    );
+    if (stored.researchSamples - max<int>(0, client.researchSamples) + allow <
+        samplesNeed) {
+      ok = false;
+    }
+    // 선행 연구 — 시작한 단계는 선행 연구가 저장본 + 인정한 레벨에서 열려 있어야 한다(앱 `startResearch` 의 `locked`).
+    for (final s in started) {
+      final req = s.d.requires;
+      if (req != null && (levels[req.id] ?? 0) < req.level) ok = false;
     }
     if (ok) {
       return _ResearchVerdict(
@@ -3403,6 +3454,21 @@ class GameActions {
         : config.battle.duelJson,
   );
 
+  /// 결투·대회에 입히는 연구 레벨 — 끝났지만 아직 앱이 받지 않은 칸(`claimResearch`)도 센다.
+  /// 방어팀은 상대가 접속하지 않아도 서는데, 저장본 레벨만 보면 끝난 연구가 다음 접속까지 빠졌다.
+  /// 세션 스냅샷도 이 값을 적는다([researchSnapshotSave] 로 되살린다).
+  Map<String, int> duelResearchLevels(SaveGame save, [DateTime? at]) {
+    final cfg = config.research;
+    if (cfg == null || save.researchSlots.isEmpty) return save.researchLevels;
+    return claimResearch(save, cfg, at ?? now()).researchLevels;
+  }
+
+  /// 세션 스냅샷 레벨로 고친 세이브 — 진행 칸을 비워 그 뒤에 끝난 연구가 다시 실리지 않게(시작 때와 같은 판).
+  static SaveGame researchSnapshotSave(SaveGame save, Map<String, int>? snap) =>
+      snap == null
+      ? save
+      : save.copyWith(researchLevels: snap, researchSlots: const []);
+
   /// 결투 편성 검증 → 출전 순서대로 결투 유닛. 검증 기준은 [validateTeam] 과 **같다**
   /// (보유·부상·성충·위조) — 한쪽만 느슨하면 그쪽으로 우회한다.
   ///
@@ -3471,7 +3537,7 @@ class GameActions {
     final tr = config.battle.training;
     // 연구소 결투 분야(설계 §9·§10) — 이 세이브의 연구(방어팀이면 상대 세이브)로 공격·방어·체력에 곱하고 치명·근성을 더한다.
     // 리그·방어팀·길드전·대회(`teamSize: 1`)가 모두 이 길을 탄다. 앱 `duelBugFor` 와 같은 배율.
-    final fx = _researchFx(save.researchLevels);
+    final fx = _researchFx(duelResearchLevels(save, at));
     final rAtk = 1 + fx.of(ResearchEffect.duelAtk);
     final rDef = 1 + fx.of(ResearchEffect.duelDef);
     final rHp = 1 + fx.of(ResearchEffect.duelHp);
@@ -3859,7 +3925,7 @@ class GameActions {
     // 연구 레벨은 시작 때 값으로(세션 스냅샷) — 탭 반격 재계산이 멈춘 판과 같은 팀이 되게.
     final snap = session.researchLevels;
     final mine = validateDuelTeam(
-      snap == null ? save : save.copyWith(researchLevels: snap),
+      researchSnapshotSave(save, snap),
       session.myTeamBugIds,
       speciesById: speciesById,
       petConfig: petConfig,
@@ -5990,7 +6056,7 @@ class GameActions {
           'cards': const <String>[],
           'done': false,
           // 시작 때의 연구 레벨 — 탭 반격 재계산·다음 웨이브가 같은 곤충으로 싸우게(결투 세션과 같은 이유).
-          'rsL': save.researchLevels,
+          'rsL': duelResearchLevels(save, t),
         },
       },
     );
@@ -6107,7 +6173,7 @@ class GameActions {
     final bugId = '${session['bugId']}';
     final snap = researchLevelsSnapshot(session['rsL']);
     final v = validateDuelTeam(
-      snap == null ? save : save.copyWith(researchLevels: snap),
+      researchSnapshotSave(save, snap),
       [bugId],
       speciesById: speciesById,
       petConfig: petConfig,

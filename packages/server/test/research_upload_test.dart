@@ -477,8 +477,9 @@ void main() {
 
   test('samples_surge_clamped — 표본 급증은 저장본 + 허용치로, 정상 드롭은 인정', () {
     final s = stored(samples: 50);
-    final small = up(s, s.copyWith(researchSamples: 55).toJson());
-    expect(small.researchSamples, 55);
+    // 60초 = 가장 큰 드롭 한 번 + 경과 시간 몫(1초 업로드를 되풀이해 모으지 못하게 정액이 아니다).
+    final small = up(s, s.copyWith(researchSamples: 53).toJson());
+    expect(small.researchSamples, 53);
     final surged = up(s, s.copyWith(researchSamples: 1000000).toJson());
     expect(surged.researchSamples, greaterThan(50));
     expect(surged.researchSamples, lessThan(1000));
@@ -727,5 +728,167 @@ void main() {
     );
     expect(out.researchLevels['jaw'], jawLv);
     expect(out.researchLevels['researchEff'], 1);
+  });
+
+  test('같은 업로드에 받은 패스 일일 젤리(+20)로 연구를 즉시 완료해도 인정', () {
+    final full = rc.timeAt(jaw, 3);
+    final s = stored(
+      levels: {'jaw': 2},
+      slots: [
+        ResearchSlot(
+          id: 'jaw',
+          level: 3,
+          endsAt: t0.subtract(const Duration(seconds: 60)).add(full),
+        ),
+      ],
+    ).copyWith(passExpiresAt: t0.add(const Duration(days: 10)));
+    final cost = rc.instantJelly(full - const Duration(seconds: 60));
+    final daily = cfg.iap.passDailyJelly;
+    expect(daily, greaterThan(0));
+    expect(cost, greaterThan(0));
+    final finished = s.copyWith(
+      researchLevels: {'jaw': 3},
+      researchSlots: const [],
+      materials: {MaterialKind.jelly: 1000 + daily - cost},
+    );
+    final ok = up(
+      s,
+      finished.copyWith(dailyClaims: {'_iapDaily': dailyDateKey(t0)}).toJson(),
+    );
+    expect(ok.researchLevels['jaw'], 3);
+    expect(ok.materialCount(MaterialKind.jelly), 1000 + daily - cost);
+    // 받은 흔적이 없으면 순감소(cost − 20)로는 즉시 완료가 설명되지 않는다.
+    expect(up(s, finished.toJson()).researchLevels['jaw'], 2);
+  });
+
+  test('내일 날짜의 선물 2배는 젤리 수입 근거가 아니다(오늘까지만)', () {
+    final s = stored(jelly: 1000);
+    final gain = cfg.gift!.doubleJellyMax;
+    expect(gain, greaterThan(0));
+    SaveGame buy(String date) => up(
+      s,
+      s
+          .copyWith(
+            researchSlotsBought: 1,
+            giftDoubleDate: date,
+            giftDoubleCount: 1,
+            materials: {MaterialKind.jelly: 1000 - rc.slotJelly[0] + gain},
+          )
+          .toJson(),
+    );
+    expect(buy(dailyDateKey(t0)).researchSlotsBought, 1);
+    final tomorrow = dailyDateKey(t0.add(const Duration(days: 1)));
+    expect(buy(tomorrow).researchSlotsBought, 0);
+  });
+
+  test('새로 시작한 단계의 표본 값을 치르지 않으면 되돌린다', () {
+    // 표본 값이 60초 업로드 표본 허용치(3)보다 큰 단계 — 젤리로 즉시 완료했다고 본다.
+    var lv = 1;
+    while (rc.costAt(jaw, lv).samples <= 5) {
+      lv++;
+    }
+    final price = rc.costAt(jaw, lv).samples;
+    final jelly = rc.instantJelly(rc.timeAt(jaw, lv)) + 1000;
+    final s = stored(
+      levels: {'jaw': lv - 1},
+      samples: price + 100,
+      jelly: jelly,
+    );
+    SaveGame done(int samples) => s.copyWith(
+      researchLevels: {'jaw': lv},
+      researchSamples: samples,
+      materials: {MaterialKind.jelly: 1000},
+    );
+    expect(up(s, done(100).toJson()).researchLevels['jaw'], lv);
+    final json = done(price + 100).toJson();
+    expect(up(s, json).researchLevels['jaw'], lv - 1);
+    expect(reasons(s, json), contains('research'));
+  });
+
+  test('선행 연구가 열리지 않은 연구는 시작할 수 없다', () {
+    final shell = rc.byId('shell')!;
+    final req = shell.requires!;
+    final s = stored(elapsed: const Duration(hours: 1), samples: 10000);
+    ResearchSlot slot() => ResearchSlot(
+      id: 'shell',
+      level: 1,
+      endsAt: t0.add(rc.timeAt(shell, 1)),
+    );
+    final locked = up(
+      s,
+      s
+          .copyWith(
+            researchSlots: [slot()],
+            researchSamples: 10000 - rc.costAt(shell, 1).samples,
+          )
+          .toJson(),
+    );
+    expect(locked.researchSlots, isEmpty);
+    // 저장본에서 선행 레벨이 이미 열려 있으면 인정.
+    final open = stored(
+      elapsed: const Duration(hours: 1),
+      samples: 10000,
+      levels: {req.id: req.level},
+    );
+    final ok = up(
+      open,
+      open
+          .copyWith(
+            researchSlots: [slot()],
+            researchSamples: 10000 - rc.costAt(shell, 1).samples,
+          )
+          .toJson(),
+    );
+    expect(ok.researchSlots.single.id, 'shell');
+  });
+
+  test('표본 온라인 몫은 경과 시간에 비례 — 1초 업로드를 되풀이해도 쌓이지 않는다', () {
+    var s = stored(elapsed: const Duration(seconds: 1), samples: 0);
+    var total = 0;
+    for (var i = 1; i <= 60; i++) {
+      final t = t0.add(Duration(seconds: i));
+      final a = GameActions(config: cfg, now: () => t);
+      final out = a
+          .mergeSave(
+            s,
+            s.copyWith(researchSamples: s.researchSamples + 50).toJson(),
+          )
+          .save!;
+      total = out.researchSamples;
+      s = out.copyWith(lastSeen: t);
+    }
+    // 한 번에 60초를 올린 업로드의 허용치보다 많지 않다.
+    final once = stored(samples: 0);
+    final big = up(once, once.copyWith(researchSamples: 1000).toJson());
+    expect(total, lessThanOrEqualTo(big.researchSamples));
+    // 30분 공백이면 60초보다 크게 열린다(패스 없음 — 온라인 몫만).
+    final gap = stored(elapsed: const Duration(minutes: 30), samples: 0);
+    final long = up(gap, gap.copyWith(researchSamples: 1000).toJson());
+    expect(long.researchSamples, greaterThan(big.researchSamples));
+    expect(long.researchSamples, lessThan(1000));
+  });
+
+  test('가 본 최고 난이도는 업로드마다 저장본 + 1 까지만 오른다', () {
+    var s = stored();
+    for (var i = 1; i <= 3; i++) {
+      final t = t0.add(Duration(seconds: 60 * i));
+      final a = GameActions(config: cfg, now: () => t);
+      s = a
+          .mergeSave(
+            s,
+            s.copyWith(maxTierReached: 3, difficultyTier: 3).toJson(),
+          )
+          .save!;
+      expect(s.maxTierReached, i, reason: '$i번째 업로드');
+      expect(s.difficultyTier, lessThanOrEqualTo(i));
+    }
+    // 정직한 한 계단(쉬움 → 보통)은 그대로.
+    final easy = stored();
+    final next = up(
+      easy,
+      easy.copyWith(maxTierReached: 1, difficultyTier: 1).toJson(),
+    );
+    expect(next.maxTierReached, 1);
+    expect(next.difficultyTier, 1);
   });
 }
