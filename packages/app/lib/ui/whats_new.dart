@@ -14,7 +14,7 @@ import 'game_dialog.dart';
 import 'popup_gate.dart';
 
 /// 이 빌드의 "업데이트 내용" 판. 내용([whatsNewItems])을 바꾸면 이 값도 바꾼다 — 기기마다 판마다 한 번 뜬다.
-const kWhatsNewVersion = '1.0.25';
+const kWhatsNewVersion = '1.0.26';
 
 /// 기기 플래그 — 마지막으로 보여 준 판(세이브가 아니라 기기 설정: 진행·보상과 무관한 안내라서).
 const kWhatsNewSeenKey = 'whatsNew.seen';
@@ -27,15 +27,11 @@ const _kFreshSave = Duration(minutes: 30);
 /// 그림이 없으면 [icon] 으로 그린다.
 typedef WhatsNewItem = ({IconData icon, String? image, String text});
 
-/// 1.0.25 업데이트 내용(2026-10-22 — 다듬기 소수점 · 짝짓기 특성 이름표 · 배너·버튼 정리).
+/// 1.0.26 업데이트 내용(2026-10-22 — 연구소 · 하단 탭 두 쪽 · 연구 패스/올인원 패스).
 List<WhatsNewItem> whatsNewItems(AppLocalizations l) => [
-  (
-    icon: Icons.auto_fix_high_rounded,
-    image: 'equip_star',
-    text: l.whatsNew25Polish,
-  ),
-  (icon: Icons.favorite_rounded, image: 'breeding', text: l.whatsNew25Trait),
-  (icon: Icons.build_rounded, image: null, text: l.whatsNew25Fix),
+  (icon: Icons.science_rounded, image: null, text: l.whatsNew26Lab),
+  (icon: Icons.swap_horiz_rounded, image: null, text: l.whatsNew26Tabs),
+  (icon: Icons.workspace_premium_rounded, image: null, text: l.whatsNew26Pass),
 ];
 
 /// 지금 세이브가 막 시작한 유저의 것인가.

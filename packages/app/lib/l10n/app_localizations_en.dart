@@ -8521,6 +8521,18 @@ class AppLocalizationsEn extends AppLocalizations {
       'Fixed the contest banner stretching, the free ticket refill button size, and the red dot cut off on the Guide button in Settings';
 
   @override
+  String get whatsNew26Lab =>
+      'The Research Lab is here — 29 long-term researches paid with gold and materials boost hunting, nurturing and duels';
+
+  @override
+  String get whatsNew26Tabs =>
+      'The bottom tabs now have two pages — tap the ⇄ button to switch between Gear, Skills, Fairies and the Lab';
+
+  @override
+  String get whatsNew26Pass =>
+      'New offers: the Research Pass (faster research) and the All-in-One Pass (bundles four passes)';
+
+  @override
   String get researchSamples => 'Research Samples';
 
   @override

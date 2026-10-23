@@ -13924,6 +13924,24 @@ abstract class AppLocalizations {
   /// **'Fixed the contest banner stretching, the free ticket refill button size, and the red dot cut off on the Guide button in Settings'**
   String get whatsNew25Fix;
 
+  /// No description provided for @whatsNew26Lab.
+  ///
+  /// In en, this message translates to:
+  /// **'The Research Lab is here — 29 long-term researches paid with gold and materials boost hunting, nurturing and duels'**
+  String get whatsNew26Lab;
+
+  /// No description provided for @whatsNew26Tabs.
+  ///
+  /// In en, this message translates to:
+  /// **'The bottom tabs now have two pages — tap the ⇄ button to switch between Gear, Skills, Fairies and the Lab'**
+  String get whatsNew26Tabs;
+
+  /// No description provided for @whatsNew26Pass.
+  ///
+  /// In en, this message translates to:
+  /// **'New offers: the Research Pass (faster research) and the All-in-One Pass (bundles four passes)'**
+  String get whatsNew26Pass;
+
   /// No description provided for @researchSamples.
   ///
   /// In en, this message translates to:

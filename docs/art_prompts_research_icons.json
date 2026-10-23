@@ -1,0 +1,217 @@
+{
+ "title": "연구소 아이콘 작업 (탭 1 + 연구 29)",
+ "saveDir": "C:\\Users\\Lenovo\\Downloads\\연구소 아이콘",
+ "intro": "29개 연구 아이콘 파일명 = 연구 id. 탭 아이콘은 lab_tab.png 로 저장 후 ui/tab/research.webp 로 변환.",
+ "items": [
+  {
+   "title": "하단 탭 연구소 아이콘 (저장: assets/images/ui/tab/research.webp)",
+   "ref": "../packages/app/assets/images/ui/icon/growth.webp",
+   "note": "기준 그림은 다른 소재(화풍만 참고). 저장 폴더: assets/images/ui/tab/research.webp 로 변환",
+   "prompt": "Use the attached image only as the art style reference. Do NOT copy its subject. A single square game icon for a cozy insect-collecting mobile game: a small glass lab flask with green liquid beside a tiny magnifying glass and a single green leaf, a research laboratory symbol. Centered, filling about 75% of the frame, one clear bold silhouette readable at 48 pixels, on a soft round warm-cream badge shape. Style: glossy stylized mobile game icon, cozy naturalist storybook palette (moss green, honey amber, warm bark brown, soft cream), semi-realistic painterly shading, soft rim light, thick warm brown outlines, high detail. Plain flat pale cream background around the badge. Square 1:1 image. no text, no letters, no numbers, no labels, no watermark, no logo.",
+   "file": "lab_tab.png"
+  },
+  {
+   "title": "턱 강화",
+   "ref": "../packages/app/assets/images/ui/icon/growth.webp",
+   "note": "기준 그림은 다른 소재(화풍만 참고). 저장 폴더: packages/app/assets/images/ui/research/jaw.webp (화면 연결은 나중)",
+   "prompt": "Use the attached image only as the art style reference. Do NOT copy its subject. A single square game icon for a cozy insect-collecting mobile game: a pair of strong curved beetle mandibles clamped together with a small golden spark. Centered, filling about 75% of the frame, one clear bold silhouette readable at 48 pixels, on a soft round warm-cream badge shape. Style: glossy stylized mobile game icon, cozy naturalist storybook palette (moss green, honey amber, warm bark brown, soft cream), semi-realistic painterly shading, soft rim light, thick warm brown outlines, high detail. Plain flat pale cream background around the badge. Square 1:1 image. no text, no letters, no numbers, no labels, no watermark, no logo.",
+   "file": "jaw.png"
+  },
+  {
+   "title": "껍질 단련",
+   "ref": "../packages/app/assets/images/ui/icon/growth.webp",
+   "note": "기준 그림은 다른 소재(화풍만 참고). 저장 폴더: packages/app/assets/images/ui/research/shell.webp (화면 연결은 나중)",
+   "prompt": "Use the attached image only as the art style reference. Do NOT copy its subject. A single square game icon for a cozy insect-collecting mobile game: a glossy armored beetle shell shield with a small gold rivet. Centered, filling about 75% of the frame, one clear bold silhouette readable at 48 pixels, on a soft round warm-cream badge shape. Style: glossy stylized mobile game icon, cozy naturalist storybook palette (moss green, honey amber, warm bark brown, soft cream), semi-realistic painterly shading, soft rim light, thick warm brown outlines, high detail. Plain flat pale cream background around the badge. Square 1:1 image. no text, no letters, no numbers, no labels, no watermark, no logo.",
+   "file": "shell.png"
+  },
+  {
+   "title": "채집 본능",
+   "ref": "../packages/app/assets/images/ui/icon/growth.webp",
+   "note": "기준 그림은 다른 소재(화풍만 참고). 저장 폴더: packages/app/assets/images/ui/research/instinct.webp (화면 연결은 나중)",
+   "prompt": "Use the attached image only as the art style reference. Do NOT copy its subject. A single square game icon for a cozy insect-collecting mobile game: a small bug-catching net with a glowing leaf inside. Centered, filling about 75% of the frame, one clear bold silhouette readable at 48 pixels, on a soft round warm-cream badge shape. Style: glossy stylized mobile game icon, cozy naturalist storybook palette (moss green, honey amber, warm bark brown, soft cream), semi-realistic painterly shading, soft rim light, thick warm brown outlines, high detail. Plain flat pale cream background around the badge. Square 1:1 image. no text, no letters, no numbers, no labels, no watermark, no logo.",
+   "file": "instinct.png"
+  },
+  {
+   "title": "더듬이 탐사",
+   "ref": "../packages/app/assets/images/ui/icon/growth.webp",
+   "note": "기준 그림은 다른 소재(화풍만 참고). 저장 폴더: packages/app/assets/images/ui/research/antenna.webp (화면 연결은 나중)",
+   "prompt": "Use the attached image only as the art style reference. Do NOT copy its subject. A single square game icon for a cozy insect-collecting mobile game: two long curled insect antennae sensing glowing golden coins. Centered, filling about 75% of the frame, one clear bold silhouette readable at 48 pixels, on a soft round warm-cream badge shape. Style: glossy stylized mobile game icon, cozy naturalist storybook palette (moss green, honey amber, warm bark brown, soft cream), semi-realistic painterly shading, soft rim light, thick warm brown outlines, high detail. Plain flat pale cream background around the badge. Square 1:1 image. no text, no letters, no numbers, no labels, no watermark, no logo.",
+   "file": "antenna.png"
+  },
+  {
+   "title": "대물 사냥",
+   "ref": "../packages/app/assets/images/ui/icon/growth.webp",
+   "note": "기준 그림은 다른 소재(화풍만 참고). 저장 폴더: packages/app/assets/images/ui/research/bossHunter.webp (화면 연결은 나중)",
+   "prompt": "Use the attached image only as the art style reference. Do NOT copy its subject. A single square game icon for a cozy insect-collecting mobile game: a large horned beetle horn trophy with a red target mark. Centered, filling about 75% of the frame, one clear bold silhouette readable at 48 pixels, on a soft round warm-cream badge shape. Style: glossy stylized mobile game icon, cozy naturalist storybook palette (moss green, honey amber, warm bark brown, soft cream), semi-realistic painterly shading, soft rim light, thick warm brown outlines, high detail. Plain flat pale cream background around the badge. Square 1:1 image. no text, no letters, no numbers, no labels, no watermark, no logo.",
+   "file": "bossHunter.png"
+  },
+  {
+   "title": "휴식 효율",
+   "ref": "../packages/app/assets/images/ui/icon/growth.webp",
+   "note": "기준 그림은 다른 소재(화풍만 참고). 저장 폴더: packages/app/assets/images/ui/research/idleEff.webp (화면 연결은 나중)",
+   "prompt": "Use the attached image only as the art style reference. Do NOT copy its subject. A single square game icon for a cozy insect-collecting mobile game: a sleeping ladybug curled on a leaf with a small crescent moon and a pocket watch. Centered, filling about 75% of the frame, one clear bold silhouette readable at 48 pixels, on a soft round warm-cream badge shape. Style: glossy stylized mobile game icon, cozy naturalist storybook palette (moss green, honey amber, warm bark brown, soft cream), semi-realistic painterly shading, soft rim light, thick warm brown outlines, high detail. Plain flat pale cream background around the badge. Square 1:1 image. no text, no letters, no numbers, no labels, no watermark, no logo.",
+   "file": "idleEff.png"
+  },
+  {
+   "title": "치명 일격",
+   "ref": "../packages/app/assets/images/ui/icon/growth.webp",
+   "note": "기준 그림은 다른 소재(화풍만 참고). 저장 폴더: packages/app/assets/images/ui/research/critStrike.webp (화면 연결은 나중)",
+   "prompt": "Use the attached image only as the art style reference. Do NOT copy its subject. A single square game icon for a cozy insect-collecting mobile game: a sharp stinger with a bright starburst impact flash. Centered, filling about 75% of the frame, one clear bold silhouette readable at 48 pixels, on a soft round warm-cream badge shape. Style: glossy stylized mobile game icon, cozy naturalist storybook palette (moss green, honey amber, warm bark brown, soft cream), semi-realistic painterly shading, soft rim light, thick warm brown outlines, high detail. Plain flat pale cream background around the badge. Square 1:1 image. no text, no letters, no numbers, no labels, no watermark, no logo.",
+   "file": "critStrike.png"
+  },
+  {
+   "title": "재생",
+   "ref": "../packages/app/assets/images/ui/icon/growth.webp",
+   "note": "기준 그림은 다른 소재(화풍만 참고). 저장 폴더: packages/app/assets/images/ui/research/regen.webp (화면 연결은 나중)",
+   "prompt": "Use the attached image only as the art style reference. Do NOT copy its subject. A single square game icon for a cozy insect-collecting mobile game: a green sprout growing out of a small heart. Centered, filling about 75% of the frame, one clear bold silhouette readable at 48 pixels, on a soft round warm-cream badge shape. Style: glossy stylized mobile game icon, cozy naturalist storybook palette (moss green, honey amber, warm bark brown, soft cream), semi-realistic painterly shading, soft rim light, thick warm brown outlines, high detail. Plain flat pale cream background around the badge. Square 1:1 image. no text, no letters, no numbers, no labels, no watermark, no logo.",
+   "file": "regen.png"
+  },
+  {
+   "title": "날쌘 발",
+   "ref": "../packages/app/assets/images/ui/icon/growth.webp",
+   "note": "기준 그림은 다른 소재(화풍만 참고). 저장 폴더: packages/app/assets/images/ui/research/swiftFeet.webp (화면 연결은 나중)",
+   "prompt": "Use the attached image only as the art style reference. Do NOT copy its subject. A single square game icon for a cozy insect-collecting mobile game: a bug leg with tiny wings on it and speed swoosh lines. Centered, filling about 75% of the frame, one clear bold silhouette readable at 48 pixels, on a soft round warm-cream badge shape. Style: glossy stylized mobile game icon, cozy naturalist storybook palette (moss green, honey amber, warm bark brown, soft cream), semi-realistic painterly shading, soft rim light, thick warm brown outlines, high detail. Plain flat pale cream background around the badge. Square 1:1 image. no text, no letters, no numbers, no labels, no watermark, no logo.",
+   "file": "swiftFeet.png"
+  },
+  {
+   "title": "성장 본능",
+   "ref": "../packages/app/assets/images/ui/icon/growth.webp",
+   "note": "기준 그림은 다른 소재(화풍만 참고). 저장 폴더: packages/app/assets/images/ui/research/growthInstinct.webp (화면 연결은 나중)",
+   "prompt": "Use the attached image only as the art style reference. Do NOT copy its subject. A single square game icon for a cozy insect-collecting mobile game: a small stack of glowing experience orbs rising up a leaf stem. Centered, filling about 75% of the frame, one clear bold silhouette readable at 48 pixels, on a soft round warm-cream badge shape. Style: glossy stylized mobile game icon, cozy naturalist storybook palette (moss green, honey amber, warm bark brown, soft cream), semi-realistic painterly shading, soft rim light, thick warm brown outlines, high detail. Plain flat pale cream background around the badge. Square 1:1 image. no text, no letters, no numbers, no labels, no watermark, no logo.",
+   "file": "growthInstinct.png"
+  },
+  {
+   "title": "스킬 숙련",
+   "ref": "../packages/app/assets/images/ui/icon/growth.webp",
+   "note": "기준 그림은 다른 소재(화풍만 참고). 저장 폴더: packages/app/assets/images/ui/research/skillMastery.webp (화면 연결은 나중)",
+   "prompt": "Use the attached image only as the art style reference. Do NOT copy its subject. A single square game icon for a cozy insect-collecting mobile game: a round hourglass with swirling green energy and a small star. Centered, filling about 75% of the frame, one clear bold silhouette readable at 48 pixels, on a soft round warm-cream badge shape. Style: glossy stylized mobile game icon, cozy naturalist storybook palette (moss green, honey amber, warm bark brown, soft cream), semi-realistic painterly shading, soft rim light, thick warm brown outlines, high detail. Plain flat pale cream background around the badge. Square 1:1 image. no text, no letters, no numbers, no labels, no watermark, no logo.",
+   "file": "skillMastery.png"
+  },
+  {
+   "title": "부화 연구",
+   "ref": "../packages/app/assets/images/ui/icon/growth.webp",
+   "note": "기준 그림은 다른 소재(화풍만 참고). 저장 폴더: packages/app/assets/images/ui/research/incubator.webp (화면 연결은 나중)",
+   "prompt": "Use the attached image only as the art style reference. Do NOT copy its subject. A single square game icon for a cozy insect-collecting mobile game: a speckled egg in a small warm glass incubator dome with a tiny crack. Centered, filling about 75% of the frame, one clear bold silhouette readable at 48 pixels, on a soft round warm-cream badge shape. Style: glossy stylized mobile game icon, cozy naturalist storybook palette (moss green, honey amber, warm bark brown, soft cream), semi-realistic painterly shading, soft rim light, thick warm brown outlines, high detail. Plain flat pale cream background around the badge. Square 1:1 image. no text, no letters, no numbers, no labels, no watermark, no logo.",
+   "file": "incubator.png"
+  },
+  {
+   "title": "산란 연구",
+   "ref": "../packages/app/assets/images/ui/icon/growth.webp",
+   "note": "기준 그림은 다른 소재(화풍만 참고). 저장 폴더: packages/app/assets/images/ui/research/nest.webp (화면 연결은 나중)",
+   "prompt": "Use the attached image only as the art style reference. Do NOT copy its subject. A single square game icon for a cozy insect-collecting mobile game: a woven twig nest holding three small pale eggs with a golden glow. Centered, filling about 75% of the frame, one clear bold silhouette readable at 48 pixels, on a soft round warm-cream badge shape. Style: glossy stylized mobile game icon, cozy naturalist storybook palette (moss green, honey amber, warm bark brown, soft cream), semi-realistic painterly shading, soft rim light, thick warm brown outlines, high detail. Plain flat pale cream background around the badge. Square 1:1 image. no text, no letters, no numbers, no labels, no watermark, no logo.",
+   "file": "nest.png"
+  },
+  {
+   "title": "훈련 이론",
+   "ref": "../packages/app/assets/images/ui/icon/growth.webp",
+   "note": "기준 그림은 다른 소재(화풍만 참고). 저장 폴더: packages/app/assets/images/ui/research/trainLore.webp (화면 연결은 나중)",
+   "prompt": "Use the attached image only as the art style reference. Do NOT copy its subject. A single square game icon for a cozy insect-collecting mobile game: an open leather notebook with a small dumbbell drawn on the page and a pencil. Centered, filling about 75% of the frame, one clear bold silhouette readable at 48 pixels, on a soft round warm-cream badge shape. Style: glossy stylized mobile game icon, cozy naturalist storybook palette (moss green, honey amber, warm bark brown, soft cream), semi-realistic painterly shading, soft rim light, thick warm brown outlines, high detail. Plain flat pale cream background around the badge. Square 1:1 image. no text, no letters, no numbers, no labels, no watermark, no logo.",
+   "file": "trainLore.png"
+  },
+  {
+   "title": "연구 효율",
+   "ref": "../packages/app/assets/images/ui/icon/growth.webp",
+   "note": "기준 그림은 다른 소재(화풍만 참고). 저장 폴더: packages/app/assets/images/ui/research/researchEff.webp (화면 연결은 나중)",
+   "prompt": "Use the attached image only as the art style reference. Do NOT copy its subject. A single square game icon for a cozy insect-collecting mobile game: a gear cog with a small glass flask in the middle and a clock hand. Centered, filling about 75% of the frame, one clear bold silhouette readable at 48 pixels, on a soft round warm-cream badge shape. Style: glossy stylized mobile game icon, cozy naturalist storybook palette (moss green, honey amber, warm bark brown, soft cream), semi-realistic painterly shading, soft rim light, thick warm brown outlines, high detail. Plain flat pale cream background around the badge. Square 1:1 image. no text, no letters, no numbers, no labels, no watermark, no logo.",
+   "file": "researchEff.png"
+  },
+  {
+   "title": "혈통 연구",
+   "ref": "../packages/app/assets/images/ui/icon/growth.webp",
+   "note": "기준 그림은 다른 소재(화풍만 참고). 저장 폴더: packages/app/assets/images/ui/research/bloodline.webp (화면 연결은 나중)",
+   "prompt": "Use the attached image only as the art style reference. Do NOT copy its subject. A single square game icon for a cozy insect-collecting mobile game: a double-helix strand made of two entwined green vines with tiny blossoms. Centered, filling about 75% of the frame, one clear bold silhouette readable at 48 pixels, on a soft round warm-cream badge shape. Style: glossy stylized mobile game icon, cozy naturalist storybook palette (moss green, honey amber, warm bark brown, soft cream), semi-realistic painterly shading, soft rim light, thick warm brown outlines, high detail. Plain flat pale cream background around the badge. Square 1:1 image. no text, no letters, no numbers, no labels, no watermark, no logo.",
+   "file": "bloodline.png"
+  },
+  {
+   "title": "약초학",
+   "ref": "../packages/app/assets/images/ui/icon/growth.webp",
+   "note": "기준 그림은 다른 소재(화풍만 참고). 저장 폴더: packages/app/assets/images/ui/research/herbalism.webp (화면 연결은 나중)",
+   "prompt": "Use the attached image only as the art style reference. Do NOT copy its subject. A single square game icon for a cozy insect-collecting mobile game: a small potion bottle with a bundle of healing herbs tied with twine. Centered, filling about 75% of the frame, one clear bold silhouette readable at 48 pixels, on a soft round warm-cream badge shape. Style: glossy stylized mobile game icon, cozy naturalist storybook palette (moss green, honey amber, warm bark brown, soft cream), semi-realistic painterly shading, soft rim light, thick warm brown outlines, high detail. Plain flat pale cream background around the badge. Square 1:1 image. no text, no letters, no numbers, no labels, no watermark, no logo.",
+   "file": "herbalism.png"
+  },
+  {
+   "title": "분해 기술",
+   "ref": "../packages/app/assets/images/ui/icon/growth.webp",
+   "note": "기준 그림은 다른 소재(화풍만 참고). 저장 폴더: packages/app/assets/images/ui/research/salvage.webp (화면 연결은 나중)",
+   "prompt": "Use the attached image only as the art style reference. Do NOT copy its subject. A single square game icon for a cozy insect-collecting mobile game: a pair of tweezers pulling a glowing crystal shard out of a cracked insect shell. Centered, filling about 75% of the frame, one clear bold silhouette readable at 48 pixels, on a soft round warm-cream badge shape. Style: glossy stylized mobile game icon, cozy naturalist storybook palette (moss green, honey amber, warm bark brown, soft cream), semi-realistic painterly shading, soft rim light, thick warm brown outlines, high detail. Plain flat pale cream background around the badge. Square 1:1 image. no text, no letters, no numbers, no labels, no watermark, no logo.",
+   "file": "salvage.png"
+  },
+  {
+   "title": "근육 단련",
+   "ref": "../packages/app/assets/images/ui/icon/growth.webp",
+   "note": "기준 그림은 다른 소재(화풍만 참고). 저장 폴더: packages/app/assets/images/ui/research/duelMuscle.webp (화면 연결은 나중)",
+   "prompt": "Use the attached image only as the art style reference. Do NOT copy its subject. A single square game icon for a cozy insect-collecting mobile game: a flexed strong insect arm with a bold red power glow. Centered, filling about 75% of the frame, one clear bold silhouette readable at 48 pixels, on a soft round warm-cream badge shape. Style: glossy stylized mobile game icon, cozy naturalist storybook palette (moss green, honey amber, warm bark brown, soft cream), semi-realistic painterly shading, soft rim light, thick warm brown outlines, high detail. Plain flat pale cream background around the badge. Square 1:1 image. no text, no letters, no numbers, no labels, no watermark, no logo.",
+   "file": "duelMuscle.png"
+  },
+  {
+   "title": "갑피 단련",
+   "ref": "../packages/app/assets/images/ui/icon/growth.webp",
+   "note": "기준 그림은 다른 소재(화풍만 참고). 저장 폴더: packages/app/assets/images/ui/research/duelArmor.webp (화면 연결은 나중)",
+   "prompt": "Use the attached image only as the art style reference. Do NOT copy its subject. A single square game icon for a cozy insect-collecting mobile game: a layered chitin plate armor piece with a blue shield sparkle. Centered, filling about 75% of the frame, one clear bold silhouette readable at 48 pixels, on a soft round warm-cream badge shape. Style: glossy stylized mobile game icon, cozy naturalist storybook palette (moss green, honey amber, warm bark brown, soft cream), semi-realistic painterly shading, soft rim light, thick warm brown outlines, high detail. Plain flat pale cream background around the badge. Square 1:1 image. no text, no letters, no numbers, no labels, no watermark, no logo.",
+   "file": "duelArmor.png"
+  },
+  {
+   "title": "체력 단련",
+   "ref": "../packages/app/assets/images/ui/icon/growth.webp",
+   "note": "기준 그림은 다른 소재(화풍만 참고). 저장 폴더: packages/app/assets/images/ui/research/duelVigor.webp (화면 연결은 나중)",
+   "prompt": "Use the attached image only as the art style reference. Do NOT copy its subject. A single square game icon for a cozy insect-collecting mobile game: a big red heart with a small green leaf wreath and a plus sign. Centered, filling about 75% of the frame, one clear bold silhouette readable at 48 pixels, on a soft round warm-cream badge shape. Style: glossy stylized mobile game icon, cozy naturalist storybook palette (moss green, honey amber, warm bark brown, soft cream), semi-realistic painterly shading, soft rim light, thick warm brown outlines, high detail. Plain flat pale cream background around the badge. Square 1:1 image. no text, no letters, no numbers, no labels, no watermark, no logo.",
+   "file": "duelVigor.png"
+  },
+  {
+   "title": "회복 연구",
+   "ref": "../packages/app/assets/images/ui/icon/growth.webp",
+   "note": "기준 그림은 다른 소재(화풍만 참고). 저장 폴더: packages/app/assets/images/ui/research/recovery.webp (화면 연결은 나중)",
+   "prompt": "Use the attached image only as the art style reference. Do NOT copy its subject. A single square game icon for a cozy insect-collecting mobile game: a bandaged beetle leg with a green healing cross. Centered, filling about 75% of the frame, one clear bold silhouette readable at 48 pixels, on a soft round warm-cream badge shape. Style: glossy stylized mobile game icon, cozy naturalist storybook palette (moss green, honey amber, warm bark brown, soft cream), semi-realistic painterly shading, soft rim light, thick warm brown outlines, high detail. Plain flat pale cream background around the badge. Square 1:1 image. no text, no letters, no numbers, no labels, no watermark, no logo.",
+   "file": "recovery.png"
+  },
+  {
+   "title": "급소 공략",
+   "ref": "../packages/app/assets/images/ui/icon/growth.webp",
+   "note": "기준 그림은 다른 소재(화풍만 참고). 저장 폴더: packages/app/assets/images/ui/research/vitalStrike.webp (화면 연결은 나중)",
+   "prompt": "Use the attached image only as the art style reference. Do NOT copy its subject. A single square game icon for a cozy insect-collecting mobile game: a small crosshair target over a beetle's weak spot with a bright flash. Centered, filling about 75% of the frame, one clear bold silhouette readable at 48 pixels, on a soft round warm-cream badge shape. Style: glossy stylized mobile game icon, cozy naturalist storybook palette (moss green, honey amber, warm bark brown, soft cream), semi-realistic painterly shading, soft rim light, thick warm brown outlines, high detail. Plain flat pale cream background around the badge. Square 1:1 image. no text, no letters, no numbers, no labels, no watermark, no logo.",
+   "file": "vitalStrike.png"
+  },
+  {
+   "title": "근성 단련",
+   "ref": "../packages/app/assets/images/ui/icon/growth.webp",
+   "note": "기준 그림은 다른 소재(화풍만 참고). 저장 폴더: packages/app/assets/images/ui/research/gritTraining.webp (화면 연결은 나중)",
+   "prompt": "Use the attached image only as the art style reference. Do NOT copy its subject. A single square game icon for a cozy insect-collecting mobile game: a clenched fist raised with a small flame behind it. Centered, filling about 75% of the frame, one clear bold silhouette readable at 48 pixels, on a soft round warm-cream badge shape. Style: glossy stylized mobile game icon, cozy naturalist storybook palette (moss green, honey amber, warm bark brown, soft cream), semi-realistic painterly shading, soft rim light, thick warm brown outlines, high detail. Plain flat pale cream background around the badge. Square 1:1 image. no text, no letters, no numbers, no labels, no watermark, no logo.",
+   "file": "gritTraining.png"
+  },
+  {
+   "title": "제련 비법",
+   "ref": "../packages/app/assets/images/ui/icon/growth.webp",
+   "note": "기준 그림은 다른 소재(화풍만 참고). 저장 폴더: packages/app/assets/images/ui/research/forgeLore.webp (화면 연결은 나중)",
+   "prompt": "Use the attached image only as the art style reference. Do NOT copy its subject. A single square game icon for a cozy insect-collecting mobile game: a small anvil with a glowing orange hammer strike and sparks. Centered, filling about 75% of the frame, one clear bold silhouette readable at 48 pixels, on a soft round warm-cream badge shape. Style: glossy stylized mobile game icon, cozy naturalist storybook palette (moss green, honey amber, warm bark brown, soft cream), semi-realistic painterly shading, soft rim light, thick warm brown outlines, high detail. Plain flat pale cream background around the badge. Square 1:1 image. no text, no letters, no numbers, no labels, no watermark, no logo.",
+   "file": "forgeLore.png"
+  },
+  {
+   "title": "별빛 연마",
+   "ref": "../packages/app/assets/images/ui/icon/growth.webp",
+   "note": "기준 그림은 다른 소재(화풍만 참고). 저장 폴더: packages/app/assets/images/ui/research/starPolish.webp (화면 연결은 나중)",
+   "prompt": "Use the attached image only as the art style reference. Do NOT copy its subject. A single square game icon for a cozy insect-collecting mobile game: a polishing cloth rubbing a shiny amber gem until a bright star sparkle appears. Centered, filling about 75% of the frame, one clear bold silhouette readable at 48 pixels, on a soft round warm-cream badge shape. Style: glossy stylized mobile game icon, cozy naturalist storybook palette (moss green, honey amber, warm bark brown, soft cream), semi-realistic painterly shading, soft rim light, thick warm brown outlines, high detail. Plain flat pale cream background around the badge. Square 1:1 image. no text, no letters, no numbers, no labels, no watermark, no logo.",
+   "file": "starPolish.png"
+  },
+  {
+   "title": "절약 다듬기",
+   "ref": "../packages/app/assets/images/ui/icon/growth.webp",
+   "note": "기준 그림은 다른 소재(화풍만 참고). 저장 폴더: packages/app/assets/images/ui/research/thriftPolish.webp (화면 연결은 나중)",
+   "prompt": "Use the attached image only as the art style reference. Do NOT copy its subject. A single square game icon for a cozy insect-collecting mobile game: a small piggy-bank-like round coin purse with a tiny gem and a downward arrow. Centered, filling about 75% of the frame, one clear bold silhouette readable at 48 pixels, on a soft round warm-cream badge shape. Style: glossy stylized mobile game icon, cozy naturalist storybook palette (moss green, honey amber, warm bark brown, soft cream), semi-realistic painterly shading, soft rim light, thick warm brown outlines, high detail. Plain flat pale cream background around the badge. Square 1:1 image. no text, no letters, no numbers, no labels, no watermark, no logo.",
+   "file": "thriftPolish.png"
+  },
+  {
+   "title": "교환 협상",
+   "ref": "../packages/app/assets/images/ui/icon/growth.webp",
+   "note": "기준 그림은 다른 소재(화풍만 참고). 저장 폴더: packages/app/assets/images/ui/research/barter.webp (화면 연결은 나중)",
+   "prompt": "Use the attached image only as the art style reference. Do NOT copy its subject. A single square game icon for a cozy insect-collecting mobile game: two hands exchanging a gold coin and a green leaf with a swap arrow. Centered, filling about 75% of the frame, one clear bold silhouette readable at 48 pixels, on a soft round warm-cream badge shape. Style: glossy stylized mobile game icon, cozy naturalist storybook palette (moss green, honey amber, warm bark brown, soft cream), semi-realistic painterly shading, soft rim light, thick warm brown outlines, high detail. Plain flat pale cream background around the badge. Square 1:1 image. no text, no letters, no numbers, no labels, no watermark, no logo.",
+   "file": "barter.png"
+  },
+  {
+   "title": "선물 감각",
+   "ref": "../packages/app/assets/images/ui/icon/growth.webp",
+   "note": "기준 그림은 다른 소재(화풍만 참고). 저장 폴더: packages/app/assets/images/ui/research/giftSense.webp (화면 연결은 나중)",
+   "prompt": "Use the attached image only as the art style reference. Do NOT copy its subject. A single square game icon for a cozy insect-collecting mobile game: a small wrapped gift box with a ribbon bow and a golden coin sparkle. Centered, filling about 75% of the frame, one clear bold silhouette readable at 48 pixels, on a soft round warm-cream badge shape. Style: glossy stylized mobile game icon, cozy naturalist storybook palette (moss green, honey amber, warm bark brown, soft cream), semi-realistic painterly shading, soft rim light, thick warm brown outlines, high detail. Plain flat pale cream background around the badge. Square 1:1 image. no text, no letters, no numbers, no labels, no watermark, no logo.",
+   "file": "giftSense.png"
+  }
+ ]
+}

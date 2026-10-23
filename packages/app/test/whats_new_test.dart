@@ -73,12 +73,12 @@ void main() {
       ),
     );
 
-    testWidgets('1.0.25 3줄 — 다듬기 소수점·짝짓기 특성 이름표·배너/버튼 정리', (tester) async {
+    testWidgets('1.0.26 3줄 — 연구소·하단 탭 두 쪽·새 패스', (tester) async {
       await tester.pumpWidget(host(const Locale('ko'), 300));
-      expect(kWhatsNewVersion, '1.0.25');
-      expect(find.textContaining('소수 한 자리'), findsOneWidget);
-      expect(find.textContaining('혈통 특성'), findsOneWidget);
-      expect(find.textContaining('무료 충전 버튼'), findsOneWidget);
+      expect(kWhatsNewVersion, '1.0.26');
+      expect(find.textContaining('연구소가 생겼어요'), findsOneWidget);
+      expect(find.textContaining('⇄'), findsOneWidget);
+      expect(find.textContaining('올인원 패스'), findsOneWidget);
       expect(
         whatsNewItems(lookupAppLocalizations(const Locale('ko'))),
         hasLength(3),

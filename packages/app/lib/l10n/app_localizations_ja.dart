@@ -8324,6 +8324,16 @@ class AppLocalizationsJa extends AppLocalizations {
       '王虫選抜大会のバナーが長くなってずれる問題、決闘の無料チャージボタンの大きさ、設定の攻略本の赤い点が切れる問題を直しました';
 
   @override
+  String get whatsNew26Lab =>
+      '研究所が登場しました — ゴールドと素材でじっくり研究する29種の研究で、狩り・育成・決闘を強化します';
+
+  @override
+  String get whatsNew26Tabs => '下部タブが2ページになりました — ⇄ボタンで装備・スキル・妖精・研究所を切り替えます';
+
+  @override
+  String get whatsNew26Pass => '新商品：研究パス（研究時間短縮）とオールインワンパス（パス4種セット）';
+
+  @override
   String get researchSamples => '研究標本';
 
   @override
