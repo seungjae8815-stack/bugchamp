@@ -448,6 +448,10 @@ void main() {
     final raw = _readJson('assets/data/research.json');
     final cfg = ResearchConfig.fromJson(raw); // 모르는 분야·효과 키는 throw
     expect(cfg.defs.length, 29);
+    for (final d in cfg.defs) {
+      expect(d.image, isNotNull, reason: d.id);
+      expect(File(d.image!).existsSync(), isTrue, reason: d.id);
+    }
     final ids = cfg.defs.map((d) => d.id).toSet();
     for (final d in cfg.defs) {
       expect(ids, contains(d.requires?.id ?? d.id), reason: d.id);

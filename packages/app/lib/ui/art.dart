@@ -675,9 +675,10 @@ Widget gameIcon(
   IconData fallback = Icons.auto_awesome_rounded,
   Color color = kHoney,
   bool dim = false,
+  String? assetPath,
 }) {
   final img = gameImage(
-    'assets/images/ui/icon/$name.webp',
+    assetPath ?? 'assets/images/ui/icon/$name.webp',
     width: size,
     height: size,
     fallback: Icon(fallback, size: size * 0.85, color: color),

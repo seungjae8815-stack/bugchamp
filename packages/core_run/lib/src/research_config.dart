@@ -104,6 +104,7 @@ class ResearchDef {
     required this.maxLevel,
     this.requires,
     this.name = const {},
+    this.image,
     this.perLevel = 0,
     this.effectGrowth = 1,
     this.firstSeconds = 0,
@@ -126,6 +127,9 @@ class ResearchDef {
   /// 선행 연구(없으면 null) — 그 연구가 `level` 이상이어야 시작할 수 있다.
   final ({String id, int level})? requires;
   final Map<String, String> name;
+
+  /// 아이콘 애셋 경로(없으면 화면이 Material 아이콘으로 폴백).
+  final String? image;
 
   // 곡선(JSON): 누적 효과 = Σ perLevel × growth^(i-1).
   // 시간·비용: Lv1 = first, 한 단계 오를 때마다 × (1 + (growth−1)·decay^(i−1)) — decay 1 = 등비.
@@ -161,6 +165,7 @@ class ResearchDef {
       requires: req == null
           ? null
           : (id: req['id'] as String, level: (req['level'] as num).toInt()),
+      image: j['image'] as String?,
       name: {
         for (final e in ((j['name'] as Map?) ?? const {}).entries)
           '${e.key}': '${e.value}',

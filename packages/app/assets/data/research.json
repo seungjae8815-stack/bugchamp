@@ -23,6 +23,7 @@
   "research": [
     {
       "id": "jaw",
+      "image": "assets/images/ui/research/jaw.webp",
       "branch": "hunt",
       "kind": "huntAtk",
       "maxLevel": 30,
@@ -53,6 +54,7 @@
     },
     {
       "id": "shell",
+      "image": "assets/images/ui/research/shell.webp",
       "branch": "hunt",
       "kind": "huntHpDef",
       "maxLevel": 30,
@@ -86,6 +88,7 @@
     },
     {
       "id": "instinct",
+      "image": "assets/images/ui/research/instinct.webp",
       "branch": "hunt",
       "kind": "find",
       "maxLevel": 30,
@@ -119,6 +122,7 @@
     },
     {
       "id": "antenna",
+      "image": "assets/images/ui/research/antenna.webp",
       "branch": "hunt",
       "kind": "gold",
       "maxLevel": 30,
@@ -152,6 +156,7 @@
     },
     {
       "id": "bossHunter",
+      "image": "assets/images/ui/research/bossHunter.webp",
       "branch": "hunt",
       "kind": "bossDmg",
       "maxLevel": 30,
@@ -185,6 +190,7 @@
     },
     {
       "id": "idleEff",
+      "image": "assets/images/ui/research/idleEff.webp",
       "branch": "hunt",
       "kind": "offline",
       "maxLevel": 30,
@@ -218,6 +224,7 @@
     },
     {
       "id": "critStrike",
+      "image": "assets/images/ui/research/critStrike.webp",
       "branch": "hunt",
       "kind": "huntCritDmg",
       "maxLevel": 30,
@@ -251,6 +258,7 @@
     },
     {
       "id": "regen",
+      "image": "assets/images/ui/research/regen.webp",
       "branch": "hunt",
       "kind": "huntRegen",
       "maxLevel": 30,
@@ -284,6 +292,7 @@
     },
     {
       "id": "swiftFeet",
+      "image": "assets/images/ui/research/swiftFeet.webp",
       "branch": "hunt",
       "kind": "huntEvade",
       "maxLevel": 30,
@@ -317,6 +326,7 @@
     },
     {
       "id": "growthInstinct",
+      "image": "assets/images/ui/research/growthInstinct.webp",
       "branch": "hunt",
       "kind": "huntExp",
       "maxLevel": 30,
@@ -350,6 +360,7 @@
     },
     {
       "id": "skillMastery",
+      "image": "assets/images/ui/research/skillMastery.webp",
       "branch": "hunt",
       "kind": "skillCooldown",
       "maxLevel": 30,
@@ -383,6 +394,7 @@
     },
     {
       "id": "incubator",
+      "image": "assets/images/ui/research/incubator.webp",
       "branch": "nurture",
       "kind": "hatchTime",
       "maxLevel": 30,
@@ -413,6 +425,7 @@
     },
     {
       "id": "nest",
+      "image": "assets/images/ui/research/nest.webp",
       "branch": "nurture",
       "kind": "breedTime",
       "maxLevel": 30,
@@ -446,6 +459,7 @@
     },
     {
       "id": "trainLore",
+      "image": "assets/images/ui/research/trainLore.webp",
       "branch": "nurture",
       "kind": "trainTime",
       "maxLevel": 30,
@@ -479,6 +493,7 @@
     },
     {
       "id": "researchEff",
+      "image": "assets/images/ui/research/researchEff.webp",
       "branch": "nurture",
       "kind": "researchTime",
       "maxLevel": 30,
@@ -512,6 +527,7 @@
     },
     {
       "id": "bloodline",
+      "image": "assets/images/ui/research/bloodline.webp",
       "branch": "nurture",
       "kind": "traitChance",
       "maxLevel": 30,
@@ -545,6 +561,7 @@
     },
     {
       "id": "herbalism",
+      "image": "assets/images/ui/research/herbalism.webp",
       "branch": "nurture",
       "kind": "potionChance",
       "maxLevel": 30,
@@ -578,6 +595,7 @@
     },
     {
       "id": "salvage",
+      "image": "assets/images/ui/research/salvage.webp",
       "branch": "nurture",
       "kind": "salvageMat",
       "maxLevel": 30,
@@ -611,6 +629,7 @@
     },
     {
       "id": "duelMuscle",
+      "image": "assets/images/ui/research/duelMuscle.webp",
       "branch": "duel",
       "kind": "duelAtk",
       "maxLevel": 30,
@@ -641,6 +660,7 @@
     },
     {
       "id": "duelArmor",
+      "image": "assets/images/ui/research/duelArmor.webp",
       "branch": "duel",
       "kind": "duelDef",
       "maxLevel": 30,
@@ -674,6 +694,7 @@
     },
     {
       "id": "duelVigor",
+      "image": "assets/images/ui/research/duelVigor.webp",
       "branch": "duel",
       "kind": "duelHp",
       "maxLevel": 30,
@@ -707,6 +728,7 @@
     },
     {
       "id": "recovery",
+      "image": "assets/images/ui/research/recovery.webp",
       "branch": "duel",
       "kind": "injuryTime",
       "maxLevel": 30,
@@ -740,6 +762,7 @@
     },
     {
       "id": "vitalStrike",
+      "image": "assets/images/ui/research/vitalStrike.webp",
       "branch": "duel",
       "kind": "duelCrit",
       "maxLevel": 30,
@@ -773,6 +796,7 @@
     },
     {
       "id": "gritTraining",
+      "image": "assets/images/ui/research/gritTraining.webp",
       "branch": "duel",
       "kind": "duelGrit",
       "maxLevel": 30,
@@ -806,6 +830,7 @@
     },
     {
       "id": "forgeLore",
+      "image": "assets/images/ui/research/forgeLore.webp",
       "branch": "gear",
       "kind": "forgeTime",
       "maxLevel": 30,
@@ -836,6 +861,7 @@
     },
     {
       "id": "starPolish",
+      "image": "assets/images/ui/research/starPolish.webp",
       "branch": "gear",
       "kind": "starTime",
       "maxLevel": 30,
@@ -869,6 +895,7 @@
     },
     {
       "id": "thriftPolish",
+      "image": "assets/images/ui/research/thriftPolish.webp",
       "branch": "gear",
       "kind": "polishCost",
       "maxLevel": 30,
@@ -902,6 +929,7 @@
     },
     {
       "id": "barter",
+      "image": "assets/images/ui/research/barter.webp",
       "branch": "economy",
       "kind": "exchangeGain",
       "maxLevel": 30,
@@ -932,6 +960,7 @@
     },
     {
       "id": "giftSense",
+      "image": "assets/images/ui/research/giftSense.webp",
       "branch": "economy",
       "kind": "giftGold",
       "maxLevel": 30,

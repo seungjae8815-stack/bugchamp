@@ -761,7 +761,7 @@ class GameNavBar extends ConsumerWidget {
   };
 
   /// 탭 아트 — 1쪽은 assets/images/ui/nav/{이름}.webp, 2쪽은 옛 캐릭터 탭 안 버튼 아트
-  /// (ui/tab/{stats,skills,fairy}.webp)를 다시 쓴다. 애셋이 없으면 Material 아이콘(§6). 연구소는 아직 아트가 없다.
+  /// (ui/tab/{stats,skills,fairy}.webp)를 다시 쓴다. 애셋이 없으면 Material 아이콘(§6).
   static Widget _navArt(int i, Color color) {
     Widget icon(IconData d) => Icon(d, color: color, size: 24);
     return switch (i) {
@@ -801,7 +801,11 @@ class GameNavBar extends ConsumerWidget {
         size: 28,
         fallback: icon(Icons.flutter_dash_rounded),
       ),
-      _ => icon(Icons.science_rounded),
+      _ => tabImage(
+        'research',
+        size: 28,
+        fallback: icon(Icons.science_rounded),
+      ),
     };
   }
 }

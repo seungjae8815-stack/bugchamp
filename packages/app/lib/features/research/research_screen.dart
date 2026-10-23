@@ -658,6 +658,7 @@ class _ResearchScreenState extends ConsumerState<ResearchScreen> {
         fallback: def == null ? Icons.science_rounded : _fxIcon(def.effect),
         color: _branchColor(def?.branch),
         dim: dim,
+        assetPath: def?.image,
       );
 
   BoxDecoration _box({Color border = const Color(0x22FFFFFF)}) => BoxDecoration(

@@ -119,6 +119,7 @@ flutter:
     - assets/images/ui/event/
     - assets/images/ui/nav/
     - assets/images/ui/tab/
+    - assets/images/ui/research/
     - assets/images/ui/skill/
     # 길드(1.0.18) — 문장·코인·보스·탭·미션 배경 등. 없는 파일은 각 화면이 아이콘으로 폴백.
     - assets/images/ui/guild/
