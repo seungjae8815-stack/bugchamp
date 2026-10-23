@@ -863,7 +863,12 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen> {
     required int free,
     required bool jobBusy,
   }) {
-    final quote = trainPointQuote(rec, cfg, _rarityOf(bug, sp), research: _research());
+    final quote = trainPointQuote(
+      rec,
+      cfg,
+      _rarityOf(bug, sp),
+      research: _research(),
+    );
     // 다음 포인트가 생기는 조건.
     final k = cfg.levelsPerPoint;
     final cap = data.petConfig?.levelCap(bug.breakthroughTier);
@@ -1672,7 +1677,12 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen> {
         );
         return;
       }
-      final q = trainPointQuote(rec, cfg, _rarityOf(bug, sp), research: _research());
+      final q = trainPointQuote(
+        rec,
+        cfg,
+        _rarityOf(bug, sp),
+        research: _research(),
+      );
       if (kTrainingMaterials.any((k) => save.materialCount(k) < q.cost)) {
         showCenterToast(context, l.trainingNoMaterials);
         return;
@@ -1841,7 +1851,10 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen> {
               rec.freeRespec
                   ? l.trainRespecFreeBadge
                   : l.trainRespecWaitInfo(
-                      remainLabel(l, trainRespecWait(cfg, rec.paid, _research())),
+                      remainLabel(
+                        l,
+                        trainRespecWait(cfg, rec.paid, _research()),
+                      ),
                     ),
               style: const TextStyle(
                 color: _honey,
@@ -1933,7 +1946,10 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen> {
               rec.freeRespec
                   ? l.trainRespecAskFree
                   : l.trainRespecAskWait(
-                      remainLabel(l, trainRespecWait(cfg, rec.paid, _research())),
+                      remainLabel(
+                        l,
+                        trainRespecWait(cfg, rec.paid, _research()),
+                      ),
                     ),
               l.trainRespecApply,
               icon: Icons.restart_alt_rounded,

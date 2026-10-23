@@ -184,7 +184,10 @@ class _ResearchScreenState extends ConsumerState<ResearchScreen> {
           ),
           formatCompact(save.materialCount(MaterialKind.fossil)),
         ),
-        _tally(jellyIcon(size: 16), formatCompact(save.materialCount(MaterialKind.jelly))),
+        _tally(
+          jellyIcon(size: 16),
+          formatCompact(save.materialCount(MaterialKind.jelly)),
+        ),
       ],
     ),
   );
@@ -247,12 +250,7 @@ class _ResearchScreenState extends ConsumerState<ResearchScreen> {
                 ),
               )
             else
-              _lockedSlot(
-                l,
-                cfg,
-                i,
-                buyPrice: i == open ? buyPrice : null,
-              ),
+              _lockedSlot(l, cfg, i, buyPrice: i == open ? buyPrice : null),
           ],
         ],
       ),

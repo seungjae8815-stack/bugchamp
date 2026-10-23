@@ -633,9 +633,7 @@ TrainOp allocTrainPoint(
         bugId: bug.id,
         slot: slot,
         count: count,
-        until: now.toUtc().add(
-          Duration(seconds: _trainSecs(secs, research)),
-        ),
+        until: now.toUtc().add(Duration(seconds: _trainSecs(secs, research))),
       ),
     ),
     error: null,

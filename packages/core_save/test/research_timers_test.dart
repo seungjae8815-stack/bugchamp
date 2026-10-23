@@ -11,7 +11,11 @@ void main() {
     expect(researchScaledSeconds(101, half, ResearchEffect.hatchTime), 51);
     expect(researchScaledSeconds(1, half, ResearchEffect.hatchTime), 1);
     expect(
-      researchScaledSeconds(100, ResearchEffects.none, ResearchEffect.hatchTime),
+      researchScaledSeconds(
+        100,
+        ResearchEffects.none,
+        ResearchEffect.hatchTime,
+      ),
       100,
     );
     // 다른 종류 효과는 영향 없음.

@@ -89,6 +89,7 @@ class RedDots {
 
   bool get skills => skillDraw || skillSweep || skillTraining || skillGradeUp;
   bool get stats => forge || starUp;
+
   /// 하단 탭 점(2026-10-22 — 옛 캐릭터 탭이 장비·스킬·요정 탭으로 나뉘었다).
   bool get equipTab => stats;
   bool get skillsTab => skills;

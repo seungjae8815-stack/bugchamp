@@ -218,8 +218,12 @@ void main() {
       expect(s.researchPassExpiresAt, t0.add(const Duration(days: 30)));
       expect(s.passExpiresAt, isNull);
       expect(s.growthPassExpiresAt, isNull);
-      s = grant(s, 'research_pass',
-          pid: 'R2', at: t0.add(const Duration(days: 10)));
+      s = grant(
+        s,
+        'research_pass',
+        pid: 'R2',
+        at: t0.add(const Duration(days: 10)),
+      );
       expect(s.researchPassExpiresAt, t0.add(const Duration(days: 60)));
     });
 

@@ -40,8 +40,14 @@ void main() {
     final rng = Random(7);
     final probe = Random(7);
     expect(
-      idleResearchSamples(base(), cfg,
-          from: t, accrued: span, eliteKills: 100, rng: rng),
+      idleResearchSamples(
+        base(),
+        cfg,
+        from: t,
+        accrued: span,
+        eliteKills: 100,
+        rng: rng,
+      ),
       0,
     );
     expect(rng.nextInt(1 << 20), probe.nextInt(1 << 20));
@@ -74,9 +80,6 @@ void main() {
   });
 
   test('보스 첫 처치는 확정 bossFirstDrop', () {
-    expect(
-      rollResearchDrop(cfg, Random(1), ResearchDropSource.bossFirst),
-      25,
-    );
+    expect(rollResearchDrop(cfg, Random(1), ResearchDropSource.bossFirst), 25);
   });
 }
