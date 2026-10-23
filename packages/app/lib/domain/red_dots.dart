@@ -8,7 +8,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../data/game_data.dart';
 import '../features/character/skill_panel.dart' show skillIdleGradeUps;
+import 'guild_service.dart' show guildBonusProvider;
 import 'providers.dart';
+import 'research_view.dart';
 import 'save_controller.dart';
 
 /// 빨간 점 — **놓치면 손해인 것**만(2026-10-19 사장님 확정: 공략집 · 하루 무료 · 빈 부화기·짝짓기 칸 ·
@@ -34,6 +36,8 @@ class RedDots {
     this.ticketFull = false,
     this.league = false,
     this.training = false,
+    this.researchIdle = false,
+    this.researchDone = false,
   });
 
   /// 이번 공략집을 아직 안 열어 봄(기기 플래그 — [guideSeenProvider]).
@@ -77,6 +81,12 @@ class RedDots {
   /// 훈련 칸이 비었고 출정(방어) 곤충에게 찍을 포인트가 남음.
   final bool training;
 
+  /// 연구 칸이 비었고 지금 시작할 수 있는 연구가 있음(재화·선행 충족).
+  final bool researchIdle;
+
+  /// 끝난 연구가 칸에 남아 있음(자동 수령이 돌기 전 잠깐).
+  final bool researchDone;
+
   bool get skills => skillDraw || skillSweep || skillTraining || skillGradeUp;
   bool get stats => forge || starUp;
   /// 하단 탭 점(2026-10-22 — 옛 캐릭터 탭이 장비·스킬·요정 탭으로 나뉘었다).
@@ -86,8 +96,8 @@ class RedDots {
       incubator || breeding || dex || breakthroughBugs.isNotEmpty;
   bool get battleTab => ticketFree || ticketFull || league || training;
 
-  /// 연구소 탭(연구 완료·칸 놀고 있음) — 연구소 화면이 들어오며 채운다.
-  bool get researchTab => false;
+  /// 연구소 탭(연구 완료·칸 놀고 있음).
+  bool get researchTab => researchIdle || researchDone;
 
   /// 빨간 점을 달 하단 탭 번호(길드 가입 신청은 길드 서비스가 따로 더한다).
   Set<int> get tabDots => {
@@ -154,6 +164,7 @@ final redDotsProvider = Provider<RedDots>((ref) {
     nowUtc: clock.now().toUtc(),
     localNow: clock.now(),
     guide: guide,
+    guildBonus: ref.watch(guildBonusProvider),
   );
 });
 
@@ -164,6 +175,7 @@ RedDots computeRedDots({
   required DateTime nowUtc,
   required DateTime localNow,
   bool guide = false,
+  Map<String, double> guildBonus = const {},
 }) {
   final now = nowUtc;
   bool due(DateTime? t) => t != null && !now.isBefore(t);
@@ -271,6 +283,15 @@ RedDots computeRedDots({
     }
   }
 
+  // ── 연구소: 빈 칸 + 시작 가능 · 끝난 연구 ──
+  final researchDone = save.researchSlots.any((r) => due(r.endsAt));
+  final researchIdle = anyResearchStartable(
+    save,
+    data,
+    now,
+    guildBonus: guildBonus,
+  );
+
   return RedDots(
     guide: guide,
     skillDraw: skillDraw,
@@ -287,5 +308,7 @@ RedDots computeRedDots({
     ticketFull: ticketFull,
     league: league,
     training: training,
+    researchIdle: researchIdle,
+    researchDone: researchDone,
   );
 }

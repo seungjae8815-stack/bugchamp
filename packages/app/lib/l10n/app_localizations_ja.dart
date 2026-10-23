@@ -8322,4 +8322,213 @@ class AppLocalizationsJa extends AppLocalizations {
   @override
   String get whatsNew25Fix =>
       '王虫選抜大会のバナーが長くなってずれる問題、決闘の無料チャージボタンの大きさ、設定の攻略本の赤い点が切れる問題を直しました';
+
+  @override
+  String get researchSamples => '研究標本';
+
+  @override
+  String get researchSlotEmpty => '空き';
+
+  @override
+  String researchSlotOpensAt(String tier) {
+    return '$tierで解放';
+  }
+
+  @override
+  String get researchSlotBuy => '解放';
+
+  @override
+  String get researchSlotBuyTitle => '研究枠の解放';
+
+  @override
+  String get researchSlotBuyBody => 'ゼリーで研究枠を1つ追加します（永久）。';
+
+  @override
+  String researchSlotsTitle(String n, String max) {
+    return '研究枠 $n/$max';
+  }
+
+  @override
+  String researchSlotItem(String name, String lv) {
+    return '$name Lv$lv';
+  }
+
+  @override
+  String researchLevel(String lv, String max) {
+    return 'Lv $lv/$max';
+  }
+
+  @override
+  String get researchMaxed => '最大レベル';
+
+  @override
+  String get researchStart => '研究';
+
+  @override
+  String get researchRunning => '研究中';
+
+  @override
+  String get researchInstantTitle => '研究を即完了';
+
+  @override
+  String researchInstantBody(String name, String lv) {
+    return '$name Lv$lv の研究を今すぐ完了しますか？';
+  }
+
+  @override
+  String researchLockedReq(String name, String lv) {
+    return '$name Lv$lv が必要';
+  }
+
+  @override
+  String researchDoneToast(String name, String lv) {
+    return '$name Lv$lv 研究完了！';
+  }
+
+  @override
+  String researchCostMaterials(String n) {
+    return '素材 各$n';
+  }
+
+  @override
+  String get researchHowToGet =>
+      '研究標本はエリート・ボスがドロップします。ゴールド・素材のコストは到達した最も高い狩り場が基準です。';
+
+  @override
+  String get researchUnitPp => 'pt';
+
+  @override
+  String get researchErrMaxLevel => 'すでに最大レベルです';
+
+  @override
+  String get researchErrLocked => '前の研究を先に上げてください';
+
+  @override
+  String get researchErrSlotsFull => '研究枠がすべて使用中です';
+
+  @override
+  String get researchErrRunning => 'すでに研究中です';
+
+  @override
+  String get researchErrNotEnough => '資源が足りません';
+
+  @override
+  String get researchErrMaxSlots => 'これ以上枠を解放できません';
+
+  @override
+  String get researchErrStale => '価格が変わりました。もう一度お試しください';
+
+  @override
+  String get researchErrGeneric => '研究を進められません';
+
+  @override
+  String get notifResearchTitle => '研究完了！';
+
+  @override
+  String get notifResearchBody => '研究が終わりました。研究所で次の研究を始めましょう。';
+
+  @override
+  String get notifyResearchDone => '研究完了';
+
+  @override
+  String get researchBranchHunt => '狩り';
+
+  @override
+  String get researchBranchNurture => '育成';
+
+  @override
+  String get researchBranchDuel => '決闘';
+
+  @override
+  String get researchBranchGear => '装備';
+
+  @override
+  String get researchBranchEconomy => '経済';
+
+  @override
+  String get researchFxHuntAtk => '狩り攻撃力';
+
+  @override
+  String get researchFxHuntHpDef => '狩り体力・防御';
+
+  @override
+  String get researchFxFind => '虫・素材の発見';
+
+  @override
+  String get researchFxGold => 'ゴールド獲得';
+
+  @override
+  String get researchFxBossDmg => 'ボスダメージ';
+
+  @override
+  String get researchFxOffline => '放置報酬';
+
+  @override
+  String get researchFxHatchTime => '孵化時間';
+
+  @override
+  String get researchFxBreedTime => '産卵時間';
+
+  @override
+  String get researchFxTrainTime => '突破・訓練時間';
+
+  @override
+  String get researchFxResearchTime => '研究時間';
+
+  @override
+  String get researchFxDuelAtk => '決闘攻撃';
+
+  @override
+  String get researchFxDuelDef => '決闘防御';
+
+  @override
+  String get researchFxDuelHp => '決闘体力';
+
+  @override
+  String get researchFxInjuryTime => '負傷回復時間';
+
+  @override
+  String get researchFxHuntCritDmg => '狩り会心ダメージ';
+
+  @override
+  String get researchFxHuntRegen => '狩り体力回復';
+
+  @override
+  String get researchFxHuntEvade => '狩り回避';
+
+  @override
+  String get researchFxHuntExp => '経験値獲得';
+
+  @override
+  String get researchFxSkillCooldown => 'スキルクールタイム';
+
+  @override
+  String get researchFxForgeTime => '工房ランクアップ・超越時間';
+
+  @override
+  String get researchFxStarTime => '星強化時間';
+
+  @override
+  String get researchFxPolishCost => '仕上げコスト';
+
+  @override
+  String get researchFxTraitChance => '血統特性の発現確率';
+
+  @override
+  String get researchFxPotionChance => '成長薬のドロップ確率';
+
+  @override
+  String get researchFxSalvageMat => '分解・放生の素材';
+
+  @override
+  String get researchFxExchangeGain => '交換所の受取量';
+
+  @override
+  String get researchFxGiftGold => 'ギフト・デイリー報酬のゴールド・素材';
+
+  @override
+  String get researchFxDuelCrit => '決闘会心率';
+
+  @override
+  String get researchFxDuelGrit => 'タップ反撃のしきい値';
 }

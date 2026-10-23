@@ -33,6 +33,10 @@ class NotificationService {
   /// 깜짝선물 알림 id.
   static const int giftId = 905;
 
+  /// 연구 완료 알림 id 대역 — 칸마다 하나(연구 칸 최대 3).
+  static const int researchIdBase = 920;
+  static const int researchIdCount = 3;
+
   /// 야간 휴식 시작·종료 시각(로컬). 이 사이에 잡힌 알림은 아침으로 미룬다.
   static const int quietFromHour = 22;
   static const int quietToHour = 8;
@@ -271,6 +275,52 @@ class NotificationService {
     for (var i = 0; i < 8; i++) {
       try {
         await _plugin.cancel(hatchIdBase + i);
+      } catch (_) {}
+    }
+  }
+
+  /// 연구 칸마다 끝나는 시각에 1회 알림. 이미 지난 시각은 건너뛴다(부화 알림과 같은 방식).
+  ///
+  /// 연구는 몇 시간~하루 넘게 걸려 앱을 꺼 둔 채 끝난다 — 알려 주지 않으면 칸이 논다.
+  Future<void> scheduleResearch(
+    List<DateTime> endsAt, {
+    required String title,
+    required String body,
+    bool quiet = true,
+  }) async {
+    if (!_ready) return;
+    await cancelResearch();
+    final now = tz.TZDateTime.now(tz.local);
+    var i = 0;
+    for (final t in endsAt) {
+      if (i >= researchIdCount) break;
+      final at = _avoidQuiet(
+        tz.TZDateTime.from(t.toLocal(), tz.local),
+        quiet: quiet,
+      );
+      if (!at.isAfter(now)) continue;
+      try {
+        await _plugin.zonedSchedule(
+          researchIdBase + i,
+          title,
+          body,
+          at,
+          _details,
+          androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+          uiLocalNotificationDateInterpretation:
+              UILocalNotificationDateInterpretation.absoluteTime,
+        );
+        i++;
+      } catch (e) {
+        debugPrint('scheduleResearch failed: $e');
+      }
+    }
+  }
+
+  Future<void> cancelResearch() async {
+    for (var i = 0; i < researchIdCount; i++) {
+      try {
+        await _plugin.cancel(researchIdBase + i);
       } catch (_) {}
     }
   }

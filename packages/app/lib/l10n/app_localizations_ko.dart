@@ -8335,4 +8335,213 @@ class AppLocalizationsKo extends AppLocalizations {
   @override
   String get whatsNew25Fix =>
       '왕충 선발대회 배너가 길어져 밀리던 것, 결투 무료 충전 버튼 크기, 설정 공략집 빨간 점이 잘리던 것을 고쳤어요';
+
+  @override
+  String get researchSamples => '연구 표본';
+
+  @override
+  String get researchSlotEmpty => '비어 있음';
+
+  @override
+  String researchSlotOpensAt(String tier) {
+    return '$tier에서 열림';
+  }
+
+  @override
+  String get researchSlotBuy => '칸 열기';
+
+  @override
+  String get researchSlotBuyTitle => '연구 칸 열기';
+
+  @override
+  String get researchSlotBuyBody => '젤리로 연구 칸을 하나 더 엽니다(영구).';
+
+  @override
+  String researchSlotsTitle(String n, String max) {
+    return '연구 칸 $n/$max';
+  }
+
+  @override
+  String researchSlotItem(String name, String lv) {
+    return '$name Lv$lv';
+  }
+
+  @override
+  String researchLevel(String lv, String max) {
+    return 'Lv $lv/$max';
+  }
+
+  @override
+  String get researchMaxed => '최고 레벨';
+
+  @override
+  String get researchStart => '연구';
+
+  @override
+  String get researchRunning => '연구 중';
+
+  @override
+  String get researchInstantTitle => '연구 즉시 완료';
+
+  @override
+  String researchInstantBody(String name, String lv) {
+    return '$name Lv$lv 연구를 지금 끝낼까요?';
+  }
+
+  @override
+  String researchLockedReq(String name, String lv) {
+    return '$name Lv$lv 필요';
+  }
+
+  @override
+  String researchDoneToast(String name, String lv) {
+    return '$name Lv$lv 연구 완료!';
+  }
+
+  @override
+  String researchCostMaterials(String n) {
+    return '재료 각 $n';
+  }
+
+  @override
+  String get researchHowToGet =>
+      '연구 표본은 정예·보스가 떨어뜨려요. 골드·재료 비용은 가 본 가장 높은 사냥터 기준이에요.';
+
+  @override
+  String get researchUnitPp => '%p';
+
+  @override
+  String get researchErrMaxLevel => '이미 최고 레벨이에요';
+
+  @override
+  String get researchErrLocked => '앞 연구를 먼저 올려야 해요';
+
+  @override
+  String get researchErrSlotsFull => '연구 칸이 모두 차 있어요';
+
+  @override
+  String get researchErrRunning => '이미 연구 중이에요';
+
+  @override
+  String get researchErrNotEnough => '재화가 부족해요';
+
+  @override
+  String get researchErrMaxSlots => '칸을 더 열 수 없어요';
+
+  @override
+  String get researchErrStale => '값이 바뀌었어요. 다시 시도해 주세요';
+
+  @override
+  String get researchErrGeneric => '연구를 진행할 수 없어요';
+
+  @override
+  String get notifResearchTitle => '연구 완료!';
+
+  @override
+  String get notifResearchBody => '연구가 끝났어요. 연구소에서 다음 연구를 시작해 보세요.';
+
+  @override
+  String get notifyResearchDone => '연구 완료';
+
+  @override
+  String get researchBranchHunt => '사냥';
+
+  @override
+  String get researchBranchNurture => '육성';
+
+  @override
+  String get researchBranchDuel => '결투';
+
+  @override
+  String get researchBranchGear => '장비';
+
+  @override
+  String get researchBranchEconomy => '경제';
+
+  @override
+  String get researchFxHuntAtk => '사냥 공격력';
+
+  @override
+  String get researchFxHuntHpDef => '사냥 체력·방어';
+
+  @override
+  String get researchFxFind => '곤충·재료 찾기';
+
+  @override
+  String get researchFxGold => '골드 획득';
+
+  @override
+  String get researchFxBossDmg => '보스 피해';
+
+  @override
+  String get researchFxOffline => '방치 보상';
+
+  @override
+  String get researchFxHatchTime => '부화 시간';
+
+  @override
+  String get researchFxBreedTime => '산란 시간';
+
+  @override
+  String get researchFxTrainTime => '돌파·훈련 시간';
+
+  @override
+  String get researchFxResearchTime => '연구 시간';
+
+  @override
+  String get researchFxDuelAtk => '결투 공격';
+
+  @override
+  String get researchFxDuelDef => '결투 방어';
+
+  @override
+  String get researchFxDuelHp => '결투 체력';
+
+  @override
+  String get researchFxInjuryTime => '부상 회복 시간';
+
+  @override
+  String get researchFxHuntCritDmg => '사냥 치명 피해';
+
+  @override
+  String get researchFxHuntRegen => '사냥 체력 회복';
+
+  @override
+  String get researchFxHuntEvade => '사냥 회피';
+
+  @override
+  String get researchFxHuntExp => '경험치 획득';
+
+  @override
+  String get researchFxSkillCooldown => '스킬 쿨타임';
+
+  @override
+  String get researchFxForgeTime => '공방 등급업·초월 시간';
+
+  @override
+  String get researchFxStarTime => '별 강화 시간';
+
+  @override
+  String get researchFxPolishCost => '다듬기 비용';
+
+  @override
+  String get researchFxTraitChance => '혈통 특성 열림 확률';
+
+  @override
+  String get researchFxPotionChance => '성장물약 드롭 확률';
+
+  @override
+  String get researchFxSalvageMat => '분해·방생 재료';
+
+  @override
+  String get researchFxExchangeGain => '교환소 받는 양';
+
+  @override
+  String get researchFxGiftGold => '선물·일일보상 골드·재료';
+
+  @override
+  String get researchFxDuelCrit => '결투 치명 확률';
+
+  @override
+  String get researchFxDuelGrit => '탭 반격 문턱';
 }

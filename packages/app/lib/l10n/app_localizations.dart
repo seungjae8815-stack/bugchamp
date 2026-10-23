@@ -13923,6 +13923,390 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Fixed the contest banner stretching, the free ticket refill button size, and the red dot cut off on the Guide button in Settings'**
   String get whatsNew25Fix;
+
+  /// No description provided for @researchSamples.
+  ///
+  /// In en, this message translates to:
+  /// **'Research Samples'**
+  String get researchSamples;
+
+  /// No description provided for @researchSlotEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Empty'**
+  String get researchSlotEmpty;
+
+  /// No description provided for @researchSlotOpensAt.
+  ///
+  /// In en, this message translates to:
+  /// **'Opens at {tier}'**
+  String researchSlotOpensAt(String tier);
+
+  /// No description provided for @researchSlotBuy.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlock'**
+  String get researchSlotBuy;
+
+  /// No description provided for @researchSlotBuyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlock research slot'**
+  String get researchSlotBuyTitle;
+
+  /// No description provided for @researchSlotBuyBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Permanently unlock one more research slot with jelly.'**
+  String get researchSlotBuyBody;
+
+  /// No description provided for @researchSlotsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Research slots {n}/{max}'**
+  String researchSlotsTitle(String n, String max);
+
+  /// No description provided for @researchSlotItem.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} Lv{lv}'**
+  String researchSlotItem(String name, String lv);
+
+  /// No description provided for @researchLevel.
+  ///
+  /// In en, this message translates to:
+  /// **'Lv {lv}/{max}'**
+  String researchLevel(String lv, String max);
+
+  /// No description provided for @researchMaxed.
+  ///
+  /// In en, this message translates to:
+  /// **'Max level'**
+  String get researchMaxed;
+
+  /// No description provided for @researchStart.
+  ///
+  /// In en, this message translates to:
+  /// **'Research'**
+  String get researchStart;
+
+  /// No description provided for @researchRunning.
+  ///
+  /// In en, this message translates to:
+  /// **'In progress'**
+  String get researchRunning;
+
+  /// No description provided for @researchInstantTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Finish research now'**
+  String get researchInstantTitle;
+
+  /// No description provided for @researchInstantBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Finish {name} Lv{lv} now?'**
+  String researchInstantBody(String name, String lv);
+
+  /// No description provided for @researchLockedReq.
+  ///
+  /// In en, this message translates to:
+  /// **'Requires {name} Lv{lv}'**
+  String researchLockedReq(String name, String lv);
+
+  /// No description provided for @researchDoneToast.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} Lv{lv} research complete!'**
+  String researchDoneToast(String name, String lv);
+
+  /// No description provided for @researchCostMaterials.
+  ///
+  /// In en, this message translates to:
+  /// **'Materials {n} each'**
+  String researchCostMaterials(String n);
+
+  /// No description provided for @researchHowToGet.
+  ///
+  /// In en, this message translates to:
+  /// **'Research Samples drop from elites and bosses. Gold and material costs are based on the highest hunting zone you have reached.'**
+  String get researchHowToGet;
+
+  /// No description provided for @researchUnitPp.
+  ///
+  /// In en, this message translates to:
+  /// **'pp'**
+  String get researchUnitPp;
+
+  /// No description provided for @researchErrMaxLevel.
+  ///
+  /// In en, this message translates to:
+  /// **'Already at max level'**
+  String get researchErrMaxLevel;
+
+  /// No description provided for @researchErrLocked.
+  ///
+  /// In en, this message translates to:
+  /// **'Level up the previous research first'**
+  String get researchErrLocked;
+
+  /// No description provided for @researchErrSlotsFull.
+  ///
+  /// In en, this message translates to:
+  /// **'All research slots are busy'**
+  String get researchErrSlotsFull;
+
+  /// No description provided for @researchErrRunning.
+  ///
+  /// In en, this message translates to:
+  /// **'Already in progress'**
+  String get researchErrRunning;
+
+  /// No description provided for @researchErrNotEnough.
+  ///
+  /// In en, this message translates to:
+  /// **'Not enough resources'**
+  String get researchErrNotEnough;
+
+  /// No description provided for @researchErrMaxSlots.
+  ///
+  /// In en, this message translates to:
+  /// **'No more slots to unlock'**
+  String get researchErrMaxSlots;
+
+  /// No description provided for @researchErrStale.
+  ///
+  /// In en, this message translates to:
+  /// **'The price changed. Please try again'**
+  String get researchErrStale;
+
+  /// No description provided for @researchErrGeneric.
+  ///
+  /// In en, this message translates to:
+  /// **'Research is not available'**
+  String get researchErrGeneric;
+
+  /// No description provided for @notifResearchTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Research complete!'**
+  String get notifResearchTitle;
+
+  /// No description provided for @notifResearchBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Your research is done. Start the next one in the Lab.'**
+  String get notifResearchBody;
+
+  /// No description provided for @notifyResearchDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Research complete'**
+  String get notifyResearchDone;
+
+  /// No description provided for @researchBranchHunt.
+  ///
+  /// In en, this message translates to:
+  /// **'Hunt'**
+  String get researchBranchHunt;
+
+  /// No description provided for @researchBranchNurture.
+  ///
+  /// In en, this message translates to:
+  /// **'Nurture'**
+  String get researchBranchNurture;
+
+  /// No description provided for @researchBranchDuel.
+  ///
+  /// In en, this message translates to:
+  /// **'Duel'**
+  String get researchBranchDuel;
+
+  /// No description provided for @researchBranchGear.
+  ///
+  /// In en, this message translates to:
+  /// **'Gear'**
+  String get researchBranchGear;
+
+  /// No description provided for @researchBranchEconomy.
+  ///
+  /// In en, this message translates to:
+  /// **'Economy'**
+  String get researchBranchEconomy;
+
+  /// No description provided for @researchFxHuntAtk.
+  ///
+  /// In en, this message translates to:
+  /// **'Hunt ATK'**
+  String get researchFxHuntAtk;
+
+  /// No description provided for @researchFxHuntHpDef.
+  ///
+  /// In en, this message translates to:
+  /// **'Hunt HP & DEF'**
+  String get researchFxHuntHpDef;
+
+  /// No description provided for @researchFxFind.
+  ///
+  /// In en, this message translates to:
+  /// **'Bug & material find'**
+  String get researchFxFind;
+
+  /// No description provided for @researchFxGold.
+  ///
+  /// In en, this message translates to:
+  /// **'Gold gain'**
+  String get researchFxGold;
+
+  /// No description provided for @researchFxBossDmg.
+  ///
+  /// In en, this message translates to:
+  /// **'Boss damage'**
+  String get researchFxBossDmg;
+
+  /// No description provided for @researchFxOffline.
+  ///
+  /// In en, this message translates to:
+  /// **'Idle rewards'**
+  String get researchFxOffline;
+
+  /// No description provided for @researchFxHatchTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Hatch time'**
+  String get researchFxHatchTime;
+
+  /// No description provided for @researchFxBreedTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Laying time'**
+  String get researchFxBreedTime;
+
+  /// No description provided for @researchFxTrainTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Breakthrough & training time'**
+  String get researchFxTrainTime;
+
+  /// No description provided for @researchFxResearchTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Research time'**
+  String get researchFxResearchTime;
+
+  /// No description provided for @researchFxDuelAtk.
+  ///
+  /// In en, this message translates to:
+  /// **'Duel ATK'**
+  String get researchFxDuelAtk;
+
+  /// No description provided for @researchFxDuelDef.
+  ///
+  /// In en, this message translates to:
+  /// **'Duel DEF'**
+  String get researchFxDuelDef;
+
+  /// No description provided for @researchFxDuelHp.
+  ///
+  /// In en, this message translates to:
+  /// **'Duel HP'**
+  String get researchFxDuelHp;
+
+  /// No description provided for @researchFxInjuryTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Injury recovery time'**
+  String get researchFxInjuryTime;
+
+  /// No description provided for @researchFxHuntCritDmg.
+  ///
+  /// In en, this message translates to:
+  /// **'Hunt crit damage'**
+  String get researchFxHuntCritDmg;
+
+  /// No description provided for @researchFxHuntRegen.
+  ///
+  /// In en, this message translates to:
+  /// **'Hunt HP regen'**
+  String get researchFxHuntRegen;
+
+  /// No description provided for @researchFxHuntEvade.
+  ///
+  /// In en, this message translates to:
+  /// **'Hunt evasion'**
+  String get researchFxHuntEvade;
+
+  /// No description provided for @researchFxHuntExp.
+  ///
+  /// In en, this message translates to:
+  /// **'EXP gain'**
+  String get researchFxHuntExp;
+
+  /// No description provided for @researchFxSkillCooldown.
+  ///
+  /// In en, this message translates to:
+  /// **'Skill cooldown'**
+  String get researchFxSkillCooldown;
+
+  /// No description provided for @researchFxForgeTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Forge upgrade & transcend time'**
+  String get researchFxForgeTime;
+
+  /// No description provided for @researchFxStarTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Star upgrade time'**
+  String get researchFxStarTime;
+
+  /// No description provided for @researchFxPolishCost.
+  ///
+  /// In en, this message translates to:
+  /// **'Refine cost'**
+  String get researchFxPolishCost;
+
+  /// No description provided for @researchFxTraitChance.
+  ///
+  /// In en, this message translates to:
+  /// **'New bloodline trait chance'**
+  String get researchFxTraitChance;
+
+  /// No description provided for @researchFxPotionChance.
+  ///
+  /// In en, this message translates to:
+  /// **'Growth potion drop chance'**
+  String get researchFxPotionChance;
+
+  /// No description provided for @researchFxSalvageMat.
+  ///
+  /// In en, this message translates to:
+  /// **'Salvage & release materials'**
+  String get researchFxSalvageMat;
+
+  /// No description provided for @researchFxExchangeGain.
+  ///
+  /// In en, this message translates to:
+  /// **'Exchange yield'**
+  String get researchFxExchangeGain;
+
+  /// No description provided for @researchFxGiftGold.
+  ///
+  /// In en, this message translates to:
+  /// **'Gift & daily reward gold, materials'**
+  String get researchFxGiftGold;
+
+  /// No description provided for @researchFxDuelCrit.
+  ///
+  /// In en, this message translates to:
+  /// **'Duel crit chance'**
+  String get researchFxDuelCrit;
+
+  /// No description provided for @researchFxDuelGrit.
+  ///
+  /// In en, this message translates to:
+  /// **'Clutch tap threshold'**
+  String get researchFxDuelGrit;
 }
 
 class _AppLocalizationsDelegate

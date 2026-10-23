@@ -8519,4 +8519,215 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get whatsNew25Fix =>
       'Fixed the contest banner stretching, the free ticket refill button size, and the red dot cut off on the Guide button in Settings';
+
+  @override
+  String get researchSamples => 'Research Samples';
+
+  @override
+  String get researchSlotEmpty => 'Empty';
+
+  @override
+  String researchSlotOpensAt(String tier) {
+    return 'Opens at $tier';
+  }
+
+  @override
+  String get researchSlotBuy => 'Unlock';
+
+  @override
+  String get researchSlotBuyTitle => 'Unlock research slot';
+
+  @override
+  String get researchSlotBuyBody =>
+      'Permanently unlock one more research slot with jelly.';
+
+  @override
+  String researchSlotsTitle(String n, String max) {
+    return 'Research slots $n/$max';
+  }
+
+  @override
+  String researchSlotItem(String name, String lv) {
+    return '$name Lv$lv';
+  }
+
+  @override
+  String researchLevel(String lv, String max) {
+    return 'Lv $lv/$max';
+  }
+
+  @override
+  String get researchMaxed => 'Max level';
+
+  @override
+  String get researchStart => 'Research';
+
+  @override
+  String get researchRunning => 'In progress';
+
+  @override
+  String get researchInstantTitle => 'Finish research now';
+
+  @override
+  String researchInstantBody(String name, String lv) {
+    return 'Finish $name Lv$lv now?';
+  }
+
+  @override
+  String researchLockedReq(String name, String lv) {
+    return 'Requires $name Lv$lv';
+  }
+
+  @override
+  String researchDoneToast(String name, String lv) {
+    return '$name Lv$lv research complete!';
+  }
+
+  @override
+  String researchCostMaterials(String n) {
+    return 'Materials $n each';
+  }
+
+  @override
+  String get researchHowToGet =>
+      'Research Samples drop from elites and bosses. Gold and material costs are based on the highest hunting zone you have reached.';
+
+  @override
+  String get researchUnitPp => 'pp';
+
+  @override
+  String get researchErrMaxLevel => 'Already at max level';
+
+  @override
+  String get researchErrLocked => 'Level up the previous research first';
+
+  @override
+  String get researchErrSlotsFull => 'All research slots are busy';
+
+  @override
+  String get researchErrRunning => 'Already in progress';
+
+  @override
+  String get researchErrNotEnough => 'Not enough resources';
+
+  @override
+  String get researchErrMaxSlots => 'No more slots to unlock';
+
+  @override
+  String get researchErrStale => 'The price changed. Please try again';
+
+  @override
+  String get researchErrGeneric => 'Research is not available';
+
+  @override
+  String get notifResearchTitle => 'Research complete!';
+
+  @override
+  String get notifResearchBody =>
+      'Your research is done. Start the next one in the Lab.';
+
+  @override
+  String get notifyResearchDone => 'Research complete';
+
+  @override
+  String get researchBranchHunt => 'Hunt';
+
+  @override
+  String get researchBranchNurture => 'Nurture';
+
+  @override
+  String get researchBranchDuel => 'Duel';
+
+  @override
+  String get researchBranchGear => 'Gear';
+
+  @override
+  String get researchBranchEconomy => 'Economy';
+
+  @override
+  String get researchFxHuntAtk => 'Hunt ATK';
+
+  @override
+  String get researchFxHuntHpDef => 'Hunt HP & DEF';
+
+  @override
+  String get researchFxFind => 'Bug & material find';
+
+  @override
+  String get researchFxGold => 'Gold gain';
+
+  @override
+  String get researchFxBossDmg => 'Boss damage';
+
+  @override
+  String get researchFxOffline => 'Idle rewards';
+
+  @override
+  String get researchFxHatchTime => 'Hatch time';
+
+  @override
+  String get researchFxBreedTime => 'Laying time';
+
+  @override
+  String get researchFxTrainTime => 'Breakthrough & training time';
+
+  @override
+  String get researchFxResearchTime => 'Research time';
+
+  @override
+  String get researchFxDuelAtk => 'Duel ATK';
+
+  @override
+  String get researchFxDuelDef => 'Duel DEF';
+
+  @override
+  String get researchFxDuelHp => 'Duel HP';
+
+  @override
+  String get researchFxInjuryTime => 'Injury recovery time';
+
+  @override
+  String get researchFxHuntCritDmg => 'Hunt crit damage';
+
+  @override
+  String get researchFxHuntRegen => 'Hunt HP regen';
+
+  @override
+  String get researchFxHuntEvade => 'Hunt evasion';
+
+  @override
+  String get researchFxHuntExp => 'EXP gain';
+
+  @override
+  String get researchFxSkillCooldown => 'Skill cooldown';
+
+  @override
+  String get researchFxForgeTime => 'Forge upgrade & transcend time';
+
+  @override
+  String get researchFxStarTime => 'Star upgrade time';
+
+  @override
+  String get researchFxPolishCost => 'Refine cost';
+
+  @override
+  String get researchFxTraitChance => 'New bloodline trait chance';
+
+  @override
+  String get researchFxPotionChance => 'Growth potion drop chance';
+
+  @override
+  String get researchFxSalvageMat => 'Salvage & release materials';
+
+  @override
+  String get researchFxExchangeGain => 'Exchange yield';
+
+  @override
+  String get researchFxGiftGold => 'Gift & daily reward gold, materials';
+
+  @override
+  String get researchFxDuelCrit => 'Duel crit chance';
+
+  @override
+  String get researchFxDuelGrit => 'Clutch tap threshold';
 }

@@ -10132,6 +10132,13 @@ class _NotifySectionState extends State<_NotifySection> {
                     enabled: s.enabled,
                   ),
                   _row(
+                    Icons.science_rounded,
+                    l.notifyResearchDone,
+                    s.researchDone,
+                    NotifyPrefs.instance.setResearchDone,
+                    enabled: s.enabled,
+                  ),
+                  _row(
                     Icons.card_giftcard_rounded,
                     l.notifyDaily,
                     s.daily,

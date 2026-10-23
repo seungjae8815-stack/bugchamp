@@ -30,6 +30,7 @@ import 'combat_power.dart';
 import 'guild_service.dart';
 import 'game_server.dart';
 import 'providers.dart';
+import 'research_view.dart';
 import 'server_sync.dart' show flushSaveBeforeServerAction, withServerSaveLock;
 
 /// 대회 회차 종료 보상(서버가 확정, UI 가 1회 표시).
@@ -362,6 +363,10 @@ class SaveController extends AsyncNotifier<SaveGame> {
     pendingRespecGift = gift.granted;
 
     save = _applySeason(save, data, now);
+
+    // 연구소 — 꺼 둔 사이 끝난 연구를 레벨에 반영한다(누르지 않아도 효과가 붙게).
+    final researchCfg = data.researchConfig;
+    if (researchCfg != null) save = claimResearch(save, researchCfg, now);
 
     save = save.copyWith(lastSeen: now);
     await repo.save(save);
@@ -778,12 +783,19 @@ class SaveController extends AsyncNotifier<SaveGame> {
     // 훈련 v2 — 이전(서버 세이브 채택 경로도 여기서 걸린다 · 멱등) · 끝난 찍기·다시 찍기 반영.
     final data = ref.read(gameDataProvider).value;
     final trimmed = _withTrimmedItems(withDex).trimmedToStorage();
-    final stamped = pruneTraining(
+    final trained = pruneTraining(
       finishTrainPointsIfDue(
         data == null ? trimmed : _migrateTrainV2(trimmed, data),
         now,
       ),
-    ).copyWith(lastSeen: now, saveRev: save.saveRev + 1);
+    );
+    // 연구소 — 끝난 연구를 레벨에 반영(누르지 않아도 효과가 붙게, 어느 경로로 저장돼도 한 곳에서).
+    final researchCfg = data?.researchConfig;
+    final stamped =
+        (researchCfg == null
+                ? trained
+                : claimResearch(trained, researchCfg, now))
+            .copyWith(lastSeen: now, saveRev: save.saveRev + 1);
     state = AsyncData(stamped);
     await _repo.save(stamped);
   }
@@ -865,6 +877,77 @@ class SaveController extends AsyncNotifier<SaveGame> {
     if (r.save == null) return r.error;
     await _commit(r.save!);
     return null;
+  }
+
+  // ── 연구소(설계 docs/superpowers/specs/2026-10-22-research-lab-design.md) ──
+  // 규칙은 core_save `research_progress.dart` 한 곳. 시각은 다른 기기 권위 타이머(부화·훈련)와 같은
+  // [clockProvider] — 서버는 업로드 때 칸마다 시계 어긋남을 `clockSkewSeconds` 만큼 봐 준다.
+
+  /// 연구 [id] 의 다음 레벨 값(화면 미리보기와 실제 차감이 같은 값). 다 찍었거나 설정이 없으면 null.
+  ResearchPrice? researchPriceNow(String id) {
+    final data = ref.read(gameDataProvider).value;
+    final s = state.value;
+    if (data == null || s == null) return null;
+    return researchPriceOf(
+      s,
+      data,
+      id,
+      ref.read(clockProvider).now().toUtc(),
+      guildBonus: ref.read(guildBonusProvider),
+    );
+  }
+
+  /// 연구 시작 — 성공하면 null, 실패하면 [ResearchOp] 사유 키.
+  Future<String?> startResearchNow(String id) async {
+    final cfg = ref.read(gameDataProvider).value?.researchConfig;
+    if (cfg == null) return 'unknown_research';
+    final price = researchPriceNow(id);
+    if (price == null) return 'max_level';
+    final r = startResearch(
+      state.requireValue,
+      cfg,
+      id,
+      ref.read(clockProvider).now().toUtc(),
+      price,
+    );
+    if (r.save == null) return r.error;
+    await _commit(r.save!);
+    return null;
+  }
+
+  /// 진행 중 연구를 젤리로 끝낸다. 성공하면 null(`not_running`·`not_enough_jelly`).
+  Future<String?> finishResearchWithJelly(String id) async {
+    final cfg = ref.read(gameDataProvider).value?.researchConfig;
+    if (cfg == null) return 'not_running';
+    final r = finishResearchNow(
+      state.requireValue,
+      cfg,
+      id,
+      ref.read(clockProvider).now().toUtc(),
+    );
+    if (r.save == null) return r.error;
+    await _commit(r.save!);
+    return null;
+  }
+
+  /// 연구 칸을 젤리로 산다. 성공하면 null(`max_slots`·`not_enough_jelly`).
+  Future<String?> buyResearchSlotNow() async {
+    final cfg = ref.read(gameDataProvider).value?.researchConfig;
+    if (cfg == null) return 'max_slots';
+    final r = buyResearchSlot(state.requireValue, cfg);
+    if (r.save == null) return r.error;
+    await _commit(r.save!);
+    return null;
+  }
+
+  /// 끝난 연구를 반영한다(사냥이 멈춰 커밋이 없을 때 연구소 화면이 부른다). 끝난 칸이 없으면 아무것도 안 한다.
+  Future<void> claimResearchDue() async {
+    final cfg = ref.read(gameDataProvider).value?.researchConfig;
+    final s = state.value;
+    if (cfg == null || s == null) return;
+    final now = ref.read(clockProvider).now().toUtc();
+    if (!s.researchSlots.any((r) => !now.isBefore(r.endsAt))) return;
+    await _commit(s);
   }
 
   /// 진행 중 공방 초월을 젤리로 즉시 끝낸다(값표는 공방 등급업과 같다). 실패 이유: `none` · `not_enough_jelly`.

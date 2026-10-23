@@ -14,6 +14,7 @@ class NotifySettings {
     this.daily = true,
     this.gift = true,
     this.quietHours = true,
+    this.researchDone = true,
   });
 
   /// 알림 전체 스위치. 끄면 개별 설정과 무관하게 아무것도 보내지 않는다.
@@ -34,6 +35,9 @@ class NotifySettings {
   /// 야간 휴식(22:00~08:00) — 이 시간대 알림은 아침 8시로 미룬다.
   final bool quietHours;
 
+  /// 연구가 끝났을 때.
+  final bool researchDone;
+
   NotifySettings copyWith({
     bool? enabled,
     bool? offlineFull,
@@ -41,6 +45,7 @@ class NotifySettings {
     bool? daily,
     bool? gift,
     bool? quietHours,
+    bool? researchDone,
   }) => NotifySettings(
     enabled: enabled ?? this.enabled,
     offlineFull: offlineFull ?? this.offlineFull,
@@ -49,6 +54,7 @@ class NotifySettings {
     // 예전엔 이 두 줄이 빠져, 다른 스위치를 건드리면 선물·야간 휴식이 기본값(켬)으로 돌아갔다.
     gift: gift ?? this.gift,
     quietHours: quietHours ?? this.quietHours,
+    researchDone: researchDone ?? this.researchDone,
   );
 }
 
@@ -74,6 +80,7 @@ class NotifyPrefs {
         daily: p.getBool('notify.daily') ?? true,
         gift: p.getBool('notify.gift') ?? true,
         quietHours: p.getBool('notify.quietHours') ?? true,
+        researchDone: p.getBool('notify.researchDone') ?? true,
       );
     } catch (e) {
       debugPrint('NotifyPrefs.load 실패(기본값 사용): $e');
@@ -108,5 +115,10 @@ class NotifyPrefs {
   Future<void> setQuietHours(bool v) async {
     settings.value = settings.value.copyWith(quietHours: v);
     await _prefs?.setBool('notify.quietHours', v);
+  }
+
+  Future<void> setResearchDone(bool v) async {
+    settings.value = settings.value.copyWith(researchDone: v);
+    await _prefs?.setBool('notify.researchDone', v);
   }
 }

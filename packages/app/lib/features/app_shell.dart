@@ -166,6 +166,19 @@ class _AppShellState extends ConsumerState<AppShell>
       } else {
         unawaited(svc.cancelHatches());
       }
+      // 연구 완료 — 칸마다 끝나는 시각에 한 번(몇 시간~하루 넘게 걸려 꺼 둔 채 끝난다).
+      if (notify.enabled && notify.researchDone && save != null) {
+        unawaited(
+          svc.scheduleResearch(
+            [for (final r in save.researchSlots) r.endsAt],
+            title: l.notifResearchTitle,
+            body: l.notifResearchBody,
+            quiet: notify.quietHours,
+          ),
+        );
+      } else {
+        unawaited(svc.cancelResearch());
+      }
       // 깜짝선물은 10~25분마다 생긴다 — 매번 알리면 성가시므로 백그라운드
       // 진입 후 몇 개 쌓였을 무렵 **한 번만** 알린다.
       if (notify.enabled && notify.gift) {
@@ -184,6 +197,7 @@ class _AppShellState extends ConsumerState<AppShell>
       // 복귀 → 오프라인 알림 취소(이미 접속).
       svc.cancelOfflineFull();
       unawaited(svc.cancelHatches());
+      unawaited(svc.cancelResearch());
       unawaited(svc.cancelGift());
       // 복귀 즉시 서버와 통신을 확인한다. 안 하면 다음 60초 주기까지
       // **백그라운드에서 끊긴 줄 모르고** 놀고, 반대로 백그라운드에서
@@ -272,6 +286,7 @@ class _AppShellState extends ConsumerState<AppShell>
     final svc = NotificationService.instance;
     if (!np.enabled || !np.offlineFull) unawaited(svc.cancelOfflineFull());
     if (!np.enabled || !np.hatchDone) unawaited(svc.cancelHatches());
+    if (!np.enabled || !np.researchDone) unawaited(svc.cancelResearch());
     if (!np.enabled || !np.gift) unawaited(svc.cancelGift());
     unawaited(_syncDailyNotifications());
   }

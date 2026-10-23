@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:app/data/game_data.dart';
+import 'package:app/domain/providers.dart' show kResearchTabIndex;
 import 'package:app/domain/red_dots.dart';
 import 'package:core_models/core_models.dart';
 import 'package:core_run/core_run.dart' show dailyDateKey;
@@ -159,5 +160,67 @@ void main() {
       ).forge,
       isFalse,
     );
+  });
+
+  group('연구소 — 빈 칸 + 시작 가능 · 끝난 연구', () {
+    // 사냥 분치 가격을 재려면 사냥 설정이 있어야 한다.
+    final rd = GameData.fromDecoded(
+      species: _json('species.json'),
+      traps: _json('traps.json'),
+      fields: _json('fields.json'),
+      spawns: _json('spawns.json'),
+      runConfig: _json('run_config.json'),
+      petConfig: _json('pets.json'),
+      itemConfig: _json('items.json'),
+      forgeConfig: _json('forge.json'),
+      battleConfig: _json('battle.json'),
+      researchConfig: _json('research.json'),
+    );
+    final rich = base.copyWith(
+      gold: 1000000000000,
+      researchSamples: 100000,
+      materials: {
+        MaterialKind.chitin: 1000000000,
+        MaterialKind.mineral: 1000000000,
+        MaterialKind.sap: 1000000000,
+        MaterialKind.fossil: 1000000,
+      },
+    );
+
+    test('빈 칸이 있고 시작할 수 있는 연구가 있으면 점', () {
+      final d = _dots(rd, rich);
+      expect(d.researchIdle, isTrue);
+      expect(d.researchTab, isTrue);
+      expect(d.tabDots, contains(kResearchTabIndex));
+    });
+
+    test('재화가 없으면 빈 칸이어도 점 없음', () {
+      expect(_dots(rd, base).researchIdle, isFalse);
+      expect(_dots(rd, base).researchTab, isFalse);
+    });
+
+    test('칸이 다 차 있으면 점 없음(쉬움 = 1칸)', () {
+      final busy = rich.copyWith(
+        researchSlots: [
+          ResearchSlot(
+            id: 'jaw',
+            level: 1,
+            endsAt: _now.add(const Duration(hours: 1)),
+          ),
+        ],
+      );
+      final d = _dots(rd, busy);
+      expect(d.researchIdle, isFalse);
+      expect(d.researchDone, isFalse);
+      expect(d.researchTab, isFalse);
+    });
+
+    test('끝난 연구가 있으면 점', () {
+      final done = base.copyWith(
+        researchSlots: [ResearchSlot(id: 'jaw', level: 1, endsAt: _now)],
+      );
+      expect(_dots(rd, done).researchDone, isTrue);
+      expect(_dots(rd, done).researchTab, isTrue);
+    });
   });
 }
