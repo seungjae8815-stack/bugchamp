@@ -265,17 +265,33 @@ void main() {
           .toJson(),
     );
     expect(paid.researchSlotsBought, 1);
-    // 같은 업로드에 미션 젤리 +5 — 순감소(95)가 칸 값(100)보다 작아도 산 칸은 남는다.
+    // 같은 업로드에 미션 젤리 — 순감소가 칸 값보다 작아도 받은 흔적(dailyClaims 미션 날짜)이 있으면 산 칸은 남는다.
+    final forge = cfg.mission!.missions.firstWhere((m) => m.id == 'forge');
+    final gain = forge.rewardAt(1);
+    expect(gain, greaterThan(0));
     final withGain = up(
       s,
       s
           .copyWith(
             researchSlotsBought: 1,
-            materials: {MaterialKind.jelly: 1000 - rc.slotJelly[0] + 5},
+            missionClaims: {'forge': 1},
+            dailyClaims: {missionJellyKey('forge', 0): dailyDateKey(t0)},
+            materials: {MaterialKind.jelly: 1000 - rc.slotJelly[0] + gain},
           )
           .toJson(),
     );
     expect(withGain.researchSlotsBought, 1);
+    // 흔적 없이 순감소가 모자라면 저장본.
+    final noProof = up(
+      s,
+      s
+          .copyWith(
+            researchSlotsBought: 1,
+            materials: {MaterialKind.jelly: 1000 - rc.slotJelly[0] + gain},
+          )
+          .toJson(),
+    );
+    expect(noProof.researchSlotsBought, 0);
     // 두 칸(400)을 젤리 없이 — 업로드 젤리 증가 허용치로도 설명이 안 된다.
     final free = up(s, s.copyWith(researchSlotsBought: 2).toJson());
     expect(free.researchSlotsBought, 0);
@@ -305,20 +321,27 @@ void main() {
           .toJson(),
     );
     expect(paid.researchSlotsBought, 2);
-    // 젤리 증가 허용치(300)만으로도 3번째 칸 값(300) 하나는 설명된다 — 예전 순서(100 + 300)였다면 모자랐다.
-    final byFloor = up(s, s.copyWith(researchSlotsBought: 2).toJson());
-    expect(byFloor.researchSlotsBought, 2);
-    // 젤리가 늘었다고 올리면(허용치 200 < 300) 저장본.
-    final cheap = up(
+    // 젤리를 안 냈으면(그대로) 3번째 칸은 공짜가 아니다 — 300 상식 여유를 칸 값에 쓰지 않는다.
+    final unchanged = up(s, s.copyWith(researchSlotsBought: 2).toJson());
+    expect(unchanged.researchSlotsBought, 0);
+    // 정직한 구매 + 같은 업로드의 미션 젤리 +2 — 인정.
+    final forge = cfg.mission!.missions.firstWhere((m) => m.id == 'forge');
+    final claims = [
+      for (var c = 0; c < 20; c++)
+        if (forge.rewardAt(c) == 2) c,
+    ].first;
+    final honest = up(
       s,
       s
           .copyWith(
             researchSlotsBought: 2,
-            materials: const {MaterialKind.jelly: 1100},
+            missionClaims: {'forge': claims},
+            dailyClaims: {missionJellyKey('forge', 0): dailyDateKey(t0)},
+            materials: {MaterialKind.jelly: 1000 - rc.slotJelly[1] + 2},
           )
           .toJson(),
     );
-    expect(cheap.researchSlotsBought, 0);
+    expect(honest.researchSlotsBought, 2);
   });
 
   test('되돌릴 때 이번 업로드에 시작한 단계의 시작 값을 돌려준다', () {

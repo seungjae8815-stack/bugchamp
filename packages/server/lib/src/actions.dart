@@ -1438,7 +1438,7 @@ class GameActions {
             early,
             t: t,
             elapsed: elapsed,
-            jelly: _researchJelly(stored, early, clientJson, elapsed),
+            jelly: _researchJelly(stored, early, clientJson, elapsed, t),
             cfg: researchCfg,
           );
     final envResearch = verdict != null && verdict.ok
@@ -2379,6 +2379,7 @@ class GameActions {
     SaveGame client,
     Map<String, dynamic> clientJson,
     Duration elapsed,
+    DateTime t,
   ) {
     final have = stored.materialCount(MaterialKind.jelly);
     final now = client.materialCount(MaterialKind.jelly);
@@ -2388,8 +2389,86 @@ class GameActions {
         0,
         have + dex - now - _jellyUsedElsewhere(stored, client, elapsed),
       ),
-      slots: max(0, have + _jellySanityFloor + dex - now),
+      // 칸은 영구 상품이다 — 300 상식 여유(`_jellySanityFloor`)를 쓰면 젤리를 안 내고 3번째 칸(300)이 열렸다.
+      // 근거가 보이는 기기 젤리 수입([_deviceJellyEvidence])만 더한다.
+      slots: max(0, have + dex + _deviceJellyEvidence(stored, client, t) - now),
     );
+  }
+
+  /// 이번 업로드에서 기기가 **받았다는 흔적이 보이는** 젤리(도감·보스 마일스톤 [_dexJellyAllowance] 밖).
+  /// 연구 칸 구매 판정용 — 같은 업로드에 미션 젤리 등이 들어와 순감소가 칸 값보다 작아도 정직한 구매가 지워지지 않게.
+  ///  - 젤리 미션: `dailyClaims` 의 `mission:<id>`(`#n`) 날짜가 앞으로 간 칸마다 그 미션의 지금 보상.
+  ///  - 깜짝선물 그날 첫 2배 젤리: 2배 날짜가 앞으로 갔으면 `doubleJellyMax`.
+  ///  - 곤충학자 패스 일일 젤리(`_iapDaily` 날짜가 앞으로 · 저장본 기준 패스 켜짐) · 일일보상 젤리(슬롯 날짜가 앞으로).
+  ///  - 새로 받은 리그 승급 보상 · 시즌이 넘어갔으면 가장 큰 시즌 보상 · 사라진 곤충의 분해 젤리(획득 시점 포텐셜).
+  /// 미래 날짜(서버 UTC + 하루 뒤)는 받은 것으로 치지 않는다([_huntRewardAllowance] 와 같은 규칙).
+  int _deviceJellyEvidence(SaveGame stored, SaveGame client, DateTime t) {
+    final latestDay = dailyDateKey(t.toUtc().add(const Duration(days: 1)));
+    bool advanced(String key) {
+      final c = client.dailyClaims[key];
+      if (c == null || c.compareTo(latestDay) > 0) return false;
+      final b = stored.dailyClaims[key];
+      return b == null || c.compareTo(b) > 0;
+    }
+
+    var sum = 0;
+    final missions = config.mission;
+    if (missions != null) {
+      for (final def in missions.missions) {
+        if (def.reward != 'jelly' || def.jellyPerDay <= 0) continue;
+        final claims = max(
+          client.missionClaimCount(def.id),
+          stored.missionClaimCount(def.id),
+        );
+        for (var n = 0; n < def.jellyPerDay; n++) {
+          if (advanced(missionJellyKey(def.id, n))) {
+            sum += max(0, def.rewardAt(claims));
+          }
+        }
+      }
+    }
+    final gift = config.gift;
+    final cDouble = client.giftDoubleDate;
+    if (gift != null &&
+        cDouble != null &&
+        cDouble.compareTo(latestDay) <= 0 &&
+        (stored.giftDoubleDate == null ||
+            cDouble.compareTo(stored.giftDoubleDate!) > 0)) {
+      sum += max(0, gift.doubleJellyMax);
+    }
+    if (stored.passActive(t) && advanced('_iapDaily')) {
+      sum += max(0, config.iap.passDailyJelly);
+    }
+    final daily = config.daily;
+    if (daily != null) {
+      for (final r in daily.rewards) {
+        if (r.jelly <= 0) continue;
+        if (advanced(r.id)) sum += r.jelly;
+        if (advanced('${r.id}#2')) sum += r.jelly;
+      }
+    }
+    final battle = config.battle;
+    for (final lg in battle.leagues) {
+      if (client.claimedLeagues.contains(lg.id) &&
+          !stored.claimedLeagues.contains(lg.id)) {
+        sum += max(0, lg.rewardJelly);
+      }
+    }
+    final cs = client.seasonStartedAt, ss = stored.seasonStartedAt;
+    if (cs != null && ss != null && cs.isAfter(ss)) {
+      var best = 0;
+      for (var i = 0; i < battle.leagues.length; i++) {
+        best = max(best, battle.seasonRewardAt(i).jelly);
+      }
+      sum += best;
+    }
+    final kept = {for (final b in client.bugs) b.id};
+    for (final b in stored.bugs) {
+      if (!kept.contains(b.id)) {
+        sum += max(0, config.pet.disassembleJelly(b.bornPotential));
+      }
+    }
+    return sum;
   }
 
   /// 연구 업로드 판정(설계 §3.9) — 연구 레벨은 기기 세이브에 살지만 **결투에 실린다**(서버가 팀에 입힌다).
