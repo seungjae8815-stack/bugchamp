@@ -2398,7 +2398,8 @@ class GameActions {
   ///
   /// 1. **정리** — 모르는 연구는 버리고 최대 레벨로 자른다 · 줄어든 레벨은 저장본(레벨은 줄지 않는다) ·
   ///    진행 칸은 아는 연구의 다음 레벨(지금 + 1)만, 연구마다 하나.
-  /// 2. **산 칸**(`rsB`) — 줄지 않고 `slotJelly` 개수까지 · 늘어난 몫의 가격이 [jelly] `slots` 를 넘으면 저장본.
+  /// 2. **산 칸**(`rsB`) — 줄지 않고 `slotJelly` 개수까지 · 한 번에 다음 칸 하나(열린 칸 n → 값 `slotJelly[n−1]`, 산 수 → n)를
+  ///    차례로 산 값이 [jelly] `slots` 를 넘으면 저장본.
   ///    이 판정은 시간 판정과 따로다 — 시간에서 걸려도 값을 치른 칸은 남는다.
   /// 3. **시간** — 시간 풀 = 경과 × 열린 칸 수 + 1분(전체) · 연구마다 경과 + 1분(한 줄은 칸 하나 — 노는 칸의 몫을 빌리지 못한다).
   ///    먼저 시간으로만 덮을 수 있는 몫(이어 도는 저장본 칸의 경과 점유 · 새 진행 칸에서 이미 흐른 몫 − 시계 어긋남)을 뺀다.
@@ -2448,19 +2449,40 @@ class GameActions {
         .firstOrNull;
 
     // 2. 산 칸.
+    // 가 본 최고 난이도는 저장본 +1 까지만 믿는다(동기화·허용치와 같은 규칙) — 위조한 극한으로 칸·시간 풀을 늘리지 못하게.
+    final tier = max(stored.topTier, min(client.topTier, stored.topTier + 1));
+    // 한 번 사면 **다음 칸 하나**(core_save `buyResearchSlot`): 열린 칸이 n 이면 값 `slotJelly[n−1]` · 산 수 → n
+    // (어려움 진행도 2칸이면 0 → 2 로 한 번에 뛴다). 저장본 산 수에서 올린 값까지 차례로 사 보고, 그 사이 난이도가
+    // 올랐을 수 있어 저장본 난이도·이번 난이도 둘 다로 재서 맞는 길 중 싼 값을 받는다.
+    int? slotCostTo(int atTier, int from, int to) {
+      var b = from, c = 0;
+      while (b < to) {
+        final n = cfg.slotsFor(atTier, b);
+        if (n >= ResearchConfig.maxSlots || n - 1 >= cfg.slotJelly.length) {
+          return null;
+        }
+        c += cfg.slotJelly[n - 1];
+        b = n;
+      }
+      return b == to ? c : null;
+    }
+
     var bought = client.researchSlotsBought
         .clamp(stored.researchSlotsBought, cfg.slotJelly.length)
         .toInt();
     var slotCost = 0;
-    for (var i = stored.researchSlotsBought; i < bought; i++) {
-      slotCost += cfg.slotJelly[i];
+    if (bought > stored.researchSlotsBought) {
+      final costs = [
+        for (final at in {stored.topTier, tier})
+          ?slotCostTo(at, stored.researchSlotsBought, bought),
+      ];
+      final c = costs.isEmpty ? null : costs.reduce(min);
+      if (c == null || c > jelly.slots) {
+        bought = stored.researchSlotsBought;
+      } else {
+        slotCost = c;
+      }
     }
-    if (slotCost > jelly.slots) {
-      bought = stored.researchSlotsBought;
-      slotCost = 0;
-    }
-    // 가 본 최고 난이도는 저장본 +1 까지만 믿는다(동기화·허용치와 같은 규칙) — 위조한 극한으로 칸·시간 풀을 늘리지 못하게.
-    final tier = max(stored.topTier, min(client.topTier, stored.topTier + 1));
     final open = cfg.slotsFor(tier, bought);
 
     // 3. 시간.

@@ -46,7 +46,8 @@ class _ResearchScreenState extends ConsumerState<ResearchScreen> {
       if (s.researchSlots.any((r) => !now.isBefore(r.endsAt))) {
         unawaited(ref.read(saveControllerProvider.notifier).claimResearchDue());
       }
-      setState(() {});
+      // 다른 탭에 있는 동안(IndexedStack 이 살려 둔다)은 다시 그리지 않는다 — 수령만 한다.
+      if (ref.read(tabIndexProvider) == kResearchTabIndex) setState(() {});
     });
   }
 
@@ -217,11 +218,8 @@ class _ResearchScreenState extends ConsumerState<ResearchScreen> {
     DateTime now,
   ) {
     final open = cfg.slotsFor(save.topTier, save.researchSlotsBought);
-    final bought = save.researchSlotsBought;
-    // 사면 칸이 실제로 늘어날 때만 판다 — 진행도 칸이 이미 앞서 있으면 산 칸이 늘지 않는다.
-    final canBuy =
-        bought < cfg.slotJelly.length &&
-        cfg.slotsFor(save.topTier, bought + 1) > open;
+    // 사면 늘 다음 칸 하나(core_save `buyResearchSlot` — 값은 열린 칸 수로 정해진다).
+    final buyPrice = researchSlotPrice(save, cfg);
     return Container(
       padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
       decoration: _box(),
@@ -253,7 +251,7 @@ class _ResearchScreenState extends ConsumerState<ResearchScreen> {
                 l,
                 cfg,
                 i,
-                buyPrice: canBuy && i == open ? cfg.slotJelly[bought] : null,
+                buyPrice: i == open ? buyPrice : null,
               ),
           ],
         ],
@@ -325,7 +323,7 @@ class _ResearchScreenState extends ConsumerState<ResearchScreen> {
                     ),
                     const SizedBox(width: 6),
                     Text(
-                      done ? '0s' : formatShortDuration(left),
+                      formatShortDuration(left),
                       style: const TextStyle(
                         color: Colors.white70,
                         fontSize: 11,

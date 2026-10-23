@@ -221,6 +221,23 @@ void main() {
     expect(buyResearchSlot(rich(tier: 3), cfg).error, 'max_slots');
   });
 
+  test('buy_slot_always_opens_next — 어려움(진행도 2칸)은 한 번에 3칸 · 값은 3번째 칸 값', () {
+    final hard = rich(tier: 2);
+    expect(cfg.slotsFor(hard.topTier, hard.researchSlotsBought), 2);
+    expect(researchSlotPrice(hard, cfg), cfg.slotJelly[1]);
+    final r = buyResearchSlot(hard, cfg);
+    expect(r.isOk, isTrue);
+    expect(r.save!.materialCount(MaterialKind.jelly), 1000 - cfg.slotJelly[1]);
+    expect(cfg.slotsFor(r.save!.topTier, r.save!.researchSlotsBought), 3);
+    expect(researchSlotPrice(r.save!, cfg), isNull);
+    expect(buyResearchSlot(r.save!, cfg).error, 'max_slots');
+    // 쉬움은 두 번 — 100 뒤 300(합계 그대로).
+    final e1 = buyResearchSlot(rich(), cfg).save!;
+    final e2 = buyResearchSlot(e1, cfg).save!;
+    expect(e2.materialCount(MaterialKind.jelly), 1000 - 100 - 300);
+    expect(cfg.slotsFor(e2.topTier, e2.researchSlotsBought), 3);
+  });
+
   test('price_uses_top_zone_not_current', () {
     final s = rich();
     final p1 = priceOf(s, 'a');

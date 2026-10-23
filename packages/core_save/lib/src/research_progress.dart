@@ -190,23 +190,34 @@ ResearchOp finishResearchNow(
   );
 }
 
-/// 연구 칸을 젤리로 산다(2·3번째 칸 가격 = `slotJelly[산 수]`).
+/// 연구 칸을 젤리로 산다 — **언제나 다음 칸 하나**가 열린다(2026-10-23 확정).
+/// 지금 열린 칸이 n 개면 값은 `slotJelly[n − 1]`(2번째 칸 = [0] · 3번째 칸 = [1]), 산 칸 수는 n 이 된다
+/// (`slotsFor = max(진행도 칸, 1 + 산 칸)` 이 n + 1 이 되게). 진행도로 이미 2칸인 어려움 유저가 사면 바로 3칸 —
+/// 예전(`slotJelly[산 수]`, 산 수 + 1)은 어려움에서 첫 구매가 칸을 늘리지 않았다.
 ResearchOp buyResearchSlot(SaveGame s, ResearchConfig cfg) {
-  final bought = s.researchSlotsBought;
-  if (bought >= cfg.slotJelly.length ||
-      cfg.slotsFor(s.topTier, bought) >= ResearchConfig.maxSlots) {
+  final n = cfg.slotsFor(s.topTier, s.researchSlotsBought);
+  if (n >= ResearchConfig.maxSlots || n - 1 >= cfg.slotJelly.length) {
     return const ResearchOp.fail('max_slots');
   }
-  final price = cfg.slotJelly[bought];
+  final price = cfg.slotJelly[n - 1];
   if (s.materialCount(MaterialKind.jelly) < price) {
     return const ResearchOp.fail('not_enough_jelly');
   }
   final mats = Map<MaterialKind, int>.from(s.materials);
   mats[MaterialKind.jelly] = (mats[MaterialKind.jelly] ?? 0) - price;
   return ResearchOp.ok(
-    s.copyWith(materials: mats, researchSlotsBought: bought + 1),
+    s.copyWith(materials: mats, researchSlotsBought: n),
     extra: {'jelly': price},
   );
+}
+
+/// 지금 칸을 하나 더 사는 값 — 더 살 수 없으면 null(화면 가격표와 [buyResearchSlot] 이 같은 값).
+int? researchSlotPrice(SaveGame s, ResearchConfig cfg) {
+  final n = cfg.slotsFor(s.topTier, s.researchSlotsBought);
+  if (n >= ResearchConfig.maxSlots || n - 1 >= cfg.slotJelly.length) {
+    return null;
+  }
+  return cfg.slotJelly[n - 1];
 }
 
 /// 표본을 [n] 개 넣는다.

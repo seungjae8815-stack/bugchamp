@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:app/data/game_data.dart';
 import 'package:app/data/save_repository.dart';
 import 'package:app/domain/providers.dart';
+import 'package:app/domain/research_view.dart';
 import 'package:app/domain/save_controller.dart';
 import 'package:app/features/research/research_screen.dart';
 import 'package:app/l10n/app_localizations.dart';
@@ -173,4 +174,38 @@ void main() {
       expect(tester.takeException(), isNull);
     });
   }
+
+  test('가격은 가 본 최고 사냥터 기준 — 지금 스테이지를 낮추거나 아래 난이도로 내려가도 골드가 같다', () {
+    final data = _data();
+    final run = data.runConfig!;
+    final top = rich(base).copyWith(
+      maxTierReached: 1,
+      difficultyTier: 1,
+      bestStage: run.zoneStartStage(5) + 30,
+      stageNumber: run.zoneStartStage(5),
+    );
+    int gold(SaveGame s) => researchPriceOf(s, data, 'jaw', t0)!.gold;
+    final g = gold(top);
+    expect(g, greaterThan(0));
+    expect(gold(top.copyWith(stageNumber: 1)), g);
+    expect(gold(top.copyWith(difficultyTier: 0, stageNumber: 1)), g);
+    // 더 높은 사냥터를 가 봤으면 비싸진다(기준이 실제로 최고 기록을 따른다).
+    expect(
+      gold(top.copyWith(bestStage: run.zoneStartStage(8))),
+      greaterThan(g),
+    );
+  });
+
+  testWidgets('어려움(2칸) — 구매 버튼은 3번째 칸 하나뿐이고 값은 3번째 칸 값', (tester) async {
+    await pump(tester, base.copyWith(maxTierReached: 2, difficultyTier: 2));
+    expect(find.byKey(const Key('researchBuySlot')), findsOneWidget);
+    final cfg = _data().researchConfig!;
+    expect(
+      find.descendant(
+        of: find.byKey(const Key('researchBuySlot')),
+        matching: find.textContaining('${cfg.slotJelly[1]}'),
+      ),
+      findsOneWidget,
+    );
+  });
 }

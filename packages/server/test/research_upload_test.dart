@@ -291,6 +291,36 @@ void main() {
     expect(over.researchSlotsBought, lessThanOrEqualTo(rc.slotJelly.length));
   });
 
+  test('칸 구매는 늘 다음 칸 — 어려움(진행도 2칸)은 0 → 2 를 3번째 칸 값으로', () {
+    final s = stored(
+      jelly: 1000,
+    ).copyWith(maxTierReached: 2, difficultyTier: 2);
+    final paid = up(
+      s,
+      s
+          .copyWith(
+            researchSlotsBought: 2,
+            materials: {MaterialKind.jelly: 1000 - rc.slotJelly[1]},
+          )
+          .toJson(),
+    );
+    expect(paid.researchSlotsBought, 2);
+    // 젤리 증가 허용치(300)만으로도 3번째 칸 값(300) 하나는 설명된다 — 예전 순서(100 + 300)였다면 모자랐다.
+    final byFloor = up(s, s.copyWith(researchSlotsBought: 2).toJson());
+    expect(byFloor.researchSlotsBought, 2);
+    // 젤리가 늘었다고 올리면(허용치 200 < 300) 저장본.
+    final cheap = up(
+      s,
+      s
+          .copyWith(
+            researchSlotsBought: 2,
+            materials: const {MaterialKind.jelly: 1100},
+          )
+          .toJson(),
+    );
+    expect(cheap.researchSlotsBought, 0);
+  });
+
   test('되돌릴 때 이번 업로드에 시작한 단계의 시작 값을 돌려준다', () {
     final barter = rc.byId('barter')!;
     final c = rc.costAt(barter, 1);
