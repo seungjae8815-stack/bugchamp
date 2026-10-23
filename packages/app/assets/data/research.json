@@ -1,5 +1,6 @@
 {
   "_comment": "연구소(설계 docs/superpowers/specs/2026-10-22-research-lab-design.md). 시간·비용 곡선 · eliteDropChance · 사냥·육성·장비·경제 effect · fitBasis 는 tool/research_table.dart --fit --write 가 뽑는다 — 손으로 한 칸씩 고치지 않는다(하루 3시간 켜 둔 무과금 · 골드·재료 = 3시간 켜 둔 날 실제 수입의 50% 목표, 한 레벨 상한 사냥 1,210분치 · 약 180일 · 사장님 A안). bossFirstDrop 25 는 사장님 확정값. 시간·비용: Lv1 = first, 한 단계 오를 때마다 × (1 + (growth−1)·decay^(i−1)). kind = ResearchEffect 키. 결투 공격·방어·체력 effect 는 결투 80% 맞추기가 정한다(server tool/duel_build_sim.dart --research-fit — 각 +57% = 다 찍은 쪽 3마리 경기 82% · 1마리 71%, 치명·근성 6b 몫을 남김). 6b: 급소 공략(치명) 최대 +5%p · 근성 단련(탭 반격 문턱) 최대 −0.02 — 다 찍은 쪽 3마리 88.7% · 1마리 77.1%(--research-max, 근성 0.05 면 95.6% 로 95% 기준을 넘음). duelCap 은 그 값(주석용).",
+  "_treeComment": "tree = 연구소 화면의 트리 칸(col 0~2 · row 위→아래, 분야마다 따로) — 화면은 이 칸에 카드를 놓고 requires 로 선을 긋는다(설계 §11). 선행은 모두 그 연구 Lv5 · 근성 단련은 설계상 회복 연구 + 급소 공략이지만 requires 가 하나라 급소 공략.",
   "instantJellyPerMinute": 1.0,
   "instantJellyExponent": 0.58,
   "slotsByTier": [
@@ -33,6 +34,10 @@
         "ja": "顎の強化"
       },
       "requires": null,
+      "tree": {
+        "col": 1,
+        "row": 0
+      },
       "effect": {
         "perLevel": 0.013333,
         "growth": 1.0
@@ -66,6 +71,10 @@
       "requires": {
         "id": "jaw",
         "level": 5
+      },
+      "tree": {
+        "col": 1,
+        "row": 1
       },
       "effect": {
         "perLevel": 0.013333,
@@ -101,6 +110,10 @@
         "id": "shell",
         "level": 5
       },
+      "tree": {
+        "col": 0,
+        "row": 2
+      },
       "effect": {
         "perLevel": 0.01,
         "growth": 1.0
@@ -132,8 +145,12 @@
         "ja": "触角探査"
       },
       "requires": {
-        "id": "instinct",
+        "id": "shell",
         "level": 5
+      },
+      "tree": {
+        "col": 2,
+        "row": 2
       },
       "effect": {
         "perLevel": 0.01,
@@ -166,8 +183,12 @@
         "ja": "大物狩り"
       },
       "requires": {
-        "id": "antenna",
+        "id": "shell",
         "level": 5
+      },
+      "tree": {
+        "col": 1,
+        "row": 2
       },
       "effect": {
         "perLevel": 0.013333,
@@ -200,8 +221,12 @@
         "ja": "休息効率"
       },
       "requires": {
-        "id": "bossHunter",
+        "id": "antenna",
         "level": 5
+      },
+      "tree": {
+        "col": 2,
+        "row": 3
       },
       "effect": {
         "perLevel": 0.01,
@@ -234,8 +259,12 @@
         "ja": "会心の一撃"
       },
       "requires": {
-        "id": "idleEff",
+        "id": "bossHunter",
         "level": 5
+      },
+      "tree": {
+        "col": 1,
+        "row": 3
       },
       "effect": {
         "perLevel": 0.013333,
@@ -271,6 +300,10 @@
         "id": "critStrike",
         "level": 5
       },
+      "tree": {
+        "col": 0,
+        "row": 4
+      },
       "effect": {
         "perLevel": 0.013333,
         "growth": 1.0
@@ -302,8 +335,12 @@
         "ja": "俊足"
       },
       "requires": {
-        "id": "regen",
+        "id": "critStrike",
         "level": 5
+      },
+      "tree": {
+        "col": 1,
+        "row": 4
       },
       "effect": {
         "perLevel": 0.006667,
@@ -336,8 +373,12 @@
         "ja": "成長本能"
       },
       "requires": {
-        "id": "swiftFeet",
+        "id": "instinct",
         "level": 5
+      },
+      "tree": {
+        "col": 0,
+        "row": 3
       },
       "effect": {
         "perLevel": 0.01,
@@ -370,8 +411,12 @@
         "ja": "スキル熟練"
       },
       "requires": {
-        "id": "growthInstinct",
+        "id": "idleEff",
         "level": 5
+      },
+      "tree": {
+        "col": 2,
+        "row": 4
       },
       "effect": {
         "perLevel": 0.006667,
@@ -404,6 +449,10 @@
         "ja": "孵化研究"
       },
       "requires": null,
+      "tree": {
+        "col": 1,
+        "row": 0
+      },
       "effect": {
         "perLevel": 0.013333,
         "growth": 1.0
@@ -438,6 +487,10 @@
         "id": "incubator",
         "level": 5
       },
+      "tree": {
+        "col": 0,
+        "row": 1
+      },
       "effect": {
         "perLevel": 0.013333,
         "growth": 1.0
@@ -469,8 +522,12 @@
         "ja": "訓練理論"
       },
       "requires": {
-        "id": "nest",
+        "id": "incubator",
         "level": 5
+      },
+      "tree": {
+        "col": 2,
+        "row": 1
       },
       "effect": {
         "perLevel": 0.013333,
@@ -506,6 +563,10 @@
         "id": "trainLore",
         "level": 5
       },
+      "tree": {
+        "col": 2,
+        "row": 2
+      },
       "effect": {
         "perLevel": 0.01,
         "growth": 1.0
@@ -537,8 +598,12 @@
         "ja": "血統研究"
       },
       "requires": {
-        "id": "researchEff",
+        "id": "nest",
         "level": 5
+      },
+      "tree": {
+        "col": 0,
+        "row": 2
       },
       "effect": {
         "perLevel": 0.016667,
@@ -571,8 +636,12 @@
         "ja": "薬草学"
       },
       "requires": {
-        "id": "bloodline",
+        "id": "researchEff",
         "level": 5
+      },
+      "tree": {
+        "col": 1,
+        "row": 3
       },
       "effect": {
         "perLevel": 0.01,
@@ -605,8 +674,12 @@
         "ja": "分解技術"
       },
       "requires": {
-        "id": "herbalism",
+        "id": "researchEff",
         "level": 5
+      },
+      "tree": {
+        "col": 2,
+        "row": 3
       },
       "effect": {
         "perLevel": 0.01,
@@ -639,6 +712,10 @@
         "ja": "筋力鍛錬"
       },
       "requires": null,
+      "tree": {
+        "col": 1,
+        "row": 0
+      },
       "effect": {
         "perLevel": 0.019,
         "growth": 1.0
@@ -673,6 +750,10 @@
         "id": "duelMuscle",
         "level": 5
       },
+      "tree": {
+        "col": 0,
+        "row": 1
+      },
       "effect": {
         "perLevel": 0.019,
         "growth": 1.0
@@ -704,8 +785,12 @@
         "ja": "体力鍛錬"
       },
       "requires": {
-        "id": "duelArmor",
+        "id": "duelMuscle",
         "level": 5
+      },
+      "tree": {
+        "col": 2,
+        "row": 1
       },
       "effect": {
         "perLevel": 0.019,
@@ -738,8 +823,12 @@
         "ja": "回復研究"
       },
       "requires": {
-        "id": "duelVigor",
+        "id": "duelArmor",
         "level": 5
+      },
+      "tree": {
+        "col": 0,
+        "row": 2
       },
       "effect": {
         "perLevel": 0.013333,
@@ -772,8 +861,12 @@
         "ja": "急所狙い"
       },
       "requires": {
-        "id": "recovery",
+        "id": "duelVigor",
         "level": 5
+      },
+      "tree": {
+        "col": 2,
+        "row": 2
       },
       "effect": {
         "perLevel": 0.001667,
@@ -809,6 +902,10 @@
         "id": "vitalStrike",
         "level": 5
       },
+      "tree": {
+        "col": 1,
+        "row": 3
+      },
       "effect": {
         "perLevel": 0.000667,
         "growth": 1.0
@@ -840,6 +937,10 @@
         "ja": "製錬の秘法"
       },
       "requires": null,
+      "tree": {
+        "col": 1,
+        "row": 0
+      },
       "effect": {
         "perLevel": 0.013333,
         "growth": 1.0
@@ -874,6 +975,10 @@
         "id": "forgeLore",
         "level": 5
       },
+      "tree": {
+        "col": 0,
+        "row": 1
+      },
       "effect": {
         "perLevel": 0.013333,
         "growth": 1.0
@@ -905,8 +1010,12 @@
         "ja": "節約仕上げ"
       },
       "requires": {
-        "id": "starPolish",
+        "id": "forgeLore",
         "level": 5
+      },
+      "tree": {
+        "col": 2,
+        "row": 1
       },
       "effect": {
         "perLevel": 0.01,
@@ -939,6 +1048,10 @@
         "ja": "交換交渉"
       },
       "requires": null,
+      "tree": {
+        "col": 1,
+        "row": 0
+      },
       "effect": {
         "perLevel": 0.006667,
         "growth": 1.0
@@ -972,6 +1085,10 @@
       "requires": {
         "id": "barter",
         "level": 5
+      },
+      "tree": {
+        "col": 1,
+        "row": 1
       },
       "effect": {
         "perLevel": 0.006667,

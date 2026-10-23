@@ -9,6 +9,7 @@ import 'package:app/domain/save_controller.dart';
 import 'package:app/features/research/research_screen.dart';
 import 'package:app/l10n/app_localizations.dart';
 import 'package:core_models/core_models.dart';
+import 'package:core_run/core_run.dart' show ResearchBranch;
 import 'package:core_save/core_save.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -113,8 +114,61 @@ void main() {
     expect(find.text('극한에서 열림'), findsOneWidget);
   });
 
+  Future<void> settle(WidgetTester tester) async {
+    for (var i = 0; i < 6; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+  }
+
+  Future<void> openCard(WidgetTester tester, String id) async {
+    await tester.ensureVisible(find.byKey(Key('researchCard_$id')));
+    await settle(tester);
+    await tester.tap(find.byKey(Key('researchCard_$id')));
+    await settle(tester);
+  }
+
+  testWidgets('트리 — 분야 탭 5개를 넘기면 카드 29장이 모두 그려진다', (tester) async {
+    await pump(tester, base);
+    final cfg = _data().researchConfig!;
+    final seen = <String>{};
+    for (final b in ResearchBranch.values) {
+      await tester.tap(find.byKey(Key('researchTab_${b.key}')));
+      await settle(tester);
+      for (final d in cfg.defs) {
+        final f = find.byKey(Key('researchCard_${d.id}'), skipOffstage: false);
+        if (d.branch == b) {
+          expect(f, findsOneWidget, reason: d.id);
+          seen.add(d.id);
+        } else {
+          expect(f, findsNothing, reason: d.id);
+        }
+      }
+    }
+    expect(seen.length, 29);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('잠긴 카드를 누르면 시트에 선행 조건이 보인다', (tester) async {
+    await pump(tester, base);
+    await openCard(tester, 'shell');
+    expect(find.byKey(const Key('researchSheet_shell')), findsOneWidget);
+    expect(find.text('턱 강화 Lv5 필요'), findsOneWidget);
+    final btn = tester.widget<FilledButton>(
+      find.byKey(const Key('researchStart_shell')),
+    );
+    expect(btn.onPressed, isNull);
+  });
+
+  testWidgets('연구 효율을 찍으면 칸 옆에 연구 속도가 보인다', (tester) async {
+    await pump(tester, base);
+    expect(find.byKey(const Key('researchSpeed')), findsNothing);
+    await pump(tester, base.copyWith(researchLevels: {'researchEff': 5}));
+    expect(find.byKey(const Key('researchSpeed')), findsOneWidget);
+  });
+
   testWidgets('재화가 없으면 시작 버튼이 꺼지고 이유가 보인다', (tester) async {
     await pump(tester, base);
+    await openCard(tester, 'jaw');
     final btn = tester.widget<FilledButton>(
       find.byKey(const Key('researchStart_jaw')),
     );
@@ -124,16 +178,20 @@ void main() {
 
   testWidgets('연구를 누르면 칸에 진행이 뜨고 재화가 빠진다', (tester) async {
     final c = await pump(tester, rich(base));
+    await openCard(tester, 'jaw');
     await tester.tap(find.byKey(const Key('researchStart_jaw')));
-    for (var i = 0; i < 4; i++) {
-      await tester.pump(const Duration(milliseconds: 50));
-    }
+    await settle(tester);
     final s = c.read(saveControllerProvider).requireValue;
     expect(s.researchSlots.map((r) => r.id), ['jaw']);
     expect(s.researchSamples, lessThan(100000));
+    // 시작하면 시트가 닫히고 칸에 진행이 뜬다.
+    expect(find.byKey(const Key('researchSheet_jaw')), findsNothing);
     expect(find.byKey(const Key('researchSlotBar_jaw')), findsOneWidget);
     expect(find.text('비어 있음'), findsNothing);
     // 칸이 다 찼으니 다른 연구는 시작할 수 없다.
+    await tester.tap(find.byKey(const Key('researchTab_nurture')));
+    await settle(tester);
+    await openCard(tester, 'incubator');
     final other = tester.widget<FilledButton>(
       find.byKey(const Key('researchStart_incubator')),
     );
@@ -171,6 +229,23 @@ void main() {
         scale: 1.3,
         locale: loc,
       );
+      expect(tester.takeException(), isNull);
+      // 분야마다 트리 · 가장 긴 사냥 트리 끝까지 · 시트까지.
+      for (final b in ResearchBranch.values) {
+        await tester.tap(find.byKey(Key('researchTab_${b.key}')));
+        await settle(tester);
+        expect(tester.takeException(), isNull, reason: b.key);
+      }
+      await tester.tap(find.byKey(const Key('researchTab_hunt')));
+      await settle(tester);
+      await tester.drag(
+        find.byKey(const Key('researchTree_hunt')),
+        const Offset(0, -2000),
+      );
+      await settle(tester);
+      expect(tester.takeException(), isNull);
+      await openCard(tester, 'skillMastery');
+      expect(find.byKey(const Key('researchSheet_skillMastery')), findsOne);
       expect(tester.takeException(), isNull);
     });
   }

@@ -124,13 +124,23 @@ void main() {
     final ids = c.defs.map((d) => d.id).toSet();
     expect(ids.length, 29);
     expect(c.defs.map((d) => d.effect).toSet(), ResearchEffect.values.toSet());
-    // 분야마다 첫 연구만 바로 열리고 나머지는 같은 분야 앞 연구 5레벨.
+    // 분야마다 첫 연구만 바로 열리고, 나머지는 같은 분야 **앞에 적힌** 연구 5레벨(갈래 — 설계 §11).
+    // 트리 칸은 분야 안에서 겹치지 않고 열 0~2 · 부모보다 아래 행.
     for (final b in ResearchBranch.values) {
       final list = c.defs.where((d) => d.branch == b).toList();
       expect(list.first.requires, isNull, reason: b.key);
-      for (var i = 1; i < list.length; i++) {
-        expect(list[i].requires?.id, list[i - 1].id, reason: list[i].id);
-        expect(list[i].requires?.level, 5, reason: list[i].id);
+      final cells = <(int, int)>{};
+      for (var i = 0; i < list.length; i++) {
+        final d = list[i];
+        final t = d.tree!;
+        expect(t.col, inInclusiveRange(0, 2), reason: d.id);
+        expect(cells.add((t.col, t.row)), isTrue, reason: d.id);
+        if (i == 0) continue;
+        final r = d.requires!;
+        expect(r.level, 5, reason: d.id);
+        final pi = list.indexWhere((e) => e.id == r.id);
+        expect(pi, inInclusiveRange(0, i - 1), reason: d.id);
+        expect(list[pi].tree!.row, lessThan(t.row), reason: d.id);
       }
     }
     for (final d in c.defs) {

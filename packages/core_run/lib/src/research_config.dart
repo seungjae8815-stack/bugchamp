@@ -103,6 +103,7 @@ class ResearchDef {
     required this.effect,
     required this.maxLevel,
     this.requires,
+    this.tree,
     this.name = const {},
     this.image,
     this.perLevel = 0,
@@ -126,6 +127,9 @@ class ResearchDef {
 
   /// 선행 연구(없으면 null) — 그 연구가 `level` 이상이어야 시작할 수 있다.
   final ({String id, int level})? requires;
+
+  /// 연구소 화면 트리의 칸(분야마다 따로 — 열 0~2, 행 위→아래, 설계 §11). 없으면 화면이 순서대로 놓는다.
+  final ({int col, int row})? tree;
   final Map<String, String> name;
 
   /// 아이콘 애셋 경로(없으면 화면이 Material 아이콘으로 폴백).
@@ -155,6 +159,7 @@ class ResearchDef {
     final time = m('time');
     final cost = m('cost');
     final req = (j['requires'] as Map?)?.cast<String, dynamic>();
+    final tree = (j['tree'] as Map?)?.cast<String, dynamic>();
     double n(Map<String, dynamic> src, String k, double d) =>
         (src[k] as num?)?.toDouble() ?? d;
     return ResearchDef(
@@ -165,6 +170,12 @@ class ResearchDef {
       requires: req == null
           ? null
           : (id: req['id'] as String, level: (req['level'] as num).toInt()),
+      tree: tree == null
+          ? null
+          : (
+              col: (tree['col'] as num).toInt(),
+              row: (tree['row'] as num).toInt(),
+            ),
       image: j['image'] as String?,
       name: {
         for (final e in ((j['name'] as Map?) ?? const {}).entries)

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:core_models/core_models.dart';
 import 'package:core_run/core_run.dart';
@@ -20,10 +21,12 @@ import '../../ui/jelly_confirm.dart';
 import '../../ui/tier_label.dart';
 import '../../ui/toast.dart';
 
-/// 연구소 탭(설계 `docs/superpowers/specs/2026-10-22-research-lab-design.md` §3).
+/// 연구소 탭(설계 `docs/superpowers/specs/2026-10-22-research-lab-design.md` §3 · §11 기술 트리).
 ///
-/// 위: 연구 재화 보유량 · 연구 칸 1~3(진행 막대·남은 시간·젤리 즉시 완료 / 빈 칸 / 잠긴 칸 + 젤리 구매).
-/// 아래: 분야 5묶음(사냥·육성·결투·장비·경제) — 한 줄 = 아이콘·이름·Lv · 지금 → 다음 효과 · 다음 레벨 비용 · [연구].
+/// 위: 연구 재화 보유량 · 연구 칸 1~3 가로 카드(진행 막대·남은 시간·젤리 즉시 완료 / 빈 칸 / 잠긴 칸 + 젤리 구매)
+/// \+ "연구 속도 +N%"(연구 효율). 가운데: 고른 분야의 **트리** — 카드(아이콘·이름·`Lv x/30`)를 research.json 의
+/// `tree` 칸에 놓고 `requires` 로 선을 긋는다. 카드를 누르면 아래 시트에 효과·비용·잠김 사유·[연구]/즉시 완료.
+/// 아래: 분야 탭 5개(사냥·육성·결투·장비·경제).
 /// 규칙(가격·시작 조건)은 core_save `research_progress.dart`, 화면은 그 결과(`ResearchOp` 사유)를 그대로 보여 준다.
 class ResearchScreen extends ConsumerStatefulWidget {
   const ResearchScreen({super.key});
@@ -32,8 +35,18 @@ class ResearchScreen extends ConsumerStatefulWidget {
   ConsumerState<ResearchScreen> createState() => _ResearchScreenState();
 }
 
+/// 연구 하나의 지금 상태(카드·시트·탭 점이 같은 값을 본다).
+typedef _Status = ({
+  int lv,
+  bool maxed,
+  ResearchSlot? slot,
+  ResearchPrice? price,
+  String? error,
+});
+
 class _ResearchScreenState extends ConsumerState<ResearchScreen> {
   Timer? _tick;
+  ResearchBranch _branch = ResearchBranch.hunt;
 
   @override
   void initState() {
@@ -98,6 +111,37 @@ class _ResearchScreenState extends ConsumerState<ResearchScreen> {
     );
   }
 
+  /// 사냥 능력치는 한 번만 — 29개 가격이 모두 같은 값을 쓴다.
+  CharacterStats? _stats(GameData data, SaveGame save, DateTime now) =>
+      data.runConfig == null
+      ? null
+      : huntStatsOf(save, data, now, guildBonus: ref.read(guildBonusProvider));
+
+  _Status _statusOf(
+    GameData data,
+    SaveGame save,
+    ResearchConfig cfg,
+    ResearchDef def,
+    DateTime now,
+    CharacterStats? stats,
+  ) {
+    final lv = save.researchLevels[def.id] ?? 0;
+    final maxed = lv >= def.maxLevel;
+    ResearchSlot? slot;
+    for (final r in save.researchSlots) {
+      if (r.id == def.id) slot = r;
+    }
+    final price = maxed || stats == null
+        ? null
+        : researchPriceOf(save, data, def.id, now, stats: stats);
+    final error = maxed
+        ? 'max_level'
+        : price == null
+        ? 'unknown_research'
+        : startResearch(save, cfg, def.id, now, price).error;
+    return (lv: lv, maxed: maxed, slot: slot, price: price, error: error);
+  }
+
   Widget _body(
     AppLocalizations l,
     String locale,
@@ -106,15 +150,12 @@ class _ResearchScreenState extends ConsumerState<ResearchScreen> {
     ResearchConfig cfg,
   ) {
     final now = ref.read(clockProvider).now().toUtc();
-    // 사냥 능력치는 한 번만 — 29줄 가격이 모두 같은 값을 쓴다.
-    final stats = data.runConfig == null
-        ? null
-        : huntStatsOf(
-            save,
-            data,
-            now,
-            guildBonus: ref.watch(guildBonusProvider),
-          );
+    ref.watch(guildBonusProvider);
+    final stats = _stats(data, save, now);
+    final status = {
+      for (final def in cfg.defs)
+        def.id: _statusOf(data, save, cfg, def, now, stats),
+    };
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -122,40 +163,9 @@ class _ResearchScreenState extends ConsumerState<ResearchScreen> {
         const SizedBox(height: 6),
         _slots(l, locale, save, cfg, now),
         const SizedBox(height: 6),
-        Expanded(
-          // 29줄뿐이라 한 번에 그린다(목록 길이가 고정).
-          child: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                for (final branch in ResearchBranch.values) ...[
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(2, 8, 2, 4),
-                    child: Text(
-                      _branchLabel(l, branch),
-                      style: const TextStyle(
-                        color: kHoney,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                  ),
-                  for (final def in cfg.defs)
-                    if (def.branch == branch)
-                      _row(l, locale, data, save, cfg, def, now, stats),
-                ],
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 10),
-                  child: Text(
-                    l.researchHowToGet,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(color: Colors.white54, fontSize: 11),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
+        Expanded(child: _tree(l, locale, save, cfg, status, now)),
+        const SizedBox(height: 6),
+        _tabs(l, cfg, status),
       ],
     );
   }
@@ -211,7 +221,7 @@ class _ResearchScreenState extends ConsumerState<ResearchScreen> {
     return tooltip == null ? w : Tooltip(message: tooltip, child: w);
   }
 
-  // ── 위: 연구 칸 ──
+  // ── 위: 연구 칸(가로 3장) ──
 
   Widget _slots(
     AppLocalizations l,
@@ -223,35 +233,91 @@ class _ResearchScreenState extends ConsumerState<ResearchScreen> {
     final open = cfg.slotsFor(save.topTier, save.researchSlotsBought);
     // 사면 늘 다음 칸 하나(core_save `buyResearchSlot` — 값은 열린 칸 수로 정해진다).
     final buyPrice = researchSlotPrice(save, cfg);
+    final cut = researchEffects(
+      cfg,
+      save.researchLevels,
+    ).of(ResearchEffect.researchTime);
     return Container(
-      padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
+      padding: const EdgeInsets.fromLTRB(8, 7, 8, 8),
       decoration: _box(),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(
-            l.researchSlotsTitle('${save.researchSlots.length}', '$open'),
-            style: const TextStyle(
-              color: kHoney,
-              fontSize: 12.5,
-              fontWeight: FontWeight.w800,
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  l.researchSlotsTitle('${save.researchSlots.length}', '$open'),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: kHoney,
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+              // 시간 −c 는 속도 ×1/(1−c) — "속도 +N%" 는 그 늘어난 몫이다.
+              if (cut > 0) ...[
+                const SizedBox(width: 6),
+                Flexible(
+                  child: Text(
+                    l.researchSpeed(fmtResearchPct(cut / (1 - cut))),
+                    key: const Key('researchSpeed'),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: Color(0xFF80DEEA),
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+          const SizedBox(height: 6),
+          IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                for (var i = 0; i < ResearchConfig.maxSlots; i++) ...[
+                  if (i > 0) const SizedBox(width: 6),
+                  Expanded(
+                    child: i < save.researchSlots.length
+                        ? _runningSlot(
+                            l,
+                            locale,
+                            cfg,
+                            save.researchSlots[i],
+                            now,
+                            cut,
+                          )
+                        : i < open
+                        ? _slotFrame(
+                            key: Key('researchSlot$i'),
+                            child: Center(
+                              child: Text(
+                                l.researchSlotEmpty,
+                                textAlign: TextAlign.center,
+                                style: const TextStyle(
+                                  color: Colors.white54,
+                                  fontSize: 11.5,
+                                ),
+                              ),
+                            ),
+                          )
+                        : _lockedSlot(
+                            l,
+                            cfg,
+                            i,
+                            buyPrice: i == open ? buyPrice : null,
+                          ),
+                  ),
+                ],
+              ],
             ),
           ),
-          for (var i = 0; i < ResearchConfig.maxSlots; i++) ...[
-            const SizedBox(height: 6),
-            if (i < save.researchSlots.length)
-              _runningSlot(l, locale, save, cfg, save.researchSlots[i], now)
-            else if (i < open)
-              _slotFrame(
-                key: Key('researchSlot$i'),
-                child: Text(
-                  l.researchSlotEmpty,
-                  style: const TextStyle(color: Colors.white54, fontSize: 12),
-                ),
-              )
-            else
-              _lockedSlot(l, cfg, i, buyPrice: i == open ? buyPrice : null),
-          ],
         ],
       ),
     );
@@ -260,9 +326,8 @@ class _ResearchScreenState extends ConsumerState<ResearchScreen> {
   Widget _slotFrame({Key? key, required Widget child, Color? border}) =>
       Container(
         key: key,
-        constraints: const BoxConstraints(minHeight: 40),
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-        alignment: Alignment.centerLeft,
+        constraints: const BoxConstraints(minHeight: 64),
+        padding: const EdgeInsets.all(6),
         decoration: BoxDecoration(
           color: const Color(0x33000000),
           borderRadius: BorderRadius.circular(8),
@@ -274,19 +339,15 @@ class _ResearchScreenState extends ConsumerState<ResearchScreen> {
   Widget _runningSlot(
     AppLocalizations l,
     String locale,
-    SaveGame save,
     ResearchConfig cfg,
     ResearchSlot r,
     DateTime now,
+    double cut,
   ) {
     final def = cfg.byId(r.id);
     final left = r.endsAt.difference(now);
     final done = left <= Duration.zero;
     // 칸에는 시작 시각이 없다 — 이번 레벨의 시간(지금 연구 효율 반영)으로 진행률을 어림한다.
-    final cut = researchEffects(
-      cfg,
-      save.researchLevels,
-    ).of(ResearchEffect.researchTime);
     final total = def == null
         ? Duration.zero
         : cfg.timeAt(def, r.level) * (1 - cut);
@@ -295,63 +356,62 @@ class _ResearchScreenState extends ConsumerState<ResearchScreen> {
         : (1 - left.inSeconds / total.inSeconds).clamp(0.0, 1.0);
     final jelly = cfg.instantJelly(left);
     final name = def == null ? r.id : _name(def, locale);
-    return _slotFrame(
-      border: const Color(0xAA4FC3F7),
-      child: Row(
-        children: [
-          _researchIcon(def, 26),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+    return GestureDetector(
+      onTap: def == null ? null : () => _openSheet(def.id),
+      child: _slotFrame(
+        border: const Color(0xAA4FC3F7),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Row(
               children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        l.researchSlotItem(name, '${r.level}'),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
+                _researchIcon(def, 20),
+                const SizedBox(width: 4),
+                Expanded(
+                  child: Text(
+                    l.researchSlotItem(name, '${r.level}'),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 10.5,
+                      fontWeight: FontWeight.w700,
+                      height: 1.15,
                     ),
-                    const SizedBox(width: 6),
-                    Text(
-                      formatShortDuration(left),
-                      style: const TextStyle(
-                        color: Colors.white70,
-                        fontSize: 11,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(3),
-                  child: LinearProgressIndicator(
-                    key: Key('researchSlotBar_${r.id}'),
-                    value: progress,
-                    minHeight: 6,
-                    backgroundColor: const Color(0x33FFFFFF),
-                    color: const Color(0xFF4FC3F7),
                   ),
                 ),
               ],
             ),
-          ),
-          if (!done && jelly > 0) ...[
-            const SizedBox(width: 8),
-            _smallButton(
-              key: Key('researchInstant_${r.id}'),
-              onPressed: () => _instant(l, name, r, jelly),
-              child: jellyPrice(cost: jelly),
+            const SizedBox(height: 4),
+            Text(
+              formatShortDuration(left),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(color: Colors.white70, fontSize: 10.5),
             ),
+            const SizedBox(height: 3),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(3),
+              child: LinearProgressIndicator(
+                key: Key('researchSlotBar_${r.id}'),
+                value: progress,
+                minHeight: 5,
+                backgroundColor: const Color(0x33FFFFFF),
+                color: const Color(0xFF4FC3F7),
+              ),
+            ),
+            if (!done && jelly > 0) ...[
+              const SizedBox(height: 5),
+              _smallButton(
+                key: Key('researchInstant_${r.id}'),
+                onPressed: () => _instant(l, name, r.id, r.level),
+                compact: true,
+                child: jellyPrice(cost: jelly),
+              ),
+            ],
           ],
-        ],
+        ),
       ),
     );
   }
@@ -365,23 +425,25 @@ class _ResearchScreenState extends ConsumerState<ResearchScreen> {
     final tier = researchSlotOpensAtTier(cfg, index);
     return _slotFrame(
       key: Key('researchSlot$index'),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
           const Icon(Icons.lock_rounded, size: 16, color: Colors.white38),
-          const SizedBox(width: 6),
-          Expanded(
-            child: Text(
-              tier == null ? '' : l.researchSlotOpensAt(tierName(l, tier)),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(color: Colors.white54, fontSize: 12),
-            ),
+          const SizedBox(height: 3),
+          Text(
+            tier == null ? '' : l.researchSlotOpensAt(tierName(l, tier)),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.center,
+            style: const TextStyle(color: Colors.white54, fontSize: 10.5),
           ),
           if (buyPrice != null) ...[
-            const SizedBox(width: 6),
+            const SizedBox(height: 5),
             _smallButton(
               key: const Key('researchBuySlot'),
               onPressed: () => _buySlot(l, buyPrice),
+              compact: true,
               child: jellyPrice(cost: buyPrice, label: l.researchSlotBuy),
             ),
           ],
@@ -390,38 +452,359 @@ class _ResearchScreenState extends ConsumerState<ResearchScreen> {
     );
   }
 
-  // ── 아래: 연구 한 줄 ──
+  // ── 가운데: 분야 트리 ──
 
-  Widget _row(
+  Widget _tree(
     AppLocalizations l,
     String locale,
+    SaveGame save,
+    ResearchConfig cfg,
+    Map<String, _Status> status,
+    DateTime now,
+  ) {
+    final defs = [
+      for (final d in cfg.defs)
+        if (d.branch == _branch) d,
+    ];
+    // 칸이 안 적힌 연구는 가운데 열에 순서대로(데이터가 빠져도 화면은 그린다).
+    final cells = <String, ({int col, int row})>{
+      for (var i = 0; i < defs.length; i++)
+        defs[i].id: defs[i].tree ?? (col: 1, row: i),
+    };
+    final rows = cells.values.fold(0, (m, c) => math.max(m, c.row + 1));
+    return LayoutBuilder(
+      builder: (context, box) {
+        final cellW = box.maxWidth / 3;
+        // 320dp 폰에서도 3열 + 틈이 들어가게 너비에서 카드 크기를 정한다.
+        final cardW = math.min(cellW - 12, 100.0);
+        final cardH = cardW * 1.18;
+        const gap = 26.0, pad = 6.0;
+        Rect rectOf(String id) {
+          final c = cells[id]!;
+          return Rect.fromLTWH(
+            cellW * (c.col.clamp(0, 2) + 0.5) - cardW / 2,
+            pad + c.row * (cardH + gap),
+            cardW,
+            cardH,
+          );
+        }
+
+        final edges = [
+          for (final d in defs)
+            if (d.requires case final req? when cells.containsKey(req.id))
+              (
+                from: rectOf(req.id),
+                to: rectOf(d.id),
+                lit: (save.researchLevels[req.id] ?? 0) >= req.level,
+              ),
+        ];
+        final height = pad * 2 + rows * cardH + math.max(0, rows - 1) * gap;
+        return SingleChildScrollView(
+          key: Key('researchTree_${_branch.key}'),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              SizedBox(
+                height: height,
+                child: Stack(
+                  children: [
+                    Positioned.fill(
+                      child: CustomPaint(painter: _TreeLines(edges)),
+                    ),
+                    for (final d in defs)
+                      Positioned.fromRect(
+                        rect: rectOf(d.id),
+                        child: _card(l, locale, d, status[d.id]!, now, cardW),
+                      ),
+                  ],
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                child: Text(
+                  l.researchHowToGet,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(color: Colors.white54, fontSize: 11),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  /// 트리 카드 — 다 찍음 금테 · 연구 중 하늘색 테 + 남은 시간 · 잠김 어둡게 + 자물쇠 · 시작 가능 빨간 점.
+  Widget _card(
+    AppLocalizations l,
+    String locale,
+    ResearchDef def,
+    _Status st,
+    DateTime now,
+    double cardW,
+  ) {
+    final locked = st.error == 'locked';
+    final running = st.slot != null;
+    final border = st.maxed
+        ? kHoney
+        : running
+        ? const Color(0xFF4FC3F7)
+        : const Color(0x33FFFFFF);
+    final card = Material(
+      color: Colors.transparent,
+      child: InkWell(
+        key: Key('researchCard_${def.id}'),
+        borderRadius: BorderRadius.circular(12),
+        onTap: () => _openSheet(def.id),
+        child: Ink(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: st.maxed
+                  ? const [Color(0xFF4A3A14), Color(0xFF231A08)]
+                  : const [Color(0xFF2A3D1C), Color(0xFF142010)],
+            ),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: border,
+              width: st.maxed || running ? 2 : 1,
+            ),
+            boxShadow: [
+              if (st.maxed || running)
+                BoxShadow(color: border.withAlpha(0x66), blurRadius: 8),
+            ],
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(5),
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: SizedBox(
+                width: cardW - 10,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _researchIcon(def, cardW * 0.4, dim: locked),
+                    const SizedBox(height: 3),
+                    Text(
+                      _name(def, locale),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w800,
+                        height: 1.15,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    // 알약은 한 줄 — 좁으면 글자를 줄인다.
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 7,
+                          vertical: 1,
+                        ),
+                        decoration: BoxDecoration(
+                          color: locked ? const Color(0x44FFFFFF) : kHoney,
+                          borderRadius: BorderRadius.circular(9),
+                        ),
+                        child: Text(
+                          l.researchLevel('${st.lv}', '${def.maxLevel}'),
+                          maxLines: 1,
+                          softWrap: false,
+                          style: TextStyle(
+                            color: locked ? Colors.white70 : kHoneyInk,
+                            fontSize: 10.5,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ),
+                    ),
+                    if (st.slot case final r?) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        formatShortDuration(r.endsAt.difference(now)),
+                        style: const TextStyle(
+                          color: Color(0xFF80DEEA),
+                          fontSize: 10,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        Positioned.fill(
+          child: locked ? Opacity(opacity: 0.5, child: card) : card,
+        ),
+        if (locked)
+          const Positioned(
+            top: 4,
+            right: 4,
+            child: Icon(Icons.lock_rounded, size: 14, color: Colors.white70),
+          ),
+        if (st.error == null)
+          const Positioned(top: -3, right: -3, child: _Dot()),
+      ],
+    );
+  }
+
+  // ── 아래: 분야 탭 ──
+
+  Widget _tabs(
+    AppLocalizations l,
+    ResearchConfig cfg,
+    Map<String, _Status> status,
+  ) => Container(
+    padding: const EdgeInsets.all(4),
+    decoration: BoxDecoration(
+      gradient: const LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [Color(0xFF1B2A12), Color(0xFF0E1608)],
+      ),
+      borderRadius: BorderRadius.circular(10),
+      border: Border.all(color: const Color(0x22FFFFFF)),
+    ),
+    child: Row(
+      children: [
+        for (final b in ResearchBranch.values)
+          Expanded(child: _tab(l, cfg, status, b)),
+      ],
+    ),
+  );
+
+  Widget _tab(
+    AppLocalizations l,
+    ResearchConfig cfg,
+    Map<String, _Status> status,
+    ResearchBranch b,
+  ) {
+    final active = b == _branch;
+    ResearchDef? root;
+    for (final d in cfg.defs) {
+      if (d.branch == b && d.requires == null) {
+        root = d;
+        break;
+      }
+    }
+    final ready = cfg.defs.any(
+      (d) => d.branch == b && status[d.id]?.error == null,
+    );
+    return InkWell(
+      key: Key('researchTab_${b.key}'),
+      borderRadius: BorderRadius.circular(8),
+      onTap: () => setState(() => _branch = b),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 2),
+        decoration: BoxDecoration(
+          color: active ? const Color(0x2EEBA52F) : null,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: active ? kHoney : Colors.transparent,
+            width: 1.5,
+          ),
+        ),
+        child: Stack(
+          clipBehavior: Clip.none,
+          children: [
+            Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Center(child: _researchIcon(root, 24, dim: !active)),
+                const SizedBox(height: 2),
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    _branchLabel(l, b),
+                    maxLines: 1,
+                    style: TextStyle(
+                      color: active ? kHoney : Colors.white70,
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            if (ready) const Positioned(top: -2, right: 2, child: _Dot()),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ── 연구 하나의 시트 ──
+
+  void _openSheet(String id) {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: const Color(0xF20A1206),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (sheetContext) => SafeArea(
+        // 남은 시간·즉시 완료 값이 흐르게 1초마다 다시 그린다(시트가 닫히면 구독도 끝난다).
+        child: StreamBuilder<void>(
+          stream: Stream<void>.periodic(const Duration(seconds: 1)),
+          builder: (ctx, _) => Consumer(
+            builder: (ctx, ref, _) {
+              final data = ref.watch(gameDataProvider).value;
+              final save = ref.watch(saveControllerProvider).value;
+              final cfg = data?.researchConfig;
+              final def = cfg?.byId(id);
+              if (data == null || save == null || cfg == null || def == null) {
+                return const SizedBox.shrink();
+              }
+              return _sheet(
+                AppLocalizations.of(ctx),
+                Localizations.localeOf(ctx).languageCode,
+                sheetContext,
+                data,
+                save,
+                cfg,
+                def,
+              );
+            },
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _sheet(
+    AppLocalizations l,
+    String locale,
+    BuildContext sheetContext,
     GameData data,
     SaveGame save,
     ResearchConfig cfg,
     ResearchDef def,
-    DateTime now,
-    CharacterStats? stats,
   ) {
-    final lv = save.researchLevels[def.id] ?? 0;
-    final maxed = lv >= def.maxLevel;
-    final running = save.researchSlots.any((r) => r.id == def.id);
-    final price = maxed || stats == null
-        ? null
-        : researchPriceOf(save, data, def.id, now, stats: stats);
-    final error = maxed
-        ? 'max_level'
-        : price == null
-        ? 'unknown_research'
-        : startResearch(save, cfg, def.id, now, price).error;
-    final cur = cfg.effectAt(def, lv);
-    final next = cfg.effectAt(def, lv + 1);
+    final now = ref.read(clockProvider).now().toUtc();
+    final st = _statusOf(data, save, cfg, def, now, _stats(data, save, now));
+    final cur = cfg.effectAt(def, st.lv);
+    final next = cfg.effectAt(def, st.lv + 1);
     final fx = _fxLabel(l, def.effect);
-    final effectText = maxed
+    final effectText = st.maxed
         ? '$fx ${_fxValue(l, def.effect, cur)}'
         : '$fx ${_fxValue(l, def.effect, cur)} → ${_fxValue(l, def.effect, next)}';
     final req = def.requires;
     final reqDef = req == null ? null : cfg.byId(req.id);
-    final reason = switch (error) {
+    final reason = switch (st.error) {
       null => null,
       'max_level' => null,
       'already_running' => null,
@@ -429,94 +812,92 @@ class _ResearchScreenState extends ConsumerState<ResearchScreen> {
         reqDef == null ? req!.id : _name(reqDef, locale),
         '${req!.level}',
       ),
-      _ => _errText(l, error),
+      final e => _errText(l, e),
     };
-    return Container(
-      margin: const EdgeInsets.only(bottom: 6),
-      padding: const EdgeInsets.fromLTRB(10, 8, 8, 8),
-      decoration: _box(
-        border: running ? const Color(0xAA4FC3F7) : const Color(0x22FFFFFF),
-      ),
+    final slot = st.slot;
+    final left = slot?.endsAt.difference(now);
+    final jelly = left == null ? 0 : cfg.instantJelly(left);
+    return SingleChildScrollView(
+      key: Key('researchSheet_${def.id}'),
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _researchIcon(def, 30, dim: error == 'locked'),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            _name(def, locale),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 13,
-                              fontWeight: FontWeight.w800,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 6),
-                        Text(
-                          l.researchLevel('$lv', '${def.maxLevel}'),
-                          style: TextStyle(
-                            color: maxed ? kHoney : Colors.white70,
-                            fontSize: 11.5,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      effectText,
-                      style: const TextStyle(
-                        color: Color(0xFFB9F6CA),
-                        fontSize: 11.5,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          if (price != null) ...[
-            const SizedBox(height: 5),
-            _cost(l, save, price),
-          ],
-          const SizedBox(height: 5),
-          Row(
-            children: [
+              _researchIcon(def, 44, dim: st.error == 'locked'),
+              const SizedBox(width: 10),
               Expanded(
                 child: Text(
-                  reason ?? '',
+                  _name(def, locale),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
-                    color: Color(0xFFFF8A80),
-                    fontSize: 11,
+                    color: Colors.white,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w800,
                   ),
                 ),
               ),
               const SizedBox(width: 6),
-              _smallButton(
-                key: Key('researchStart_${def.id}'),
-                onPressed: error == null ? () => _start(l, def.id) : null,
-                child: Text(
-                  maxed
-                      ? l.researchMaxed
-                      : running
-                      ? l.researchRunning
-                      : l.researchStart,
+              Text(
+                l.researchLevel('${st.lv}', '${def.maxLevel}'),
+                style: TextStyle(
+                  color: st.maxed ? kHoney : Colors.white70,
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w700,
                 ),
               ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            effectText,
+            style: const TextStyle(color: Color(0xFFB9F6CA), fontSize: 13),
+          ),
+          if (st.price case final p?) ...[
+            const SizedBox(height: 8),
+            _cost(l, save, p),
+          ],
+          if (reason != null) ...[
+            const SizedBox(height: 8),
+            Text(
+              reason,
+              style: const TextStyle(color: Color(0xFFFF8A80), fontSize: 12),
+            ),
+          ],
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              if (slot != null && left != null) ...[
+                Expanded(
+                  child: Text(
+                    formatShortDuration(left),
+                    style: const TextStyle(
+                      color: Color(0xFF80DEEA),
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+                if (jelly > 0)
+                  _smallButton(
+                    key: Key('researchSheetInstant_${def.id}'),
+                    onPressed: () =>
+                        _instant(l, _name(def, locale), slot.id, slot.level),
+                    child: jellyPrice(cost: jelly),
+                  ),
+              ] else ...[
+                const Spacer(),
+                _smallButton(
+                  key: Key('researchStart_${def.id}'),
+                  onPressed: st.error == null
+                      ? () => _start(l, def.id, sheetContext)
+                      : null,
+                  child: Text(st.maxed ? l.researchMaxed : l.researchStart),
+                ),
+              ],
             ],
           ),
         ],
@@ -537,7 +918,7 @@ class _ResearchScreenState extends ConsumerState<ResearchScreen> {
           text,
           style: TextStyle(
             color: enough ? ok : short,
-            fontSize: 11,
+            fontSize: 12,
             fontWeight: FontWeight.w600,
           ),
         ),
@@ -547,29 +928,29 @@ class _ResearchScreenState extends ConsumerState<ResearchScreen> {
       (m) => save.materialCount(m) >= p.materialsEach,
     );
     return Wrap(
-      spacing: 10,
-      runSpacing: 3,
+      spacing: 12,
+      runSpacing: 4,
       crossAxisAlignment: WrapCrossAlignment.center,
       children: [
         item(
-          const Icon(Icons.schedule_rounded, size: 13, color: Colors.white54),
+          const Icon(Icons.schedule_rounded, size: 14, color: Colors.white54),
           formatShortDuration(p.time),
           true,
         ),
         if (p.samples > 0)
           item(
-            _sampleIcon(13),
+            _sampleIcon(14),
             formatCompact(p.samples),
             save.researchSamples >= p.samples,
           ),
         if (p.gold > 0)
-          item(goldIcon(size: 13), formatCompact(p.gold), save.gold >= p.gold),
+          item(goldIcon(size: 14), formatCompact(p.gold), save.gold >= p.gold),
         if (p.materialsEach > 0)
           item(
             materialImage(
               MaterialKind.chitin,
-              size: 13,
-              fallback: const Icon(Icons.category_rounded, size: 12),
+              size: 14,
+              fallback: const Icon(Icons.category_rounded, size: 13),
             ),
             l.researchCostMaterials(formatCompact(p.materialsEach)),
             matsOk,
@@ -578,8 +959,8 @@ class _ResearchScreenState extends ConsumerState<ResearchScreen> {
           item(
             materialImage(
               MaterialKind.fossil,
-              size: 13,
-              fallback: const Icon(Icons.diamond_rounded, size: 12),
+              size: 14,
+              fallback: const Icon(Icons.diamond_rounded, size: 13),
             ),
             formatCompact(p.fossil),
             save.materialCount(MaterialKind.fossil) >= p.fossil,
@@ -590,25 +971,46 @@ class _ResearchScreenState extends ConsumerState<ResearchScreen> {
 
   // ── 동작 ──
 
-  Future<void> _start(AppLocalizations l, String id) async {
+  Future<void> _start(
+    AppLocalizations l,
+    String id,
+    BuildContext sheetContext,
+  ) async {
     final err = await _ctrl.startResearchNow(id);
-    if (err != null && mounted) showCenterToast(context, _errText(l, err));
+    if (!mounted) return;
+    if (err != null) {
+      showCenterToast(context, _errText(l, err));
+    } else if (sheetContext.mounted) {
+      Navigator.of(sheetContext).pop();
+    }
   }
 
+  /// 즉시 완료 — 젤리 값은 누르는 순간의 남은 시간으로 다시 잰다(칸·시트가 1초 늦게 그려져 있어도 같은 값).
   Future<void> _instant(
     AppLocalizations l,
     String name,
-    ResearchSlot r,
-    int jelly,
+    String id,
+    int level,
   ) async {
+    final s = ref.read(saveControllerProvider).value;
+    final cfg = ref.read(gameDataProvider).value?.researchConfig;
+    ResearchSlot? slot;
+    for (final r in s?.researchSlots ?? const <ResearchSlot>[]) {
+      if (r.id == id) slot = r;
+    }
+    if (cfg == null || slot == null) return;
+    final jelly = cfg.instantJelly(
+      slot.endsAt.difference(ref.read(clockProvider).now().toUtc()),
+    );
+    if (jelly <= 0) return;
     final ok = await confirmJellySpend(
       context,
       title: l.researchInstantTitle,
-      body: l.researchInstantBody(name, '${r.level}'),
+      body: l.researchInstantBody(name, '$level'),
       jelly: jelly,
     );
     if (!ok || !mounted) return;
-    final err = await _ctrl.finishResearchWithJelly(r.id);
+    final err = await _ctrl.finishResearchWithJelly(id);
     if (err != null && mounted) showCenterToast(context, _errText(l, err));
   }
 
@@ -627,10 +1029,12 @@ class _ResearchScreenState extends ConsumerState<ResearchScreen> {
 
   // ── 모양 ──
 
+  /// [compact] 는 칸 카드 안 버튼 — 좁은 칸에서도 글자를 줄여 넣는다.
   Widget _smallButton({
     required Key key,
     required VoidCallback? onPressed,
     required Widget child,
+    bool compact = false,
   }) => FilledButton(
     key: key,
     onPressed: onPressed,
@@ -640,17 +1044,18 @@ class _ResearchScreenState extends ConsumerState<ResearchScreen> {
       disabledBackgroundColor: const Color(0x22FFFFFF),
       disabledForegroundColor: Colors.white38,
       visualDensity: VisualDensity.compact,
-      padding: const EdgeInsets.symmetric(horizontal: 12),
-      minimumSize: const Size(56, 32),
+      padding: EdgeInsets.symmetric(horizontal: compact ? 4 : 12),
+      minimumSize: compact ? const Size(0, 28) : const Size(56, 32),
+      tapTargetSize: compact ? MaterialTapTargetSize.shrinkWrap : null,
       textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800),
     ),
-    child: child,
+    child: compact ? FittedBox(fit: BoxFit.scaleDown, child: child) : child,
   );
 
   Widget _sampleIcon(double size) =>
       Icon(Icons.science_rounded, size: size, color: const Color(0xFF80DEEA));
 
-  /// 연구 아이콘 — `assets/images/ui/icon/research_<id>.webp`, 없으면 효과별 Material 아이콘(§6 폴백).
+  /// 연구 아이콘 — research.json `image`, 없으면 효과별 Material 아이콘(§6 폴백).
   Widget _researchIcon(ResearchDef? def, double size, {bool dim = false}) =>
       gameIcon(
         def == null ? 'research' : 'research_${def.id}',
@@ -666,6 +1071,67 @@ class _ResearchScreenState extends ConsumerState<ResearchScreen> {
     borderRadius: BorderRadius.circular(10),
     border: Border.all(color: border),
   );
+}
+
+/// 시작할 수 있음 표시(빨간 점 — 하단 탭 빨간 점과 같은 뜻).
+class _Dot extends StatelessWidget {
+  const _Dot();
+
+  @override
+  Widget build(BuildContext context) => Container(
+    width: 9,
+    height: 9,
+    decoration: BoxDecoration(
+      color: const Color(0xFFE53935),
+      shape: BoxShape.circle,
+      border: Border.all(color: const Color(0xFF0E1608), width: 1.5),
+    ),
+  );
+}
+
+/// 트리 선 — 부모 카드 아래 → 두 행 사이 → 자식 카드 위로 꺾어 긋는다. 선행을 채웠으면 밝게.
+class _TreeLines extends CustomPainter {
+  _TreeLines(this.edges);
+
+  final List<({Rect from, Rect to, bool lit})> edges;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    Paint pen(Color c) => Paint()
+      ..color = c
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 4
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
+    final dim = pen(const Color(0x40FFFFFF));
+    final lit = pen(const Color(0xFFE8D9A8));
+    // 어두운 선을 먼저 — 밝은 선이 겹친 마디 위에 남는다.
+    for (final pass in [false, true]) {
+      for (final e in edges) {
+        if (e.lit != pass) continue;
+        final x0 = e.from.center.dx, y0 = e.from.bottom;
+        final x1 = e.to.center.dx, y1 = e.to.top;
+        final mid = y1 - math.min(13.0, (y1 - y0) / 2);
+        canvas.drawPath(
+          Path()
+            ..moveTo(x0, y0)
+            ..lineTo(x0, mid)
+            ..lineTo(x1, mid)
+            ..lineTo(x1, y1),
+          pass ? lit : dim,
+        );
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(_TreeLines old) {
+    if (old.edges.length != edges.length) return true;
+    for (var i = 0; i < edges.length; i++) {
+      if (old.edges[i] != edges[i]) return true;
+    }
+    return false;
+  }
 }
 
 String _name(ResearchDef def, String locale) =>

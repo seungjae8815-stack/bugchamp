@@ -8364,6 +8364,11 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
+  String researchSpeed(String pct) {
+    return '研究速度 +$pct%';
+  }
+
+  @override
   String researchLevel(String lv, String max) {
     return 'Lv $lv/$max';
   }

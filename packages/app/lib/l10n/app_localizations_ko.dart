@@ -8377,6 +8377,11 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
+  String researchSpeed(String pct) {
+    return '연구 속도 +$pct%';
+  }
+
+  @override
   String researchLevel(String lv, String max) {
     return 'Lv $lv/$max';
   }

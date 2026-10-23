@@ -2588,6 +2588,7 @@
   "researchSlotBuyBody": "젤리로 연구 칸을 하나 더 엽니다(영구).",
   "researchSlotsTitle": "연구 칸 {n}/{max}",
   "researchSlotItem": "{name} Lv{lv}",
+  "researchSpeed": "연구 속도 +{pct}%",
   "researchLevel": "Lv {lv}/{max}",
   "researchMaxed": "최고 레벨",
   "researchStart": "연구",

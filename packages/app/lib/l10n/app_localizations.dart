@@ -13990,6 +13990,12 @@ abstract class AppLocalizations {
   /// **'{name} Lv{lv}'**
   String researchSlotItem(String name, String lv);
 
+  /// No description provided for @researchSpeed.
+  ///
+  /// In en, this message translates to:
+  /// **'Research speed +{pct}%'**
+  String researchSpeed(String pct);
+
   /// No description provided for @researchLevel.
   ///
   /// In en, this message translates to:
