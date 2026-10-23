@@ -868,7 +868,8 @@ void main() {
     expect(long.researchSamples, lessThan(1000));
   });
 
-  test('가 본 최고 난이도는 업로드마다 저장본 + 1 까지만 오른다', () {
+  test('가 본 최고 난이도는 그 난이도의 최종 보스 기록이 있어야 + 1 — 위조 업로드 3번으로 극한에 못 간다', () {
+    // 최종 보스 없이 올린 극한은 저장본에 머문다(예전엔 +1 씩 올라 3번이면 극한이었다).
     var s = stored();
     for (var i = 1; i <= 3; i++) {
       final t = t0.add(Duration(seconds: 60 * i));
@@ -879,16 +880,59 @@ void main() {
             s.copyWith(maxTierReached: 3, difficultyTier: 3).toJson(),
           )
           .save!;
-      expect(s.maxTierReached, i, reason: '$i번째 업로드');
-      expect(s.difficultyTier, lessThanOrEqualTo(i));
+      expect(s.maxTierReached, 0, reason: '$i번째 업로드');
+      expect(s.difficultyTier, 0);
     }
-    // 정직한 한 계단(쉬움 → 보통)은 그대로.
+    // 최종 보스까지 함께 위조해도 한 계단 뒤에는 그 난이도에 들어선 지 6시간이 지나야 한다.
+    final run = cfg.run;
+    String fin(int tier) => run.bossArtId(tier, run.zonesPerTier);
+    s = stored();
+    for (var i = 1; i <= 3; i++) {
+      final t = t0.add(Duration(seconds: 60 * i));
+      final a = GameActions(config: cfg, now: () => t);
+      s = a
+          .mergeSave(
+            s,
+            s
+                .copyWith(
+                  maxTierReached: 3,
+                  difficultyTier: 3,
+                  bossDex: {fin(0), fin(1), fin(2)},
+                )
+                .toJson(),
+          )
+          .save!;
+      expect(s.maxTierReached, 1, reason: '$i번째 업로드');
+      expect(s.difficultyTier, lessThanOrEqualTo(1));
+    }
+    // 정직한 한 계단(쉬움 최종 보스를 잡고 바로 보통으로 — 같은 업로드)은 그대로.
     final easy = stored();
     final next = up(
       easy,
-      easy.copyWith(maxTierReached: 1, difficultyTier: 1).toJson(),
+      easy
+          .copyWith(maxTierReached: 1, difficultyTier: 1, bossDex: {fin(0)})
+          .toJson(),
     );
     expect(next.maxTierReached, 1);
     expect(next.difficultyTier, 1);
+    // 보통에 들어선 지 6시간 뒤 보통 최종 보스를 잡으면 어려움으로.
+    final later = t0.add(const Duration(hours: 7));
+    final hard = GameActions(config: cfg, now: () => later)
+        .mergeSave(
+          next,
+          next
+              .copyWith(
+                maxTierReached: 2,
+                difficultyTier: 2,
+                bossDex: {...next.bossDex, fin(1)},
+              )
+              .toJson(),
+        )
+        .save!;
+    expect(hard.maxTierReached, 2);
+    // 내려가는 것(로드맵 난이도 선택)은 막지 않는다.
+    final down = up(next, next.copyWith(difficultyTier: 0).toJson());
+    expect(down.difficultyTier, 0);
+    expect(down.maxTierReached, 1);
   });
 }

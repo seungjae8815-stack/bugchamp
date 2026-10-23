@@ -731,6 +731,8 @@ class SaveGame {
     this.abyssScoreWeek,
     this.abyssRankMark,
     this.abyssFloorAt,
+    this.jellySlackAt,
+    this.topTierAt,
     this.goldCarry = 0,
     this.goldCarryUntil,
     this.passiveRerollBug,
@@ -1039,6 +1041,15 @@ class SaveGame {
   /// 인정할 때마다 그만큼 앞으로 민다. 업로드마다 경과 시간을 올림으로 재던 시절엔 1초마다 올리면
   /// 매번 한 층씩 늘어 300번에 305층이 됐다(2026-09-30 점검).
   final DateTime? abyssFloorAt;
+
+  /// 젤리 업로드 **근거 없는 여유의 기준 시각**(서버 소유, 2026-10-23). 여유는 시간당 일정량만 차오르고
+  /// 서버가 쓴 만큼 앞으로 민다([abyssFloorAt] 과 같은 결) — 업로드마다 정액(300)을 주던 시절엔 60초마다
+  /// 올리는 세이브 편집이 하루 수십만 젤리가 됐다. null = 아직 쓴 적 없음(여유가 가득).
+  final DateTime? jellySlackAt;
+
+  /// 가 본 최고 난이도(`topTier`)에 **처음 들어선 시각**(서버 소유, 2026-10-23). 서버가 다음 난이도를
+  /// 인정할 때 적고, 그 난이도를 깨는 데 걸리는 최소 시간을 이 시각부터 잰다. null = 기록 전(옛 세이브).
+  final DateTime? topTierAt;
 
   /// 업로드 골드 허용치 이월(서버 소유, 2026-10-13). 오래 쉬었다 돌아온 업로드가 방치 허용치를 다 쓰지
   /// 않으면 남은 몫을 [goldCarryUntil] 까지 다음 업로드로 넘긴다 — 앱 복귀 때 연결 확인 업로드가 방치
@@ -1709,6 +1720,8 @@ class SaveGame {
     String? abyssScoreWeek,
     String? abyssRankMark,
     DateTime? abyssFloorAt,
+    DateTime? jellySlackAt,
+    DateTime? topTierAt,
     int? goldCarry,
     DateTime? goldCarryUntil,
     String? passiveRerollBug,
@@ -1859,6 +1872,8 @@ class SaveGame {
     abyssScoreWeek: abyssScoreWeek ?? this.abyssScoreWeek,
     abyssRankMark: abyssRankMark ?? this.abyssRankMark,
     abyssFloorAt: abyssFloorAt ?? this.abyssFloorAt,
+    jellySlackAt: jellySlackAt ?? this.jellySlackAt,
+    topTierAt: topTierAt ?? this.topTierAt,
     goldCarry: goldCarry ?? this.goldCarry,
     goldCarryUntil: goldCarryUntil ?? this.goldCarryUntil,
     passiveRerollBug: clearPassiveReroll
@@ -2142,6 +2157,12 @@ class SaveGame {
     abyssFloorAt: json['abyssFloorAt'] == null
         ? null
         : DateTime.tryParse(json['abyssFloorAt'] as String)?.toUtc(),
+    jellySlackAt: json['jSA'] is String
+        ? DateTime.tryParse(json['jSA'] as String)?.toUtc()
+        : null,
+    topTierAt: json['tTA'] is String
+        ? DateTime.tryParse(json['tTA'] as String)?.toUtc()
+        : null,
     goldCarry: (json['gC'] as num?)?.toInt() ?? 0,
     passiveRerollBug: json['pRr'] is Map
         ? '${(json['pRr'] as Map)['b']}'
@@ -2419,6 +2440,8 @@ class SaveGame {
     if (abyssScoreWeek != null) 'abyssScoreWeek': abyssScoreWeek,
     if (abyssRankMark != null) 'abyRk': abyssRankMark,
     if (abyssFloorAt != null) 'abyssFloorAt': abyssFloorAt!.toIso8601String(),
+    if (jellySlackAt != null) 'jSA': jellySlackAt!.toIso8601String(),
+    if (topTierAt != null) 'tTA': topTierAt!.toIso8601String(),
     if (goldCarry > 0) 'gC': goldCarry,
     if (passiveRerollBug != null && passiveRerollRoll != null)
       'pRr': {'b': passiveRerollBug, 'r': passiveRerollRoll},

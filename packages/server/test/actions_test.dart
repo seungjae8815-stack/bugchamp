@@ -3029,11 +3029,15 @@ void main() {
       expect(r.save!.materialCount(MaterialKind.jelly), lessThan(999999));
     });
 
-    test('젤리 소량 증가(선물·분해)는 통과', () {
+    // 2026-10-23: 근거 없는 증가는 업로드당 300 이 아니라 시간 여유(시간당 2 · 최대 20)까지만 — 예전 +50 통과 테스트를 바꿨다.
+    test('근거 없는 젤리 소량 증가(분해 등)는 시간 여유까지만 통과', () {
       final base = stored().copyWith(materials: {MaterialKind.jelly: 10});
-      final ok = base.copyWith(materials: {MaterialKind.jelly: 60});
+      final ok = base.copyWith(materials: {MaterialKind.jelly: 30});
       final r = actions.mergeSave(base, ok.toJson());
-      expect(r.save!.materialCount(MaterialKind.jelly), 60);
+      expect(r.save!.materialCount(MaterialKind.jelly), 30);
+      final over = base.copyWith(materials: {MaterialKind.jelly: 60});
+      final r2 = actions.mergeSave(base, over.toJson());
+      expect(r2.save!.materialCount(MaterialKind.jelly), 30);
     });
   });
 

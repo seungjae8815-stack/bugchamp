@@ -198,6 +198,9 @@ class GameActions {
     'abyssRewardWeek',
     // 심연 층 시간 예산 기준(2026-09-30). 지우면 예산이 다시 차서 층 상한이 풀린다.
     'abyssFloorAt',
+    // 젤리 시간 여유 기준 시각 · 최고 난이도에 들어선 시각(2026-10-23) — 앱이 고치면 여유가 늘 가득이고 난이도 시간 제한이 사라진다.
+    'jSA',
+    'tTA',
     // 골드 허용치 이월(2026-10-13) — 기기가 늘리면 이월 몫만큼 골드를 부풀린다.
     'gC',
     'gCU',
@@ -724,13 +727,18 @@ class GameActions {
   static const _goldCarryMinGap = Duration(minutes: 2);
   static const _goldCarryWindow = Duration(minutes: 5);
 
-  /// 젤리(프리미엄 재화) 급증 상한의 바닥. 솔로 획득(선물·분해)은 소량이라
-  /// 통과하되, 세이브 편집으로 999999 를 넣는 건 막는다(결제 우회 차단).
+  /// 젤리(프리미엄 재화) 업로드 증가 허용치의 **근거 없는 여유** — 시간당 [_jellySlackPerHour] 씩 차오르고
+  /// [_jellySlackCap] 까지 쌓인다(서버 소유 기준 시각 `jellySlackAt`, 심연 층 예산과 같은 결).
   ///
-  /// 1000 → 300(2026-09-30 점검): 업로드는 60초마다라 1000 이면 편집으로 하루 144만까지 통과했다.
-  /// 기기에서 한꺼번에 들어오는 큰 젤리는 도감·보스 마일스톤뿐이라 그건 [_dexJellyAllowance] 로
-  /// 따로 인정한다(결제·순위·대회·우편 젤리는 서버가 저장본에 먼저 넣어 증가분에 안 잡힌다).
-  static const _jellySanityFloor = 300;
+  /// 1000 → 300(2026-09-30) → 근거 기반(2026-10-23 점검): 업로드마다 정액 300 이면 60초마다 올리는 세이브 편집이
+  /// 하루 43만 젤리였고, 그 젤리가 결투 연구 즉시 완료(실물 경품 대회)를 산다. 이제 허용치 =
+  /// 도감·보스 마일스톤([_dexJellyAllowance]) + 받은 흔적이 보이는 기기 수입([_deviceJellyEvidence] — 미션·선물 첫 2배·패스 일일·
+  /// 일일보상·리그 승급·시즌·최종 사냥터 클리어) + 이 여유. 결제·순위·대회·우편 젤리는 서버가 저장본에 먼저 넣어 증가분에 안 잡힌다.
+  /// 여유가 덮는 것 = 흔적이 남지 않는 드문 기기 수입(5성 분해 3개 — `jelly_sim` 하루 0, 떠 있던 옛 젤리 선물).
+  /// 분해는 근거로 세지 않는다 — 새 id 곤충의 태생 포텐셜을 서버가 모르니 5성을 만들어 올리고 지우는 것을 되풀이하면 끝이 없었다.
+  /// 값: 시간당 2 · 최대 20 → 위조 상한 하루 48(순위권 밖 하루 수입 15~26 의 2~3배), 정직한 유저는 5성 6마리까지 한 번에.
+  static const _jellySlackPerHour = 2;
+  static const _jellySlackCap = 20;
 
   /// 일반 재료(키틴·미네랄·수액) **업로드 1회당** 증가 상한.
   ///
@@ -752,7 +760,7 @@ class GameActions {
   static const goldUploadCap = _goldSanityFloor;
 
   static int uploadCapFor(MaterialKind k) => switch (k) {
-    MaterialKind.jelly => _jellySanityFloor,
+    MaterialKind.jelly => _jellySlackCap,
     // 화석은 설정에서 파생되므로 인스턴스 값이 필요하다 — 정상화 대상이
     // 아니라서 보수적으로 0(= 뺄셈 없음)을 준다.
     MaterialKind.fossil => 0,
@@ -798,14 +806,24 @@ class GameActions {
   /// 1. 로드맵 설정에 있는 챕터만,
   /// 2. 저장본에 **없던** 챕터만(같은 챕터를 두 번 인정하지 않는다),
   /// 3. 올라온 최고 스테이지가 실제로 그 챕터를 넘겼을 때만.
-  int _chapterGrantAllowance(SaveGame stored, Map<String, dynamic> clientJson) {
+  int _chapterGrantAllowance(
+    SaveGame stored,
+    Map<String, dynamic> clientJson,
+  ) => _chapterGrants(stored, clientJson).gold;
+
+  /// [_chapterGrantAllowance] 의 골드와 같은 조건으로 새로 받은 클리어 보상 **젤리**(최종 사냥터 `rewardJelly`)까지.
+  ({int gold, int jelly}) _chapterGrants(
+    SaveGame stored,
+    Map<String, dynamic> clientJson,
+  ) {
+    const none = (gold: 0, jelly: 0);
     final chapters = config.roadmap?.chapters;
-    if (chapters == null || chapters.isEmpty) return 0;
+    if (chapters == null || chapters.isEmpty) return none;
 
     final claimed = ((clientJson['clearedChapters'] as List?) ?? const [])
         .map((e) => e.toString())
         .toSet();
-    if (claimed.isEmpty) return 0;
+    if (claimed.isEmpty) return none;
 
     final already = stored.clearedChapters.toSet();
     // 사냥터 세대가 낮은 앱(구버전)이 올린 스테이지는 옛 진행도다 — 안 믿는다.
@@ -823,15 +841,15 @@ class GameActions {
     // 저장본이 가 본 최고 난이도에서 **한 계단**까지만 믿는다(업로드 사이에 최종
     // 보스를 깨고 넘어갔을 수 있다). 표가 없는 난이도도 인정하지 않는다.
     final storedTop = stored.topTier;
-    if (tier < 0 || tier > storedTop + 1) return 0;
+    if (tier < 0 || tier > storedTop + 1) return none;
     if (config.run.zoneTiers.isNotEmpty &&
         tier >= config.run.zoneTiers.length) {
-      return 0;
+      return none;
     }
     // 가 본 난이도로 내려가 있으면 앱이 클리어 보상을 주지 않는다
     // (`SaveController.grantChapterClears`).
     final clientTop = (clientJson['maxTierReached'] as num?)?.toInt() ?? tier;
-    if (tier < clientTop) return 0;
+    if (tier < clientTop) return none;
     // 저장본 스테이지는 **같은 난이도**일 때만 근거가 된다 — 쉬움 1001 에서 보통으로
     // 넘어간 직후 그 1001 로 보통 챕터를 전부 넘긴 것처럼 보이면 안 된다.
     // 최고 기록(`bestStage`)도 본다 — 보스를 깨고 곧장 아래 사냥터로 내려가면
@@ -854,6 +872,7 @@ class GameActions {
       for (final e in (clientJson['bossDex'] as List? ?? const [])) '$e',
     };
     var sum = 0;
+    var jelly = 0;
     for (final ch in chapters) {
       final key = chapterClearKey(ch.id, tier);
       if (already.contains(key) ||
@@ -870,13 +889,15 @@ class GameActions {
       if (claimed.contains(key)) {
         final now = chapterClearGold(config.run, ch, tier);
         sum += tier == 0 ? max(now, ch.rewardGold) : now;
+        jelly += max(0, ch.rewardJelly);
       } else if (maybeOld &&
           claimed.contains(ch.id) &&
           !already.contains(ch.id)) {
         sum += ch.rewardGold;
+        jelly += max(0, ch.rewardJelly);
       }
     }
-    return sum;
+    return (gold: sum, jelly: jelly);
   }
 
   /// 이번 업로드에서 **정당하게 받았을 수 있는 도감 보스 수집 화석**의 합.
@@ -1542,15 +1563,25 @@ class GameActions {
     if (stored.maxTierReached > clientTop) {
       merged['maxTierReached'] = stored.maxTierReached;
     }
-    // 위로는 저장본이 가 본 최고 난이도 **한 계단**까지만(클리어 보상·봉투·연구 칸과 같은 규칙) — 그대로 받으면
-    // 업로드마다 +1 씩 위조한 값이 쌓여 몇 분 만에 극한이 됐다(연구 칸·시간 풀이 이 값을 본다).
+    // 위로는 저장본이 가 본 최고 난이도 **한 계단**까지, 그것도 그 난이도의 최종 보스를 잡은 기록이 있을 때만
+    // ([_tierCapFor]) — 그대로 받으면 업로드마다 +1 씩 위조한 값이 쌓여 몇 분 만에 극한이 됐다(연구 칸·시간 풀이 이 값을 본다).
     // 최종 보스를 깨고 넘어가는 건 한 번에 한 계단이라 정직한 진행은 잘리지 않는다. 지금 난이도도 같은 선.
-    final tierCap = stored.topTier + 1;
+    final tierCap = _tierCapFor(
+      stored,
+      (merged['bossDex'] as List?) ?? const [],
+      t,
+    );
+    final topNow = min(
+      max(stored.topTier, (merged['maxTierReached'] as num?)?.toInt() ?? 0),
+      tierCap,
+    );
     if (clientTop > tierCap) merged['maxTierReached'] = tierCap;
     final clientNowTier = (merged['difficultyTier'] as num?)?.toInt();
     if (clientNowTier != null && clientNowTier > tierCap) {
       merged['difficultyTier'] = tierCap;
     }
+    // 새 최고 난이도에 들어선 시각(서버 소유 `tTA`) — 다음 계단의 최소 시간을 여기서 잰다.
+    if (topNow > stored.topTier) merged['tTA'] = t.toIso8601String();
     if (stored.bossDex.isNotEmpty) {
       final clientBoss = ((merged['bossDex'] as List?) ?? const [])
           .map((e) => e.toString())
@@ -1610,13 +1641,23 @@ class GameActions {
           (mats['jelly'] as num?)?.toInt() ??
           stored.materialCount(MaterialKind.jelly);
       final storedJelly = stored.materialCount(MaterialKind.jelly);
-      final jellyAllow =
-          _jellySanityFloor +
-          _dexJellyAllowance(stored, clientJson, parsed: early);
-      if (clientJelly - storedJelly > jellyAllow) {
+      // 근거 있는 몫 + 시간 여유([_jellyAllowance]) — 옛 업로드당 정액 300 은 60초 주기 편집으로 하루 43만이었다.
+      final ja = _jellyAllowance(stored, early, clientJson, t);
+      final jellyAllow = ja.dex + ja.evidence + ja.slack;
+      final gain = clientJelly - storedJelly;
+      if (gain > jellyAllow) {
         mats['jelly'] = storedJelly + jellyAllow;
         clampReasons.add('jelly');
-        clampDetail['jelly'] = '+${clientJelly - storedJelly} / 허용 $jellyAllow';
+        clampDetail['jelly'] =
+            '+$gain / 허용 $jellyAllow '
+            '(도감 ${ja.dex} · 기기 근거 ${ja.evidence} · 여유 ${ja.slack})';
+      }
+      // 여유를 쓴 만큼 기준 시각을 민다(서버 소유 `jSA`) — 근거로 설명되는 몫은 여유를 쓰지 않는다.
+      final slackUsed = max(0, min(gain, jellyAllow) - ja.dex - ja.evidence);
+      if (slackUsed > 0) {
+        merged['jSA'] = ja.slackBase
+            .add(Duration(seconds: slackUsed * 3600 ~/ _jellySlackPerHour))
+            .toIso8601String();
       }
 
       // 일반 재료도 급증을 막는다 — 여기가 비어 있던 탓에 조작 업로드가
@@ -2384,7 +2425,7 @@ class GameActions {
     return used;
   }
 
-  /// 연구 검사에 넘길 젤리 두 가지 — [levels] = 즉시 완료에 쓸 수 있었던 젤리(줄어든 젤리 + 근거 있는 도감 젤리 + 근거 있는 기기 수입(300 까지) −
+  /// 연구 검사에 넘길 젤리 두 가지 — [levels] = 즉시 완료에 쓸 수 있었던 젤리(줄어든 젤리 + 근거 있는 도감 젤리 + 근거 있는 기기 수입 −
   /// 다른 곳에 쓴 몫, 칸 구매 몫은 [_judgeResearch] 가 뺀다) · [slots] = 칸 구매에 쓸 수 있었던 젤리(저장본 + 업로드 젤리
   /// 증가 허용치 − 올라온 젤리 — 같은 업로드에 미션·선물 젤리가 들어와 순감소가 칸 값보다 작아도 산 칸이 지워지지 않게).
   ({int levels, int slots, int refundCap}) _researchJelly(
@@ -2396,11 +2437,15 @@ class GameActions {
   ) {
     final have = stored.materialCount(MaterialKind.jelly);
     final now = client.materialCount(MaterialKind.jelly);
-    final dex = _dexJellyAllowance(stored, clientJson, parsed: client);
-    final evidence = _deviceJellyEvidence(stored, client, t);
-    // 즉시 완료도 같은 업로드에 받은 기기 젤리(패스 일일·미션·일일보상·선물 2배)를 쓸 수 있다 — 빼면 받자마자
-    // 연구를 젤리로 끝낸 정직한 유저가 레벨과 젤리를 함께 잃는다. 젤리 업로드 상한(300 + 도감)을 넘지 않게 자른다.
-    final income = min(evidence, _jellySanityFloor);
+    // 젤리 업로드 허용치와 **같은 함수**([_jellyAllowance]) — 근거 있는 몫(도감 + 기기 수입)만 쓴다.
+    // 시간 여유(`slack`)는 넣지 않는다: 여유는 젤리 증가 검사에서 쓴 만큼만 기준 시각을 민다 — 연구에도 주면 같은 여유를
+    // 업로드마다 즉시 완료에 다시 쓸 수 있다. 여유로 받은 젤리는 다음 업로드부터 저장본 젤리로 쓴다.
+    final allow = _jellyAllowance(stored, client, clientJson, t);
+    final dex = allow.dex;
+    final evidence = allow.evidence;
+    // 즉시 완료도 같은 업로드에 받은 기기 젤리(패스 일일·미션·일일보상·선물 2배·최종 사냥터 클리어)를 쓸 수 있다 — 빼면
+    // 받자마자 연구를 젤리로 끝낸 정직한 유저가 레벨과 젤리를 함께 잃는다.
+    final income = evidence;
     return (
       levels: max(
         0,
@@ -2410,11 +2455,11 @@ class GameActions {
             now -
             _jellyUsedElsewhere(stored, client, elapsed),
       ),
-      // 칸은 영구 상품이다 — 300 상식 여유(`_jellySanityFloor`)를 쓰면 젤리를 안 내고 3번째 칸(300)이 열렸다.
-      // 근거가 보이는 기기 젤리 수입([_deviceJellyEvidence])만 더한다.
+      // 칸은 영구 상품이다 — 옛 300 상식 여유를 쓰면 젤리를 안 내고 3번째 칸(300)이 열렸다.
+      // 근거가 보이는 기기 젤리 수입만 더한다.
       slots: max(0, have + dex + evidence - now),
-      // 걸린 칸 구매의 젤리 환불 상한(저장본 위로) — 근거 있는 수입까지만, 젤리 업로드 상한(300 + 도감)도 넘지 않게.
-      refundCap: dex + min(evidence, _jellySanityFloor),
+      // 걸린 칸 구매의 젤리 환불 상한(저장본 위로) — 근거 있는 수입까지만(환불은 업로드마다 되풀이될 수 있어 시간 여유는 안 쓴다).
+      refundCap: dex + evidence,
     );
   }
 
@@ -2423,7 +2468,9 @@ class GameActions {
   ///  - 젤리 미션: `dailyClaims` 의 `mission:<id>`(`#n`) 날짜가 앞으로 간 칸마다 그 미션의 지금 보상.
   ///  - 깜짝선물 그날 첫 2배 젤리: 2배 날짜가 앞으로 갔으면 `doubleJellyMax`.
   ///  - 곤충학자 패스 일일 젤리(`_iapDaily` 날짜가 앞으로 · 저장본 기준 패스 켜짐) · 일일보상 젤리(슬롯 날짜가 앞으로).
-  ///  - 새로 받은 리그 승급 보상 · 시즌이 넘어갔으면 가장 큰 시즌 보상 · 사라진 곤충의 분해 젤리(획득 시점 포텐셜).
+  ///  - 새로 받은 리그 승급 보상 · 시즌이 넘어갔으면 가장 큰 시즌 보상.
+  ///  - ❌ 분해 젤리는 세지 않는다(2026-10-23) — 새 id 곤충의 태생 포텐셜은 기기 권위라, 5성을 만들어 올리고 다음 업로드에
+  ///    지우면 매번 근거가 생겼다. 분해(5성 3개, 드묾)는 시간 여유([_jellySlackCap])가 덮는다.
   /// 미래 날짜(서버 UTC + 하루 뒤)는 받은 것으로 치지 않는다([_huntRewardAllowance] 와 같은 규칙).
   int _deviceJellyEvidence(SaveGame stored, SaveGame client, DateTime t) {
     final latestDay = dailyDateKey(t.toUtc().add(const Duration(days: 1)));
@@ -2487,13 +2534,63 @@ class GameActions {
       }
       sum += best;
     }
-    final kept = {for (final b in client.bugs) b.id};
-    for (final b in stored.bugs) {
-      if (!kept.contains(b.id)) {
-        sum += max(0, config.pet.disassembleJelly(b.bornPotential));
-      }
-    }
     return sum;
+  }
+
+  /// 한 난이도를 깨는 최소 시간(2026-10-23) — 사냥터 11개(몬스터 100마리 + 보스)를 지나야 한다. 처치 속도 상한
+  /// (`kRareDropKillsPerSecondCap` 초당 2)으로는 9분이라 위조를 늦추지 못해서, 실제 진행(쉬움 평균 6일 · 90일 표)보다 한참
+  /// 짧으면서 업로드를 몇 번 고쳐 올리는 것으로는 닿지 않는 값으로 둔다. 위조로 극한까지 = 최소 12시간(쉬움 → 보통은 계정 생성부터).
+  static const _tierClimbMin = Duration(hours: 6);
+
+  /// 이번 업로드에서 인정하는 **가 본 최고 난이도의 상한**(2026-10-23).
+  /// 저장본 최고 난이도 T 에서 T + 1 은 아래를 모두 채울 때만, 아니면 T:
+  ///  1. T 의 최종 보스를 잡은 기록 — 저장본 도감(클리어 기록 포함, `collectedBosses`) 또는 이번 업로드 도감
+  ///     (보스를 잡고 바로 넘어간 업로드는 둘이 같이 온다).
+  ///  2. T 에 들어선 지 [_tierClimbMin] 이 지났다(서버 소유 `topTierAt` — 쉬움은 계정 생성 시각, 기록 전 옛 세이브는 통과).
+  /// 내려가는 것(난이도 선택)·심연·사냥터 세대는 이 상한 아래라 영향이 없다.
+  int _tierCapFor(
+    SaveGame stored,
+    Iterable<Object?> clientBossDex,
+    DateTime t,
+  ) {
+    final top = stored.topTier;
+    final finalId = config.run.bossArtId(top, config.run.zonesPerTier);
+    final killed =
+        collectedBosses(stored, config.run, config.roadmap).contains(finalId) ||
+        clientBossDex.any((e) => '$e' == finalId);
+    if (!killed) return top;
+    final since = stored.topTierAt ?? (top == 0 ? stored.createdAt : null);
+    if (since != null && t.difference(since) < _tierClimbMin) return top;
+    return top + 1;
+  }
+
+  /// 이번 업로드의 **젤리 증가 허용치**(2026-10-23) — 업로드 젤리 검사·연구 즉시 완료 예산·칸 환불 상한이 같이 쓴다.
+  ///  - `dex` 도감·보스 마일스톤([_dexJellyAllowance]).
+  ///  - `evidence` 받은 흔적이 보이는 기기 수입([_deviceJellyEvidence]) + 새로 받은 최종 사냥터 클리어 젤리([_chapterGrants]).
+  ///  - `slack` 근거 없는 여유 — 기준 시각(`jellySlackAt`, 서버 소유)부터 시간당 [_jellySlackPerHour], 최대 [_jellySlackCap].
+  ///    업로드 간격과 상관없이 시간으로만 차오른다(60초마다 올려도, 1초씩 쪼개 올려도 하루 몫은 같다).
+  ///  - `slackBase` 여유를 쓴 뒤 기준 시각을 밀 출발점(가득 찬 여유보다 오래된 시각은 당겨 온다).
+  /// [client] 가 null(파싱 실패)이면 기기 수입 근거는 0 — 그 업로드는 어차피 bad_save 로 끝난다.
+  ({int dex, int evidence, int slack, DateTime slackBase}) _jellyAllowance(
+    SaveGame stored,
+    SaveGame? client,
+    Map<String, dynamic> clientJson,
+    DateTime t,
+  ) {
+    final dex = _dexJellyAllowance(stored, clientJson, parsed: client);
+    final evidence =
+        (client == null ? 0 : _deviceJellyEvidence(stored, client, t)) +
+        _chapterGrants(stored, clientJson).jelly;
+    final full = t.subtract(
+      Duration(seconds: _jellySlackCap * 3600 ~/ _jellySlackPerHour),
+    );
+    final anchor = stored.jellySlackAt;
+    final base = anchor == null || anchor.isBefore(full) ? full : anchor;
+    // 한 번에 내림 — 쪼개 올려 올림 몫을 모으지 못하게.
+    final slack = (t.difference(base).inSeconds * _jellySlackPerHour ~/ 3600)
+        .clamp(0, _jellySlackCap)
+        .toInt();
+    return (dex: dex, evidence: evidence, slack: slack, slackBase: base);
   }
 
   /// 연구 업로드 판정(설계 §3.9) — 연구 레벨은 기기 세이브에 살지만 **결투에 실린다**(서버가 팀에 입힌다).
@@ -2554,8 +2651,12 @@ class GameActions {
         .firstOrNull;
 
     // 2. 산 칸.
-    // 가 본 최고 난이도는 저장본 +1 까지만 믿는다(동기화·허용치와 같은 규칙) — 위조한 극한으로 칸·시간 풀을 늘리지 못하게.
-    final tier = max(stored.topTier, min(client.topTier, stored.topTier + 1));
+    // 가 본 최고 난이도는 병합과 같은 상한([_tierCapFor] — 저장본 +1, 최종 보스 기록·최소 시간)까지만 믿는다
+    // — 위조한 극한으로 칸·시간 풀을 늘리지 못하게.
+    final tier = max(
+      stored.topTier,
+      min(client.topTier, _tierCapFor(stored, client.bossDex, t)),
+    );
     // 한 번 사면 **다음 칸 하나**(core_save `buyResearchSlot`): 열린 칸이 n 이면 값 `slotJelly[n−1]` · 산 수 → n
     // (어려움 진행도 2칸이면 0 → 2 로 한 번에 뛴다). 저장본 산 수에서 올린 값까지 차례로 사 보고, 그 사이 난이도가
     // 올랐을 수 있어 저장본 난이도·이번 난이도 둘 다로 재서 맞는 길 중 싼 값을 받는다.
