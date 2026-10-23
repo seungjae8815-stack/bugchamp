@@ -344,6 +344,30 @@ void main() {
     expect(honest.researchSlotsBought, 2);
   });
 
+  test('걸린 칸 구매는 낸 젤리를 돌려준다 — 저장본 + 근거 있는 수입 위로는 안 올린다', () {
+    final s = stored(
+      jelly: 1000,
+    ).copyWith(maxTierReached: 2, difficultyTier: 2);
+    // 정직한 구매(−300) + 같은 업로드에 흔적 없는 젤리 +50(우편 등) — 칸은 걸리지만 젤리는 잃지 않는다.
+    final honest = up(
+      s,
+      s
+          .copyWith(
+            researchSlotsBought: 2,
+            materials: {MaterialKind.jelly: 1000 - rc.slotJelly[1] + 50},
+          )
+          .toJson(),
+    );
+    expect(honest.researchSlotsBought, 0);
+    final j = honest.materialCount(MaterialKind.jelly);
+    expect(j, greaterThanOrEqualTo(1000 - rc.slotJelly[1] + 50));
+    expect(j, lessThanOrEqualTo(1000));
+    // 젤리를 그대로 두고 산 수만 올림 — 칸도 없고 젤리도 늘지 않는다.
+    final attacker = up(s, s.copyWith(researchSlotsBought: 2).toJson());
+    expect(attacker.researchSlotsBought, 0);
+    expect(attacker.materialCount(MaterialKind.jelly), 1000);
+  });
+
   test('되돌릴 때 이번 업로드에 시작한 단계의 시작 값을 돌려준다', () {
     final barter = rc.byId('barter')!;
     final c = rc.costAt(barter, 1);

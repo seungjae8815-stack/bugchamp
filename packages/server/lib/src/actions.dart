@@ -2374,7 +2374,7 @@ class GameActions {
   /// 연구 검사에 넘길 젤리 두 가지 — [levels] = 즉시 완료에 쓸 수 있었던 젤리(줄어든 젤리 + 근거 있는 도감 젤리 −
   /// 다른 곳에 쓴 몫, 칸 구매 몫은 [_judgeResearch] 가 뺀다) · [slots] = 칸 구매에 쓸 수 있었던 젤리(저장본 + 업로드 젤리
   /// 증가 허용치 − 올라온 젤리 — 같은 업로드에 미션·선물 젤리가 들어와 순감소가 칸 값보다 작아도 산 칸이 지워지지 않게).
-  ({int levels, int slots}) _researchJelly(
+  ({int levels, int slots, int refundCap}) _researchJelly(
     SaveGame stored,
     SaveGame client,
     Map<String, dynamic> clientJson,
@@ -2384,6 +2384,7 @@ class GameActions {
     final have = stored.materialCount(MaterialKind.jelly);
     final now = client.materialCount(MaterialKind.jelly);
     final dex = _dexJellyAllowance(stored, clientJson, parsed: client);
+    final evidence = _deviceJellyEvidence(stored, client, t);
     return (
       levels: max(
         0,
@@ -2391,7 +2392,9 @@ class GameActions {
       ),
       // 칸은 영구 상품이다 — 300 상식 여유(`_jellySanityFloor`)를 쓰면 젤리를 안 내고 3번째 칸(300)이 열렸다.
       // 근거가 보이는 기기 젤리 수입([_deviceJellyEvidence])만 더한다.
-      slots: max(0, have + dex + _deviceJellyEvidence(stored, client, t) - now),
+      slots: max(0, have + dex + evidence - now),
+      // 걸린 칸 구매의 젤리 환불 상한(저장본 위로) — 근거 있는 수입까지만, 젤리 업로드 상한(300 + 도감)도 넘지 않게.
+      refundCap: dex + min(evidence, _jellySanityFloor),
     );
   }
 
@@ -2504,7 +2507,7 @@ class GameActions {
     SaveGame client, {
     required DateTime t,
     required Duration elapsed,
-    required ({int levels, int slots}) jelly,
+    required ({int levels, int slots, int refundCap}) jelly,
     required ResearchConfig cfg,
   }) {
     // 1. 정리.
@@ -2550,6 +2553,8 @@ class GameActions {
         .clamp(stored.researchSlotsBought, cfg.slotJelly.length)
         .toInt();
     var slotCost = 0;
+    // 걸린 칸 구매에서 기기가 낸 젤리 — [_applyResearch] 가 돌려준다(값을 못 치른 칸이 지워져도 젤리는 잃지 않게).
+    var slotRefund = 0;
     if (bought > stored.researchSlotsBought) {
       final costs = [
         for (final at in {stored.topTier, tier})
@@ -2558,6 +2563,7 @@ class GameActions {
       final c = costs.isEmpty ? null : costs.reduce(min);
       if (c == null || c > jelly.slots) {
         bought = stored.researchSlotsBought;
+        slotRefund = c ?? 0;
       } else {
         slotCost = c;
       }
@@ -2628,7 +2634,8 @@ class GameActions {
     }
     gained.sort((a, b) => a.secs.compareTo(b.secs));
     var jellyNeed = 0;
-    final jellyHave = max(0, jelly.levels - slotCost);
+    // 돌려줄 칸 값은 즉시 완료 몫으로도 쓰지 않는다(한 젤리를 두 번 세지 않게).
+    final jellyHave = max(0, jelly.levels - slotCost - slotRefund);
     for (final g in gained) {
       final cover = ok ? max(0, min(g.secs, min(lineLeft(g.id), pool))) : 0;
       line[g.id] = lineLeft(g.id) - cover;
@@ -2668,6 +2675,8 @@ class GameActions {
         slots: slots,
         bought: bought,
         samples: samples,
+        refundJelly: slotRefund,
+        refundJellyCap: jelly.refundCap,
       );
     }
 
@@ -2691,6 +2700,8 @@ class GameActions {
       refundGold: pGold,
       refundMaterialsEach: pMats,
       refundFossil: pFossil,
+      refundJelly: slotRefund,
+      refundJellyCap: jelly.refundCap,
     );
   }
 
@@ -2702,7 +2713,8 @@ class GameActions {
   /// 판정([_judgeResearch])을 병합 세이브에 입힌다. 걸린 판정이면 환불까지 —
   /// 골드는 업로드 골드 허용치([goldCap] = mergeSave 의 maxGain) 안에서만 돌려주고, 돌려준 만큼 **허용치 이월(`gC`)을 줄인다**
   /// (안 줄이면 이월 창 안에서 위조 → 환불을 되풀이해 골드를 찍어 낼 수 있었다 — 직접 올린 골드와 같은 허용치를 쓴다).
-  /// 재료·화석은 각 업로드 허용치 안에서(젤리는 돌려주지 않는다). 바뀐 게 없으면 [capped] 를 그대로 돌려준다.
+  /// 재료·화석은 각 업로드 허용치 안에서. 젤리는 걸린 칸 구매의 칸 값만 돌려준다(즉시 완료 젤리는 돌려주지 않는다 — §2.6).
+  /// 바뀐 게 없으면 [capped] 를 그대로 돌려준다.
   SaveGame _applyResearch(
     SaveGame stored,
     SaveGame capped,
@@ -2726,6 +2738,21 @@ class GameActions {
       researchSlotsBought: v.bought,
       researchSamples: v.samples,
     );
+    // 걸린 칸 구매 — 기기가 낸 칸 값을 돌려준다. 저장본 + 근거 있는 수입([_ResearchVerdict.refundJellyCap]) 위로는 안 올리고
+    // 올라온 값 아래로도 안 내린다(젤리를 그대로 두고 산 수만 올린 업로드는 늘지 않는다).
+    if (v.refundJelly > 0) {
+      out = out.copyWith(
+        materials: {
+          ...out.materials,
+          MaterialKind.jelly: _refundTo(
+            out.materialCount(MaterialKind.jelly),
+            v.refundJelly,
+            stored.materialCount(MaterialKind.jelly),
+            v.refundJellyCap,
+          ),
+        },
+      );
+    }
     if (v.ok) return out;
     final mats = Map<MaterialKind, int>.from(out.materials);
     for (final m in kRegularMaterials) {
@@ -6677,6 +6704,8 @@ class _ResearchVerdict {
     this.refundGold = 0,
     this.refundMaterialsEach = 0,
     this.refundFossil = 0,
+    this.refundJelly = 0,
+    this.refundJellyCap = 0,
   });
 
   final bool ok;
@@ -6687,4 +6716,8 @@ class _ResearchVerdict {
   final int refundGold;
   final int refundMaterialsEach;
   final int refundFossil;
+
+  /// 걸린 칸 구매의 젤리 환불(기기가 낸 칸 값)과 그 상한(저장본 위로 늘 수 있는 몫).
+  final int refundJelly;
+  final int refundJellyCap;
 }
