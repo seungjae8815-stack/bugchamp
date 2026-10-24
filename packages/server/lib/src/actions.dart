@@ -469,10 +469,31 @@ class GameActions {
     return out.isEmpty ? null : out;
   }
 
+  Species? _speciesLookup(String id) => config.speciesList.where((x) => x.id == id).firstOrNull;
+
+  /// 구버전 앱이 올린 암컷의 크기(mm) — 같은 곤충은 저장본 값, 새 곤충은 수컷 범위 위치를 암컷 범위로(2026-10-24 §12 암수).
+  static double _femaleSizeFromOldApp(
+    Map b,
+    double? storedMm,
+    Species? Function(String speciesId) speciesOf,
+  ) {
+    final raw = (b['sizeMm'] as num?)?.toDouble() ?? 0;
+    if (storedMm != null) return storedMm;
+    final sp = speciesOf('${b['speciesId']}');
+    if (sp == null || sp.femaleSizeMinMm == null || sp.femaleSizeMaxMm == null) {
+      return raw;
+    }
+    final male = raw.isFinite
+        ? raw.clamp(sp.sizeMinMm, sp.sizeMaxMm).toDouble()
+        : sp.sizeMinMm;
+    return sp.remapFromMale(male, Sex.female);
+  }
+
   /// [incoming] 을 쓴 앱이 모르는 필드는 [stored] 의 값으로 채운 사본(아는 앱이면 그대로).
   static Map<String, dynamic> _keepFieldsOldAppDoesNotKnow(
     SaveGame stored,
     Map<String, dynamic> incoming,
+    Species? Function(String speciesId) speciesOf,
   ) {
     final feat = (incoming['feat'] as num?)?.toInt() ?? 0;
     if (feat >= kSaveFeatureLevel) return incoming;
@@ -546,6 +567,27 @@ class GameActions {
               b,
         ];
       }
+    }
+    // 암컷 크기(`sxm`, feat 29 — 2026-10-24 §12 암수) — 구버전 앱은 암컷을 수컷 범위 mm 로 올린다. 같은 곤충이면 저장본
+    // `sizeMm`(이미 암컷 범위)을 되돌리고, 저장본에 없는 새 암컷은 수컷 범위 위치를 암컷 범위로 옮긴다. 표식은 늘 켠다.
+    if (feat < 29) {
+      final storedSize = {for (final b in stored.bugs) b.id: b.sizeMm};
+      final list = out['bugs'];
+      if (list is List) {
+        out['bugs'] = [
+          for (final b in list)
+            if (b is Map && b['sex'] == Sex.female.key)
+              (Map<String, dynamic>.from(b)
+                ..['sizeMm'] = _femaleSizeFromOldApp(
+                  b,
+                  storedSize[b['id']],
+                  speciesOf,
+                ))
+            else
+              b,
+        ];
+      }
+      out['sxm'] = true;
     }
     // 훈련 지휘 칸(`command`, feat 26 — 1.0.21 D3) — 1.0.20 이하 앱은 모르는 칸 키를 건너뛰고 읽어(`TrainSlot.fromKeyOrNull`)
     // 배분·대기 배분에서 빼고 올린다. 같은 곤충이면 저장본의 지휘 칸 점수를 되돌린다(안 되돌리면 구버전 기기 한 번 업로드로
@@ -1452,11 +1494,14 @@ class GameActions {
   ///  2. 골드가 **말도 안 되게** 뛰면(1→10억) 상식 상한으로 자른다.
   /// PvP 전투·결제의 실제 지급은 별도 서버 액션이 확정한다.
   ActionResult mergeSave(SaveGame stored, Map<String, dynamic> incomingJson) {
+    // 암컷 크기 마이그레이션(2026-10-24 §12 암수) — 저장본이 아직 안 옮겨졌으면 **먼저** 한 번 옮긴다
+    // (구버전 되돌리기·도감 병합이 모두 암컷 범위 mm 를 전제한다. 멱등).
+    stored = migrateFemaleSizes(stored, _speciesLookup);
     // 구버전 앱(1.0.13 이하)은 1.0.14 필드를 모른다 — 키 없이 올리면 기본값이 저장본을 덮어
     // 훈련소 기록·이번 주 심연 층이 사라졌다. 그 필드만 저장본 값으로 채워 넣고 진행한다.
     // 연구 칸은 결투에 실린다 — 꼴이 틀린 값(숫자 아닌 레벨 등)은 먼저 걸러 봉투·파싱이 깨지지 않게.
     final clientJson = _sanitizeResearchJson(
-      _keepFieldsOldAppDoesNotKnow(stored, incomingJson),
+      _keepFieldsOldAppDoesNotKnow(stored, incomingJson, _speciesLookup),
     );
     final t = now().toUtc();
     var elapsed = t.difference(stored.lastSeen);
@@ -3707,6 +3752,8 @@ class GameActions {
     bool allowInjured = false,
     int? teamSize,
   }) {
+    // 암컷 크기가 아직 수컷 범위 값인 저장본(업로드 안 한 방어팀 등)도 수컷 환산이 맞게 먼저 옮긴다(멱등).
+    save = migrateFemaleSizes(save, _speciesLookup);
     final built = _buildDuelTeam(
       save,
       bugIds,
@@ -3788,7 +3835,9 @@ class GameActions {
                 DuelBug.fromBattleBug(
                   v.team[i],
                   speciesId: bug.speciesId,
-                  sizeMm: bug.sizeMm,
+                  // 무게는 수컷 환산 크기(2026-10-24 §12 암수) — 암컷이 작아도 같은 수컷 위치면 같은 무게. 성별은 표시 전용.
+                  sizeMm: sp.maleEquivalentMm(bug),
+                  sex: bug.sex,
                   specialty: sp.specialty,
                   // 크기는 결투에서 무게로만(2026-10-08 사장님 확정) — 스탯에 구워진 사이즈 배율을 알려 주면
                   // 엔진이 `sizeStatExp` 로 덜어낸다. 방치 런·도감은 그대로. 앱 `duelBugFor` 와 같은 값.
@@ -4996,6 +5045,7 @@ class GameActions {
     // 부모의 오행·기질·특성까지 스냅샷한다(§2.5 상속). 앱과 **같은 생성자**를
     // 써야 한쪽만 값을 빠뜨려 "상속이 안 되는 유저"가 생기지 않는다.
     final slot = BreedingSlot.from(
+      species: sp,
       id: _uuid.v4(),
       mother: mother,
       father: father,

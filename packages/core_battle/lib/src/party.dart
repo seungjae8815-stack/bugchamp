@@ -96,9 +96,11 @@ DuelBug buildDuelBug({
     variantHpBonus: variantHpBonus,
   ),
   speciesId: species.id,
-  sizeMm: bug.sizeMm,
+  // 무게는 수컷 환산 크기(2026-10-24 §12 암수) · 성별은 표시 전용.
+  sizeMm: species.maleEquivalentMm(bug),
   specialty: species.specialty,
   potential: bug.potential,
+  sex: bug.sex,
 );
 
 /// 내 팀(A)에서 이번 전투 중 KO 된 파이터 id들.
