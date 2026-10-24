@@ -212,9 +212,32 @@ class StorageScreen extends ConsumerWidget {
           // 보기 거르기 — 보이는 목록만 좁힌다(세이브는 그대로).
           if (save.bugs.isNotEmpty) _viewFilterBar(context, ref, data, l, save),
           Expanded(child: SafeGrid(child: _grid(context, ref, data, l, save))),
-          _breedingBar(context, ref, data, l, save),
-          _incubatorBar(context, ref, data, l, save),
+          _bottomBar(context, ref, data, l, save),
         ],
+      ),
+    );
+  }
+
+  /// 하단 짝짓기·부화기 — **한 줄에 둘**(2026-10-24 사장님: 세로 두 줄이 격자를 눌렀다).
+  Widget _bottomBar(
+    BuildContext context,
+    WidgetRef ref,
+    GameData data,
+    AppLocalizations l,
+    SaveGame save,
+  ) {
+    if (data.petConfig == null) return const SizedBox.shrink();
+    return Material(
+      color: const Color(0xFF15200D),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(12, 6, 12, 8),
+        child: Row(
+          children: [
+            Expanded(child: _breedingBar(context, ref, data, l, save)),
+            const SizedBox(width: 8),
+            Expanded(child: _incubatorBar(context, ref, data, l, save)),
+          ],
+        ),
       ),
     );
   }
@@ -241,7 +264,7 @@ class StorageScreen extends ConsumerWidget {
 
     return Container(
       color: const Color(0xFF15200D),
-      padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
+      padding: const EdgeInsets.fromLTRB(12, 4, 12, 6),
       child: Row(
         children: [
           Expanded(
@@ -362,7 +385,7 @@ class StorageScreen extends ConsumerWidget {
   ) {
     final min = save.bugFilterMinGrade;
     return Container(
-      padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+      padding: const EdgeInsets.fromLTRB(12, 0, 12, 6),
       child: Row(
         children: [
           // 이름이 길어져(종 희귀도) 좁은 폰·영어에서 오른쪽 버튼과 부딪히지 않게 남는 폭에 맞춰 줄인다.
@@ -899,62 +922,58 @@ class StorageScreen extends ConsumerWidget {
     if (data.petConfig == null) return const SizedBox.shrink();
     final used = save.breeding.length;
     final cap = save.breedingCapacity;
-    return Material(
-      color: const Color(0xFF15200D),
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
-        child: SizedBox(
-          height: 46,
-          child: FilledButton(
-            onPressed: () => _showBreeding(context, ref, data),
-            style: FilledButton.styleFrom(
-              backgroundColor: const Color(0xFF7E57C2),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
+    return SizedBox(
+      height: 42,
+      child: FilledButton(
+        onPressed: () => _showBreeding(context, ref, data),
+        style: FilledButton.styleFrom(
+          backgroundColor: const Color(0xFF7E57C2),
+          padding: const EdgeInsets.symmetric(horizontal: 8),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+        // 반 폭이라 글자가 넘치면 줄인다(자르지 않는다).
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              gameImage(
+                'assets/images/ui/icon/breeding.webp',
+                width: 20,
+                height: 20,
+                fallback: const Text('🧬', style: TextStyle(fontSize: 16)),
               ),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                gameImage(
-                  'assets/images/ui/icon/breeding.webp',
-                  width: 24,
-                  height: 24,
-                  fallback: const Text('🧬', style: TextStyle(fontSize: 18)),
+              const SizedBox(width: 6),
+              Text(
+                l.breedingTitle,
+                style: const TextStyle(
+                  fontWeight: FontWeight.w900,
+                  fontSize: 14,
                 ),
-                const SizedBox(width: 8),
-                Text(
-                  l.breedingTitle,
+              ),
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(
+                  color: const Color(0x33000000),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  l.breedingSlotsLabel(used, cap),
                   style: const TextStyle(
-                    fontWeight: FontWeight.w900,
-                    fontSize: 15,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
-                const SizedBox(width: 8),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 2,
-                  ),
-                  decoration: BoxDecoration(
-                    color: const Color(0x33000000),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    l.breedingSlotsLabel(used, cap),
-                    style: const TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ),
-                // 산란 끝 · 또는 빈 칸에 넣을 암수가 있음(2026-10-19 — 빈 칸도 손해다).
-                if (ref.watch(redDotsProvider).breeding) ...[
-                  const SizedBox(width: 6),
-                  const RedDot(size: 9),
-                ],
+              ),
+              // 산란 끝 · 또는 빈 칸에 넣을 암수가 있음(2026-10-19 — 빈 칸도 손해다).
+              if (ref.watch(redDotsProvider).breeding) ...[
+                const SizedBox(width: 6),
+                const RedDot(size: 9),
               ],
-            ),
+            ],
           ),
         ),
       ),
@@ -1580,62 +1599,57 @@ class StorageScreen extends ConsumerWidget {
     if (data.petConfig == null) return const SizedBox.shrink();
     final used = save.incubating.length;
     final cap = save.incubatorCapacity;
-    return Material(
-      color: const Color(0xFF15200D),
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(12, 8, 12, 10),
-        child: SizedBox(
-          height: 46,
-          child: FilledButton(
-            onPressed: () => _showIncubator(context, ref, data),
-            style: FilledButton.styleFrom(
-              backgroundColor: const Color(0xFF2E6DA4),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
+    return SizedBox(
+      height: 42,
+      child: FilledButton(
+        onPressed: () => _showIncubator(context, ref, data),
+        style: FilledButton.styleFrom(
+          backgroundColor: const Color(0xFF2E6DA4),
+          padding: const EdgeInsets.symmetric(horizontal: 8),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              gameImage(
+                'assets/images/ui/icon/incubator.webp',
+                width: 20,
+                height: 20,
+                fallback: const Text('🥚', style: TextStyle(fontSize: 16)),
               ),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                gameImage(
-                  'assets/images/ui/icon/incubator.webp',
-                  width: 24,
-                  height: 24,
-                  fallback: const Text('🥚', style: TextStyle(fontSize: 18)),
+              const SizedBox(width: 6),
+              Text(
+                l.incubatorTitle,
+                style: const TextStyle(
+                  fontWeight: FontWeight.w900,
+                  fontSize: 14,
                 ),
-                const SizedBox(width: 8),
-                Text(
-                  l.incubatorTitle,
+              ),
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(
+                  color: const Color(0x33000000),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  l.incubatorSlots(used, cap),
                   style: const TextStyle(
-                    fontWeight: FontWeight.w900,
-                    fontSize: 15,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
-                const SizedBox(width: 8),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 2,
-                  ),
-                  decoration: BoxDecoration(
-                    color: const Color(0x33000000),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    l.incubatorSlots(used, cap),
-                    style: const TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ),
-                // 부화 끝 · 또는 빈 칸에 넣을 알이 있음(2026-10-19).
-                if (ref.watch(redDotsProvider).incubator) ...[
-                  const SizedBox(width: 6),
-                  const RedDot(size: 9),
-                ],
+              ),
+              // 부화 끝 · 또는 빈 칸에 넣을 알이 있음(2026-10-19).
+              if (ref.watch(redDotsProvider).incubator) ...[
+                const SizedBox(width: 6),
+                const RedDot(size: 9),
               ],
-            ),
+            ],
           ),
         ),
       ),
@@ -2910,9 +2924,10 @@ class StorageScreen extends ConsumerWidget {
         .toList();
     if (items.isEmpty) {
       // 거른 결과가 비면 이유와 되돌리기를 함께 보여 준다 — 빈 화면만 있으면 곤충이 사라진 줄 안다.
+      // 세로가 모자라면 스크롤(2026-10-24 실기 — 유충·번데기 0마리에서 50px 넘쳤다).
       return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(32),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(24),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -2941,12 +2956,12 @@ class StorageScreen extends ConsumerWidget {
     // 결투 전투력(2026-10-12) — 세이브가 바뀔 때만 다시 계산한다(그리드 칸마다 계산하지 않는다).
     final powers = ref.watch(duelPowerByBugProvider);
     return GridView.builder(
-      padding: const EdgeInsets.all(10),
+      padding: const EdgeInsets.fromLTRB(8, 6, 8, 8),
       // 4칸(2026-10-24 문의 "곤충 그림이 너무 작다" — 5칸이던 시절 그림 48dp). 칸이 넓어진 만큼 그림도 60dp.
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 4,
-        mainAxisSpacing: 8,
-        crossAxisSpacing: 8,
+        mainAxisSpacing: 6,
+        crossAxisSpacing: 6,
         childAspectRatio: 0.82,
       ),
       itemCount: items.length,
@@ -3140,46 +3155,10 @@ class StorageScreen extends ConsumerWidget {
         l.storageViewRarityAtLeast(gradeLabel(l, view.minRarity!)),
       if (view.rarityUpOnly) l.storageViewRarityUp,
     ];
-    // 단계 빠른 칩(2026-10-24 문의 "유충·번데기 보는 창") — 시트 안의 "단계"와 같은 조건을 한 줄로 꺼내 둔다.
-    // 전에는 시트를 열어야 보였고 이름도 "그 외"라 유충·번데기만 보는 길을 아무도 못 찾았다.
-    final stageChips = Row(
-      children: [
-        for (final st in StorageViewStage.values) ...[
-          if (st != StorageViewStage.all) const SizedBox(width: 6),
-          _gradeChip(
-            label: _viewStageLabel(l, st),
-            color: const Color(0xFF8FA3B3),
-            selected: view.stage == st,
-            onTap: () => ref
-                .read(storageViewFilterProvider.notifier)
-                .set(view.copyWith(stage: st)),
-          ),
-        ],
-      ],
-    );
+    // 단계 빠른 칩은 뺐다(2026-10-24 사장님 — 격자 자리를 먹는다). 단계 거르기는 보기 시트의 "단계"(유충·번데기)로.
     return Padding(
-      padding: const EdgeInsets.fromLTRB(12, 6, 12, 0),
-      child: Column(
-        children: [
-          _viewFilterRow(
-            context,
-            ref,
-            data,
-            l,
-            save,
-            view,
-            ready,
-            parts,
-            shown,
-          ),
-          const SizedBox(height: 6),
-          // 칩 네 개가 좁은 폰에서 넘치면 가로로 민다(자르지 않는다).
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: stageChips,
-          ),
-        ],
-      ),
+      padding: const EdgeInsets.fromLTRB(12, 4, 12, 0),
+      child: _viewFilterRow(context, ref, data, l, save, view, ready, parts, shown),
     );
   }
 
@@ -3956,7 +3935,8 @@ class StorageScreen extends ConsumerWidget {
       hpPct = ((pb.hpMult - 1) * 100).toStringAsFixed(0);
     }
     return Container(
-      padding: const EdgeInsets.fromLTRB(12, 10, 12, 8),
+      // 여백 10/8 → 6/4(2026-10-24 — 격자에 자리를 더 준다).
+      padding: const EdgeInsets.fromLTRB(12, 6, 12, 4),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -4030,7 +4010,8 @@ class StorageScreen extends ConsumerWidget {
             ? null
             : () => _showBugDetail(context, ref, data, bug.id),
         child: Container(
-          height: 118,
+          // 96(2026-10-24 사장님 — 118 은 격자를 눌렀다). 그림도 58 → 44.
+          height: 96,
           decoration: bug == null
               ? BoxDecoration(
                   color: const Color(0x22000000),
@@ -4067,8 +4048,8 @@ class StorageScreen extends ConsumerWidget {
                         bug.speciesId,
                         stage,
                         sex: bug.sex,
-                        size: 58,
-                        fallback: bugAvatar(species!, size: 52),
+                        size: 44,
+                        fallback: bugAvatar(species!, size: 40),
                         skin: bugView(ref.watch(skinOfProvider), bug),
                       ),
                     ),
@@ -4141,7 +4122,7 @@ class StorageScreen extends ConsumerWidget {
     AppLocalizations l,
     SaveGame save,
   ) => Container(
-    padding: const EdgeInsets.fromLTRB(12, 6, 12, 8),
+    padding: const EdgeInsets.fromLTRB(12, 4, 12, 4),
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [

@@ -553,25 +553,20 @@ class DexScreen extends ConsumerWidget {
               ),
             ),
             const SizedBox(height: 1),
+            // 알로만 만난 종은 크기 기록이 없다(2026-10-14 — 알 크기는 부화 뒤 공개).
+            // 암수 최대를 성별 아이콘과 함께(2026-10-24 §12 암수 — 사장님: 채집함과 같은 아이콘).
             FittedBox(
               fit: BoxFit.scaleDown,
-              child: Text(
-                // 알로만 만난 종은 크기 기록이 없다(2026-10-14 — 알 크기는 부화 뒤 공개).
-                // 암컷 기록만 있는 종도 보인다(2026-10-24 §12 암수).
-                found && (entry.maxSizeMm > 0 || entry.maxSizeMmF > 0)
-                    ? [
-                        if (entry.maxSizeMm > 0) formatSizeMm(entry.maxSizeMm),
-                        if (entry.maxSizeMmF > 0)
-                          '♀${formatSizeMm(entry.maxSizeMmF)}',
-                      ].join(' ')
-                    : '—',
-                maxLines: 1,
-                style: TextStyle(
-                  color: found ? _honey : const Color(0x44FFFFFF),
-                  fontSize: 10.5,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
+              child: found && (entry.maxSizeMm > 0 || entry.maxSizeMmF > 0)
+                  ? _sexSizes(entry, fontSize: 10.5)
+                  : Text(
+                      '—',
+                      style: TextStyle(
+                        color: found ? _honey : const Color(0x44FFFFFF),
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
             ),
             // 진행 표식 — 무엇이 남았는지가 칸에서 바로 읽혀야 "하나씩
             // 모아 가는" 느낌이 난다. 완료는 왕관 하나로 갈음한다.
@@ -701,22 +696,33 @@ class DexScreen extends ConsumerWidget {
               ),
             ],
             const SizedBox(height: 10),
-            _row(
-              l.dexMaxSize,
-              entry.maxSizeMm > 0 ? formatSizeMm(entry.maxSizeMm) : '—',
-            ),
-            // 암컷 최대는 기록이 있을 때만(2026-10-24 §12 암수).
-            if (entry.maxSizeMmF > 0)
-              Align(
-                alignment: Alignment.centerRight,
-                child: Text(
-                  l.dexMaxSizeFemale(formatSizeMm(entry.maxSizeMmF)),
-                  style: const TextStyle(
-                    color: Color(0x99FFFFFF),
-                    fontSize: 12,
+            // 암수 최대를 성별 아이콘과 함께(2026-10-24 §12 암수).
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 2),
+              child: Row(
+                children: [
+                  Text(
+                    l.dexMaxSize,
+                    style: const TextStyle(
+                      color: Color(0x99FFFFFF),
+                      fontSize: 12,
+                    ),
                   ),
-                ),
+                  const Spacer(),
+                  if (entry.maxSizeMm > 0 || entry.maxSizeMmF > 0)
+                    _sexSizes(entry, fontSize: 12.5)
+                  else
+                    const Text(
+                      '—',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w800,
+                        fontSize: 12.5,
+                      ),
+                    ),
+                ],
               ),
+            ),
             gradeOn
                 ? _row(
                     l.igDexMaxGrade,
@@ -854,6 +860,36 @@ class DexScreen extends ConsumerWidget {
       actions: [gameDialogButton(l.actionClose, () => Navigator.pop(context))],
     );
   }
+
+  /// 암수 최대 크기 — 성별 아이콘(채집함 칸과 같은 `sexIcon`) + mm, 기록이 있는 성별만.
+  Widget _sexSizes(DexEntry entry, {required double fontSize}) => Row(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      if (entry.maxSizeMm > 0) ...[
+        sexArt(Sex.male, size: fontSize + 2),
+        Text(
+          formatSizeMm(entry.maxSizeMm),
+          style: TextStyle(
+            color: _honey,
+            fontSize: fontSize,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+      ],
+      if (entry.maxSizeMm > 0 && entry.maxSizeMmF > 0) const SizedBox(width: 5),
+      if (entry.maxSizeMmF > 0) ...[
+        sexArt(Sex.female, size: fontSize + 2),
+        Text(
+          formatSizeMm(entry.maxSizeMmF),
+          style: TextStyle(
+            color: _honey,
+            fontSize: fontSize,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+      ],
+    ],
+  );
 
   Widget _row(String label, String value) => Padding(
     padding: const EdgeInsets.symmetric(vertical: 2),

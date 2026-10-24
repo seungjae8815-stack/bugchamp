@@ -8335,6 +8335,13 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                         }
                       }),
                     ]),
+                    // 연구소 확인용(2026-10-24 사장님) — 골드·재료·화석 각 1천조 · 젤리 5천 · 연구 표본 1만.
+                    _devSection('연구소', [
+                      _devBtn('연구 재료 충전', () async {
+                        await ctrl.devResearchKit();
+                        toast('골드·재료·화석·표본·젤리 충전');
+                      }),
+                    ]),
                     _devSection('개체 등급', [
                       _devBtn('정수 +200(전 종)·물약 +10', () async {
                         await ctrl.devGradeKit();

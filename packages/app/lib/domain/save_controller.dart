@@ -2925,6 +2925,29 @@ class SaveController extends AsyncNotifier<SaveGame> {
     await _commit(s.copyWith(bugs: bugs));
   }
 
+  /// (개발) 연구소 시험용(2026-10-24 사장님) — 연구 비용(골드·재료 3종·화석·표본)과 칸 구매용 젤리를 넉넉히.
+  /// 연구 비용은 최고 사냥터 사냥 분치라 계정마다 규모가 달라서, 지금 가진 양의 몇 배가 아니라 큰 정액을 더한다.
+  Future<void> devResearchKit() async {
+    final s = state.requireValue;
+    const big = 1000000000000000; // 1천조 — 극한 최종 사냥터 비용도 수십 레벨 버틴다
+    final mats = Map<MaterialKind, int>.from(s.materials);
+    for (final k in [
+      MaterialKind.chitin,
+      MaterialKind.mineral,
+      MaterialKind.sap,
+      MaterialKind.fossil,
+    ]) {
+      mats[k] = addCurrency(mats[k] ?? 0, big);
+    }
+    mats[MaterialKind.jelly] = (mats[MaterialKind.jelly] ?? 0) + 5000;
+    await _commit(
+      grantResearchSamples(
+        s.copyWith(gold: addCurrency(s.gold, big), materials: mats),
+        10000,
+      ),
+    );
+  }
+
   /// (개발) 개체 등급 시험용 — 모든 종 정수 +200 · 성장물약 +10.
   /// (개발) 방치 정산을 [away] 전에 나간 것처럼 다시 돌린다 — 복귀 팝업(버프 더 받음/놓침)을 바로 보려고(2026-10-14).
   /// 보상이 생겼으면 true([pendingOffline] 을 화면이 띄운다).
