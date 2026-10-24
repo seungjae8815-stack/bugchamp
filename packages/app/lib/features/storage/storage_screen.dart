@@ -3158,7 +3158,17 @@ class StorageScreen extends ConsumerWidget {
     // 단계 빠른 칩은 뺐다(2026-10-24 사장님 — 격자 자리를 먹는다). 단계 거르기는 보기 시트의 "단계"(유충·번데기)로.
     return Padding(
       padding: const EdgeInsets.fromLTRB(12, 4, 12, 0),
-      child: _viewFilterRow(context, ref, data, l, save, view, ready, parts, shown),
+      child: _viewFilterRow(
+        context,
+        ref,
+        data,
+        l,
+        save,
+        view,
+        ready,
+        parts,
+        shown,
+      ),
     );
   }
 
@@ -3563,15 +3573,18 @@ class StorageScreen extends ConsumerWidget {
     top: -2,
     right: -2,
     size: 9,
-    child: _bugCellBody(
-      context,
-      ref,
-      data,
-      bug,
-      stage,
-      equipped,
-      duelPower,
-      canRarityUp: canRarityUp,
+    // 칸을 꽉 채운다(2026-10-24 실기 — 빨간 점 Stack 이 느슨한 제약을 줘 카드가 내용 폭만큼만 그려져 칸 사이가 벌어졌다).
+    child: SizedBox.expand(
+      child: _bugCellBody(
+        context,
+        ref,
+        data,
+        bug,
+        stage,
+        equipped,
+        duelPower,
+        canRarityUp: canRarityUp,
+      ),
     ),
   );
 
@@ -4029,28 +4042,41 @@ class StorageScreen extends ConsumerWidget {
                 )
               : Column(
                   children: [
-                    Align(
-                      alignment: Alignment.topRight,
-                      child: Padding(
-                        padding: const EdgeInsets.only(top: 4, right: 6),
-                        child: Text(
-                          'Lv.${bug.level}',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w800,
-                            fontSize: 11,
-                          ),
-                        ),
-                      ),
-                    ),
+                    // 그림을 키우고 Lv 를 그림 위에 겹친다(2026-10-24 사장님 — 카드 높이는 그대로, 그림만 크게).
                     Expanded(
-                      child: bugStageImage(
-                        bug.speciesId,
-                        stage,
-                        sex: bug.sex,
-                        size: 44,
-                        fallback: bugAvatar(species!, size: 40),
-                        skin: bugView(ref.watch(skinOfProvider), bug),
+                      child: Stack(
+                        clipBehavior: Clip.none,
+                        children: [
+                          Positioned.fill(
+                            top: 2,
+                            child: bugStageImage(
+                              bug.speciesId,
+                              stage,
+                              sex: bug.sex,
+                              size: 64,
+                              fallback: bugAvatar(species!, size: 56),
+                              skin: bugView(ref.watch(skinOfProvider), bug),
+                            ),
+                          ),
+                          Positioned(
+                            top: 4,
+                            right: 6,
+                            child: Text(
+                              'Lv.${bug.level}',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w800,
+                                fontSize: 11,
+                                shadows: [
+                                  Shadow(
+                                    color: Color(0xCC000000),
+                                    blurRadius: 3,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                     // 어떤 곤충을 끼웠는지 그림만으로는 헷갈린다 — 이름을 적는다.
