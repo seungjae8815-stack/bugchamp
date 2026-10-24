@@ -34,7 +34,8 @@ FLAT_F = (
     "mandibles TINY and stubby — shorter than the head itself, just two small pincer tips that barely poke out in front of "
     "the face, NEVER long, NEVER curved, NEVER toothed jaws (a previous drawing gave her male-like long jaws, which is "
     "wrong — she must look jawless at a glance), elytra glossy with fine lengthwise lines, short elbowed antennae with a "
-    "small club."
+    "small club. In the right-hand (hit) pose she stays ON HER LEGS seen from the side, tilted back and off balance — "
+    "NEVER flipped onto her back, NEVER showing the belly (a previous drawing flipped her over, which is wrong)."
 )
 RELICT_M = (
     "a male relict longhorn beetle (Callipogon relictus): huge dark brown-black longhorn, elytra dark brown with a faint "
@@ -58,7 +59,7 @@ items = [
         by_file["stag_flat_female"],
         FLAT_F,
         title="넓적사슴벌레 암컷 (다시)",
-        note="1차 그림: 큰턱이 수컷처럼 길고 휨 = 틀림. 머리보다 짧은 집게 끝만 — 한눈에 턱이 없어 보여야 한다.",
+        note="1차: 큰턱이 수컷처럼 김 = 틀림 · 2차: 피격 자세가 뒤집혀 배를 보임 = 틀림. 짧은 집게 + 피격은 옆모습으로 기울기만.",
     ),
     with_desc(
         by_file["longhorn_relict"],
