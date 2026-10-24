@@ -469,7 +469,8 @@ class GameActions {
     return out.isEmpty ? null : out;
   }
 
-  Species? _speciesLookup(String id) => config.speciesList.where((x) => x.id == id).firstOrNull;
+  Species? _speciesLookup(String id) =>
+      config.speciesList.where((x) => x.id == id).firstOrNull;
 
   /// 구버전 앱이 올린 암컷의 크기(mm) — 같은 곤충은 저장본 값, 새 곤충은 수컷 범위 위치를 암컷 범위로(2026-10-24 §12 암수).
   static double _femaleSizeFromOldApp(
@@ -480,7 +481,9 @@ class GameActions {
     final raw = (b['sizeMm'] as num?)?.toDouble() ?? 0;
     if (storedMm != null) return storedMm;
     final sp = speciesOf('${b['speciesId']}');
-    if (sp == null || sp.femaleSizeMinMm == null || sp.femaleSizeMaxMm == null) {
+    if (sp == null ||
+        sp.femaleSizeMinMm == null ||
+        sp.femaleSizeMaxMm == null) {
       return raw;
     }
     final male = raw.isFinite

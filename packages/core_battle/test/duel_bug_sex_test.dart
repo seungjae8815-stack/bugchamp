@@ -36,4 +36,29 @@ void main() {
     expect(f.radius(p), m.radius(p));
     expect(f.powerIn(p), m.powerIn(p));
   });
+
+  test('buildDuelBug uses male-equivalent mm and carries sex', () {
+    const sp = Species(
+      id: 'x',
+      name: LocalizedText(ko: 'x', en: 'x', ja: 'x'),
+      grade: Grade.common,
+      baseStats: Stats(hp: 100, atk: 10, def: 10, spd: 10),
+      specialty: Specialty.grip,
+      sizeMinMm: 40,
+      sizeMaxMm: 92,
+      femaleSizeMinMm: 30,
+      femaleSizeMaxMm: 50,
+    );
+    final bug = IndividualBug(
+      id: 'f',
+      speciesId: 'x',
+      sizeMm: 40,
+      potential: 1,
+      temperament: Temperament.cunning,
+      sex: Sex.female,
+    );
+    final d = buildDuelBug(bug: bug, species: sp, locale: 'ko');
+    expect(d.sizeMm, closeTo(66, 0.001));
+    expect(d.sex, Sex.female);
+  });
 }
