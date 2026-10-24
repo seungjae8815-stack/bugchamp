@@ -2039,6 +2039,28 @@ class GameActions {
         '구매 $buyLeft · 드롭 $dropLeft, 오늘 드롭 인정 $dropsUsed)',
       );
     }
+    // 운영 수선(2026-10-24, 강군 님): 저장본 `dailyClaims['fix:lru']` 가 `pending[:물약]` 이면 운영이 DB 에 적어 둔 복구 요청이다.
+    // 놓친 능력치 굴리기 횟수(lru)를 모두 지우고(다시 굴릴 수 있게) 물약을 돌려준 뒤 `done:<날짜>` 로 바꾼다.
+    // DB 세이브를 직접 고치는 방식은 실패했다 — 앱이 로컬을 "더 진행됨"으로 보면 서버 복구본을 채택하지 않고,
+    // 다음 업로드가 lru 를 되살린다(횟수는 줄지 않는 규칙). 여기서 고치면 `clamped` 로 돌아가 앱이 채택한다.
+    final fix = stored.dailyClaims[kLruFixKey];
+    if (fix != null && fix.startsWith('pending')) {
+      final potions =
+          int.tryParse(fix.split(':').elementAtOrNull(1) ?? '') ?? 0;
+      out = sanitizeGradeRolls(
+        out.copyWith(
+          bugs: [
+            for (final b in out.bugs)
+              b.legacyRollUps > 0
+                  ? IndividualBug.fromJson(b.toJson()..remove('lru'))
+                  : b,
+          ],
+          growthPotions: out.growthPotions + potions,
+          dailyClaims: {...out.dailyClaims, kLruFixKey: 'done:$today'},
+        ),
+      );
+      notes.add('운영 수선 lru 초기화 · 물약 +$potions');
+    }
     // 잘림 판정은 서버 하루 기록을 적기 **전에** — 기록은 서버 소유라 기기가 되받을 필요가 없다.
     final clamped = !identical(out, client);
     // 서버 하루 기록(서버 소유) — 쓴 몫이 있을 때만 적는다(날이 바뀌었으면 그날 몫부터 새로).
@@ -2059,6 +2081,10 @@ class GameActions {
   ///  - 켜진 뒤 생김(`ng`)은 저장본 값 그대로 — **새 id 에만** 붙을 수 있다(붙이면 새 등급 누적으로 가치가 커진다).
   ///  - 옛 합성 단계(`ls`)는 한 번 적히면 고정, 처음 적힐 때는 저장본 합성 단계를 넘지 못한다.
   static const kNewRarityPerUpload = 2;
+
+  /// 운영 수선 요청 키(2026-10-24) — 운영이 DB 세이브 `dailyClaims` 에 `pending:<돌려줄 물약>` 을 적으면 다음 업로드에서
+  /// 서버가 놓친 능력치 굴리기 횟수(lru)를 지우고 물약을 돌려준 뒤 `done:<날짜>` 로 바꾼다([_enforceGrade]).
+  static const kLruFixKey = 'fix:lru';
   static const kNewRaritySecondsEach = 600;
   // 새 결제 알(id `iap-`)의 뽑기 출신 표식 — 업로드당 넉넉히(스킨 덤 알은 한 번에 1개).
   static const kNewIapEggsPerUpload = 4;

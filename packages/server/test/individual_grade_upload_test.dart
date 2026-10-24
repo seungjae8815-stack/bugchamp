@@ -445,6 +445,54 @@ void main() {
       },
     );
 
+    test(
+      '운영 수선 fix:lru — 저장본에 pending 이면 다음 업로드에서 lru 를 지우고 물약을 돌려주고 done 으로 바꾼다',
+      () {
+        const stale = [50, 50, 50, 50, 50, 50, 50, 50];
+        final s =
+            stored([
+              bug(
+                'a',
+                pot: 3,
+                ng: false,
+              ).copyWith(legacyRollUps: 2, rolls: stale),
+              bug(
+                'b',
+                pot: 4,
+                su: 1,
+                ng: false,
+              ).copyWith(legacyRollUps: 1, rolls: stale),
+            ]).copyWith(
+              growthPotions: 5,
+              dailyClaims: {GameActions.kLruFixKey: 'pending:60'},
+            );
+        final j = stored([
+          bug('a', pot: 3, ng: false).copyWith(legacyRollUps: 2, rolls: stale),
+          bug(
+            'b',
+            pot: 4,
+            su: 1,
+            ng: false,
+          ).copyWith(legacyRollUps: 1, rolls: stale),
+        ]).copyWith(growthPotions: 5).toJson();
+        final r = on.mergeSave(s, j);
+        final out = r.save!;
+        expect(r.extra['clamped'], isTrue);
+        final a = out.bugs.firstWhere((b) => b.id == 'a');
+        final b = out.bugs.firstWhere((b) => b.id == 'b');
+        expect(a.legacyRollUps, 0);
+        expect(a.rolls, isNull); // 등급 올리기 없는 곤충은 처음 롤로 돌아간다
+        expect(b.legacyRollUps, 0);
+        expect(b.rolls, stale); // 등급 올리기(su) 몫의 롤은 남는다
+        expect(out.growthPotions, 65);
+        expect(out.dailyClaims[GameActions.kLruFixKey], startsWith('done:'));
+        // 두 번째 업로드(앱이 채택한 뒤) — 다시 적용되지 않는다.
+        final r2 = on.mergeSave(out, out.toJson());
+        expect(r2.save!.growthPotions, 65);
+        expect(r2.save!.bugs.every((x) => x.legacyRollUps == 0), isTrue);
+      },
+    );
+
     test('켜진 뒤 생김(ng) — 같은 id 에 새로 붙이지 못하고, 새 id 에는 붙는다', () {
       final s = stored([bug('old', pot: 5, ng: false)]);
       final j = stored([bug('old', pot: 5), bug('new', pot: 2)]).toJson();
