@@ -316,9 +316,49 @@ def frame_metrics(img):
     return box, (acc / total if total else (l + r) / 2)
 
 
-def process(src, sid, dry, skin="", cutter="rembg", tol=34):
+def scrub_bg_pockets(cut, sheet, tol=12, min_px=40):
+    """다리 사이에 남은 **배경색 조각**을 지운다(2026-10-24 암컷 시트).
+
+    이번 시트는 바닥에 가는 지평선이 있어 다리·몸·선이 배경을 작은 주머니로 가둔다.
+    rembg 가 그 주머니를 곤충으로 치고, `punch_holes` 는 큰 덩어리(600px↑)만 뚫어서
+    100~400px 조각이 수십 개 남았다(실측: 참나무하늘소 1,600px · 방아깨비 1,300px —
+    예전 시트는 최대 400px). 판정은 **시트 배경색과 거의 같은 색**(tol 12)이라
+    몸의 밝은 부분(연두 메뚜기도 채도가 달라 20 이상 차이)은 안 건드린다.
+    알비노처럼 몸이 배경과 닮은 시트면 아무것도 하지 않는다(`punch_holes` 와 같은 25% 보호).
+    """
+    import numpy as np
+    from PIL import Image
+    from scipy import ndimage
+
+    src = np.array(sheet.convert("RGB")).astype(int)
+    bg = np.median(np.concatenate([src[:6].reshape(-1, 3), src[:, :6].reshape(-1, 3)]), axis=0)
+    rgb = np.array(cut.convert("RGB")).astype(int)
+    a = np.array(cut.getchannel("A"))
+    inside = a > 8
+    d = np.abs(rgb - bg).max(axis=2)
+    like = inside & (d < tol)
+    if like.sum() / max(1, inside.sum()) > 0.25:
+        return cut
+    lab, n = ndimage.label(like)
+    if n == 0:
+        return cut
+    sizes = ndimage.sum(like, lab, range(1, n + 1))
+    kill = np.isin(lab, [i + 1 for i, s in enumerate(sizes) if s >= min_px])
+    if not kill.any():
+        return cut
+    # 조각 가장자리의 혼색 1px 까지(배경과 다리 선 사이 안티에일리어싱).
+    kill |= ndimage.binary_dilation(kill, iterations=1) & inside & (d < tol * 4)
+    a[kill] = 0
+    out = cut.copy()
+    out.putalpha(Image.fromarray(a))
+    return out
+
+
+def process(src, sid, dry, skin="", cutter="rembg", tol=34, name=None):
     from PIL import Image
 
+    # 저장 이름 머리 — 암컷 시트(2026-10-24)는 `{종}_female` 로 저장한다(art.dart 가 성별로 찾는다).
+    name = name or sid
     sheet = erase_corner_mark(Image.open(src).convert("RGBA"))
     # 시트를 **통째로** 지운다(칸을 먼저 자르면 큰턱 안쪽에 배경이 남는다).
     if cutter == "flood":
@@ -383,6 +423,7 @@ def process(src, sid, dry, skin="", cutter="rembg", tol=34):
         from rembg import remove
 
         cut = punch_holes(fill_speckles(remove(sheet), sheet), sheet)
+    cut = scrub_bg_pockets(cut, sheet)
     w, h = cut.size
     cuts = split_columns(cut.getchannel("A"), w, h)
 
@@ -414,7 +455,7 @@ def process(src, sid, dry, skin="", cutter="rembg", tol=34):
         canvas.alpha_composite(strip, (round(cw / 2 - cx * scale), 0))
         # 스킨 그림은 접미사를 **번호 뒤**에 붙인다 — 앱이 찾는 이름이
         # `{종}_adult_{번호}_{효과}.webp` 다(art.dart 의 폴백 사슬).
-        dst = os.path.join(DEST, f"{sid}_adult_{i + 1}{skin}.webp")
+        dst = os.path.join(DEST, f"{name}_adult_{i + 1}{skin}.webp")
         out.append(dst)
         if not dry:
             # 무손실은 60장에 8.4MB — 번들이 감당 못 한다. 화면에서 96pt(고밀도
@@ -431,7 +472,7 @@ def process(src, sid, dry, skin="", cutter="rembg", tol=34):
         # 스킨을 안 산 사람에게도(스카우트 보드·채집함·도감) 스킨 그림이
         # 나온다 — 후광도 없이 색만 바뀌어 보인다(실기 지적 2026-08-19).
         idle.save(
-            os.path.join(DEST, f"{sid}_adult{skin}.webp"),
+            os.path.join(DEST, f"{name}_adult{skin}.webp"),
             "WEBP",
             quality=92,
             method=6,
@@ -461,6 +502,12 @@ def main():
         help="스킨 그림이면 효과 키(gold/albino). "
         "{종}_adult_{n}_{효과}.webp 로 저장된다.",
     )
+    ap.add_argument(
+        "--sex",
+        choices=("male", "female"),
+        default="male",
+        help="female 이면 `{종}_female.png/.jpg` 시트를 읽어 `{종}_female_adult*.webp` 로 저장한다(2026-10-24 암수 그림).",
+    )
     ap.add_argument("--dry", action="store_true")
     a = ap.parse_args()
 
@@ -470,11 +517,18 @@ def main():
             sys.exit(f"species.json 에 없는 id 입니다: {a.only}")
         ids = [a.only]
 
-    found = [(i, os.path.join(a.src, i + ".png")) for i in ids]
-    found = [(i, p) for i, p in found if os.path.exists(p)]
+    tag = "_female" if a.sex == "female" else ""
+    # png 와 jpg 둘 다 받는다 — 생성기가 jpg 로 내려 줄 때가 있다(2026-10-24 암컷 시트).
+    found = []
+    for i in ids:
+        for ext in (".png", ".jpg", ".jpeg"):
+            p = os.path.join(a.src, i + tag + ext)
+            if os.path.exists(p):
+                found.append((i, p))
+                break
     missing = [i for i in ids if not any(i == j for j, _ in found)]
     if not found:
-        sys.exit(f"{a.src} 에 종 id 이름의 png 가 없습니다")
+        sys.exit(f"{a.src} 에 종 id{tag} 이름의 png/jpg 가 없습니다")
 
     os.makedirs(DEST, exist_ok=True)
     print(f"{len(found)}종 처리{' (--dry: 저장 안 함)' if a.dry else ''}\n")
@@ -489,6 +543,7 @@ def main():
                 "_" + a.skin if a.skin else "",
                 a.cut,
                 a.tol,
+                name=sid + tag,
             )
         )
     if missing:
