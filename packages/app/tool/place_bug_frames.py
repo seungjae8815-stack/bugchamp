@@ -316,6 +316,91 @@ def frame_metrics(img):
     return box, (acc / total if total else (l + r) / 2)
 
 
+def erase_ground_line(sheet, tol=34):
+    """시트 바닥의 **가는 지평선**을 배경색으로 덮는다(2026-10-24 암컷 시트 — 1차 시트엔 없던 선).
+
+    rembg 가 선을 곤충의 일부로 봐서 발 아래로 긴 막대가 남았다(실측: 왕사슴벌레·장수하늘소·물장군).
+    선은 **세로로 2~3px 얇고 가로로 길다** — 다리는 세로로 두껍고 발끝만 가로로 짧다. 그래서
+    (1) 위아래 3px 가 배경인 '얇은' 어두운 화소 중 (2) 가로 15px 이상 이어진 것만 고르고,
+    (3) 그런 화소가 폭의 25% 이상인 **줄**(아래쪽 40% 안)에서만 지운다. 발끝이 선 위에 있으면
+    그 줄의 발끝 화소도 같이 지워지지만 2~3px 라 눈에 띄지 않는다.
+    """
+    import numpy as np
+    from PIL import Image
+    from scipy import ndimage
+
+    a = np.array(sheet.convert("RGB")).astype(int)
+    h, w, _ = a.shape
+    bg = np.median(
+        np.concatenate([a[:6].reshape(-1, 3), a[:, :6].reshape(-1, 3)]), axis=0
+    )
+    dark = np.abs(a - bg).max(axis=2) > tol
+    up = np.zeros_like(dark)
+    dn = np.zeros_like(dark)
+    up[3:] = dark[:-3]
+    dn[:-3] = dark[3:]
+    thin = dark & ~(up & dn)
+    hz = ndimage.binary_opening(thin, structure=np.ones((1, 15), bool))
+    # 폭의 10% — 선이 곤충 셋에 가려 짧게만 드러나는 줄도 잡는다(25% 에선 장수말벌 2번 아래 조각이 남았다).
+    rows = np.where(hz.sum(axis=1) > w * 0.10)[0]
+    rows = rows[rows > h * 0.55]
+    if rows.size == 0:
+        return sheet
+    band = np.zeros_like(dark)
+    for y in rows:
+        band[max(0, y - 2) : y + 3] = True
+    hit = ndimage.binary_dilation(hz & band, np.ones((3, 3), bool)) & dark & band
+    # 선의 **연한 테두리**(안티에일리어싱, 배경과 8~34 차이)까지 — 진한 부분만 지우면 희미한 선이 남았다(실측 장수말벌).
+    # 위아래 4px 안에 두꺼운 어두운 덩어리(다리)가 있으면 그 화소는 둔다.
+    faint = np.abs(a - bg).max(axis=2) > 8
+    up4 = np.zeros_like(dark)
+    dn4 = np.zeros_like(dark)
+    up4[4:] = dark[:-4]
+    dn4[:-4] = dark[4:]
+    halo = ndimage.binary_dilation(hit, np.ones((5, 5), bool)) & faint & ~(up4 & dn4)
+    a[hit | halo] = bg
+    return Image.fromarray(a.astype("uint8"), "RGB").convert("RGBA")
+
+
+def harden_alpha(cut, sheet, min_alpha=40, min_dist=70):
+    """몸통 안쪽의 **반투명**을 불투명으로 굳힌다(2026-10-24 — 왕사마귀 암컷 피격 자세가 52% 반투명으로 바랬다).
+
+    rembg 는 가늘고 밝은 몸(사마귀·방아깨비)에 낮은 알파를 주기도 한다. 색이 배경과 확실히 다른
+    (거리 ≥ [min_dist]) 화소는 그림이지 가장자리 혼색이 아니므로 알파를 255 로 올린다.
+    가장자리의 안티에일리어싱 화소는 배경 쪽으로 섞여 거리가 작아 그대로 남는다.
+    """
+    import numpy as np
+    from PIL import Image
+
+    src = np.array(sheet.convert("RGB")).astype(int)
+    bg = np.median(np.concatenate([src[:6].reshape(-1, 3), src[:, :6].reshape(-1, 3)]), axis=0)
+    rgb = np.array(cut.convert("RGB")).astype(int)
+    a = np.array(cut.getchannel("A"))
+    d = np.abs(rgb - bg).max(axis=2)
+    # 바닥 그림자(배경보다 어두운 회녹색, 채도 낮고 중간 밝기)는 굳히지 않는다 — 굳히면 발 아래 검은 조각이 된다
+    # (실측: 방아깨비 피격 자세). 그림은 채도가 있거나(초록·갈색) 아주 어둡다(검은 딱정벌레).
+    chroma = rgb.max(axis=2) - rgb.min(axis=2)
+    bright = rgb.mean(axis=2)
+    inky = (chroma >= 35) | (bright < 80)
+    # **불투명 윤곽선에 둘러싸인 안쪽**만 굳힌다 — 몸 밖의 그림자·더듬이 끝은 둘러싸이지 않아 그대로 남는다
+    # (실측: 방아깨비 피격 자세의 그림자가 굳어 검은 막대가 됐다).
+    from scipy import ndimage
+
+    solid = a >= 250
+    inside = ndimage.binary_fill_holes(
+        ndimage.binary_closing(solid, structure=np.ones((5, 5), bool))
+    )
+    # ⚠️ 연결성(flood) 안쪽까지 굳히면 방아깨비의 그린 그림자가 검게 살아났다(실측) — 윤곽선 안쪽만.
+    # rembg 가 몸을 아예 지운 그림(왕사마귀 암컷 피격)은 여기서 못 살린다 → 그 종은 `--cut both` 로 자른다.
+    hit = (a > min_alpha) & (a < 255) & (d >= min_dist) & inky & inside
+    if not hit.any():
+        return cut
+    a[hit] = 255
+    out = cut.copy()
+    out.putalpha(Image.fromarray(a))
+    return out
+
+
 def scrub_bg_pockets(cut, sheet, tol=12, min_px=40):
     """다리 사이에 남은 **배경색 조각**을 지운다(2026-10-24 암컷 시트).
 
@@ -359,7 +444,9 @@ def process(src, sid, dry, skin="", cutter="rembg", tol=34, name=None):
 
     # 저장 이름 머리 — 암컷 시트(2026-10-24)는 `{종}_female` 로 저장한다(art.dart 가 성별로 찾는다).
     name = name or sid
-    sheet = erase_corner_mark(Image.open(src).convert("RGBA"))
+    sheet = erase_corner_mark(
+        erase_ground_line(Image.open(src).convert("RGBA"), tol)
+    )
     # 시트를 **통째로** 지운다(칸을 먼저 자르면 큰턱 안쪽에 배경이 남는다).
     if cutter == "flood":
         # 배경이 균일하면 연결성으로 가르는 쪽이 훨씬 안전하다(창백한 곤충).
@@ -423,7 +510,7 @@ def process(src, sid, dry, skin="", cutter="rembg", tol=34, name=None):
         from rembg import remove
 
         cut = punch_holes(fill_speckles(remove(sheet), sheet), sheet)
-    cut = scrub_bg_pockets(cut, sheet)
+    cut = harden_alpha(scrub_bg_pockets(cut, sheet), sheet)
     w, h = cut.size
     cuts = split_columns(cut.getchannel("A"), w, h)
 
