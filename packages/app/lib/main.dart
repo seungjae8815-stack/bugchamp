@@ -40,6 +40,9 @@ const _supabaseAnonKey = String.fromEnvironment('SUPABASE_ANON_KEY');
 /// 구글 로그인용 **웹** 클라이언트 ID(공개값). 없으면 로그인 버튼이 비활성.
 const _googleWebClientId = String.fromEnvironment('GOOGLE_WEB_CLIENT_ID');
 
+/// 구글 로그인용 **iOS** 클라이언트 ID(공개값, 2026-10-24). 비어 있으면 iOS 에선 구글 버튼을 숨긴다(안드로이드는 불필요).
+const _googleIosClientId = String.fromEnvironment('GOOGLE_IOS_CLIENT_ID');
+
 /// 권위 서버 주소. `--dart-define=GAME_SERVER_URL=https://...` 로 주입한다.
 /// 비어 있으면 **기존 로컬 계산 경로**로 동작한다(전환 중 안전장치).
 const _gameServerUrl = String.fromEnvironment('GAME_SERVER_URL');
@@ -157,7 +160,11 @@ Future<void> main() async {
             return s;
           }),
           authServiceProvider.overrideWithValue(
-            SupabaseAuthService(supaClient, _googleWebClientId),
+            SupabaseAuthService(
+              supaClient,
+              _googleWebClientId,
+              _googleIosClientId,
+            ),
           ),
         ],
       ],

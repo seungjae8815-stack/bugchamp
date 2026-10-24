@@ -4348,7 +4348,7 @@
   "storageViewStage": "Stage",
   "storageViewStageEgg": "Eggs",
   "storageViewStageAdult": "Adults",
-  "storageViewStageOther": "Others",
+  "storageViewStageOther": "Larvae & pupae",
   "storageViewGrade": "Individual grade",
   "storageViewGradeAtLeast": "{grade}+",
   "@storageViewGradeAtLeast": {"placeholders": {"grade": {"type": "String"}}},

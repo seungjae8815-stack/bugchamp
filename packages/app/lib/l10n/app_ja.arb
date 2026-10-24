@@ -2316,7 +2316,7 @@
   "storageViewStage": "段階",
   "storageViewStageEgg": "卵",
   "storageViewStageAdult": "成虫",
-  "storageViewStageOther": "その他",
+  "storageViewStageOther": "幼虫・蛹",
   "storageViewGrade": "個体等級",
   "storageViewGradeAtLeast": "{grade}以上",
   "storageViewSpecies": "種",

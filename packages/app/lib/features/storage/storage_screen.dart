@@ -2940,8 +2940,9 @@ class StorageScreen extends ConsumerWidget {
     final powers = ref.watch(duelPowerByBugProvider);
     return GridView.builder(
       padding: const EdgeInsets.all(10),
+      // 4칸(2026-10-24 문의 "곤충 그림이 너무 작다" — 5칸이던 시절 그림 48dp). 칸이 넓어진 만큼 그림도 60dp.
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 5,
+        crossAxisCount: 4,
         mainAxisSpacing: 8,
         crossAxisSpacing: 8,
         childAspectRatio: 0.82,
@@ -3137,126 +3138,174 @@ class StorageScreen extends ConsumerWidget {
         l.storageViewRarityAtLeast(gradeLabel(l, view.minRarity!)),
       if (view.rarityUpOnly) l.storageViewRarityUp,
     ];
+    // 단계 빠른 칩(2026-10-24 문의 "유충·번데기 보는 창") — 시트 안의 "단계"와 같은 조건을 한 줄로 꺼내 둔다.
+    // 전에는 시트를 열어야 보였고 이름도 "그 외"라 유충·번데기만 보는 길을 아무도 못 찾았다.
+    final stageChips = Row(
+      children: [
+        for (final st in StorageViewStage.values) ...[
+          if (st != StorageViewStage.all) const SizedBox(width: 6),
+          _gradeChip(
+            label: _viewStageLabel(l, st),
+            color: const Color(0xFF8FA3B3),
+            selected: view.stage == st,
+            onTap: () => ref
+                .read(storageViewFilterProvider.notifier)
+                .set(view.copyWith(stage: st)),
+          ),
+        ],
+      ],
+    );
     return Padding(
       padding: const EdgeInsets.fromLTRB(12, 6, 12, 0),
-      child: Row(
+      child: Column(
         children: [
-          Expanded(
-            child: InkWell(
-              key: const ValueKey('storageViewButton'),
-              onTap: () => _showViewFilter(context, data),
-              borderRadius: BorderRadius.circular(10),
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 5,
+          _viewFilterRow(
+            context,
+            ref,
+            data,
+            l,
+            save,
+            view,
+            ready,
+            parts,
+            shown,
+          ),
+          const SizedBox(height: 6),
+          // 칩 네 개가 좁은 폰에서 넘치면 가로로 민다(자르지 않는다).
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: stageChips,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _viewFilterRow(
+    BuildContext context,
+    WidgetRef ref,
+    GameData data,
+    AppLocalizations l,
+    SaveGame save,
+    StorageViewFilter view,
+    Set<String> ready,
+    List<String> parts,
+    int shown,
+  ) {
+    return Row(
+      children: [
+        Expanded(
+          child: InkWell(
+            key: const ValueKey('storageViewButton'),
+            onTap: () => _showViewFilter(context, data),
+            borderRadius: BorderRadius.circular(10),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+              decoration: BoxDecoration(
+                color: view.isActive
+                    ? _honey.withValues(alpha: 0.18)
+                    : const Color(0x18FFFFFF),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(
+                  color: view.isActive ? _honey : const Color(0x33FFFFFF),
                 ),
-                decoration: BoxDecoration(
-                  color: view.isActive
-                      ? _honey.withValues(alpha: 0.18)
-                      : const Color(0x18FFFFFF),
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(
-                    color: view.isActive ? _honey : const Color(0x33FFFFFF),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.tune_rounded, size: 16, color: _honey),
+                  const SizedBox(width: 5),
+                  Text(
+                    l.storageViewButton,
+                    style: const TextStyle(
+                      color: Color(0xDDFFFFFF),
+                      fontSize: 12,
+                      fontWeight: FontWeight.w800,
+                    ),
                   ),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.tune_rounded, size: 16, color: _honey),
-                    const SizedBox(width: 5),
-                    Text(
-                      l.storageViewButton,
-                      style: const TextStyle(
-                        color: Color(0xDDFFFFFF),
-                        fontSize: 12,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                    const SizedBox(width: 6),
-                    Expanded(
-                      child: Text(
-                        parts.isEmpty ? l.storageViewAll : parts.join(' · '),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          color: view.isActive
-                              ? Colors.white
-                              : const Color(0x99FFFFFF),
-                          fontSize: 11.5,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ),
-                    Text(
-                      l.storageViewCount('$shown', '${save.bugs.length}'),
-                      style: const TextStyle(
-                        color: Color(0x99FFFFFF),
-                        fontSize: 11,
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      parts.isEmpty ? l.storageViewAll : parts.join(' · '),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: view.isActive
+                            ? Colors.white
+                            : const Color(0x99FFFFFF),
+                        fontSize: 11.5,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
-                  ],
-                ),
+                  ),
+                  Text(
+                    l.storageViewCount('$shown', '${save.bugs.length}'),
+                    style: const TextStyle(
+                      color: Color(0x99FFFFFF),
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
-          // 희귀도를 올릴 수 있는 곤충이 있으면 바로 옆에(1.0.22) — 누르면 자동 올리기 미리보기.
-          if (ready.isNotEmpty) ...[
-            const SizedBox(width: 6),
-            InkWell(
-              key: const ValueKey('rarityAutoButton'),
-              onTap: () => _runAutoRarityUp(context, ref, data, l),
-              borderRadius: BorderRadius.circular(10),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
-                decoration: BoxDecoration(
-                  color: const Color(0x337CFC8A),
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: const Color(0xFF7CFC8A)),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(
-                      Icons.diamond_rounded,
-                      size: 14,
-                      color: Color(0xFF7CFC8A),
+        ),
+        // 희귀도를 올릴 수 있는 곤충이 있으면 바로 옆에(1.0.22) — 누르면 자동 올리기 미리보기.
+        if (ready.isNotEmpty) ...[
+          const SizedBox(width: 6),
+          InkWell(
+            key: const ValueKey('rarityAutoButton'),
+            onTap: () => _runAutoRarityUp(context, ref, data, l),
+            borderRadius: BorderRadius.circular(10),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+              decoration: BoxDecoration(
+                color: const Color(0x337CFC8A),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: const Color(0xFF7CFC8A)),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(
+                    Icons.diamond_rounded,
+                    size: 14,
+                    color: Color(0xFF7CFC8A),
+                  ),
+                  const Icon(
+                    Icons.arrow_upward_rounded,
+                    size: 12,
+                    color: Color(0xFF7CFC8A),
+                  ),
+                  Text(
+                    '${ready.length}',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w900,
                     ),
-                    const Icon(
-                      Icons.arrow_upward_rounded,
-                      size: 12,
-                      color: Color(0xFF7CFC8A),
-                    ),
-                    Text(
-                      '${ready.length}',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 11.5,
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
-          ],
-          if (view.isActive) ...[
-            const SizedBox(width: 4),
-            IconButton(
-              tooltip: l.storageViewReset,
-              visualDensity: VisualDensity.compact,
-              icon: const Icon(
-                Icons.close_rounded,
-                size: 18,
-                color: Color(0xCCFFFFFF),
-              ),
-              onPressed: () => ref
-                  .read(storageViewFilterProvider.notifier)
-                  .set(const StorageViewFilter()),
-            ),
-          ],
+          ),
         ],
-      ),
+        if (view.isActive) ...[
+          const SizedBox(width: 4),
+          IconButton(
+            tooltip: l.storageViewReset,
+            visualDensity: VisualDensity.compact,
+            icon: const Icon(
+              Icons.close_rounded,
+              size: 18,
+              color: Color(0xCCFFFFFF),
+            ),
+            onPressed: () => ref
+                .read(storageViewFilterProvider.notifier)
+                .set(const StorageViewFilter()),
+          ),
+        ],
+      ],
     );
   }
 
@@ -3603,8 +3652,8 @@ class StorageScreen extends ConsumerWidget {
                     child: bugStageImage(
                       bug.speciesId,
                       stage,
-                      size: 48,
-                      fallback: bugAvatar(species, size: 44),
+                      size: 60,
+                      fallback: bugAvatar(species, size: 54),
                       skin: bugView(ref.watch(skinOfProvider), bug),
                     ),
                   ),

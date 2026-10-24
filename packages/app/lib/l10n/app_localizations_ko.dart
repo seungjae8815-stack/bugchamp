@@ -7617,7 +7617,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get storageViewStageAdult => '성충';
 
   @override
-  String get storageViewStageOther => '그 외';
+  String get storageViewStageOther => '유충·번데기';
 
   @override
   String get storageViewGrade => '개체 등급';

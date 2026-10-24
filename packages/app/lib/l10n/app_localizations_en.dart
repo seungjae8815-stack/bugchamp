@@ -7785,7 +7785,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get storageViewStageAdult => 'Adults';
 
   @override
-  String get storageViewStageOther => 'Others';
+  String get storageViewStageOther => 'Larvae & pupae';
 
   @override
   String get storageViewGrade => 'Individual grade';

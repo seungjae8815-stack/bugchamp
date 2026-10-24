@@ -76,10 +76,20 @@ workflows:
       - name: IPA 빌드 (dart-define 주입)
         script: |
           cd packages/app
+          # iOS 구글 로그인(2026-10-24) — 선택 변수. 있으면 Info.plist 자리표시자에 클라이언트 ID·URL 스킴을 넣는다.
+          # 없으면 자리표시자가 남고 앱이 iOS 구글 버튼을 숨긴다(빌드는 막지 않는다).
+          if [ -n "${GOOGLE_IOS_CLIENT_ID:-}" ]; then
+            rev="com.googleusercontent.apps.${GOOGLE_IOS_CLIENT_ID%.apps.googleusercontent.com}"
+            sed -i '' "s#__GOOGLE_IOS_CLIENT_ID__#$GOOGLE_IOS_CLIENT_ID#; s#__GOOGLE_IOS_REVERSED_CLIENT_ID__#$rev#" ios/Runner/Info.plist
+            echo "✅ GOOGLE_IOS_CLIENT_ID 주입 (${#GOOGLE_IOS_CLIENT_ID}자)"
+          else
+            echo "⚠️ GOOGLE_IOS_CLIENT_ID 비어 있음 — iOS 에서 구글 로그인 버튼이 숨겨진다"
+          fi
           flutter build ipa --release \
             --dart-define=SUPABASE_URL="$SUPABASE_URL" \
             --dart-define=SUPABASE_ANON_KEY="$SUPABASE_ANON_KEY" \
             --dart-define=GOOGLE_WEB_CLIENT_ID="$GOOGLE_WEB_CLIENT_ID" \
+            --dart-define=GOOGLE_IOS_CLIENT_ID="${GOOGLE_IOS_CLIENT_ID:-}" \
             --dart-define=GAME_SERVER_URL="$GAME_SERVER_URL" \
             --dart-define=ADMOB_REWARDED_IOS="$ADMOB_REWARDED_IOS" \
             --export-options-plist=/Users/builder/export_options.plist

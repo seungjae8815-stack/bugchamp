@@ -386,6 +386,8 @@ class _TitleScreenState extends ConsumerState<TitleScreen> {
   Widget _loginChoice(AppLocalizations l) {
     final auth = ref.read(authServiceProvider);
     final showApple = auth.available && auth.appleAvailable;
+    // iOS 에도 구글을 함께 둔다(iOS 클라이언트 ID 가 있을 때 — 2026-10-24 스크린타임 문의).
+    final showGoogle = auth.googleAvailable;
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -397,7 +399,7 @@ class _TitleScreenState extends ConsumerState<TitleScreen> {
             primary: true,
           ),
         ),
-        if (auth.available) ...[
+        if (showGoogle || showApple) ...[
           const SizedBox(height: 14),
           Row(
             children: [
@@ -416,15 +418,16 @@ class _TitleScreenState extends ConsumerState<TitleScreen> {
             ],
           ),
           const SizedBox(height: 12),
-          SizedBox(
-            width: double.infinity,
-            child: _pill(
-              l.accountSignIn,
-              _busy ? null : () => _signIn(apple: false),
+          if (showGoogle)
+            SizedBox(
+              width: double.infinity,
+              child: _pill(
+                l.accountSignIn,
+                _busy ? null : () => _signIn(apple: false),
+              ),
             ),
-          ),
           if (showApple) ...[
-            const SizedBox(height: 10),
+            if (showGoogle) const SizedBox(height: 10),
             SizedBox(
               width: double.infinity,
               child: _pill(

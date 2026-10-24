@@ -12816,7 +12816,7 @@ abstract class AppLocalizations {
   /// No description provided for @storageViewStageOther.
   ///
   /// In en, this message translates to:
-  /// **'Others'**
+  /// **'Larvae & pupae'**
   String get storageViewStageOther;
 
   /// No description provided for @storageViewGrade.

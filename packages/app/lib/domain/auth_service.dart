@@ -17,8 +17,13 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 /// ⚠️ 세이브 자체는 기기(Hive)에 있으므로 **로그인해도 진행도는 그대로**다.
 /// 클라우드 백업/복원은 `CloudSaveService` 가 담당한다.
 abstract interface class AuthService {
-  /// 구글 로그인을 쓸 수 있는 환경인지(Supabase + 웹 클라이언트 ID 주입됨).
+  /// 어떤 로그인이든 쓸 수 있는 환경인지(구글 또는 애플).
   bool get available;
+
+  /// 구글 로그인을 쓸 수 있는 환경인지 — 웹 클라이언트 ID 가 있고, iOS 면 iOS 클라이언트 ID 까지 있을 때.
+  /// (2026-10-24 문의: 스크린타임 "계정 변경 제한"이 걸린 학생 기기는 Sign in with Apple 이 막혀서
+  /// iOS 에도 구글 로그인을 연다. Apple 4.8 은 "제3자 로그인이 있으면 애플도 함께"라 함께 두면 된다.)
+  bool get googleAvailable;
 
   /// 익명이 아닌 실제 계정으로 로그인돼 있는지.
   bool get isSignedIn;
@@ -61,6 +66,8 @@ class NoAuthService implements AuthService {
   @override
   bool get available => false;
   @override
+  bool get googleAvailable => false;
+  @override
   String? get userId => null;
   @override
   bool get isSignedIn => false;
@@ -86,19 +93,31 @@ class NoAuthService implements AuthService {
 /// 웹 클라이언트 ID 는 `--dart-define-from-file=supabase.env.json` 의
 /// `GOOGLE_WEB_CLIENT_ID` 로 주입한다(코드/깃에 넣지 않는다).
 class SupabaseAuthService implements AuthService {
-  SupabaseAuthService(this._client, this._webClientId);
+  SupabaseAuthService(
+    this._client,
+    this._webClientId, [
+    this._iosClientId = '',
+  ]);
 
   final SupabaseClient _client;
   final String _webClientId;
+
+  /// iOS 구글 로그인용 클라이언트 ID(`GOOGLE_IOS_CLIENT_ID`, Codemagic 이 넣는다). 비어 있으면 iOS 에선 구글 버튼을 숨긴다 —
+  /// google_sign_in 은 iOS 클라이언트 ID 가 없으면 실패해서 눌러도 아무 일이 없는 버튼이 됐다.
+  final String _iosClientId;
   bool _initialized = false;
 
   @override
   String? get userId => _client.auth.currentUser?.id;
 
-  // 로그인 가능 여부 = 애플(iOS) 또는 구글(웹 클라이언트 ID 주입) 중 하나라도 가능.
+  // 로그인 가능 여부 = 애플(iOS) 또는 구글 중 하나라도 가능.
   // 이 서비스는 Supabase 초기화됐을 때만 생성되므로, iOS 면 애플 로그인은 항상 가능.
   @override
-  bool get available => appleAvailable || _webClientId.isNotEmpty;
+  bool get available => appleAvailable || googleAvailable;
+
+  @override
+  bool get googleAvailable =>
+      _webClientId.isNotEmpty && (!appleAvailable || _iosClientId.isNotEmpty);
 
   @override
   bool get isSignedIn {
@@ -152,13 +171,16 @@ class SupabaseAuthService implements AuthService {
 
   Future<void> _ensureInit() async {
     if (_initialized) return;
-    await GoogleSignIn.instance.initialize(serverClientId: _webClientId);
+    await GoogleSignIn.instance.initialize(
+      clientId: _iosClientId.isEmpty ? null : _iosClientId,
+      serverClientId: _webClientId,
+    );
     _initialized = true;
   }
 
   @override
   Future<bool> signInWithGoogle() async {
-    if (!available) return false;
+    if (!googleAvailable) return false;
     try {
       await _ensureInit();
       final account = await GoogleSignIn.instance.authenticate();

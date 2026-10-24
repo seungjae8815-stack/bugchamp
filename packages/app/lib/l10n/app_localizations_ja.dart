@@ -7606,7 +7606,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get storageViewStageAdult => '成虫';
 
   @override
-  String get storageViewStageOther => 'その他';
+  String get storageViewStageOther => '幼虫・蛹';
 
   @override
   String get storageViewGrade => '個体等級';

@@ -2392,7 +2392,7 @@
   "storageViewStage": "단계",
   "storageViewStageEgg": "알",
   "storageViewStageAdult": "성충",
-  "storageViewStageOther": "그 외",
+  "storageViewStageOther": "유충·번데기",
   "storageViewGrade": "개체 등급",
   "storageViewGradeAtLeast": "{grade} 이상",
   "storageViewSpecies": "종",

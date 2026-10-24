@@ -75,6 +75,22 @@
 		<string>ja</string>
 	</array>
 
+	<!-- 구글 로그인(iOS, 2026-10-24) — 자리표시자는 Codemagic 빌드가 GOOGLE_IOS_CLIENT_ID 로 바꿔 넣는다
+	     (codemagic.yaml "IPA 빌드"). 변수가 비어 있으면 그대로 남고, 앱은 iOS 구글 버튼을 숨긴다(googleAvailable). -->
+	<key>GIDClientID</key>
+	<string>__GOOGLE_IOS_CLIENT_ID__</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>__GOOGLE_IOS_REVERSED_CLIENT_ID__</string>
+			</array>
+		</dict>
+	</array>
+
 	<!-- 수출 규정: HTTPS 외 비면제 암호화 없음 → 매 제출마다 묻는 질문을 끈다. -->
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
