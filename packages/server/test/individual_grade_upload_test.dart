@@ -410,6 +410,41 @@ void main() {
       expect(on.mergeSave(s, j).save!.bugs.single.legacyRollUps, 3);
     });
 
+    test(
+      '옛 상태의 클라이언트(굴리기 전) — 횟수(lru·su)를 저장본으로 되돌릴 때 롤도 저장본 것(2026-10-24 문의)',
+      () {
+        // 실제 사고: 굴리기 뒤 서버에는 lru 2 + 새 롤이 있는데, 앱이 굴리기 전 상태(lru 0 · 롤 없음 · 물약 더 많음)를
+        // 다시 올렸다. 서버가 lru 만 2 로 되돌리고 롤은 클라이언트 것을 두어 "횟수는 사라지고 능력치는 원래대로"가 됐다.
+        const rolled = [80, 70, 90, 60, 75, 85, 65, 95];
+        final s = stored([
+          bug('o', pot: 3, ng: false).copyWith(legacyRollUps: 2, rolls: rolled),
+        ]);
+        final stale = stored([bug('o', pot: 3, ng: false)]).toJson();
+        final o = on.mergeSave(s, stale).save!.bugs.single;
+        expect(o.legacyRollUps, 2);
+        expect(o.rolls, rolled);
+        // 등급 올리기(su)도 같은 길 — 저장본 su 3 · 롤 있음, 옛 클라이언트 su 1 · 옛 롤.
+        const older = [50, 50, 50, 50, 50, 50, 50, 50];
+        final s2 = stored([
+          bug('g', pot: 4, su: 3, ng: false).copyWith(rolls: rolled),
+        ]);
+        final stale2 = stored([
+          bug('g', pot: 2, su: 1, ng: false).copyWith(rolls: older),
+        ]).toJson();
+        final g = on.mergeSave(s2, stale2).save!.bugs.single;
+        expect(g.synthUps, 3);
+        expect(g.rolls, rolled);
+        // 진행이 같거나 클라이언트가 앞서면 클라이언트 롤 그대로(정상 굴리기 업로드).
+        final s3 = stored([
+          bug('f', pot: 3, ng: false).copyWith(legacyRollUps: 1, rolls: older),
+        ]);
+        final fresh3 = stored([
+          bug('f', pot: 3, ng: false).copyWith(legacyRollUps: 2, rolls: rolled),
+        ]).toJson();
+        expect(on.mergeSave(s3, fresh3).save!.bugs.single.rolls, rolled);
+      },
+    );
+
     test('켜진 뒤 생김(ng) — 같은 id 에 새로 붙이지 못하고, 새 id 에는 붙는다', () {
       final s = stored([bug('old', pot: 5, ng: false)]);
       final j = stored([bug('old', pot: 5), bug('new', pot: 2)]).toJson();
