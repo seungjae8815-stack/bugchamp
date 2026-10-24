@@ -48,6 +48,14 @@ void main() {
     expect(d.sex, Sex.female);
   });
 
+  test('결투 창 표시 mm 는 암컷을 암컷 범위로 되돌린다', () {
+    final b = bug(Sex.female, 40);
+    final save = SaveGame.initial(createdAt: t0).copyWith(bugs: [b]);
+    final d = duelBugFor(b, data, save, 'ko');
+    expect(d.sizeMm, closeTo(66, 1e-6));
+    expect(duelDisplayMm(d, data.species('stag_giant')), closeTo(40, 1e-6));
+  });
+
   test('수컷은 크기 그대로 · male', () {
     final b = bug(Sex.male, 60);
     final save = SaveGame.initial(createdAt: t0).copyWith(bugs: [b]);
@@ -58,7 +66,9 @@ void main() {
 
   test('speciesById 조회로 미이전 암컷을 암컷 범위로 옮기고 두 번째는 그대로', () {
     final b = bug(Sex.female, 66); // 수컷 범위 40~92 안의 위치 -> 암컷 40mm
-    final save = SaveGame.initial(createdAt: t0).copyWith(bugs: [b]);
+    final save = SaveGame.initial(
+      createdAt: t0,
+    ).copyWith(bugs: [b], sexSizeMigrated: false);
     final moved = migrateFemaleSizes(save, (id) => data.speciesById[id]);
     expect(moved.bugs.single.sizeMm, closeTo(40, 1e-6));
     expect(moved.sexSizeMigrated, isTrue);

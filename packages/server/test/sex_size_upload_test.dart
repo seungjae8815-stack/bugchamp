@@ -145,4 +145,24 @@ void main() {
     expect(r.error, isNull);
     expect(r.team[0].sizeMm, closeTo(66, 0.001));
   });
+
+  // loadSave 는 app.dart 안의 클로저라 단독 호출이 어렵다 — 그 본문과 같은 조합
+  // (원본 JSON → migrateToCurrent → fromJson → migrateFemaleSizes)을 검사한다.
+  test('저장본 원본 JSON 을 읽는 조합이 암컷을 한 번만 이전한다', () {
+    final raw = stored([bug('a', 40, Sex.female)], sxm: false).toJson();
+    SaveGame load() => migrateFemaleSizes(
+      SaveGame.fromJson(migrateToCurrent(raw)),
+      (id) => byId[id],
+    );
+    final once = load();
+    expect(once.sexSizeMigrated, isTrue);
+    final mm = sizeOf(once, 'a');
+    expect(mm, closeTo(sp.remapFromMale(40, Sex.female), 1e-6));
+    // 이전된 저장본을 다시 읽어도 그대로(멱등).
+    final twice = migrateFemaleSizes(
+      SaveGame.fromJson(migrateToCurrent(once.toJson())),
+      (id) => byId[id],
+    );
+    expect(sizeOf(twice, 'a'), closeTo(mm, 1e-9));
+  });
 }

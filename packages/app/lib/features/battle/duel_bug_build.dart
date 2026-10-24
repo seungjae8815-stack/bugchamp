@@ -77,6 +77,10 @@ DuelParams? _params;
 double duelPowerOf(DuelBug d, GameData? data) => d.powerIn(duelParamsOf(data));
 
 /// 개체 → 결투 유닛(결투·왕충 선발대회 공용). 서버 `validateDuelTeam` 과 **같은 계산**이다 —
+/// 결투 곤충의 화면 크기(mm) — `DuelBug.sizeMm` 은 수컷 환산이라 암컷은 암컷 범위로 되돌려 보인다(2026-10-24 §12 암수).
+double duelDisplayMm(DuelBug d, Species sp) =>
+    d.sex == Sex.female ? sp.remapFromMale(d.sizeMm, Sex.female) : d.sizeMm;
+
 /// 훈련 v2 배분(예산·칸 상한으로 자름)·수련 레벨·체급·밀어내기 힘·주특기 기술·근성까지.
 DuelBug duelBugFor(
   IndividualBug bug,

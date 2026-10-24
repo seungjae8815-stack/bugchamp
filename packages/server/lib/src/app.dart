@@ -399,7 +399,11 @@ Handler buildHandler({
       // 2026-09-14 여기서 돌렸다가 구버전 앱을 쓰는 실유저의 진행도가
       // 동기화 한 번에 1 로 떨어졌다(준범 st 978 → 1). 리셋은 새 앱이 자기
       // 로드에서만 하고, 서버는 그 결과를 받는다.
-      return SaveGame.fromJson(migrateToCurrent(raw));
+      // 암컷 크기는 읽는 순간 한 번 새 범위로(멱등, 2026-10-24 §12 암수) — 곤충을 넣는 경로의 이중 이전 방지.
+      return migrateFemaleSizes(
+        SaveGame.fromJson(migrateToCurrent(raw)),
+        (id) => species[id],
+      );
     }
 
     // 길드(1.0.15) — 상태는 서버 테이블이 소유한다(세이브에 없음).
@@ -3750,7 +3754,10 @@ Handler buildHandler({
       try {
         final raw = await store.load(userId);
         if (raw == null) return _jsonTuple({'error': 'no_save'}, status: 404);
-        final save = SaveGame.fromJson(migrateToCurrent(raw));
+        final save = migrateFemaleSizes(
+          SaveGame.fromJson(migrateToCurrent(raw)),
+          (id) => species[id],
+        );
         final res = actions.grantPurchase(
           save,
           productId: productId,

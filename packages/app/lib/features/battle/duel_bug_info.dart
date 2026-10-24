@@ -38,9 +38,11 @@ Future<bool?> showDuelBugInfo(
   String? grade;
   // 개체 등급이 켜졌으면 칩 대신 "등급 · 희귀도" 두 줄(2026-10-15 사장님 — 상대 곤충도).
   Widget? gradeRows;
+  var shownMm = d.sizeMm;
   try {
     final sp = data?.species(d.speciesId);
     if (sp != null) {
+      shownMm = duelDisplayMm(d, sp); // 암컷은 암컷 범위 mm 로(2026-10-24 §12 암수)
       name = sp.name.resolve(locale);
       final on = individualGradeOn(data!);
       if (on) {
@@ -139,7 +141,7 @@ Future<bool?> showDuelBugInfo(
           temperamentLabel(l, d.temperament),
           lead: temperamentIcon(d.temperament, size: 14),
         ),
-        row(l.bugInfoSize, l.bugSize(d.sizeMm.toStringAsFixed(1))),
+        row(l.bugInfoSize, l.bugSize(shownMm.toStringAsFixed(1))),
         if (d.evade > 0) row(l.trainEvade, pct(d.evade)),
         if (d.crit > 0) row(l.trainCrit, '+${pct(d.crit)}'),
         if (d.recovery > 0) row(l.trainRecovery, '+${pct(d.recovery)}'),

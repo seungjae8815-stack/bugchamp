@@ -25,7 +25,9 @@ void main() {
   }
 
   test('sxm(암컷 크기 마이그레이션 표식)은 왕복에서 보존된다', () {
-    final json = SaveGame.initial(createdAt: t0).toJson();
+    final json = SaveGame.initial(
+      createdAt: t0,
+    ).copyWith(sexSizeMigrated: false).toJson();
     expect(json.containsKey('sxm'), isFalse);
     json['sxm'] = true;
     final out = SaveGame.fromJson(json).toJson();

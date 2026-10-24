@@ -553,21 +553,24 @@ class DexScreen extends ConsumerWidget {
               ),
             ),
             const SizedBox(height: 1),
-            Text(
-              // 알로만 만난 종은 크기 기록이 없다(2026-10-14 — 알 크기는 부화 뒤 공개).
-              found && entry.maxSizeMm > 0
-                  ? formatSizeMm(entry.maxSizeMm) +
-                        // 암컷 기록이 있으면 짧게 덧붙인다(2026-10-24 §12 암수).
-                        (entry.maxSizeMmF > 0
-                            ? ' ♀${formatSizeMm(entry.maxSizeMmF)}'
-                            : '')
-                  : '—',
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                color: found ? _honey : const Color(0x44FFFFFF),
-                fontSize: 10.5,
-                fontWeight: FontWeight.w800,
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                // 알로만 만난 종은 크기 기록이 없다(2026-10-14 — 알 크기는 부화 뒤 공개).
+                // 암컷 기록만 있는 종도 보인다(2026-10-24 §12 암수).
+                found && (entry.maxSizeMm > 0 || entry.maxSizeMmF > 0)
+                    ? [
+                        if (entry.maxSizeMm > 0) formatSizeMm(entry.maxSizeMm),
+                        if (entry.maxSizeMmF > 0)
+                          '♀${formatSizeMm(entry.maxSizeMmF)}',
+                      ].join(' ')
+                    : '—',
+                maxLines: 1,
+                style: TextStyle(
+                  color: found ? _honey : const Color(0x44FFFFFF),
+                  fontSize: 10.5,
+                  fontWeight: FontWeight.w800,
+                ),
               ),
             ),
             // 진행 표식 — 무엇이 남았는지가 칸에서 바로 읽혀야 "하나씩

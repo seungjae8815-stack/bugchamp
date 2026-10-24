@@ -1629,6 +1629,8 @@ class SaveGame {
 
   factory SaveGame.initial({DateTime? createdAt}) => SaveGame(
     schemaVersion: kSaveSchemaVersion,
+    // 새 세이브는 암컷 크기 새 규칙으로 태어난다(2026-10-24 §12 암수).
+    sexSizeMigrated: true,
     bugs: const [],
     materials: const {},
     installations: const [],

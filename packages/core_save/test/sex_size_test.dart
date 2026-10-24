@@ -49,7 +49,9 @@ void main() {
   test('migrateFemaleSizes keeps male-equivalent mm: 암컷 66mm(수컷 범위 한가운데) → 40mm(암컷 한가운데), 수컷은 그대로, 표식 켜짐', () {
     final f = _bug('f', _stag, sex: Sex.female, mm: 66);
     final m = _bug('m', _stag, sex: Sex.male, mm: 66);
-    final s = SaveGame.initial(createdAt: t0).copyWith(bugs: [f, m]);
+    final s = SaveGame.initial(
+      createdAt: t0,
+    ).copyWith(bugs: [f, m], sexSizeMigrated: false);
     expect(s.sexSizeMigrated, isFalse);
     final out = migrateFemaleSizes(s, _speciesOf);
     expect(out.sexSizeMigrated, isTrue);
@@ -90,7 +92,10 @@ void main() {
   });
 
   test('sxm round-trips in toJson/fromJson and is omitted when false', () {
-    final base = SaveGame.initial(createdAt: t0);
+    expect(SaveGame.initial(createdAt: t0).sexSizeMigrated, isTrue);
+    final base = SaveGame.initial(
+      createdAt: t0,
+    ).copyWith(sexSizeMigrated: false);
     expect(base.toJson().containsKey('sxm'), isFalse);
     final on = base.copyWith(sexSizeMigrated: true);
     expect(on.toJson()['sxm'], true);

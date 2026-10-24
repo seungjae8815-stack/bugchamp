@@ -3325,7 +3325,9 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
           temperamentLabel(l, d.temperament),
           lead: temperamentIcon(d.temperament, size: 14),
         ),
-        _statRow(l.bugInfoSize, l.bugSize(d.sizeMm.toStringAsFixed(1))),
+        _statRow(l.bugInfoSize, l.bugSize(
+            duelDisplayMm(d, data.species(d.speciesId)).toStringAsFixed(1),
+          )),
         // 회피·치명·회복력 — 훈련이 들어간 결투 값(내 곤충·상대 곤충 모두).
         if (d.evade > 0)
           _statRow(l.trainEvade, '${(d.evade * 100).toStringAsFixed(1)}%'),
