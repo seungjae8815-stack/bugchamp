@@ -279,6 +279,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String get accountSignedOut => 'Signed out';
 
   @override
+  String get accountSignOutTitle => 'Sign out?';
+
+  @override
+  String get accountSignOutBody =>
+      'Your progress is saved to your account. After signing out this device starts fresh; sign in with the same account to get your progress back.';
+
+  @override
+  String get accountSignOutUploadFailed =>
+      'Could not save to the server, so sign-out was cancelled. Please try again shortly';
+
+  @override
   String get accountSignInFailed => 'Sign-in failed';
 
   @override

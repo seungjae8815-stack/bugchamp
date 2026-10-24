@@ -275,6 +275,17 @@ class AppLocalizationsJa extends AppLocalizations {
   String get accountSignedOut => 'ログアウトしました';
 
   @override
+  String get accountSignOutTitle => 'ログアウトしますか？';
+
+  @override
+  String get accountSignOutBody =>
+      '進行状況はアカウントに保存されています。ログアウトするとこの端末では最初から始まり、同じアカウントで再ログインすると進行が戻ります。';
+
+  @override
+  String get accountSignOutUploadFailed =>
+      'サーバーに保存できなかったためログアウトを中止しました。しばらくしてからもう一度お試しください';
+
+  @override
   String get accountSignInFailed => 'ログインできませんでした';
 
   @override

@@ -592,6 +592,24 @@ abstract class AppLocalizations {
   /// **'Signed out'**
   String get accountSignedOut;
 
+  /// No description provided for @accountSignOutTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign out?'**
+  String get accountSignOutTitle;
+
+  /// No description provided for @accountSignOutBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Your progress is saved to your account. After signing out this device starts fresh; sign in with the same account to get your progress back.'**
+  String get accountSignOutBody;
+
+  /// No description provided for @accountSignOutUploadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not save to the server, so sign-out was cancelled. Please try again shortly'**
+  String get accountSignOutUploadFailed;
+
   /// No description provided for @accountSignInFailed.
   ///
   /// In en, this message translates to:

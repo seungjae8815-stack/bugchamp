@@ -276,6 +276,17 @@ class AppLocalizationsKo extends AppLocalizations {
   String get accountSignedOut => '로그아웃했어요';
 
   @override
+  String get accountSignOutTitle => '로그아웃할까요?';
+
+  @override
+  String get accountSignOutBody =>
+      '진행 상황은 계정에 저장돼 있어요. 로그아웃하면 이 기기에서는 처음부터 시작하고, 같은 계정으로 다시 로그인하면 진행이 돌아와요.';
+
+  @override
+  String get accountSignOutUploadFailed =>
+      '서버에 저장하지 못해 로그아웃을 취소했어요. 잠시 뒤 다시 시도해 주세요';
+
+  @override
   String get accountSignInFailed => '로그인하지 못했어요';
 
   @override

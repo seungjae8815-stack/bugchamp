@@ -7633,12 +7633,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
         if (auth.isSignedIn)
           gameDialogButton(l.accountSignOut, () async {
             Navigator.pop(context);
-            await ref.read(authServiceProvider).signOut();
-            if (!mounted) return;
-            setState(() {});
-            ref.invalidate(myRankProvider); // 로그아웃 → 랭킹 표시 제거
-            forgetGuildSession(ref); // 이전 계정의 길드·버프 캐시를 잊는다
-            showCenterToast(context, l.accountSignedOut);
+            await _signOut(l);
           }, color: const Color(0xFF556070)),
         // 계정 삭제는 로그인 여부와 무관하게 제공한다 — 익명 계정도 서버에
         // 랭킹·방어팀 데이터가 쌓이므로 지울 경로가 있어야 한다(Play 요구사항).
@@ -7680,6 +7675,55 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
   ///
   /// 순서가 중요하다: **서버 삭제가 성공한 뒤에만 로컬을 초기화**한다.
   /// 반대로 하면 서버 삭제가 실패했을 때 진행도만 날아간다.
+  /// 로그아웃(2026-10-24 문의 — 랭킹·심연에 같은 닉네임이 두 줄). 예전엔 로그아웃 뒤 새 익명 계정으로 돌아가면서
+  /// **로컬 세이브를 그 계정에 이관**해 진행·닉네임이 복제됐다(프로필 둘 → 순위표 두 줄, 실제로 강군 님 계정이 둘이 됐다).
+  /// 이제: 확인 창 → 최신 로컬을 **원래 계정에 올린 뒤** → 로그아웃 → 이 기기는 **빈 세이브**로 시작한다.
+  /// 진행은 원래 계정에 그대로 있고 다시 로그인하면 돌아온다. 올리기에 실패하면 로그아웃하지 않는다(진행이 기기에만 남는 일이 없게).
+  Future<void> _signOut(AppLocalizations l) async {
+    final confirmed = await showGameDialog<bool>(
+      context,
+      title: l.accountSignOutTitle,
+      icon: Icons.logout_rounded,
+      content: Text(
+        l.accountSignOutBody,
+        textAlign: TextAlign.center,
+        style: const TextStyle(
+          color: Color(0xD9FFFFFF),
+          fontSize: 13,
+          height: 1.45,
+        ),
+      ),
+      actions: [
+        gameDialogButton(
+          l.actionClose,
+          () => Navigator.pop(context, false),
+          primary: false,
+        ),
+        gameDialogButton(
+          l.accountSignOut,
+          () => Navigator.pop(context, true),
+          color: const Color(0xFF556070),
+        ),
+      ],
+    );
+    if (confirmed != true || !mounted) return;
+    final server = ref.read(gameServerProvider);
+    final ctrl = ref.read(saveControllerProvider.notifier);
+    if (!await flushSaveBeforeServerAction(server, () => ctrl.latestSave)) {
+      if (!mounted) return;
+      showCenterToast(context, l.accountSignOutUploadFailed);
+      return;
+    }
+    await ref.read(authServiceProvider).signOut();
+    // 이 기기는 처음부터 — 새 익명 계정에 옛 진행을 이관하지 않는다.
+    await ctrl.resetGame();
+    if (!mounted) return;
+    setState(() {});
+    ref.invalidate(myRankProvider); // 로그아웃 → 랭킹 표시 제거
+    forgetGuildSession(ref); // 이전 계정의 길드·버프 캐시를 잊는다
+    showCenterToast(context, l.accountSignedOut);
+  }
+
   Future<void> _deleteAccount(AppLocalizations l) async {
     final auth = ref.read(authServiceProvider);
     final controller = TextEditingController();
