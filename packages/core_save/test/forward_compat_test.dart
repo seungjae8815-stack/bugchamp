@@ -24,6 +24,14 @@ void main() {
     return json;
   }
 
+  test('sxm(암컷 크기 마이그레이션 표식)은 왕복에서 보존된다', () {
+    final json = SaveGame.initial(createdAt: t0).toJson();
+    expect(json.containsKey('sxm'), isFalse);
+    json['sxm'] = true;
+    final out = SaveGame.fromJson(json).toJson();
+    expect(out['sxm'], true);
+  });
+
   test('모르는 재료·업그레이드 키가 있어도 파싱이 죽지 않는다', () {
     final s = SaveGame.fromJson(futureSave());
     expect(s.materialCount(MaterialKind.chitin), 10);

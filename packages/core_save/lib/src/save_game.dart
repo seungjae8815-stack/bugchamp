@@ -33,7 +33,9 @@ const int kSaveSchemaVersion = 18;
 /// 27(2026-10-16, 1.0.22): 곤충 희귀도 — 곤충 `ry` · 짝짓기 슬롯 `mr`(어미 희귀도, 표시 전용).
 ///    `ry` 는 버전과 상관없이 서버가 같은 id 면 저장본 값으로 지킨다(`guardGradeBugFields`) · `mr` 은 떨궈도 종 희귀도로 보일 뿐이다.
 ///    곤충 `lru`(놓친 능력치 굴리기 사용 횟수) — 서버가 줄지 않게(큰 쪽) 지킨다.
-const int kSaveFeatureLevel = 28;
+/// 29(2026-10-24 §12 암수): 암수 크기 차이 — 세이브 표식 `sxm`(암컷 크기를 암컷 범위로 옮겼다) · 곤충 `sizeMm` 이 성별 범위 안의 값 ·
+///    도감 암컷 최대 크기 `sf`. 구버전이 `sxm` 을 떨궈도 서버가 저장본 값을 지킨다(3단계).
+const int kSaveFeatureLevel = 29;
 
 /// 프로필 그림 id 형식(2026-10-10) — `assets/data/avatars.json` 의 id 꼴이자 Supabase `profiles.avatar` 의 SQL 검사와 같다.
 /// 서버는 이 꼴이 아닌 값을 받지 않는다(긴 문자열이 상대의 결투 후보 응답·세션에 그대로 실려 나갔다 — 2026-10-10 점검).
@@ -244,10 +246,15 @@ class BreedingSlot {
     required DateTime endsAt,
     required int seed,
     Grade? motherRarity,
+    // 암수 크기 차이(2026-10-24 §12): 주면 부모 크기를 수컷 범위로 환산해 평균한다. 없으면 원 mm 평균(구버전 호환).
+    Species? species,
   }) => BreedingSlot(
     id: id,
     speciesId: mother.speciesId,
-    parentAvgSizeMm: (mother.sizeMm + father.sizeMm) / 2,
+    parentAvgSizeMm: species != null
+        ? (species.maleEquivalentMm(mother) + species.maleEquivalentMm(father)) /
+              2
+        : (mother.sizeMm + father.sizeMm) / 2,
     motherPotential: mother.potential,
     fatherPotential: father.potential,
     endsAt: endsAt,
@@ -337,6 +344,7 @@ class BreedingSlot {
 class DexEntry {
   const DexEntry({
     this.maxSizeMm = 0,
+    this.maxSizeMmF = 0,
     this.maxPotential = 0,
     this.raisedToAdult = false,
     this.variantFound = false,
@@ -351,6 +359,9 @@ class DexEntry {
 
   /// 이 종으로 잡은 **역대 최대 크기**(mm). 곤충 게임의 원초적 자랑거리다.
   final double maxSizeMm;
+
+  /// 암컷으로 잡은 역대 최대 크기(mm, JSON `sf`, 2026-10-24 §12 암수) — 수컷 기록과 따로 센다.
+  final double maxSizeMmF;
 
   /// 역대 최고 포텐셜.
   final int maxPotential;
@@ -386,8 +397,12 @@ class DexEntry {
     bool variant = false,
     int level = 0,
     Grade? rarity,
+    Sex sex = Sex.male,
   }) => DexEntry(
-    maxSizeMm: sizeMm > maxSizeMm ? sizeMm : maxSizeMm,
+    maxSizeMm: sex == Sex.male && sizeMm > maxSizeMm ? sizeMm : maxSizeMm,
+    maxSizeMmF: sex == Sex.female && sizeMm > maxSizeMmF
+        ? sizeMm
+        : maxSizeMmF,
     maxPotential: potential > maxPotential ? potential : maxPotential,
     raisedToAdult: raisedToAdult || adult,
     variantFound: variantFound || variant,
@@ -405,6 +420,7 @@ class DexEntry {
 
   factory DexEntry.fromJson(Map<String, dynamic> json) => DexEntry(
     maxSizeMm: (json['s'] as num?)?.toDouble() ?? 0,
+    maxSizeMmF: (json['sf'] as num?)?.toDouble() ?? 0,
     maxPotential: (json['p'] as num?)?.toInt() ?? 0,
     raisedToAdult: json['a'] as bool? ?? false,
     variantFound: json['v'] as bool? ?? false,
@@ -423,6 +439,7 @@ class DexEntry {
   /// 통째로 업로드되므로 습관적으로 아낀다(§3).
   Map<String, dynamic> toJson() => {
     if (maxSizeMm > 0) 's': maxSizeMm,
+    if (maxSizeMmF > 0) 'sf': maxSizeMmF,
     if (maxPotential > 0) 'p': maxPotential,
     if (raisedToAdult) 'a': true,
     if (variantFound) 'v': true,
@@ -460,8 +477,10 @@ Map<String, DexEntry> updatedDex({
       variant: b.variant != BugVariant.none,
       level: b.level,
       rarity: rarityOf?.call(b),
+      sex: b.sex,
     );
     if (after.maxSizeMm == before.maxSizeMm &&
+        after.maxSizeMmF == before.maxSizeMmF &&
         after.maxPotential == before.maxPotential &&
         after.raisedToAdult == before.raisedToAdult &&
         after.variantFound == before.variantFound &&
@@ -660,6 +679,7 @@ class SaveGame {
     this.reviewAsked = false,
     this.reviewPromptTier = -1,
     this.reviewOpened = false,
+    this.sexSizeMigrated = false,
     this.adsRemoved = false,
     this.buffPassExpiresAt,
     this.starterBought = false,
@@ -1518,6 +1538,9 @@ class SaveGame {
   /// (스토어는 작성 여부를 알려주지 않는다. 연 것을 쓴 것으로 본다.)
   final bool reviewOpened;
 
+  /// 암컷 곤충 크기를 암컷 범위로 옮겼는가(JSON `sxm`, 2026-10-24 §12 암수) — 한 번만 옮긴다(`migrateFemaleSizes`).
+  final bool sexSizeMigrated;
+
   /// [noticeId] 가 아직 안 읽은 새 공지인지.
   bool isNewNotice(int noticeId) => noticeId > lastReadNoticeId;
 
@@ -1806,6 +1829,7 @@ class SaveGame {
     bool? reviewAsked,
     int? reviewPromptTier,
     bool? reviewOpened,
+    bool? sexSizeMigrated,
     bool? adsRemoved,
     DateTime? buffPassExpiresAt,
     bool? starterBought,
@@ -1971,6 +1995,7 @@ class SaveGame {
     reviewAsked: reviewAsked ?? this.reviewAsked,
     reviewPromptTier: reviewPromptTier ?? this.reviewPromptTier,
     reviewOpened: reviewOpened ?? this.reviewOpened,
+    sexSizeMigrated: sexSizeMigrated ?? this.sexSizeMigrated,
     adsRemoved: adsRemoved ?? this.adsRemoved,
     buffPassExpiresAt: buffPassExpiresAt ?? this.buffPassExpiresAt,
     starterBought: starterBought ?? this.starterBought,
@@ -2319,6 +2344,7 @@ class SaveGame {
     reviewAsked: json['reviewAsked'] as bool? ?? false,
     reviewPromptTier: (json['reviewTier'] as num?)?.toInt() ?? -1,
     reviewOpened: json['reviewOpened'] as bool? ?? false,
+    sexSizeMigrated: json['sxm'] as bool? ?? false,
     adsRemoved: json['adsRemoved'] as bool? ?? false,
     buffPassExpiresAt: json['buffPassExpiresAt'] == null
         ? null
@@ -2548,6 +2574,7 @@ class SaveGame {
     'reviewAsked': reviewAsked,
     if (reviewPromptTier >= 0) 'reviewTier': reviewPromptTier,
     if (reviewOpened) 'reviewOpened': true,
+    if (sexSizeMigrated) 'sxm': true,
     'adsRemoved': adsRemoved,
     'buffPassExpiresAt': buffPassExpiresAt?.toIso8601String(),
     'starterBought': starterBought,

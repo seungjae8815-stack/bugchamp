@@ -24,6 +24,7 @@ export 'src/pvp_league.dart';
 export 'src/research_progress.dart';
 export 'src/save_game.dart';
 export 'src/save_migrations.dart';
+export 'src/sex_size_migration.dart';
 export 'src/skill_progress.dart';
 export 'src/team_aura.dart';
 export 'src/tier_progress.dart';

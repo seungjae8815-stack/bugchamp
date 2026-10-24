@@ -27,6 +27,21 @@ void main() {
   LifeStage asStored(IndividualBug b) => b.stage;
 
   group('updatedDex — 보유 곤충 → 기록', () {
+    test('암컷은 maxSizeMmF 만 갱신하고 수컷 기록은 그대로 · 저장 키 sf (2026-10-24 §12 암수)', () {
+      final female = bug('alpha', size: 48).copyWith(sex: Sex.female);
+      final dex = updatedDex(
+        current: const {},
+        bugs: [female.copyWith(stage: LifeStage.adult)],
+        stageOf: asStored,
+      );
+      expect(dex['alpha']!.maxSizeMmF, 48);
+      expect(dex['alpha']!.maxSizeMm, 0);
+      final j = dex['alpha']!.toJson();
+      expect(j['sf'], 48);
+      expect(j.containsKey('s'), isFalse);
+      expect(DexEntry.fromJson(j).maxSizeMmF, 48);
+    });
+
     test('최고 희귀도(1.0.22) — 높은 쪽만 남고, 곤충이 사라져도 남는다 · 저장 키 r', () {
       Grade r(IndividualBug b) =>
           b.sizeMm >= 50 ? Grade.legendary : Grade.uncommon;
