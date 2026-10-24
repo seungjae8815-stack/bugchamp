@@ -317,6 +317,9 @@ class SaveController extends AsyncNotifier<SaveGame> {
     // 훈련 v2 이전(2026-10-08) — 옛 부위 강화·옛 훈련 단계를 포인트 칸으로(멱등). 서버 업로드와 **같은 함수**다.
     save = _migrateTrainV2(save, data);
 
+    // 암컷 크기 이전 (2026-10-24 §12 암수 — 로드 경로는 _commit 을 지나지 않는다). 멱등.
+    save = migrateFemaleSizes(save, (id) => data.speciesById[id]);
+
     // 스킬 필드를 규칙 안으로(만렙·장착 칸). 서버 업로드와 **같은 함수**다.
     final skillCfg = data.skillConfig;
     if (skillCfg != null) save = enforceSkillRules(save, skillCfg);
@@ -776,10 +779,10 @@ class SaveController extends AsyncNotifier<SaveGame> {
     // 분해로 개체는 없어지지만 도감 기록은 남아야 한다. 그래서 trim **전에**
     // 훑는다.
     // 암컷 크기 이전(2026-10-24 §12 암수) — 도감(`sf`)이 미이전 암컷의 수컷 범위 mm 를 적지 않게
-    // **도감보다 먼저** 한다(멱등 · 서버 세이브 채택·앱 시작 로드도 모두 이 길을 지난다).
-    final sexData = ref.read(gameDataProvider).value;
-    if (sexData != null) {
-      save = migrateFemaleSizes(save, (id) => sexData.speciesById[id]);
+    // **도감보다 먼저** 한다(멱등 · 서버 세이브 채택이 이 길을 지난다 — 앱 시작 로드는 build() 에서 따로).
+    final data = ref.read(gameDataProvider).value;
+    if (data != null) {
+      save = migrateFemaleSizes(save, (id) => data.speciesById[id]);
     }
     final withDex = _withUpdatedDex(save, now);
     // 장비 옵션 정리(§제련 개편)도 여기서 한다 — 낀 8개 + 모루 10개뿐이라
@@ -787,7 +790,6 @@ class SaveController extends AsyncNotifier<SaveGame> {
     // (서버 세이브 채택·구버전 세이브 로드까지 한 곳에서 걸린다).
     // 훈련소 — 끝난 훈련 반영 · 사라진 곤충의 훈련 기록 정리(어느 경로로 저장돼도 한 곳에서).
     // 훈련 v2 — 이전(서버 세이브 채택 경로도 여기서 걸린다 · 멱등) · 끝난 찍기·다시 찍기 반영.
-    final data = ref.read(gameDataProvider).value;
     final trimmed = _withTrimmedItems(withDex).trimmedToStorage();
     final trained = pruneTraining(
       finishTrainPointsIfDue(

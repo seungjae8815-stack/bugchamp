@@ -55,4 +55,19 @@ void main() {
     expect(d.sizeMm, 60);
     expect(d.sex, Sex.male);
   });
+
+  test('speciesById 조회로 미이전 암컷을 암컷 범위로 옮기고 두 번째는 그대로', () {
+    final b = bug(Sex.female, 66); // 수컷 범위 40~92 안의 위치 -> 암컷 40mm
+    final save = SaveGame.initial(createdAt: t0).copyWith(bugs: [b]);
+    final moved = migrateFemaleSizes(save, (id) => data.speciesById[id]);
+    expect(moved.bugs.single.sizeMm, closeTo(40, 1e-6));
+    expect(moved.sexSizeMigrated, isTrue);
+    expect(
+      identical(
+        migrateFemaleSizes(moved, (id) => data.speciesById[id]),
+        moved,
+      ),
+      isTrue,
+    );
+  });
 }
