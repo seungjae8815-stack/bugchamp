@@ -6075,6 +6075,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                         (_petPulse[bug.id] ?? 0) > 0.12
                             ? BugPose.attack
                             : BugPose.idle,
+                        sex: bug.sex,
                         size: size,
                         fallback: bugAvatar(sp, size: size - 4),
                         skin: bugView(ref.watch(skinOfProvider), bug),
@@ -6082,6 +6083,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                     : bugStageImage(
                         bug.speciesId,
                         stage,
+                        sex: bug.sex,
                         size: size,
                         fallback: bugAvatar(sp, size: size),
                         skin: bugView(ref.watch(skinOfProvider), bug),

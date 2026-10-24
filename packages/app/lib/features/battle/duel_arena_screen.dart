@@ -929,6 +929,9 @@ class _DuelArenaScreenState extends State<DuelArenaScreen>
                   gameImageChain(
                     [
                       'assets/images/duel/duel_${d.speciesId}.webp',
+                      // 암컷 그림이 있으면 먼저(2026-10-24 §12 암수) — 없으면 수컷 그림으로 내려간다.
+                      if (d.sex == Sex.female)
+                        'assets/images/bugs/${d.speciesId}_female_adult.webp',
                       'assets/images/bugs/${d.speciesId}_adult.webp',
                     ],
                     size: size,
@@ -1157,6 +1160,7 @@ class _DuelArenaScreenState extends State<DuelArenaScreen>
         d.speciesId,
         pose,
         size: base,
+        sex: d.sex,
         // 옆모습 그림은 가로로 길어 가운데 정렬이면 발 밑이 비어 공중에 뜬다(실기 "날아다닌다").
         alignment: Alignment.bottomCenter,
         skin: skin,

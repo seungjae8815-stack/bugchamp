@@ -702,6 +702,7 @@ class _GachaCard extends ConsumerWidget {
                         bugStageImage(
                           bug.speciesId,
                           LifeStage.adult,
+                          sex: bug.sex,
                           size: 48,
                           fallback: bugAvatar(sp, size: 44),
                           skin: bug.variant == BugVariant.none
@@ -840,6 +841,7 @@ class _GachaCard extends ConsumerWidget {
           bugStageImage(
             bug.speciesId,
             LifeStage.adult,
+            sex: bug.sex,
             size: 96,
             fallback: bugAvatar(sp, size: 84),
             skin: bug.variant == BugVariant.none

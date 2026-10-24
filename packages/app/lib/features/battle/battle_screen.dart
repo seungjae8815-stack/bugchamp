@@ -1558,6 +1558,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
               child: bugStageImage(
                 bug.speciesId,
                 LifeStage.adult,
+                sex: bug.sex,
                 size: 44,
                 fallback: bugAvatar(sp, size: 40),
                 skin: bugView(ref.read(skinOfProvider), bug),
@@ -2047,6 +2048,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
                                   t.sp,
                                   LifeStage.adult,
                                   size: 27,
+                                  sex: t.bug?.sex ?? Sex.male,
                                   skin: _foeView(t.sp, t.variant, t.skin),
                                   fallback: const Icon(
                                     Icons.bug_report,
@@ -2349,6 +2351,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
         child: bugStageImage(
           bug.speciesId,
           LifeStage.adult,
+          sex: bug.sex,
           size: 48,
           fallback: bugAvatar(sp, size: 42),
           skin: bugView(ref.read(skinOfProvider), bug),
@@ -2468,6 +2471,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
                         child: bugStageImage(
                           bug.speciesId,
                           LifeStage.adult,
+                          sex: bug.sex,
                           size: 52,
                           fallback: bugAvatar(sp!, size: 44),
                         ),
@@ -2578,6 +2582,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
                         child: bugStageImage(
                           bug.speciesId,
                           LifeStage.adult,
+                          sex: bug.sex,
                           size: 66,
                           fallback: bugAvatar(sp, size: 52),
                           skin: bugView(ref.watch(skinOfProvider), bug),
@@ -3031,6 +3036,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
                       bugStageImage(
                         bug.speciesId,
                         LifeStage.adult,
+                        sex: bug.sex,
                         size: 44,
                         fallback: bugAvatar(sp, size: 38),
                         skin: bugView(ref.watch(skinOfProvider), bug),
@@ -3218,6 +3224,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
                 d.speciesId,
                 BugPose.idle,
                 size: 72,
+                sex: d.sex,
                 skin: skin,
                 fallback: const Icon(Icons.bug_report, color: Colors.white54),
               ),
@@ -3421,6 +3428,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
       child: bugStageImage(
         bug.speciesId,
         LifeStage.adult,
+        sex: bug.sex,
         size: 40,
         fallback: sp == null
             ? const Icon(Icons.bug_report_rounded, color: _honey)

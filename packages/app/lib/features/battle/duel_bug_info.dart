@@ -97,6 +97,7 @@ Future<bool?> showDuelBugInfo(
       d.speciesId,
       BugPose.idle,
       size: 60,
+      sex: d.sex,
       skin: skin,
       fallback: const Icon(Icons.bug_report, color: Colors.white54),
     ),

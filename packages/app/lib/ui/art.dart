@@ -267,6 +267,51 @@ enum BugPose {
   hurt, // 3 — 피격
 }
 
+/// 성충 그림 경로 사슬(앞이 우선). [pose] 가 있으면 전투 자세 1~3, 없으면 한 장짜리 대표 그림.
+/// [skin] 은 전용 스킨 그림이 있을 때의 효과 키(없으면 빈 문자열).
+///
+/// (2026-10-24 §12 암수) 암컷이면 `_female_adult*` 를 **스킨 그림보다 앞에** 둔다 —
+/// 암컷 스킨 그림은 없으므로 암컷 기본 그림 + 색 필터다([_femaleSkin]). 수컷 사슬은 예전 그대로.
+/// 암컷 그림이 없는 종은 뒤의 수컷 사슬로 조용히 내려간다.
+List<String> adultImagePaths(
+  String speciesId, {
+  int? pose,
+  Sex sex = Sex.male,
+  String skin = '',
+}) {
+  const b = 'assets/images/bugs/';
+  final sk = skin.isEmpty ? '' : '_$skin';
+  return [
+    if (sex == Sex.female) ...[
+      if (pose != null) '$b${speciesId}_female_adult_$pose.webp',
+      '$b${speciesId}_female_adult_1.webp',
+      '$b${speciesId}_female_adult.webp',
+    ],
+    // 전용 스킨 그림이 있으면 그걸 먼저. 없으면 기본 그림으로 조용히 떨어져
+    // 색 필터가 대신 입혀진다 — 그림이 한 종씩 들어와도 화면이 안 깨진다.
+    if (sk.isNotEmpty) ...[
+      if (pose != null) '$b${speciesId}_adult_$pose$sk.webp',
+      '$b${speciesId}_adult_1$sk.webp',
+      if (pose == null) '$b${speciesId}_adult$sk.webp',
+    ],
+    if (pose != null) ...[
+      '$b${speciesId}_adult_$pose.webp', '$b${speciesId}_adult_$pose.png',
+      // 자세가 없으면 대기 프레임 → 예전 한 장짜리 순으로 내려간다.
+      '$b${speciesId}_adult_1.webp', '$b${speciesId}_adult_1.png',
+    ],
+    '$b${speciesId}_adult.webp',
+    '$b${speciesId}_adult.png',
+    '$b$speciesId.webp',
+    '$b$speciesId.png',
+  ];
+}
+
+/// 암컷 + 전용 그림 스킨 → 암컷 스킨 그림이 없으니 `hasArt` 를 꺼서 색 필터를 입힌다.
+SkinView? _femaleSkin(SkinView? skin, Sex sex) =>
+    skin != null && skin.hasArt && sex == Sex.female
+    ? SkinView(skin.effect)
+    : skin;
+
 /// 자세별 성충 이미지. **없으면 기본 성충 그림으로 조용히 내려간다** —
 /// 20종을 한 번에 다 그릴 수 없으므로, 종 하나씩 넣어도 화면이 깨지지 않아야 한다.
 ///
@@ -283,32 +328,20 @@ Widget bugPoseImage(
   SkinView? skin,
   Alignment alignment = Alignment.center,
   double auraBoost = 1,
+  Sex sex = Sex.male,
 }) {
-  final n = pose.index + 1;
-  final sk = skin != null && skin.hasArt ? '_${skin.effect}' : '';
   final img = gameImageChain(
-    [
-      // 전용 스킨 그림이 있으면 그걸 먼저. 없으면 기본 그림으로 조용히 떨어져
-      // 색 필터가 대신 입혀진다 — 그림이 한 종씩 들어와도 화면이 안 깨진다.
-      if (sk.isNotEmpty) ...[
-        'assets/images/bugs/${speciesId}_adult_$n$sk.webp',
-        'assets/images/bugs/${speciesId}_adult_1$sk.webp',
-      ],
-      'assets/images/bugs/${speciesId}_adult_$n.webp',
-      'assets/images/bugs/${speciesId}_adult_$n.png',
-      // 자세가 없으면 대기 프레임 → 예전 한 장짜리 순으로 내려간다.
-      'assets/images/bugs/${speciesId}_adult_1.webp',
-      'assets/images/bugs/${speciesId}_adult_1.png',
-      'assets/images/bugs/${speciesId}_adult.webp',
-      'assets/images/bugs/${speciesId}_adult.png',
-      'assets/images/bugs/$speciesId.webp',
-      'assets/images/bugs/$speciesId.png',
-    ],
+    adultImagePaths(
+      speciesId,
+      pose: pose.index + 1,
+      sex: sex,
+      skin: skin != null && skin.hasArt ? skin.effect : '',
+    ),
     size: size,
     fallback: fallback,
     alignment: alignment,
   );
-  return _skinned(img, skin, size, boost: auraBoost);
+  return _skinned(img, _femaleSkin(skin, sex), size, boost: auraBoost);
 }
 
 /// 스킨 → **색 필터(전용 그림이 없을 때만) + 후광·반짝임**을 입힌 위젯.
@@ -350,22 +383,16 @@ Widget bugStageImage(
   required double size,
   required Widget fallback,
   SkinView? skin,
+  Sex sex = Sex.male,
 }) {
-  final sk = skin != null && skin.hasArt ? '_${skin.effect}' : '';
   final List<String> paths;
   if (stage == LifeStage.adult) {
-    paths = [
-      // 전용 스킨 그림 우선. 알·유충·번데기는 스킨 그림을 따로 두지 않는다
-      // (성충이 되어야 보이는 게 스킨의 값어치다).
-      if (sk.isNotEmpty) ...[
-        'assets/images/bugs/${speciesId}_adult_1$sk.webp',
-        'assets/images/bugs/${speciesId}_adult$sk.webp',
-      ],
-      'assets/images/bugs/${speciesId}_adult.webp',
-      'assets/images/bugs/${speciesId}_adult.png',
-      'assets/images/bugs/$speciesId.webp',
-      'assets/images/bugs/$speciesId.png',
-    ];
+    // 알·유충·번데기는 스킨 그림을 따로 두지 않는다(성충이 되어야 보이는 게 스킨의 값어치다).
+    paths = adultImagePaths(
+      speciesId,
+      sex: sex,
+      skin: skin != null && skin.hasArt ? skin.effect : '',
+    );
   } else {
     final fam = bugFamily(speciesId);
     final up = bugFamilyFallback(fam);
@@ -384,7 +411,7 @@ Widget bugStageImage(
     ];
   }
   final img = gameImageChain(paths, size: size, fallback: fallback);
-  return _skinned(img, skin, size);
+  return _skinned(img, _femaleSkin(skin, sex), size);
 }
 
 /// 곤충 아바타. species.imageAsset 없으면 등급색 원 + 이모지 폴백.

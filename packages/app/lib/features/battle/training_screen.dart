@@ -411,6 +411,7 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen> {
                   child: bugStageImage(
                     bug.speciesId,
                     LifeStage.adult,
+                    sex: bug.sex,
                     size: 52,
                     fallback: const Icon(Icons.bug_report, color: _text),
                     skin: bugView(ref.read(skinOfProvider), bug),
@@ -536,6 +537,7 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen> {
                   bugStageImage(
                     b.speciesId,
                     LifeStage.adult,
+                    sex: b.sex,
                     size: 48,
                     fallback: bugAvatar(sp, size: 40),
                     skin: bugView(ref.read(skinOfProvider), b),
@@ -734,6 +736,7 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen> {
           child: bugStageImage(
             bug.speciesId,
             LifeStage.adult,
+            sex: bug.sex,
             size: 60,
             fallback: bugAvatar(sp, size: 52),
             skin: bugView(ref.read(skinOfProvider), bug),

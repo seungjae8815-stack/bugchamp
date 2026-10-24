@@ -1401,6 +1401,10 @@ Widget duelProfileBugTile(
                 sp,
                 LifeStage.adult,
                 size: 56,
+                // 상대 곤충의 성별은 `bug.sx`(2026-10-24 §12 암수) — 없으면 수컷.
+                sex: (t['bug'] is Map && (t['bug'] as Map)['sx'] == 'f')
+                    ? Sex.female
+                    : Sex.male,
                 skin: foeBugView(
                   data?.iapConfig,
                   sp,

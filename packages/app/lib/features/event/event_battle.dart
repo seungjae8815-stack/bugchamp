@@ -617,6 +617,7 @@ class _EventBattleScreenState extends ConsumerState<EventBattleScreen>
                     bugStageImage(
                       bug.speciesId,
                       LifeStage.adult,
+                      sex: bug.sex,
                       size: 22,
                       fallback: bugAvatar(sp, size: 20),
                     ),
@@ -673,6 +674,7 @@ class _EventBattleScreenState extends ConsumerState<EventBattleScreen>
         sp.id,
         LifeStage.adult,
         size: 40,
+        sex: bug.sex,
         fallback: bugAvatar(sp, size: 36),
       ),
       subtitle: gradeLabel(l, shownGrade(widget.data, bug, sp)),

@@ -1476,6 +1476,7 @@ class StorageScreen extends ConsumerWidget {
                   bugStageImage(
                     bug.speciesId,
                     LifeStage.adult,
+                    sex: bug.sex,
                     size: 60,
                     fallback: bugAvatar(sp, size: 50),
                   ),
@@ -2723,6 +2724,7 @@ class StorageScreen extends ConsumerWidget {
       iconWidget: bugStageImage(
         bug.speciesId,
         stage,
+        sex: bug.sex,
         size: 56,
         fallback: bugAvatar(sp, size: 48),
         skin: skin,
@@ -3652,6 +3654,7 @@ class StorageScreen extends ConsumerWidget {
                     child: bugStageImage(
                       bug.speciesId,
                       stage,
+                      sex: bug.sex,
                       size: 60,
                       fallback: bugAvatar(species, size: 54),
                       skin: bugView(ref.watch(skinOfProvider), bug),
@@ -4063,6 +4066,7 @@ class StorageScreen extends ConsumerWidget {
                       child: bugStageImage(
                         bug.speciesId,
                         stage,
+                        sex: bug.sex,
                         size: 58,
                         fallback: bugAvatar(species!, size: 52),
                         skin: bugView(ref.watch(skinOfProvider), bug),
@@ -4328,6 +4332,7 @@ class StorageScreen extends ConsumerWidget {
                         child: bugStageImage(
                           bug.speciesId,
                           effStage,
+                          sex: bug.sex,
                           size: 54,
                           fallback: bugAvatar(species, size: 50),
                           skin: bugView(r.watch(skinOfProvider), bug),
@@ -5808,6 +5813,7 @@ Widget _rarityUpButton(
                       f.speciesId,
                       f.stage,
                       size: 26,
+                      sex: f.sex,
                       fallback: bugAvatar(sp, size: 22),
                     ),
                     const SizedBox(width: 6),

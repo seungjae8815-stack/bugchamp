@@ -963,6 +963,7 @@ class _EventScreenState extends ConsumerState<EventScreen> {
                         child: bugPoseImage(
                           bug.speciesId,
                           BugPose.idle,
+                          sex: bug.sex,
                           size: 108,
                           skin: bugView(ref.read(skinOfProvider), bug),
                           fallback: bugAvatar(sp!, size: 90),
@@ -1245,6 +1246,7 @@ class _EventScreenState extends ConsumerState<EventScreen> {
                   bugStageImage(
                     bug.speciesId,
                     LifeStage.adult,
+                    sex: bug.sex,
                     size: 44,
                     fallback: bugAvatar(sp, size: 40),
                     skin: bugView(ref.read(skinOfProvider), bug),
