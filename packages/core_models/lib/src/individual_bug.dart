@@ -206,8 +206,9 @@ class IndividualBug {
     if (!sizeMm.isFinite) return 'size_not_finite';
     // 롤·브리딩 모두 종 범위로 clamp 하므로 범위 밖 = 위조다.
     // 부동소수 저장/파싱 오차만 허용한다.
-    if (sizeMm < species.sizeMinMm - 0.001 ||
-        sizeMm > species.sizeMaxMm + 0.001) {
+    // 성별 범위(2026-10-24 §12 암수).
+    final range = species.sizeRangeFor(sex);
+    if (sizeMm < range.min - 0.001 || sizeMm > range.max + 0.001) {
       return 'size_out_of_range';
     }
     if (potential < kPotentialMin || potential > kPotentialMax) {
@@ -225,8 +226,11 @@ class IndividualBug {
   }
 
   /// 이 개체의 사이즈에 대응하는 스탯 배율 (종 사이즈 범위 기준).
-  double statMultiplier(Species species) =>
-      sizeToStatMultiplier(sizeMm, species.sizeMinMm, species.sizeMaxMm);
+  /// 성별 범위(2026-10-24 §12 암수) 안에서의 위치로 잰다.
+  double statMultiplier(Species species) {
+    final r = species.sizeRangeFor(sex);
+    return sizeToStatMultiplier(sizeMm, r.min, r.max);
+  }
 
   /// 사이즈 배율만 적용한 유효 기본 스탯 (강화 미적용).
   Stats baseEffectiveStats(Species species) =>
@@ -252,12 +256,14 @@ class IndividualBug {
       potential >= kPotentialMin && potential <= kPotentialMax,
       'potential must be in [$kPotentialMin, $kPotentialMax], got $potential',
     );
-    final size = rollSizeMm(rng, species.sizeMinMm, species.sizeMaxMm);
+    final maleSize = rollSizeMm(rng, species.sizeMinMm, species.sizeMaxMm);
     final temp =
         temperament ??
         Temperament.values[rng.nextInt(Temperament.values.length)];
     final resolvedSex = sex ?? (rng.nextBool() ? Sex.male : Sex.female);
     final element = Element.values[rng.nextInt(Element.values.length)];
+    // 성별 범위(2026-10-24 §12 암수): 수컷 범위로 굴린 뒤 성별이 정해지면 난수 없이 옮긴다.
+    final size = species.remapFromMale(maleSize, resolvedSex);
     // 이색 롤은 **맨 마지막** — 앞의 rng 소비 순서를 바꾸면 같은 seed 의
     // 기존 롤 결과가 달라진다(breed 와 같은 규칙).
     return IndividualBug(
@@ -383,6 +389,8 @@ class IndividualBug {
     );
 
     final sex = rng.nextBool() ? Sex.male : Sex.female;
+    // 성별 범위(2026-10-24 §12 암수): 수컷 범위로 clamp 한 크기를 성별이 정해진 뒤 옮긴다(난수 없음).
+    size = species.remapFromMale(size, sex);
     // ⚠️ 이색 롤은 기존 롤(사이즈→포텐셜→오행→기질→특성→성별) **뒤에** 붙는다 —
     // 순서를 바꾸면 돌고 있던 슬롯의 결과가 달라진다.
     final variant = _rollVariant(rng, variantChance);

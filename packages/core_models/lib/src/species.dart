@@ -1,6 +1,7 @@
 import 'package:meta/meta.dart';
 
 import 'enums.dart';
+import 'individual_bug.dart';
 import 'localized_text.dart';
 import 'stats.dart';
 
@@ -57,6 +58,8 @@ class Species {
     required this.baseStats,
     required this.sizeMinMm,
     required this.sizeMaxMm,
+    this.femaleSizeMinMm,
+    this.femaleSizeMaxMm,
     this.imageAsset,
     this.desc,
     this.passive,
@@ -85,6 +88,40 @@ class Species {
   /// 사이즈 범위(mm).
   final double sizeMinMm;
   final double sizeMaxMm;
+
+  /// 암컷 사이즈 범위(mm, 2026-10-24 §12 암수). 둘 다 있어야 유효 — 없으면 암컷도 수컷 범위를 쓴다.
+  final double? femaleSizeMinMm;
+  final double? femaleSizeMaxMm;
+
+  /// 성별에 맞는 사이즈 범위. 암컷이고 암컷 범위가 있으면 그것, 아니면 수컷 범위.
+  ({double min, double max}) sizeRangeFor(Sex sex) =>
+      sex == Sex.female && femaleSizeMinMm != null && femaleSizeMaxMm != null
+      ? (min: femaleSizeMinMm!, max: femaleSizeMaxMm!)
+      : (min: sizeMinMm, max: sizeMaxMm);
+
+  /// 같은 성별 범위 안의 위치(0~1). 퇴화 범위(max ≤ min)면 0.5.
+  double sizeFracOf(IndividualBug bug) {
+    final r = sizeRangeFor(bug.sex);
+    if (r.max <= r.min) return 0.5;
+    return ((bug.sizeMm - r.min) / (r.max - r.min)).clamp(0.0, 1.0).toDouble();
+  }
+
+  /// 성별 범위 안 위치 [frac] 에 해당하는 크기(mm).
+  double sizeForFrac(Sex sex, double frac) {
+    final r = sizeRangeFor(sex);
+    return r.min + frac.clamp(0.0, 1.0) * (r.max - r.min);
+  }
+
+  /// 수컷 범위로 환산한 크기 — 결투 무게·짝짓기 평균이 쓴다.
+  double maleEquivalentMm(IndividualBug bug) =>
+      sizeForFrac(Sex.male, sizeFracOf(bug));
+
+  /// 수컷 범위로 굴린 크기를 [sex] 의 범위로 옮긴다(난수 없음 — 롤 순서 불변).
+  double remapFromMale(double maleMm, Sex sex) {
+    if (sex == Sex.male) return maleMm;
+    if (sizeMaxMm <= sizeMinMm) return sizeForFrac(sex, 0.5);
+    return sizeForFrac(sex, (maleMm - sizeMinMm) / (sizeMaxMm - sizeMinMm));
+  }
 
   /// 종 일러스트 파일명 (예: 'stag_dorcus.webp'). 없으면 UI 가 플레이스홀더로 폴백.
   final String? imageAsset;
@@ -121,31 +158,39 @@ class Species {
       (availableFrom == null || !now.isBefore(availableFrom!)) &&
       (availableUntil == null || now.isBefore(availableUntil!));
 
-  factory Species.fromJson(Map<String, dynamic> json) => Species(
-    id: json['id'] as String,
-    name: LocalizedText.fromJson(json['name'] as Map<String, dynamic>),
-    grade: Grade.fromKey(json['grade'] as String),
-    specialty: Specialty.fromKey(json['specialty'] as String),
-    baseStats: Stats.fromJson(json['baseStats'] as Map<String, dynamic>),
-    sizeMinMm: (json['sizeMinMm'] as num).toDouble(),
-    sizeMaxMm: (json['sizeMaxMm'] as num).toDouble(),
-    imageAsset: json['image'] as String?,
-    desc: json['desc'] == null
-        ? null
-        : LocalizedText.fromJson(json['desc'] as Map<String, dynamic>),
-    passive: json['passive'] == null
-        ? null
-        : SpeciesPassive.fromJson(json['passive'] as Map<String, dynamic>),
-    availableFrom: json['from'] == null
-        ? null
-        : DateTime.parse(json['from'] as String).toUtc(),
-    availableUntil: json['until'] == null
-        ? null
-        : DateTime.parse(json['until'] as String).toUtc(),
-    gradeScale: (json['gradeScale'] as num?)?.toDouble() ?? 1,
-    metamorphosis: Metamorphosis.fromKey(json['metamorphosis'] as String?),
-    duelRole: DuelRole.fromKeyOrNull(json['duelRole'] as String?),
-  );
+  factory Species.fromJson(Map<String, dynamic> json) {
+    // 암컷 범위는 둘 다 있어야 유효 — 하나만 있으면 둘 다 없는 것으로 본다.
+    final fMin = (json['femaleSizeMinMm'] as num?)?.toDouble();
+    final fMax = (json['femaleSizeMaxMm'] as num?)?.toDouble();
+    final hasFemale = fMin != null && fMax != null;
+    return Species(
+      id: json['id'] as String,
+      name: LocalizedText.fromJson(json['name'] as Map<String, dynamic>),
+      grade: Grade.fromKey(json['grade'] as String),
+      specialty: Specialty.fromKey(json['specialty'] as String),
+      baseStats: Stats.fromJson(json['baseStats'] as Map<String, dynamic>),
+      sizeMinMm: (json['sizeMinMm'] as num).toDouble(),
+      sizeMaxMm: (json['sizeMaxMm'] as num).toDouble(),
+      femaleSizeMinMm: hasFemale ? fMin : null,
+      femaleSizeMaxMm: hasFemale ? fMax : null,
+      imageAsset: json['image'] as String?,
+      desc: json['desc'] == null
+          ? null
+          : LocalizedText.fromJson(json['desc'] as Map<String, dynamic>),
+      passive: json['passive'] == null
+          ? null
+          : SpeciesPassive.fromJson(json['passive'] as Map<String, dynamic>),
+      availableFrom: json['from'] == null
+          ? null
+          : DateTime.parse(json['from'] as String).toUtc(),
+      availableUntil: json['until'] == null
+          ? null
+          : DateTime.parse(json['until'] as String).toUtc(),
+      gradeScale: (json['gradeScale'] as num?)?.toDouble() ?? 1,
+      metamorphosis: Metamorphosis.fromKey(json['metamorphosis'] as String?),
+      duelRole: DuelRole.fromKeyOrNull(json['duelRole'] as String?),
+    );
+  }
 
   Map<String, dynamic> toJson() => {
     'id': id,
@@ -155,6 +200,10 @@ class Species {
     'baseStats': baseStats.toJson(),
     'sizeMinMm': sizeMinMm,
     'sizeMaxMm': sizeMaxMm,
+    if (femaleSizeMinMm != null && femaleSizeMaxMm != null) ...{
+      'femaleSizeMinMm': femaleSizeMinMm,
+      'femaleSizeMaxMm': femaleSizeMaxMm,
+    },
     if (imageAsset != null) 'image': imageAsset,
     if (desc != null) 'desc': desc!.toJson(),
     if (passive != null) 'passive': passive!.toJson(),

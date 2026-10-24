@@ -71,6 +71,24 @@ void main() {
       }
     });
 
+    test('암컷 범위는 둘 다 있고 min < max, 장수꽃무지만 없음 (2026-10-24 §12)', () {
+      for (final s in species) {
+        if (s.id == 'chafer_flower') {
+          expect(s.femaleSizeMinMm, isNull, reason: s.id);
+          expect(s.femaleSizeMaxMm, isNull, reason: s.id);
+        } else {
+          expect(s.femaleSizeMinMm, isNotNull, reason: s.id);
+          expect(s.femaleSizeMaxMm, isNotNull, reason: s.id);
+          expect(s.femaleSizeMinMm, greaterThan(0), reason: s.id);
+          expect(
+            s.femaleSizeMaxMm,
+            greaterThan(s.femaleSizeMinMm!),
+            reason: s.id,
+          );
+        }
+      }
+    });
+
     test('모든 baseStat > 0', () {
       for (final s in species) {
         final st = s.baseStats;
