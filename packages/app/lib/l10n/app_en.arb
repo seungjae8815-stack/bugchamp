@@ -684,6 +684,14 @@
     }
   },
   "dexMaxSize": "Largest",
+  "dexMaxSizeFemale": "Female max {mm}mm",
+  "@dexMaxSizeFemale": {
+    "placeholders": {
+      "mm": {
+        "type": "String"
+      }
+    }
+  },
   "dexMaxPotential": "Best potential",
   "dexNotFound": "You haven't met this bug yet. Go find one!",
   "dexClaim": "Claim {n} dex reward(s)",
@@ -4846,6 +4854,7 @@
   "whatsNew26Lab": "The Research Lab is here — 29 long-term researches paid with gold and materials boost hunting, nurturing and duels",
   "whatsNew26Tabs": "The bottom tabs now have two pages — tap the ⇄ button to switch between Gear, Skills, Fairies and the Lab",
   "whatsNew26Pass": "New offers: the Research Pass (faster research) and the All-in-One Pass (bundles four passes)",
+  "whatsNew26SexSize": "Female bugs now show female art and female sizes — duel strength is unchanged",
   "researchSamples": "Research Samples",
   "researchSlotEmpty": "Empty",
   "researchSlotOpensAt": "Opens at {tier}",

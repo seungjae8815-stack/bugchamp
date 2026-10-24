@@ -32,11 +32,9 @@ String statRollLabel(AppLocalizations l, StatRoll s) => switch (s) {
 };
 
 /// 크기 롤(0~100) — 종 크기 범위 안에서의 위치.
-int sizeRollOf(Species sp, IndividualBug bug) {
-  final span = sp.sizeMaxMm - sp.sizeMinMm;
-  if (span <= 0) return 50;
-  return ((bug.sizeMm - sp.sizeMinMm) / span * 100).round().clamp(0, 100);
-}
+int sizeRollOf(Species sp, IndividualBug bug) =>
+    // 암컷은 암컷 범위 안의 위치(2026-10-24 §12 암수).
+    (sp.sizeFracOf(bug) * 100).round().clamp(0, 100);
 
 /// 롤 값 색 — 낮으면 붉게, 가운데 노랗게, 높으면 푸르게.
 Color rollQualityColor(int v) {

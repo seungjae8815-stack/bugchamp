@@ -1073,6 +1073,11 @@ class AppLocalizationsJa extends AppLocalizations {
   String get dexMaxSize => '最大サイズ';
 
   @override
+  String dexMaxSizeFemale(String mm) {
+    return 'メス最大 ${mm}mm';
+  }
+
+  @override
   String get dexMaxPotential => '最高ポテンシャル';
 
   @override
@@ -8332,6 +8337,9 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get whatsNew26Pass => '新商品：研究パス（研究時間短縮）とオールインワンパス（パス4種セット）';
+
+  @override
+  String get whatsNew26SexSize => 'メスの虫がメスの絵とメスのサイズで表示されます — 決闘の強さはそのままです';
 
   @override
   String get researchSamples => '研究標本';

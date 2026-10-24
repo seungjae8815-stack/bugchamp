@@ -406,6 +406,7 @@
     }
   },
   "dexMaxSize": "최대 크기",
+  "dexMaxSizeFemale": "암컷 최대 {mm}mm",
   "dexMaxPotential": "최고 포텐셜",
   "dexNotFound": "아직 만나지 못한 곤충이에요. 채집으로 찾아보세요!",
   "dexClaim": "도감 보상 {n}개 받기",
@@ -2580,6 +2581,7 @@
   "whatsNew26Lab": "연구소가 생겼어요 — 사냥·육성·결투를 키우는 연구 29가지를 골드와 재료로 오래 연구해요",
   "whatsNew26Tabs": "하단 탭이 두 쪽이 됐어요 — ⇄ 버튼으로 장비·스킬·요정·연구소를 오가요",
   "whatsNew26Pass": "새 상품: 연구 패스(연구 시간 단축)와 올인원 패스(패스 4종 묶음)",
+  "whatsNew26SexSize": "암컷 곤충이 암컷 그림과 암컷 크기로 보여요 — 결투 힘은 그대로예요",
   "researchSamples": "연구 표본",
   "researchSlotEmpty": "비어 있음",
   "researchSlotOpensAt": "{tier}에서 열림",

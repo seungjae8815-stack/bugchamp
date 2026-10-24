@@ -1075,6 +1075,11 @@ class AppLocalizationsKo extends AppLocalizations {
   String get dexMaxSize => '최대 크기';
 
   @override
+  String dexMaxSizeFemale(String mm) {
+    return '암컷 최대 ${mm}mm';
+  }
+
+  @override
   String get dexMaxPotential => '최고 포텐셜';
 
   @override
@@ -8345,6 +8350,9 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get whatsNew26Pass => '새 상품: 연구 패스(연구 시간 단축)와 올인원 패스(패스 4종 묶음)';
+
+  @override
+  String get whatsNew26SexSize => '암컷 곤충이 암컷 그림과 암컷 크기로 보여요 — 결투 힘은 그대로예요';
 
   @override
   String get researchSamples => '연구 표본';

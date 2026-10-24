@@ -556,8 +556,14 @@ class DexScreen extends ConsumerWidget {
             Text(
               // 알로만 만난 종은 크기 기록이 없다(2026-10-14 — 알 크기는 부화 뒤 공개).
               found && entry.maxSizeMm > 0
-                  ? formatSizeMm(entry.maxSizeMm)
+                  ? formatSizeMm(entry.maxSizeMm) +
+                        // 암컷 기록이 있으면 짧게 덧붙인다(2026-10-24 §12 암수).
+                        (entry.maxSizeMmF > 0
+                            ? ' ♀${formatSizeMm(entry.maxSizeMmF)}'
+                            : '')
                   : '—',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               style: TextStyle(
                 color: found ? _honey : const Color(0x44FFFFFF),
                 fontSize: 10.5,
@@ -696,6 +702,18 @@ class DexScreen extends ConsumerWidget {
               l.dexMaxSize,
               entry.maxSizeMm > 0 ? formatSizeMm(entry.maxSizeMm) : '—',
             ),
+            // 암컷 최대는 기록이 있을 때만(2026-10-24 §12 암수).
+            if (entry.maxSizeMmF > 0)
+              Align(
+                alignment: Alignment.centerRight,
+                child: Text(
+                  l.dexMaxSizeFemale(formatSizeMm(entry.maxSizeMmF)),
+                  style: const TextStyle(
+                    color: Color(0x99FFFFFF),
+                    fontSize: 12,
+                  ),
+                ),
+              ),
             gradeOn
                 ? _row(
                     l.igDexMaxGrade,

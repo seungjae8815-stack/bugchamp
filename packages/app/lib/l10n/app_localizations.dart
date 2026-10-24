@@ -1966,6 +1966,12 @@ abstract class AppLocalizations {
   /// **'Largest'**
   String get dexMaxSize;
 
+  /// No description provided for @dexMaxSizeFemale.
+  ///
+  /// In en, this message translates to:
+  /// **'Female max {mm}mm'**
+  String dexMaxSizeFemale(String mm);
+
   /// No description provided for @dexMaxPotential.
   ///
   /// In en, this message translates to:
@@ -13941,6 +13947,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'New offers: the Research Pass (faster research) and the All-in-One Pass (bundles four passes)'**
   String get whatsNew26Pass;
+
+  /// No description provided for @whatsNew26SexSize.
+  ///
+  /// In en, this message translates to:
+  /// **'Female bugs now show female art and female sizes — duel strength is unchanged'**
+  String get whatsNew26SexSize;
 
   /// No description provided for @researchSamples.
   ///

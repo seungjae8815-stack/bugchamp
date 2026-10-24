@@ -1111,6 +1111,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get dexMaxSize => 'Largest';
 
   @override
+  String dexMaxSizeFemale(String mm) {
+    return 'Female max ${mm}mm';
+  }
+
+  @override
   String get dexMaxPotential => 'Best potential';
 
   @override
@@ -8531,6 +8536,10 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get whatsNew26Pass =>
       'New offers: the Research Pass (faster research) and the All-in-One Pass (bundles four passes)';
+
+  @override
+  String get whatsNew26SexSize =>
+      'Female bugs now show female art and female sizes — duel strength is unchanged';
 
   @override
   String get researchSamples => 'Research Samples';

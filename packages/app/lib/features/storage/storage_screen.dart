@@ -2792,8 +2792,8 @@ class StorageScreen extends ConsumerWidget {
             val(
               stage == LifeStage.egg
                   ? l.eggSizeHidden(
-                      sp.sizeMinMm.toStringAsFixed(0),
-                      sp.sizeMaxMm.toStringAsFixed(0),
+                      sp.sizeRangeFor(bug.sex).min.toStringAsFixed(0),
+                      sp.sizeRangeFor(bug.sex).max.toStringAsFixed(0),
                     )
                   : l.bugSize(bug.sizeMm.toStringAsFixed(1)),
             ),
@@ -5642,13 +5642,13 @@ Widget _bugInfoCard(
             // 종 범위는 종 정보라 그대로 둔다 — 이 알의 크기와 배율만 가린다.
             hideStats
                 ? l.eggSizeHidden(
-                    sp.sizeMinMm.toStringAsFixed(0),
-                    sp.sizeMaxMm.toStringAsFixed(0),
+                    sp.sizeRangeFor(bug.sex).min.toStringAsFixed(0),
+                    sp.sizeRangeFor(bug.sex).max.toStringAsFixed(0),
                   )
                 : l.bugInfoSizeDetail(
                     bug.sizeMm.toStringAsFixed(1),
-                    sp.sizeMinMm.toStringAsFixed(0),
-                    sp.sizeMaxMm.toStringAsFixed(0),
+                    sp.sizeRangeFor(bug.sex).min.toStringAsFixed(0),
+                    sp.sizeRangeFor(bug.sex).max.toStringAsFixed(0),
                     mult.toStringAsFixed(2),
                   ),
           ),

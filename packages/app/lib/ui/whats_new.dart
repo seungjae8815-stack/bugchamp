@@ -32,6 +32,7 @@ List<WhatsNewItem> whatsNewItems(AppLocalizations l) => [
   (icon: Icons.science_rounded, image: null, text: l.whatsNew26Lab),
   (icon: Icons.swap_horiz_rounded, image: null, text: l.whatsNew26Tabs),
   (icon: Icons.workspace_premium_rounded, image: null, text: l.whatsNew26Pass),
+  (icon: Icons.female_rounded, image: null, text: l.whatsNew26SexSize),
 ];
 
 /// 지금 세이브가 막 시작한 유저의 것인가.
