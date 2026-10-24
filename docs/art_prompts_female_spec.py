@@ -1,4 +1,5 @@
-"""암컷 성충 그림 19종 + 수컷 고증 다시 그리기 2종 (2026-10-23, 유저 문의 "암수 차이" → 사장님 "따로 그려보자").
+"""암컷 성충 그림 19종 + 수컷 다시 그리기 3종 (2026-10-23, 유저 문의 "암수 차이" → 사장님 "따로 그려보자" ·
+2026-10-24 유저 문의 "넓적사슴벌레 턱 끝이 안 나와요" → 수컷 다시 + 모든 카드에 "가장자리 여백" 규칙).
 
     python docs/art_prompts_female_spec.py
     python packages/app/tool/make_prompt_page.py docs/art_prompts_female.json "C:/Users/Lenovo/Downloads/곤충암컷/곤충암컷_작업.html"
@@ -36,7 +37,9 @@ AR = (
     "idle, weight settled, all legs planted, calm ready stance; center: {c}; right: recoiling from a heavy hit, "
     "knocked backward and tilted up, legs buckling underneath, head thrown back, off balance, still seen from the side (NOT belly-up). Cozy naturalist cartoon, "
     "semi-realistic stylized, soft warm golden-hour lighting, gentle rim light, hand-painted storybook texture, clean "
-    "readable silhouette, mobile game art, crisp high detail, no text, no watermark. Wide 3:1 image."
+    "readable silhouette, mobile game art, crisp high detail, no text, no watermark. Leave a clear empty margin around "
+    "every pose: mandible tips, antennae, legs and wings must be fully inside the picture, nothing touching or cut off by "
+    "the image edges. Wide 3:1 image."
 )
 SEIZE = "lunging seize, {x} thrown wide open and reaching out to clamp, front of the body reared up"
 STRIKE = "charging strike, body pitched low and thrust forward, {x} driving straight ahead, rear legs kicking off the ground"
@@ -172,6 +175,15 @@ CARDS = [
      "curved mandibles, antennae about as long as the body but NOT longer, very long front legs.",
      "large curved mandibles", "지금 그림: 알락하늘소처럼 더듬이가 몸보다 김 = 틀림. 앞가슴 노란 털 뭉치·큰 큰턱.",
      "longhorn_relict__1", "장수하늘소 암컷 접사(앞가슴 노란 털 뭉치 참고) — 수컷은 큰턱이 더 크다"),
+    # ── 유저 문의(2026-10-24): 넓적사슴벌레 큰턱 끝이 그림 가장자리에 잘려 있다 → 여백을 두고 다시 ──
+    ("넓적사슴벌레 수컷 (다시)", "stag_flat", BEETLE_REF,
+     "a male flat stag beetle (Dorcus titanus castanicolor): black, very flat and wide body, slightly matte finely textured "
+     "elytra, long nearly straight mandibles that curve inward only at the tips, a row of many small teeth along the inner "
+     "edge and one larger tooth near the base, short elbowed antennae with a small comb-like club (NOT long antennae). "
+     "The whole beetle including the full length of both mandibles must fit inside the picture with empty space beyond "
+     "the jaw tips.",
+     "long flat mandibles", "지금 그림: 큰턱 끝·더듬이 끝이 그림 테두리에 잘림(유저 문의). 턱 끝 바깥에 여백이 남게.",
+     "stag_flat__0", "넓적사슴벌레 — 왼쪽 큰 것이 수컷"),
 ]
 
 meta = json.loads((SP / "_meta.json").read_text(encoding="utf-8"))
@@ -191,9 +203,10 @@ for title, file, ref, desc, x, note, cand, photo_note in CARDS:
 (DST / "_출처.json").write_text(json.dumps(src_json, ensure_ascii=False, indent=1), encoding="utf-8")
 
 spec = dict(
-    title="곤충 암컷 성충 19종 + 수컷 다시 그리기 2종 (2026-10-23)",
+    title="곤충 암컷 성충 19종 + 수컷 다시 그리기 3종 (2026-10-23)",
     saveDir=r"C:\Users\Lenovo\Downloads\곤충암컷",
-    intro="1~19 = 암컷 성충(가로 3자세 한 장: 대기 · 공격 · 피격) · 20~21 = 참나무하늘소·장수하늘소 수컷 고증 다시 그리기. "
+    intro="1~19 = 암컷 성충(가로 3자세 한 장: 대기 · 공격 · 피격) · 20~22 = 참나무하늘소·장수하늘소 수컷 고증 다시 그리기 + "
+    "넓적사슴벌레 수컷(큰턱 끝이 잘려 있어 여백을 두고 다시). "
     "장수꽃무지는 암수 차이가 거의 없어 수컷 그림을 쓴다. 장수말벌 암컷 그림 = 여왕벌. "
     "첫 그림 = 화풍 기준(일부러 다른 생물), 두 번째 = 실물 사진(암컷 사진이 없는 종은 카드에 적힘 — 다른 점은 프롬프트 글이 이긴다). "
     "결과는 파일명 그대로 저장(암컷은 `종id_female.png`).",

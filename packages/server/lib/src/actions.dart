@@ -2177,6 +2177,13 @@ class GameActions {
         max(b.legacyRollUps, o.legacyRollUps),
         legacyMissedRolls(o),
       );
+      // 능력치 롤(`rl`)은 **횟수가 앞선 쪽**의 것이다(2026-10-24 문의 "굴리기는 사라지고 능력치는 원래대로").
+      // 굴리기 뒤의 저장본에 옛 상태(굴리기 전)의 앱이 다시 올리면 su·lru 는 위에서 저장본으로 되돌리면서 롤만
+      // 클라이언트(굴리기 전) 것을 두어, 횟수는 쓴 것으로 남고 올린 능력치는 사라졌다. 롤은 su·lru 가 오를 때만
+      // 바뀌므로 저장본 횟수가 더 크면 저장본 롤이 그 횟수의 결과다. 클라이언트가 같거나 앞서면 클라이언트 롤.
+      final staleRolls =
+          o.synthUps > b.synthUps || o.legacyRollUps > b.legacyRollUps;
+      final rolls = staleRolls ? o.rolls : b.rolls;
       int? ls;
       if (ng) {
         ls = null;
@@ -2192,7 +2199,8 @@ class GameActions {
           pfu == b.passiveFreeUsed &&
           ls == b.legacySynthUps &&
           ry == b.rarity &&
-          lru == b.legacyRollUps) {
+          lru == b.legacyRollUps &&
+          !staleRolls) {
         bugs.add(b);
         continue;
       }
@@ -2205,10 +2213,12 @@ class GameActions {
         ..remove('pfu')
         ..remove('ls')
         ..remove('ry')
-        ..remove('lru');
+        ..remove('lru')
+        ..remove('rl');
       bugs.add(
         IndividualBug.fromJson({
           ...j,
+          if (rolls != null) 'rl': rolls,
           if (su > 0) 'su': su,
           if (gc) 'gc': true,
           if (ng) 'ng': true,
