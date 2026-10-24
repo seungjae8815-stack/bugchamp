@@ -91,7 +91,9 @@ DuelBug duelBugFor(
   return DuelBug.fromBattleBug(
         battleBugFor(bug, data, save, locale),
         speciesId: bug.speciesId,
-        sizeMm: bug.sizeMm,
+        // 무게는 수컷 환산 크기(2026-10-24 §12 암수) — 서버 `validateDuelTeam` 과 같은 값.
+        sizeMm: sp.maleEquivalentMm(bug),
+        sex: bug.sex,
         specialty: sp.specialty,
         // 크기는 결투에서 무게로만(2026-10-08 사장님 확정) — 엔진이 스탯에 구워진 사이즈 배율을 덜어낸다.
         // 서버 `validateDuelTeam` 과 같은 값이어야 재생·체험이 서버 판과 같다.

@@ -775,6 +775,12 @@ class SaveController extends AsyncNotifier<SaveGame> {
     // ⚠️ 곤충이 **사라지기 전에** 기록되는 게 요점이다 — 상한 정리(trim)와
     // 분해로 개체는 없어지지만 도감 기록은 남아야 한다. 그래서 trim **전에**
     // 훑는다.
+    // 암컷 크기 이전(2026-10-24 §12 암수) — 도감(`sf`)이 미이전 암컷의 수컷 범위 mm 를 적지 않게
+    // **도감보다 먼저** 한다(멱등 · 서버 세이브 채택·앱 시작 로드도 모두 이 길을 지난다).
+    final sexData = ref.read(gameDataProvider).value;
+    if (sexData != null) {
+      save = migrateFemaleSizes(save, (id) => sexData.speciesById[id]);
+    }
     final withDex = _withUpdatedDex(save, now);
     // 장비 옵션 정리(§제련 개편)도 여기서 한다 — 낀 8개 + 모루 10개뿐이라
     // 비용이 없고, **어느 경로로 들어온 장비든** 지금 규칙을 따르게 된다
@@ -4922,6 +4928,7 @@ class SaveController extends AsyncNotifier<SaveGame> {
     // 부모의 오행·기질·특성까지 찍어 둔다(§2.5 상속) — 부모를 잠그지 않는
     // 설계라 수령 시점엔 이미 없을 수 있다.
     final slot = BreedingSlot.from(
+      species: sp,
       id: _uuid.v4(),
       mother: mother,
       father: father,
