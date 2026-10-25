@@ -113,7 +113,7 @@ void main() {
     final s = startForgeTranscend(maxed(jelly: 1000), _forge, t0).save!;
     final cost = forgeTranscendRushJelly(s, _forge, t0);
     expect(cost, _forge.levelUpJelly(const Duration(hours: 24)));
-    expect(cost, 50);
+    expect(cost, 70); // 2026-10-25 시간당 3젤리 — 24시간 72 → 가격 단위 70
     final r = rushForgeTranscendSave(s, _forge, t0).save!;
     expect(r.forgeTranscend, 1);
     expect(r.forgeTranscendAt, isNull);
