@@ -17,7 +17,9 @@
 // ⚠️ 근사인 지점(결과를 읽을 때 감안할 것):
 //  - 플레이어 구매 전략 = "지금 살 수 있는 것 중 가장 싼 업그레이드"를 반복.
 //    실제 유저는 더 잘/못 살 수 있어 ±20% 정도는 흔들린다.
-//  - 펫·버프·광고·결제 보너스는 빼고 계산한다(맨몸 기준 = 가장 느린 경로).
+//  - 버프는 buffs.json 무료 규칙의 하루 가동률(무과금 기본) — `--buff-pass`·`--idle-pass` 로 결제 유저.
+//    dart run tool/balance_sim.dart --tiers=4 --buff-pass --idle-pass   # 두 패스 다
+//    dart run tool/balance_sim.dart --tiers=4 --idle-pass --pass-idle-gold=1.6 --pass-offline-hours=24   # 패스 손잡이 탐색
 //  - 활동 플레이는 efficiency 1.0, 오프라인은 run_config 의 offlineEfficiency.
 
 import 'dart:convert';
@@ -43,7 +45,7 @@ double _activeHoursPerDay = 2.0;
 String? _researchMode;
 
 /// 하루에 오프라인 보상으로 회수하는 시간(상한 8h — kMaxOfflineAccrual).
-const _offlineHoursPerDay = 8.0;
+double _offlineHoursPerDay = 8.0;
 
 // ── 맨몸이 아닌 "실제 유저"를 재기 위한 보정 ─────────────────────────
 //
@@ -55,12 +57,102 @@ const _offlineHoursPerDay = 8.0;
 // 아래 값들은 **평균적인 유저**의 가정이다. 상한(전부 최대)으로 잡으면 대다수가
 // 너무 어려워지고, 0으로 잡으면 지금처럼 빗나간다.
 
-/// 골드 배율 — `goldRush` 버프(gold x2.0, 누적 상한 6h/일)를 하루 평균으로.
-/// 광고를 꼬박꼬박 보는 유저는 2.0 에 가깝고, 안 보면 1.0 이다.
-const _buffGoldMult = 1.5;
+// ── 버프 가동률(2026-10-25 — buffs.json 무료 규칙에서 계산) ─────────────
+//
+// 예전엔 `_buffGoldMult 1.5`·`_buffDpsMult 1.4` 를 **활동·방치 모두에 늘** 곱했다(광고 시절
+// "하루 6시간 누적"이 되던 가정). 지금 무료 버프는 버프마다 30분 · 같은 버프 재사용 4시간 ·
+// 하루 12회라 그만큼 켜져 있을 수 없다 — 그 가정이 무과금 진행을 실제보다 빠르게 쟀다.
+//
+// 무과금 가정(성실한 유저): 하루 활동 [_activeHoursPerDay] 를 깨어 있는 16시간에 고르게
+// [_buffSessions] 번(기본 3 — 아침·점심·저녁)으로 나눠 켜고, 접속할 때마다 쿨이 돈 버프를
+// **모두** 켠다. 하루 무료 횟수(freeDaily)가 모자라면 골드 → 광폭화 → 경험치 → 채집꾼 →
+// 행운 순으로 쓴다. 한 번 켜면 min(지속, 접속 길이)만큼 활동 구간을 덮고, 접속을 닫은 뒤
+// 남은 시간(지속 − 접속 길이)은 방치 구간을 덮는다(1.0.21 "버프는 방치 중에도" —
+// 방치 시작 때 남아 있던 만큼만). 무료 대기 60초는 뺀다(하루 몇 분).
+// 가동률 = 켠 횟수 × 덮은 시간 ÷ 그 구간 길이(1 에서 자름). 배율 = 1 + (버프 배율 − 1) × 가동률
+// (기대값 — 예전 상수와 같은 근사). 무한 버프 패스(`--buff-pass`)는 5종 모두 가동률 1.
+// 반영하는 효과: 골드 · 공격 · 공속 · 경험치 · 재료 찾기(활동 중만). 곤충 찾기(펫 곡선이 가정)·희귀 드롭은 시뮬 밖.
 
-/// DPS 배율 — `frenzy` 버프(공격 x1.2, 공속 x1.5 = DPS x1.8)를 활동 시간 평균으로.
-const _buffDpsMult = 1.4;
+/// `--buff-pass` — 무한 버프 패스(iap.json `buff_pass`): 5종 버프 24시간 상시 + 깜짝선물 항상 2배.
+bool _buffPass = false;
+
+/// `--idle-pass` — 곤충학자 패스(iap.json `idle_pass`): 방치 상한 `passOfflineCapHours` ·
+/// 방치 골드 × `passIdleGoldMult` · 깜짝선물 항상 2배. 매일 젤리 20 은 진행 시뮬 밖.
+/// ⚠️ 하루 방치 회수 시간을 상한까지(16시간) 다 쓴다고 본다 — 하루 한 번 길게 비우는 유저의 상한.
+bool _idlePass = false;
+
+/// `--buff-sessions=N` — 무과금이 하루 활동을 몇 번에 나눠 접속하나(버프를 켜는 기회).
+int _buffSessions = 3;
+
+/// 곤충학자 패스 수치 — iap.json 에서 읽는다(`--pass-offline-hours=`·`--pass-idle-gold=` 로 탐색 덮어쓰기).
+double _passOfflineCapHours = 16;
+double _passIdleGoldMult = 1.3;
+double? _passOfflineOverride, _passIdleGoldOverride;
+
+/// 버프 설정(buffs.json) — main 이 읽는다.
+BuffConfig? _buffCfg;
+
+/// 버프마다 (활동 구간 가동률, 방치 구간 가동률). [_computeBuffUptime] 이 채운다.
+Map<BuffKind, ({double on, double off})> _buffUptime = const {};
+
+/// 버프 켜는 우선순위(무료 횟수가 모자랄 때).
+const _buffPriority = [
+  BuffKind.goldRush,
+  BuffKind.frenzy,
+  BuffKind.xpBoost,
+  BuffKind.gatherer,
+  BuffKind.luckyWind,
+];
+
+void _computeBuffUptime() {
+  final c = _buffCfg;
+  if (c == null) return;
+  if (_buffPass) {
+    _buffUptime = {for (final k in BuffKind.values) k: (on: 1.0, off: 1.0)};
+    return;
+  }
+  final dur = c.durationSeconds / 3600;
+  final cd = c.freeCooldownSeconds / 3600;
+  const waking = 16.0;
+  final sessions = math.max(1, _buffSessions);
+  // 접속이 깨어 있는 시간에 고르게 흩어져 있다고 보고, 쿨(4시간)이 돌아야 같은 버프를 다시 켠다.
+  final perBuffMax = cd <= 0
+      ? sessions
+      : math.min(sessions, 1 + (waking / cd).floor());
+  final len = _activeHoursPerDay / sessions;
+  var budget = c.freeDaily;
+  final out = <BuffKind, ({double on, double off})>{};
+  for (final k in _buffPriority) {
+    if (c.spec(k) == null) continue;
+    final n = math.min(perBuffMax, budget);
+    budget -= n;
+    final on = _activeHoursPerDay <= 0
+        ? 0.0
+        : math.min(1.0, n * math.min(dur, len) / _activeHoursPerDay);
+    final off = _offlineHoursPerDay <= 0
+        ? 0.0
+        : math.min(1.0, n * math.max(0.0, dur - len) / _offlineHoursPerDay);
+    out[k] = (on: on, off: off);
+  }
+  _buffUptime = out;
+}
+
+/// 지금 구간(활동/방치)의 버프 기대 배율 — [field] 로 고른 효과를 버프마다 곱한다.
+double _buffMult(bool online, double Function(BuffSpec) field) {
+  final c = _buffCfg;
+  if (c == null) return 1.0;
+  var m = 1.0;
+  for (final e in _buffUptime.entries) {
+    final spec = c.spec(e.key);
+    if (spec == null) continue;
+    final u = online ? e.value.on : e.value.off;
+    m *= 1 + (field(spec) - 1) * u;
+  }
+  return m;
+}
+
+/// 깜짝선물이 항상 2배인가(두 패스 모두).
+bool get _giftAlwaysDouble => _buffPass || _idlePass;
 
 // ── ★ 적응형 체력 **기준 밖** 전력 (2026-08-30 추가) ──────────────────
 //
@@ -236,6 +328,25 @@ void main(List<String> args) {
   } catch (_) {
     _daily = null;
   }
+  _buffCfg = BuffConfig.fromJson(
+    jsonDecode(File('../app/assets/data/buffs.json').readAsStringSync())
+        as Map<String, dynamic>,
+  );
+  final iap = IapConfig.fromJson(
+    jsonDecode(File('../app/assets/data/iap.json').readAsStringSync())
+        as Map<String, dynamic>,
+  );
+  _passOfflineCapHours =
+      _passOfflineOverride ?? iap.passOfflineCapHours.toDouble();
+  _passIdleGoldMult = _passIdleGoldOverride ?? iap.passIdleGoldMult;
+  // 하루는 24시간 — 방치 회수는 (24 − 활동)을 넘지 못한다(상한 24시간 탐색 때).
+  if (_idlePass) {
+    _offlineHoursPerDay = math.min(
+      _passOfflineCapHours,
+      24 - _activeHoursPerDay,
+    );
+  }
+  _computeBuffUptime();
   if (opts.fitZones != null) {
     // ── 사냥터 표 맞추기 ──
     // 사냥터 k 의 몬스터는 "사냥터 k-1 에서 의도한 일수만큼 키운 전력"으로
@@ -356,6 +467,18 @@ void main(List<String> args) {
   stdout.writeln(
     '  플레이어 모델     : 활동 ${_activeHoursPerDay}h/일'
     ' + 오프라인 ${_offlineHoursPerDay}h/일',
+  );
+  stdout.writeln(
+    '  결제             : ${_buffPass ? '무한 버프 패스' : '무과금 버프(접속 $_buffSessions번)'}'
+    '${_idlePass ? ' + 곤충학자 패스(방치 ${_passOfflineCapHours}h · 방치 골드 ×$_passIdleGoldMult)' : ''}',
+  );
+  stdout.writeln(
+    '  버프 가동률(활동/방치): ${[for (final e in _buffUptime.entries) '${e.key.name} ${(e.value.on * 100).round()}/${(e.value.off * 100).round()}%'].join(' · ')}',
+  );
+  stdout.writeln(
+    '  버프 기대 배율(활동/방치): 골드 ×${_buffMult(true, (x) => x.gold).toStringAsFixed(2)}/${_buffMult(false, (x) => x.gold).toStringAsFixed(2)}'
+    ' · 초당 피해 ×${(_buffMult(true, (x) => x.attack) * _buffMult(true, (x) => x.attackSpeed)).toStringAsFixed(2)}/${(_buffMult(false, (x) => x.attack) * _buffMult(false, (x) => x.attackSpeed)).toStringAsFixed(2)}'
+    ' (예전 상수: 골드 ×1.50 · 공격 ×1.40 늘)',
   );
   stdout.writeln('');
   stdout.writeln('── 현실적 최고치(tool/balance_targets.json → ceiling) ──');
@@ -1561,10 +1684,14 @@ class _Player {
       attack:
           b.attack *
           _passiveAttackMult *
-          (hunt ? 1.0 : _restrainMult * _buffDpsMult) *
+          (hunt ? 1.0 : _restrainMult * _buffMult(_online, (x) => x.attack)) *
           tap,
       // 부스트는 공속에도 실린다 — 얼마나 실리는지는 `boostSpeedFactor` 다.
-      attackSpeed: b.attackSpeed * (1 + (tap - 1) * config.boostSpeedFactor),
+      // 버프(광폭화 공속)는 지금 구간(활동/방치)의 가동률로 — [_buffMult].
+      attackSpeed:
+          b.attackSpeed *
+          (1 + (tap - 1) * config.boostSpeedFactor) *
+          (hunt ? 1.0 : _buffMult(_online, (x) => x.attackSpeed)),
       rewardMultiplier: b.rewardMultiplier,
       critChance: b.critChance,
       critDamage: b.critDamage,
@@ -1625,7 +1752,7 @@ class _Player {
 
   CharacterStats _applySkills(CharacterStats s, {bool activeAvg = true}) {
     final cfg = _skillConfig;
-    // ⚠️ 온라인 여부로 가르지 않는다 — 버프(_buffDpsMult)·탭 부스트(_tapBoostAvg)와 **같은 규약**.
+    // ⚠️ 온라인 여부로 가르지 않는다 — 탭 부스트(_tapBoostAvg)와 **같은 규약**(버프는 2026-10-25 부터 구간별 가동률).
     // 이 시뮬에서 `stats` 는 "접속해서 싸울 때의 전력"이고, 오프라인은 그 전력 × offlineEfficiency
     // 로 근사한다. 표 맞추기(`--fit-tiers`)도 이 값을 도착 전력으로 쓴다. 온라인에만 넣으면
     // 표를 잴 때(오프라인 상태) 스킬이 빠져 몬스터가 약하게 뽑히고, 실제 접속 플레이는 스킬이
@@ -2038,7 +2165,10 @@ class _Player {
               3;
         }
         final avgMult = (gifts.adMultiplierMin + gifts.adMultiplierMax) / 2.0;
-        final units = giftCount + gifts.freeDoubleDaily * (avgMult - 1);
+        // 패스(무한 버프·곤충학자)는 깜짝선물이 **항상** 2배 받기 — 무과금은 하루 freeDoubleDaily 번.
+        final units = _giftAlwaysDouble
+            ? giftCount * avgMult
+            : giftCount + gifts.freeDoubleDaily * (avgMult - 1);
         giftGold = giftEach * units * giftResearch;
         giftMats = eachMats * units * giftResearch;
       }
@@ -2918,8 +3048,10 @@ class _Player {
       }
       final earned =
           prog.gold *
-          _buffGoldMult *
-          (_online ? 1 + config.onlineGoldBonus : 1.0);
+          _buffMult(_online, (x) => x.gold) *
+          (_online
+              ? 1 + config.onlineGoldBonus
+              : (_idlePass ? _passIdleGoldMult : 1.0));
       if (_online) {
         _onlineGoldAcc += earned;
         _onlineKillsAcc += prog.habitatClears;
@@ -2935,7 +3067,7 @@ class _Player {
       _toUpgradesAcc += earned - toForge;
       _goldEarned += earned;
       goldEarnedByDay[elapsedDays.floor()] = _goldEarned;
-      _gainXp(prog.xp);
+      _gainXp((prog.xp * _buffMult(_online, (x) => x.xp)).round());
       // 재료: 처치당 materialDropChance 확률로 평균 1.5개, 3종에 고르게.
       // `chance × find` 를 그대로 곱하는 게 맞다 — 게임은 확률을 1 에서 자르고
       // 넘친 배율을 수량으로 돌리므로(`materialDrop`) 기대값이 정확히 이 값이다.
@@ -2949,6 +3081,7 @@ class _Player {
           ? prog.habitatClears *
                 config.materialDropChance *
                 stats.materialFind *
+                _buffMult(true, (x) => x.materialFind) *
                 1.5 *
                 materialAmountMult(config, prevStage - 1)
           : 0.0;
@@ -3315,6 +3448,30 @@ _Opts _parseArgs(List<String> args) {
     }
     if (a == '--research' || a.startsWith('--research=')) {
       _researchMode = a == '--research' ? 'schedule' : a.substring(11);
+      continue;
+    }
+    if (a == '--buff-pass') {
+      _buffPass = true;
+      continue;
+    }
+    if (a == '--idle-pass') {
+      _idlePass = true;
+      continue;
+    }
+    final bs = RegExp(r'^--buff-sessions=(\d+)$').firstMatch(a);
+    if (bs != null) {
+      _buffSessions = int.parse(bs.group(1)!);
+      continue;
+    }
+    // 곤충학자 패스 손잡이 탐색(iap.json 은 그대로) — `--idle-pass` 와 함께 쓴다.
+    final po = RegExp(r'^--pass-offline-hours=(.+)$').firstMatch(a);
+    if (po != null) {
+      _passOfflineOverride = double.parse(po.group(1)!);
+      continue;
+    }
+    final pg = RegExp(r'^--pass-idle-gold=(.+)$').firstMatch(a);
+    if (pg != null) {
+      _passIdleGoldOverride = double.parse(pg.group(1)!);
       continue;
     }
     final ah = RegExp(r'^--active-hours=(.+)$').firstMatch(a);
