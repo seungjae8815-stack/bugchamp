@@ -1276,9 +1276,10 @@ void _transcendCostTests() {
       );
     });
 
-    test('초월 즉시 완료 젤리 = 등급업과 같은 값표(시간당 2, 5·10 단위)', () {
-      expect(forge.levelUpJelly(forge.transcendDuration(0)), 50); // 24h × 2
-      expect(forge.levelUpJelly(forge.transcendDuration(4)), 140); // 72h × 2
+    // 시간당 3(2026-10-25 — 부화·연구 즉시 완료와 비슷하게, 예전 2).
+    test('초월 즉시 완료 젤리 = 등급업과 같은 값표(시간당 3, 5·10 단위)', () {
+      expect(forge.levelUpJelly(forge.transcendDuration(0)), 70); // 24h × 3 = 72 → 70
+      expect(forge.levelUpJelly(forge.transcendDuration(4)), 220); // 72h × 3 = 216 → 220
       for (var n = 0; n < forge.transcendMax; n++) {
         expect(forge.levelUpJelly(forge.transcendDuration(n)) % 5, 0);
       }

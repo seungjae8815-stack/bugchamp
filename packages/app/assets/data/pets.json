@@ -74,7 +74,7 @@
  "breakthroughJellyPerMinute": 0.93,
  "incubatorSlotsInitial": 1,
  "incubatorSlotsMax": 5,
- "incubatorExpandJelly": 100,
+ "incubatorExpandJelly": 200,
  "incubateDurationsSec": {
   "common": 300,
   "uncommon": 1200,
@@ -101,7 +101,7 @@
  "breedingJellyPerMinute": 0.93,
  "breedingSlotsInitial": 1,
  "breedingSlotsMax": 5,
- "breedingExpandJelly": 100,
+ "breedingExpandJelly": 200,
  "storageSlotsMax": 100,
  "storageExpandJelly": 100,
  "storageExpandAmount": 10,

@@ -24,7 +24,7 @@
   "endGoldGrowth": 1.6,
   "baseSeconds": 3600,
   "growth": 1.28,
-  "jellyPerHour": 2,
+  "jellyPerHour": 3,
   "jellyMin": 5,
   "_transcendComment": "초월 뒤 등급업(2026-10-12 사장님 재확정): 초월 단계 t>0(진행 중 초월도 센다)이면 골드 = max(원래 비용, 원래 transcendGoldFloorLevel 레벨 비용 약 263억) x transcendGoldMult^t, 시간 = max(원래 시간, transcendTimeFloorHours) x transcendTimeMult^t. 앞쪽 레벨도 싸지 않고 전체는 단계마다 1.5배. 근거: 원래 0→19 가 약 55조 골드·385시간(최상위 유저 수입으로 약 425시간)이라 x100^t 는 4만 시간이 되어 폐기. t=0 이면 원래와 같다.",
   "transcendGoldMult": 1.5,
