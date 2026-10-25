@@ -1,0 +1,21 @@
+{
+ "title": "상점 패스 그림 2장 (2026-10-25)",
+ "saveDir": "C:\\Users\\Lenovo\\Downloads\\상점패스",
+ "intro": "연구 패스·올인원 패스 상점 카드 그림. 첫 그림(성장 패스)을 화풍 기준으로 함께 붙여 넣으세요. 정사각, 아래 15% 는 잘라냅니다. 파일명 그대로 저장.",
+ "items": [
+  {
+   "title": "연구 패스 (30일)",
+   "file": "research_pass",
+   "ref": "../packages/app/assets/images/shop/growth_pass.webp",
+   "note": "연구소 전용 패스 — 방치 중 연구 표본. 초록·파랑·유리빛(실험실).",
+   "prompt": "Use the attached image only as the art style reference. Do NOT copy its subject. Mobile game shop item illustration for a \"30-day research pass\": a small wooden naturalist's lab stand holding a round glass flask filled with glowing teal-green liquid, a brass magnifying glass leaning against it, and a few small rolled paper scrolls tied with string. Around the flask a soft circular ring of light orbits, and along the ring float three small glowing teal crystal vials (research samples) evenly spaced. A few golden sparkles drift upward. Style: cozy naturalist storybook painting, semi-realistic painterly shading, warm soft lighting, rich detail, same rendering style as the reference. Background: soft blurred deep teal to forest-green gradient with a gentle golden glow behind the flask. Single object centered, three-quarter front view. no people, no hands, no insects, no fairies, no calendar, no text, no letters, no numbers, no price tag, no border, no frame, no watermark, no logo. Composition: keep the main subject and everything important in the upper 85% of the image; the bottom 15% must be plain empty background only (it will be cropped off). --ar 1:1"
+  },
+  {
+   "title": "올인원 패스 (30일, 패스 4종)",
+   "file": "all_pass",
+   "ref": "../packages/app/assets/images/shop/growth_pass.webp",
+   "note": "곤충학자·무한 버프·성장·연구 패스 4종 묶음 — 가장 화려하게. 금빛·여러 색.",
+   "prompt": "Use the attached image only as the art style reference. Do NOT copy its subject. Mobile game shop item illustration for a \"30-day all-in-one pass\": an ornate open golden treasure chest with dark wood panels and engraved leaf patterns, overflowing with light. Rising from inside the chest, four small glowing emblems float in a gentle arc: a green-and-gold glowing sapling in a tiny clay pot, a round glass flask of glowing teal liquid, a small honey-amber jelly cube, and a radiant orange sun-like orb. Golden ribbons of light swirl around them and bright sparkles drift upward. Premium, most luxurious feeling of the set. Style: cozy naturalist storybook painting, semi-realistic painterly shading, warm soft lighting, rich detail, same rendering style as the reference. Background: soft blurred royal purple to deep gold gradient with a strong warm golden glow behind the chest. Single object centered, three-quarter front view. no people, no hands, no insects, no fairies, no calendar, no text, no letters, no numbers, no price tag, no border, no frame, no watermark, no logo. Composition: keep the main subject and everything important in the upper 85% of the image; the bottom 15% must be plain empty background only (it will be cropped off). --ar 1:1"
+  }
+ ]
+}

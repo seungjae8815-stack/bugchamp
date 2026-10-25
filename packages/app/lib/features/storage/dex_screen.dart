@@ -710,7 +710,14 @@ class DexScreen extends ConsumerWidget {
                   ),
                   const Spacer(),
                   if (entry.maxSizeMm > 0 || entry.maxSizeMmF > 0)
-                    _sexSizes(entry, fontSize: 12.5)
+                    // 좁은 시트·큰 글씨에서 넘치지 않게 줄인다(2026-10-25 점검).
+                    Flexible(
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.centerRight,
+                        child: _sexSizes(entry, fontSize: 12.5),
+                      ),
+                    )
                   else
                     const Text(
                       '—',

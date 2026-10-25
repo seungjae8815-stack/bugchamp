@@ -2955,29 +2955,33 @@ class StorageScreen extends ConsumerWidget {
     }
     // 결투 전투력(2026-10-12) — 세이브가 바뀔 때만 다시 계산한다(그리드 칸마다 계산하지 않는다).
     final powers = ref.watch(duelPowerByBugProvider);
-    return GridView.builder(
-      padding: const EdgeInsets.fromLTRB(8, 6, 8, 8),
-      // 4칸(2026-10-24 문의 "곤충 그림이 너무 작다" — 5칸이던 시절 그림 48dp). 칸이 넓어진 만큼 그림도 60dp.
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 4,
-        mainAxisSpacing: 6,
-        crossAxisSpacing: 6,
-        childAspectRatio: 0.82,
+    // 칸 비율이 고정이라 큰 글씨에서 칸 안 글자가 그림을 밀어낸다 — 격자만 글씨 배율 1.15 로 묶는다(2026-10-25 점검).
+    return MediaQuery.withClampedTextScaling(
+      maxScaleFactor: 1.15,
+      child: GridView.builder(
+        padding: const EdgeInsets.fromLTRB(8, 6, 8, 8),
+        // 4칸(2026-10-24 문의 "곤충 그림이 너무 작다" — 5칸이던 시절 그림 48dp). 칸이 넓어진 만큼 그림도 60dp.
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 4,
+          mainAxisSpacing: 6,
+          crossAxisSpacing: 6,
+          childAspectRatio: 0.82,
+        ),
+        itemCount: items.length,
+        itemBuilder: (context, i) {
+          final it = items[i];
+          return _bugCell(
+            context,
+            ref,
+            data,
+            it.bug,
+            it.stage,
+            it.equipped,
+            it.stage == LifeStage.adult ? powers[it.bug.id] : null,
+            canRarityUp: ready.contains(it.bug.id),
+          );
+        },
       ),
-      itemCount: items.length,
-      itemBuilder: (context, i) {
-        final it = items[i];
-        return _bugCell(
-          context,
-          ref,
-          data,
-          it.bug,
-          it.stage,
-          it.equipped,
-          it.stage == LifeStage.adult ? powers[it.bug.id] : null,
-          canRarityUp: ready.contains(it.bug.id),
-        );
-      },
     );
   }
 
@@ -3641,21 +3645,26 @@ class StorageScreen extends ConsumerWidget {
               child: Stack(
                 alignment: Alignment.center,
                 children: [
+                  // 칸 높이에 맞춰 줄인다(2026-10-25 출시 전 점검 — 320~360dp·큰 글씨에서 60 이 그림 영역보다 커 위아래가 잘렸다).
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 3),
-                    child: bugStageImage(
-                      bug.speciesId,
-                      stage,
-                      sex: bug.sex,
-                      size: 60,
-                      fallback: bugAvatar(species, size: 54),
-                      skin: bugView(ref.watch(skinOfProvider), bug),
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: bugStageImage(
+                        bug.speciesId,
+                        stage,
+                        sex: bug.sex,
+                        size: 60,
+                        fallback: bugAvatar(species, size: 54),
+                        skin: bugView(ref.watch(skinOfProvider), bug),
+                      ),
                     ),
                   ),
                   if (equipped)
                     Positioned(
-                      top: -2,
-                      left: -2,
+                      // 음수 좌표는 Stack 이 잘랐다(2026-10-25 점검).
+                      top: 0,
+                      left: 0,
                       child: Container(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 4,
