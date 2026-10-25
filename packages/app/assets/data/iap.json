@@ -5,7 +5,7 @@
  "passDurationDays": 30,
  "passDailyJelly": 20,
  "passOfflineCapHours": 16,
- "passIdleGoldMult": 1.3,
+ "passIdleGoldMult": 2.0,
  "products": [
   {
    "id": "starter_pack",
@@ -38,9 +38,9 @@
     "ja": "昆虫学者パス（30日）"
    },
    "desc": {
-    "ko": "오프라인 16시간\n방치 골드 +30%\n매일 젤리 20\n깜짝선물 자동 수령·항상 2배",
-    "en": "16h offline cap\n+30% idle gold\n20 jelly daily\nSurprise gifts auto-claimed & always doubled",
-    "ja": "オフライン16時間\n放置ゴールド+30%\n毎日ゼリー20\nサプライズギフト自動受取・常に2倍"
+    "ko": "오프라인 16시간\n방치 골드 2배\n매일 젤리 20\n깜짝선물 자동 수령·항상 2배",
+    "en": "16h offline cap\n2× idle gold\n20 jelly daily\nSurprise gifts auto-claimed & always doubled",
+    "ja": "オフライン16時間\n放置ゴールド2倍\n毎日ゼリー20\nサプライズギフト自動受取・常に2倍"
    },
    "image": "idle_pass",
    "iosId": "idle_pass_c"
