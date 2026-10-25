@@ -2094,7 +2094,10 @@ class GameActions {
     final fix = stored.dailyClaims[kLruFixKey];
     if (fix != null && fix.startsWith('pending')) {
       final potions =
-          int.tryParse(fix.split(':').elementAtOrNull(1) ?? '') ?? 0;
+          (int.tryParse(fix.split(':').elementAtOrNull(1) ?? '') ?? 0).clamp(
+            0,
+            kLruFixMaxPotions,
+          );
       out = sanitizeGradeRolls(
         out.copyWith(
           bugs: [
@@ -2133,6 +2136,12 @@ class GameActions {
   /// 운영 수선 요청 키(2026-10-24) — 운영이 DB 세이브 `dailyClaims` 에 `pending:<돌려줄 물약>` 을 적으면 다음 업로드에서
   /// 서버가 놓친 능력치 굴리기 횟수(lru)를 지우고 물약을 돌려준 뒤 `done:<날짜>` 로 바꾼다([_enforceGrade]).
   static const kLruFixKey = 'fix:lru';
+
+  /// 운영 수선 표식의 머리 — 이 키들은 서버만 바꾼다([_mergeDailyClaims] 가 앱 값을 버린다).
+  static const kFixKeyPrefix = 'fix:';
+
+  /// 운영 수선 한 번에 돌려줄 수 있는 물약 상한 — DB 에 잘못 적어도 이 이상은 들어가지 않는다.
+  static const kLruFixMaxPotions = 200;
   static const kNewRaritySecondsEach = 600;
   // 새 결제 알(id `iap-`)의 뽑기 출신 표식 — 업로드당 넉넉히(스킨 덤 알은 한 번에 1개).
   static const kNewIapEggsPerUpload = 4;
@@ -3173,16 +3182,23 @@ class GameActions {
   /// 일일보상 수령 날짜는 **뒤로 가지 않는다**(슬롯마다 저장본과 늦은 쪽). 키를 지웠다 다시 적어
   /// [_huntRewardAllowance] 의 몫을 또 받는 것을 막는다. 날짜는 'yyyy-MM-dd' 라 문자열 비교가 곧 날짜 비교다.
   void _mergeDailyClaims(SaveGame stored, Map<String, dynamic> merged) {
-    if (stored.dailyClaims.isEmpty) return;
     final raw = merged['dailyClaims'];
     final out = <String, String>{
       if (raw is Map)
-        for (final e in raw.entries) '${e.key}': '${e.value}',
+        for (final e in raw.entries)
+          // 운영 수선 표식(`fix:*`)은 **서버 소유** — 앱이 올린 값은 버린다(2026-10-25 출시 전 점검: 앱이 `fix:lru=pending:N` 을
+          // 적어 올리면 다음 업로드에서 물약 N 개가 들어왔고, 'pending' > 'done' 이라 done 뒤에도 다시 적을 수 있었다).
+          if (!'${e.key}'.startsWith(kFixKeyPrefix)) '${e.key}': '${e.value}',
     };
     for (final e in stored.dailyClaims.entries) {
+      if (e.key.startsWith(kFixKeyPrefix)) {
+        out[e.key] = e.value; // 저장본 그대로(운영이 DB 에 적은 값)
+        continue;
+      }
       final c = out[e.key];
       if (c == null || c.compareTo(e.value) < 0) out[e.key] = e.value;
     }
+    if (raw == null && out.isEmpty) return;
     merged['dailyClaims'] = out;
   }
 
