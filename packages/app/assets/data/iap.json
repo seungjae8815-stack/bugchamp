@@ -320,9 +320,9 @@
     "ja": "研究パス（30日）"
    },
    "desc": {
-    "ko": "30일 동안 앱을 꺼 둔 사이에도 연구 표본이 모여요\n하루 8시간 방치하면 약 20~35개 — 표본 수입이 거의 2배\n표본이 모자라 연구 칸이 노는 일이 줄어요\n곤충학자 패스와 함께면 16시간 방치까지",
-    "en": "For 30 days, research samples keep coming in while the app is closed\nAbout 20–35 a day from 8 hours idle — nearly double your sample income\nYour research slots sit empty far less often\nWith the Entomologist Pass, up to 16 hours idle",
-    "ja": "30日間、アプリを閉じている間も研究サンプルが集まります\n1日8時間の放置で約20〜35個 — サンプル収入がほぼ2倍\nサンプル不足で研究枠が空く時間が減ります\n昆虫学者パスと一緒なら16時間放置まで"
+    "ko": "앱을 꺼 둔 사이에도 연구 표본이 모여요\n8시간 방치에 표본 약 20~35개\n표본 수입이 거의 2배\n곤충학자 패스와 함께면 16시간까지",
+    "en": "Research samples while the app is closed\nAbout 20–35 samples per 8h idle\nNearly double your sample income\nUp to 16h with the Entomologist Pass",
+    "ja": "アプリを閉じている間も研究サンプル\n8時間放置で約20〜35個\nサンプル収入がほぼ2倍\n昆虫学者パスと一緒なら16時間まで"
    },
    "image": "research_pass"
   },
