@@ -168,9 +168,7 @@ void main() {
     expect(find.text('연구 시간 −${fmtResearchPct(cut)}%'), findsOneWidget);
   });
 
-  testWidgets('연구 중 — 카드에 남은 시간 · 칸 카드를 누르면 시트에서 젤리로 즉시 완료', (
-    tester,
-  ) async {
+  testWidgets('연구 중 — 카드에 남은 시간 · 칸 카드를 누르면 시트에서 젤리로 즉시 완료', (tester) async {
     final c = await pump(
       tester,
       base.copyWith(

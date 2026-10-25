@@ -73,10 +73,7 @@ void main() {
     expect(moved.bugs.single.sizeMm, closeTo(40, 1e-6));
     expect(moved.sexSizeMigrated, isTrue);
     expect(
-      identical(
-        migrateFemaleSizes(moved, (id) => data.speciesById[id]),
-        moved,
-      ),
+      identical(migrateFemaleSizes(moved, (id) => data.speciesById[id]), moved),
       isTrue,
     );
   });

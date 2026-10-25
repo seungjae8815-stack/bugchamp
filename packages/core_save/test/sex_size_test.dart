@@ -40,41 +40,51 @@ IndividualBug _bug(
   element: Element.values.first,
 );
 
-Species? _speciesOf(String id) =>
-    {'stag_x': _stag, 'chafer_x': _chafer}[id];
+Species? _speciesOf(String id) => {'stag_x': _stag, 'chafer_x': _chafer}[id];
 
 void main() {
   final t0 = DateTime.utc(2026, 10, 24);
 
-  test('migrateFemaleSizes keeps male-equivalent mm: 암컷 66mm(수컷 범위 한가운데) → 40mm(암컷 한가운데), 수컷은 그대로, 표식 켜짐', () {
-    final f = _bug('f', _stag, sex: Sex.female, mm: 66);
-    final m = _bug('m', _stag, sex: Sex.male, mm: 66);
-    final s = SaveGame.initial(
-      createdAt: t0,
-    ).copyWith(bugs: [f, m], sexSizeMigrated: false);
-    expect(s.sexSizeMigrated, isFalse);
-    final out = migrateFemaleSizes(s, _speciesOf);
-    expect(out.sexSizeMigrated, isTrue);
-    final nf = out.bugs.firstWhere((b) => b.id == 'f');
-    expect(nf.sizeMm, closeTo(40, 1e-9));
-    expect(_stag.maleEquivalentMm(nf), closeTo(66, 1e-9));
-    expect(out.bugs.firstWhere((b) => b.id == 'm').sizeMm, 66);
-  });
+  test(
+    'migrateFemaleSizes keeps male-equivalent mm: 암컷 66mm(수컷 범위 한가운데) → 40mm(암컷 한가운데), 수컷은 그대로, 표식 켜짐',
+    () {
+      final f = _bug('f', _stag, sex: Sex.female, mm: 66);
+      final m = _bug('m', _stag, sex: Sex.male, mm: 66);
+      final s = SaveGame.initial(
+        createdAt: t0,
+      ).copyWith(bugs: [f, m], sexSizeMigrated: false);
+      expect(s.sexSizeMigrated, isFalse);
+      final out = migrateFemaleSizes(s, _speciesOf);
+      expect(out.sexSizeMigrated, isTrue);
+      final nf = out.bugs.firstWhere((b) => b.id == 'f');
+      expect(nf.sizeMm, closeTo(40, 1e-9));
+      expect(_stag.maleEquivalentMm(nf), closeTo(66, 1e-9));
+      expect(out.bugs.firstWhere((b) => b.id == 'm').sizeMm, 66);
+    },
+  );
 
-  test('migrateFemaleSizes is idempotent and skips unknown species / species without female range', () {
-    final s = SaveGame.initial(createdAt: t0).copyWith(
-      bugs: [
-        _bug('c', _chafer, sex: Sex.female, mm: 30),
-        _bug('u', _stag, sex: Sex.female, mm: 66).copyWith(speciesId: 'ghost'),
-      ],
-    );
-    final once = migrateFemaleSizes(s, _speciesOf);
-    expect(once.bugs[0].sizeMm, 30);
-    expect(once.bugs[1].sizeMm, 66);
-    expect(once.sexSizeMigrated, isTrue);
-    final twice = migrateFemaleSizes(once, _speciesOf);
-    expect(identical(twice, once), isTrue);
-  });
+  test(
+    'migrateFemaleSizes is idempotent and skips unknown species / species without female range',
+    () {
+      final s = SaveGame.initial(createdAt: t0).copyWith(
+        bugs: [
+          _bug('c', _chafer, sex: Sex.female, mm: 30),
+          _bug(
+            'u',
+            _stag,
+            sex: Sex.female,
+            mm: 66,
+          ).copyWith(speciesId: 'ghost'),
+        ],
+      );
+      final once = migrateFemaleSizes(s, _speciesOf);
+      expect(once.bugs[0].sizeMm, 30);
+      expect(once.bugs[1].sizeMm, 66);
+      expect(once.sexSizeMigrated, isTrue);
+      final twice = migrateFemaleSizes(once, _speciesOf);
+      expect(identical(twice, once), isTrue);
+    },
+  );
 
   test('BreedingSlot.from with species averages male-equivalent mm', () {
     final mother = _bug('mo', _stag, sex: Sex.female, mm: 50); // 수컷 환산 92

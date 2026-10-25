@@ -252,7 +252,8 @@ class BreedingSlot {
     id: id,
     speciesId: mother.speciesId,
     parentAvgSizeMm: species != null
-        ? (species.maleEquivalentMm(mother) + species.maleEquivalentMm(father)) /
+        ? (species.maleEquivalentMm(mother) +
+                  species.maleEquivalentMm(father)) /
               2
         : (mother.sizeMm + father.sizeMm) / 2,
     motherPotential: mother.potential,
@@ -400,9 +401,7 @@ class DexEntry {
     Sex sex = Sex.male,
   }) => DexEntry(
     maxSizeMm: sex == Sex.male && sizeMm > maxSizeMm ? sizeMm : maxSizeMm,
-    maxSizeMmF: sex == Sex.female && sizeMm > maxSizeMmF
-        ? sizeMm
-        : maxSizeMmF,
+    maxSizeMmF: sex == Sex.female && sizeMm > maxSizeMmF ? sizeMm : maxSizeMmF,
     maxPotential: potential > maxPotential ? potential : maxPotential,
     raisedToAdult: raisedToAdult || adult,
     variantFound: variantFound || variant,

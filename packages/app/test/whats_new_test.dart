@@ -73,15 +73,16 @@ void main() {
       ),
     );
 
-    testWidgets('1.0.26 3줄 — 연구소·하단 탭 두 쪽·새 패스', (tester) async {
+    testWidgets('1.0.26 4줄 — 연구소·하단 탭 두 쪽·새 패스·암수 그림', (tester) async {
       await tester.pumpWidget(host(const Locale('ko'), 300));
       expect(kWhatsNewVersion, '1.0.26');
       expect(find.textContaining('연구소가 생겼어요'), findsOneWidget);
       expect(find.textContaining('⇄'), findsOneWidget);
       expect(find.textContaining('올인원 패스'), findsOneWidget);
+      expect(find.textContaining('암컷 곤충이'), findsOneWidget);
       expect(
         whatsNewItems(lookupAppLocalizations(const Locale('ko'))),
-        hasLength(3),
+        hasLength(4),
       );
       expect(tester.takeException(), isNull);
     });
