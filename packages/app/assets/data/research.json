@@ -3,12 +3,14 @@
   "_treeComment": "tree = 연구소 화면의 트리 칸(col 0~2 · row 위→아래, 분야마다 따로) — 화면은 이 칸에 카드를 놓고 requires 로 선을 긋는다(설계 §11). 선행은 모두 그 연구 Lv5 · 근성 단련은 설계상 회복 연구 + 급소 공략이지만 requires 가 하나라 급소 공략.",
   "instantJellyPerMinute": 1.0,
   "instantJellyExponent": 0.58,
+  "_slotComment": "연구 칸(2026-10-25 사장님 — 극한 2칸 · 심연 3칸): slotsByTier = 처음 가 본 난이도(쉬움~극한)별 칸, abyssSlots = 심연이 열리면(극한 최종 보스) 칸. 젤리로는 slotJelly 로 먼저 열 수 있다(언제나 다음 칸 하나). 최대 3칸(코드 상수).",
   "slotsByTier": [
     1,
     1,
-    2,
-    3
+    1,
+    2
   ],
+  "abyssSlots": 3,
   "slotJelly": [
     100,
     300
@@ -1121,6 +1123,7 @@
     "activeHours": 3.0,
     "hardDay": 25.0,
     "extremeDay": 46.0,
+    "abyssDay": 70.0,
     "elitesPerDay": [
       427.5,
       416.0,

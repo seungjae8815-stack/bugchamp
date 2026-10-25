@@ -99,7 +99,11 @@ ResearchOp startResearch(
     return const ResearchOp.fail('already_running');
   }
   if (s.researchSlots.length >=
-      cfg.slotsFor(s.topTier, s.researchSlotsBought)) {
+      cfg.slotsFor(
+        s.topTier,
+        s.researchSlotsBought,
+        abyss: s.abyssUnlocked,
+      )) {
     return const ResearchOp.fail('slots_full');
   }
   if (price.samples < 0 ||
@@ -194,7 +198,11 @@ ResearchOp finishResearchNow(
 /// (`slotsFor = max(진행도 칸, 1 + 산 칸)` 이 n + 1 이 되게). 진행도로 이미 2칸인 어려움 유저가 사면 바로 3칸 —
 /// 예전(`slotJelly[산 수]`, 산 수 + 1)은 어려움에서 첫 구매가 칸을 늘리지 않았다.
 ResearchOp buyResearchSlot(SaveGame s, ResearchConfig cfg) {
-  final n = cfg.slotsFor(s.topTier, s.researchSlotsBought);
+  final n = cfg.slotsFor(
+        s.topTier,
+        s.researchSlotsBought,
+        abyss: s.abyssUnlocked,
+      );
   if (n >= ResearchConfig.maxSlots || n - 1 >= cfg.slotJelly.length) {
     return const ResearchOp.fail('max_slots');
   }
@@ -212,7 +220,11 @@ ResearchOp buyResearchSlot(SaveGame s, ResearchConfig cfg) {
 
 /// 지금 칸을 하나 더 사는 값 — 더 살 수 없으면 null(화면 가격표와 [buyResearchSlot] 이 같은 값).
 int? researchSlotPrice(SaveGame s, ResearchConfig cfg) {
-  final n = cfg.slotsFor(s.topTier, s.researchSlotsBought);
+  final n = cfg.slotsFor(
+        s.topTier,
+        s.researchSlotsBought,
+        abyss: s.abyssUnlocked,
+      );
   if (n >= ResearchConfig.maxSlots || n - 1 >= cfg.slotJelly.length) {
     return null;
   }

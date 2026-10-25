@@ -2837,13 +2837,23 @@ class GameActions {
       stored.topTier,
       min(client.topTier, _tierCapFor(stored, client.bossDex, t)),
     );
+    // 심연 칸(2026-10-25 극한 2칸 · 심연 3칸) — 열림은 [_enforceAbyss] 와 같은 판정(극한 최종 보스 도감)에
+    // 믿을 수 있는 난이도가 극한일 때만.
+    final run = config.run;
+    final abyss =
+        stored.abyssUnlocked ||
+        (client.abyssUnlocked &&
+            tier >= abyssTier(run) &&
+            {...stored.bossDex, ...client.bossDex}.contains(
+              run.bossArtId(abyssTier(run), run.zonesPerTier),
+            ));
     // 한 번 사면 **다음 칸 하나**(core_save `buyResearchSlot`): 열린 칸이 n 이면 값 `slotJelly[n−1]` · 산 수 → n
     // (어려움 진행도 2칸이면 0 → 2 로 한 번에 뛴다). 저장본 산 수에서 올린 값까지 차례로 사 보고, 그 사이 난이도가
     // 올랐을 수 있어 저장본 난이도·이번 난이도 둘 다로 재서 맞는 길 중 싼 값을 받는다.
-    int? slotCostTo(int atTier, int from, int to) {
+    int? slotCostTo(int atTier, bool atAbyss, int from, int to) {
       var b = from, c = 0;
       while (b < to) {
-        final n = cfg.slotsFor(atTier, b);
+        final n = cfg.slotsFor(atTier, b, abyss: atAbyss);
         if (n >= ResearchConfig.maxSlots || n - 1 >= cfg.slotJelly.length) {
           return null;
         }
@@ -2861,8 +2871,11 @@ class GameActions {
     var slotRefund = 0;
     if (bought > stored.researchSlotsBought) {
       final costs = [
-        for (final at in {stored.topTier, tier})
-          ?slotCostTo(at, stored.researchSlotsBought, bought),
+        for (final (at, ab) in {
+          (stored.topTier, stored.abyssUnlocked),
+          (tier, abyss),
+        })
+          ?slotCostTo(at, ab, stored.researchSlotsBought, bought),
       ];
       final c = costs.isEmpty ? null : costs.reduce(min);
       if (c == null || c > jelly.slots) {
@@ -2872,7 +2885,7 @@ class GameActions {
         slotCost = c;
       }
     }
-    final open = cfg.slotsFor(tier, bought);
+    final open = cfg.slotsFor(tier, bought, abyss: abyss);
 
     // 3. 시간.
     // 시계 어긋남은 한 단계에 두 번 실릴 수 있다(시작 때 새 칸 + 끝날 때 저장본 칸) — 양쪽에 반씩만 봐준다.

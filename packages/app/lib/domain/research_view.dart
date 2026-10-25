@@ -68,7 +68,11 @@ bool anyResearchStartable(
   final cfg = data.researchConfig;
   if (cfg == null || data.runConfig == null) return false;
   if (s.researchSlots.length >=
-      cfg.slotsFor(s.topTier, s.researchSlotsBought)) {
+      cfg.slotsFor(
+        s.topTier,
+        s.researchSlotsBought,
+        abyss: s.abyssUnlocked,
+      )) {
     return false;
   }
   CharacterStats? stats;

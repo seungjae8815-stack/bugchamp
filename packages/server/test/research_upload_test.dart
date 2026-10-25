@@ -307,10 +307,10 @@ void main() {
     expect(over.researchSlotsBought, lessThanOrEqualTo(rc.slotJelly.length));
   });
 
-  test('칸 구매는 늘 다음 칸 — 어려움(진행도 2칸)은 0 → 2 를 3번째 칸 값으로', () {
+  test('칸 구매는 늘 다음 칸 — 극한(진행도 2칸)은 0 → 2 를 3번째 칸 값으로', () {
     final s = stored(
       jelly: 1000,
-    ).copyWith(maxTierReached: 2, difficultyTier: 2);
+    ).copyWith(maxTierReached: 3, difficultyTier: 3);
     final paid = up(
       s,
       s
@@ -415,11 +415,43 @@ void main() {
     expect(out.researchSlots.single.id, 'barter');
   });
 
+  test('3번째 칸은 심연(2026-10-25) — 극한 최종 보스 기록 없이 심연을 적어 올리면 2칸으로 판정한다', () {
+    final run = cfg.run;
+    final fin3 = run.bossArtId(3, run.zonesPerTier);
+    final s = stored().copyWith(maxTierReached: 3);
+    final three = [
+      for (final id in ['jaw', 'incubator', 'barter'])
+        ResearchSlot(
+          id: id,
+          level: 1,
+          endsAt: t0.add(const Duration(hours: 1)),
+        ),
+    ];
+    final forged = up(
+      s,
+      s.copyWith(abyssUnlocked: true, researchSlots: three).toJson(),
+    );
+    expect(forged.researchSlots, isEmpty, reason: '2칸인데 셋을 돌림 → 저장본');
+    final honest = up(
+      s,
+      s
+          .copyWith(
+            abyssUnlocked: true,
+            bossDex: {...s.bossDex, fin3},
+            researchSlots: three,
+          )
+          .toJson(),
+    );
+    expect(honest.researchSlots, hasLength(3));
+  });
+
   test('한 줄은 칸 하나 — 노는 칸의 시간을 빌려 한 연구를 두 배로 올리지 못한다', () {
     final need = timeSum(0, 2);
-    // 극한까지 가 본 계정 = 3칸. 경과는 두 레벨 시간의 60% — 칸 셋을 합치면 넉넉하지만 한 줄로는 모자란다.
-    final s = stored(elapsed: need * 0.6).copyWith(maxTierReached: 3);
-    expect(rc.slotsFor(s.topTier, 0), 3);
+    // 심연까지 간 계정 = 3칸. 경과는 두 레벨 시간의 60% — 칸 셋을 합치면 넉넉하지만 한 줄로는 모자란다.
+    final s = stored(
+      elapsed: need * 0.6,
+    ).copyWith(maxTierReached: 3, abyssUnlocked: true);
+    expect(rc.slotsFor(s.topTier, 0, abyss: s.abyssUnlocked), 3);
     final out = up(s, s.copyWith(researchLevels: {'jaw': 2}).toJson());
     expect(out.researchLevels['jaw'], isNull);
   });

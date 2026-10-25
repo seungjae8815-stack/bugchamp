@@ -75,14 +75,15 @@ void main() {
       (run['offlineEfficiency'] as num) /
       basis.activeHours;
 
-  test('연구 패스 유저는 175~185일에 다 끝나고 표본은 아슬아슬하게 맞는다', () {
+  test('연구 패스 유저는 185~200일에 다 끝나고 표본은 아슬아슬하게 맞는다', () {
     final r = scheduleResearch(
       c,
       basis,
       idleFactor: idleFactor.toDouble(),
       passCut: c.passTimeCut,
     );
-    expect(r.completionDay, inInclusiveRange(175, 185));
+    // 2026-10-25 극한 2칸 · 심연 3칸으로 180 → 약 194일(사장님 — 일수 괜찮음).
+    expect(r.completionDay, inInclusiveRange(185, 200));
     // 번 표본의 90~100% 를 쓴다(남아돌지 않는다).
     expect(r.samplesSpent / r.samplesEarned, inInclusiveRange(0.9, 1.0));
     // 표본이 모자라 칸이 논 시간은 5% 미만.

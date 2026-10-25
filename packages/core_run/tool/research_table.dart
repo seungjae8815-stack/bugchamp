@@ -9,7 +9,7 @@
 //   dart run tool/research_table.dart --income=%TEMP%\income3h.txt --fit --level-cap=0   # 한 레벨 상한(기본 1,210분) 없이
 //
 // 맞추는 목표(사장님 확정 · 컨트롤러 판정):
-//  - 시간: 무과금 칸 곡선(1칸 → 어려움 도착일부터 2칸 → 극한 도착일부터 3칸)을 **쉬지 않고** 돌릴 때
+//  - 시간: 무과금 칸 곡선(research.json slotsByTier·abyssSlots — 2026-10-25 1칸 → 극한 도착일부터 2칸 → 심연(극한 최종 보스)부터 3칸)을 **쉬지 않고** 돌릴 때
 //    29개 × 전 레벨이 [_targetDays](180)일에 끝난다. Lv1 = [_firstSeconds](5분) · Lv10 = [_kneeSeconds](12시간).
 //  - 골드·재료: JSON 단위는 "가 본 최고 사냥터의 사냥 N분치"지만, 크기는 그날 **실제 활동 수입**
 //    (처치 + 선물·일일보상·미션, 방치 제외)의 180일 평균 50% 로 맞춘다(골드·재료 따로, 사장님 확정).
@@ -94,11 +94,15 @@ class IncomeDay {
       hourMats = (j['hourMats'] as num).toDouble(),
       elites = (j['elites'] as num).toDouble(),
       bossKills = (j['bossKills'] as num).toDouble(),
+      abyss = j['abyss'] == true,
       fossil = (j['fossil'] as num).toDouble(),
       activeHours = (j['activeHours'] as num).toDouble();
 
   final double day;
   final int tier;
+
+  /// 심연이 열린 날인가(극한 최종 보스 뒤 — 연구 3번째 칸).
+  final bool abyss;
   final double onlineGold, onlineMats, hourGold, hourMats;
 
   /// 선물·일일보상·미션 등 전투 밖 골드 · 재료(종류당) · 그날 강화에 쓸 수 있게 들어온 골드 전부(방치 포함).
@@ -125,6 +129,7 @@ class FitBasis {
     required this.activeHours,
     required this.hardDay,
     required this.extremeDay,
+    this.abyssDay = double.infinity,
     required this.elitesPerDay,
     required this.bossKillsPerDay,
   });
@@ -158,6 +163,9 @@ class FitBasis {
       activeHours: inc.first.activeHours,
       hardDay: _r1(firstDay(2)),
       extremeDay: _r1(firstDay(3)),
+      abyssDay: _r1(
+        inc.where((r) => r.abyss).firstOrNull?.day ?? double.infinity,
+      ),
       elitesPerDay: [for (final v in per10((r) => r.elites)) _r1(v)],
       bossKillsPerDay: [for (final v in per10((r) => r.bossKills)) _r2(v)],
     );
@@ -167,6 +175,7 @@ class FitBasis {
     activeHours: (j['activeHours'] as num).toDouble(),
     hardDay: (j['hardDay'] as num).toDouble(),
     extremeDay: (j['extremeDay'] as num).toDouble(),
+    abyssDay: (j['abyssDay'] as num?)?.toDouble() ?? double.infinity,
     elitesPerDay: [for (final v in j['elitesPerDay'] as List) (v as num) * 1.0],
     bossKillsPerDay: [
       for (final v in j['bossKillsPerDay'] as List) (v as num) * 1.0,
@@ -176,6 +185,9 @@ class FitBasis {
   final double activeHours;
   final double hardDay;
   final double extremeDay;
+
+  /// 심연이 열린 날(연구 3번째 칸) — 옛 바탕엔 없다(무한대 = 안 열림).
+  final double abyssDay;
   final List<double> elitesPerDay;
   final List<double> bossKillsPerDay;
 
@@ -185,6 +197,7 @@ class FitBasis {
     'activeHours': activeHours,
     'hardDay': hardDay,
     'extremeDay': extremeDay,
+    if (abyssDay.isFinite) 'abyssDay': abyssDay,
     'elitesPerDay': elitesPerDay,
     'bossKillsPerDay': bossKillsPerDay,
   };
@@ -198,7 +211,8 @@ class FitBasis {
       ? 2
       : 0;
 
-  int slotsAt(ResearchConfig c, double day) => c.slotsFor(topTierAt(day), 0);
+  int slotsAt(ResearchConfig c, double day) =>
+      c.slotsFor(topTierAt(day), 0, abyss: day >= abyssDay);
 
   /// 하루 표본 수입. [idleFactor] = 연구 패스가 방치 중 더하는 정예 몫(방치 시간 × 방치 효율 ÷ 활동 시간, [_PassFit]).
   double samplesPerDay(ResearchConfig c, double day, {double idleFactor = 0}) =>
@@ -318,7 +332,7 @@ ScheduleResult scheduleResearch(
     var next = running.isEmpty
         ? double.infinity
         : running.map((e) => e.end).reduce(math.min);
-    for (final edge in [basis.hardDay, basis.extremeDay]) {
+    for (final edge in [basis.hardDay, basis.extremeDay, basis.abyssDay]) {
       if (edge > t + 1e-9) next = math.min(next, edge);
     }
     final free = math.max(0, slots - running.length);
@@ -697,7 +711,7 @@ void _report(
   stdout.writeln('');
   stdout.writeln('── 무과금 일정(칸을 쉬지 않음) ──');
   stdout.writeln(
-    '  칸: 1칸 → ${basis.hardDay.toStringAsFixed(0)}일 2칸 → ${basis.extremeDay.toStringAsFixed(0)}일 3칸 (하루 ${basis.activeHours}h 켜 둔 유저)',
+    '  칸(난이도 도착일 — 칸 수는 research.json): 어려움 ${basis.hardDay.toStringAsFixed(0)}일 · 극한 ${basis.extremeDay.toStringAsFixed(0)}일 · 심연 ${basis.abyssDay.isFinite ? basis.abyssDay.toStringAsFixed(0) : '-'}일 (하루 ${basis.activeHours}h 켜 둔 유저)',
   );
   stdout.writeln('  ★ 전체 완료: ${s.completionDay.toStringAsFixed(1)}일');
   stdout.writeln(

@@ -43,7 +43,8 @@ void main() {
   );
   const cfg = ResearchConfig(
     defs: [a, b, speed],
-    slotsByTier: [1, 1, 2, 3],
+    slotsByTier: [1, 1, 1, 2],
+    abyssSlots: 3,
     slotJelly: [100, 300],
     eliteDropChance: 0.5,
     eliteDropAmount: 1,
@@ -237,13 +238,20 @@ void main() {
     expect(buyResearchSlot(r2.save!, cfg).error, 'max_slots');
     final poor = rich().copyWith(materials: const {MaterialKind.jelly: 5});
     expect(buyResearchSlot(poor, cfg).error, 'not_enough_jelly');
-    // 진행도로 이미 3칸이면 사 봐야 소용없다.
-    expect(buyResearchSlot(rich(tier: 3), cfg).error, 'max_slots');
+    // 진행도로 이미 3칸(심연)이면 사 봐야 소용없다.
+    expect(
+      buyResearchSlot(
+        rich(tier: 3).copyWith(abyssUnlocked: true),
+        cfg,
+      ).error,
+      'max_slots',
+    );
   });
 
-  test('buy_slot_always_opens_next — 어려움(진행도 2칸)은 한 번에 3칸 · 값은 3번째 칸 값', () {
-    final hard = rich(tier: 2);
+  test('buy_slot_always_opens_next — 극한(진행도 2칸)은 한 번에 3칸 · 값은 3번째 칸 값', () {
+    final hard = rich(tier: 3);
     expect(cfg.slotsFor(hard.topTier, hard.researchSlotsBought), 2);
+    expect(cfg.slotsFor(2, 0), 1, reason: '어려움은 이제 1칸(2026-10-25)');
     expect(researchSlotPrice(hard, cfg), cfg.slotJelly[1]);
     final r = buyResearchSlot(hard, cfg);
     expect(r.isOk, isTrue);

@@ -234,6 +234,9 @@ int _petRestrainCount = 0;
 /// `--endgame-days=N` — 극한 최종 보스 뒤로 더 노는 일수.
 int _endgameDays = 0;
 
+/// 극한 최종 보스를 잡은 뒤 첫날(심연 열림, 연구 3번째 칸 — 2026-10-25). `--endgame-days` 때만 정해진다.
+double? _abyssDay;
+
 /// `--abyss-weeks=N` — 극한을 깬 뒤 심연을 N 주 오른다(주마다 1층부터, docs/design_abyss.md).
 /// 한 주의 도달 층 = min(전력의 벽, 시간의 벽). 주 사이에는 성장이 이어진다.
 int _abyssWeeks = 0;
@@ -575,6 +578,7 @@ void main(List<String> args) {
     // 90일 계획 밖의 **후반 목표**가 언제 닿는지 본다.
     if (_endgameDays > 0) {
       stdout.writeln('  ── 극한 이후(최종 사냥터에서 계속) ──');
+      _abyssDay = sim.incomeLog.isEmpty ? 0 : sim.incomeLog.last.day + 1;
       var lastForge = sim.forgeLevel;
       for (var d = 1; d <= _endgameDays; d++) {
         sim.stage = config.zoneStartStage(config.zonesPerTier);
@@ -1221,7 +1225,7 @@ void _printResearchIncome(_Player sim) {
   stdout.writeln('');
   for (final r in sim.incomeLog) {
     stdout.writeln(
-      '@research-income ${jsonEncode({'day': r.day, 'tier': r.tier, 'zone': r.zone, 'activeHours': _activeHoursPerDay, 'onlineGold': r.online, 'onlineMats': r.onlineMats, 'hourGold': r.hourGold, 'hourMats': r.hourMats, 'offBattleGold': r.offBattleGold, 'offBattleMats': r.offBattleMats, 'toUpgrades': r.toUpgrades, 'kills': r.onlineKills, 'elites': r.onlineKills * sim.config.eliteChance, 'bossKills': r.bossKills, 'fossil': fossilPerDay})}',
+      '@research-income ${jsonEncode({'day': r.day, 'tier': r.tier, 'zone': r.zone, 'activeHours': _activeHoursPerDay, 'onlineGold': r.online, 'onlineMats': r.onlineMats, 'hourGold': r.hourGold, 'hourMats': r.hourMats, 'offBattleGold': r.offBattleGold, 'offBattleMats': r.offBattleMats, 'toUpgrades': r.toUpgrades, 'kills': r.onlineKills, 'elites': r.onlineKills * sim.config.eliteChance, 'bossKills': r.bossKills, 'fossil': fossilPerDay, 'abyss': _abyssDay != null && r.day >= _abyssDay!})}',
     );
   }
   stdout.writeln('');

@@ -218,7 +218,8 @@ class ResearchCost {
 class ResearchConfig {
   const ResearchConfig({
     this.defs = const [],
-    this.slotsByTier = const [1, 1, 2, 3],
+    this.slotsByTier = const [1, 1, 1, 2],
+    this.abyssSlots = 3,
     this.slotJelly = const [100, 300],
     this.instantJellyPerMinute = 1.0,
     this.instantJellyExponent = 0.58,
@@ -235,6 +236,10 @@ class ResearchConfig {
 
   /// 처음 가 본 난이도(0 쉬움~3 극한)별 연구 칸 수.
   final List<int> slotsByTier;
+
+  /// 심연이 열리면(극한 최종 보스 처치, `SaveGame.abyssUnlocked`) 진행도로 열리는 칸 수
+  /// (2026-10-25 사장님 — 극한 2칸 · 심연 3칸).
+  final int abyssSlots;
 
   /// 2·3번째 칸을 젤리로 사는 가격.
   final List<int> slotJelly;
@@ -314,11 +319,13 @@ class ResearchConfig {
     );
   }
 
-  /// 연구 칸 수 = max(진행도 칸, 1 + 산 칸) 을 [maxSlots] 로 자른다.
-  int slotsFor(int topTier, int bought) {
-    final byTier = slotsByTier.isEmpty
+  /// 연구 칸 수 = max(진행도 칸, 1 + 산 칸) 을 [maxSlots] 로 자른다. 진행도 칸 = 난이도 칸,
+  /// 심연이 열렸으면([abyss]) [abyssSlots] 와 큰 쪽.
+  int slotsFor(int topTier, int bought, {bool abyss = false}) {
+    var byTier = slotsByTier.isEmpty
         ? 1
         : slotsByTier[topTier.clamp(0, slotsByTier.length - 1)];
+    if (abyss) byTier = math.max(byTier, abyssSlots);
     return math.min(maxSlots, math.max(byTier, 1 + bought));
   }
 
@@ -333,6 +340,7 @@ class ResearchConfig {
           ResearchDef.fromJson((e as Map).cast<String, dynamic>()),
       ],
       slotsByTier: ints(j['slotsByTier'], d.slotsByTier),
+      abyssSlots: (j['abyssSlots'] as num?)?.toInt() ?? d.abyssSlots,
       slotJelly: ints(j['slotJelly'], d.slotJelly),
       instantJellyPerMinute:
           (j['instantJellyPerMinute'] as num?)?.toDouble() ??

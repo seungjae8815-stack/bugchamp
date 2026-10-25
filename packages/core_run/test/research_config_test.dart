@@ -70,10 +70,11 @@ void main() {
     expect(cfg.costAt(dec, 4).fossil, 6);
   });
 
-  test('칸 수', () {
+  test('칸 수 — 극한 2칸 · 심연 3칸(2026-10-25) · 젤리로 먼저', () {
     expect(c.slotsFor(0, 0), 1);
-    expect(c.slotsFor(2, 0), 2);
-    expect(c.slotsFor(3, 0), 3);
+    expect(c.slotsFor(2, 0), 1);
+    expect(c.slotsFor(3, 0), 2);
+    expect(c.slotsFor(3, 0, abyss: true), 3);
     expect(c.slotsFor(0, 1), 2);
     expect(c.slotsFor(0, 5), 3);
     expect(c.slotsFor(3, 2), 3);

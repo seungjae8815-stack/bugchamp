@@ -273,7 +273,11 @@ class _ResearchScreenState extends ConsumerState<ResearchScreen> {
     ResearchConfig cfg,
     DateTime now,
   ) {
-    final open = cfg.slotsFor(save.topTier, save.researchSlotsBought);
+    final open = cfg.slotsFor(
+      save.topTier,
+      save.researchSlotsBought,
+      abyss: save.abyssUnlocked,
+    );
     // 사면 늘 다음 칸 하나(core_save `buyResearchSlot` — 값은 열린 칸 수로 정해진다).
     final buyPrice = researchSlotPrice(save, cfg);
     // 연구 효율 + 연구 패스(2026-10-25) — 시작 값과 같은 합.
@@ -468,9 +472,11 @@ class _ResearchScreenState extends ConsumerState<ResearchScreen> {
                   fit: BoxFit.scaleDown,
                   alignment: Alignment.centerLeft,
                   child: Text(
-                    tier == null
-                        ? ''
-                        : l.researchSlotOpensAt(tierName(l, tier)),
+                    tier != null
+                        ? l.researchSlotOpensAt(tierName(l, tier))
+                        : index < cfg.abyssSlots
+                        ? l.researchSlotOpensAt(l.abyssName)
+                        : '',
                     maxLines: 1,
                     style: const TextStyle(
                       color: Colors.white54,
