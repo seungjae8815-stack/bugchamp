@@ -8475,7 +8475,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get notifResearchBody => '연구가 끝났어요. 연구소에서 다음 연구를 시작해 보세요.';
 
   @override
-  String get researchPassHint => '연구 패스가 있으면 앱을 꺼 둔 동안에도 연구 표본이 모여요';
+  String get researchPassHint => '연구 패스: 앱을 꺼도 표본이 모여요';
 
   @override
   String get researchPassHintGo => '상점';

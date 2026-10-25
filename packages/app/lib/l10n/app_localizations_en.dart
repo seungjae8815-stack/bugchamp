@@ -8664,8 +8664,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Your research is done. Start the next one in the Lab.';
 
   @override
-  String get researchPassHint =>
-      'With the Research Pass, research samples keep coming in while the app is closed';
+  String get researchPassHint => 'Research Pass: samples while closed';
 
   @override
   String get researchPassHintGo => 'Shop';

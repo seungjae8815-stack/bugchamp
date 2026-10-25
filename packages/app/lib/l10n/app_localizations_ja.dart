@@ -8462,7 +8462,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get notifResearchBody => '研究が終わりました。研究所で次の研究を始めましょう。';
 
   @override
-  String get researchPassHint => '研究パスがあれば、アプリを閉じている間も研究サンプルが集まります';
+  String get researchPassHint => '研究パス：閉じていてもサンプルが集まる';
 
   @override
   String get researchPassHintGo => 'ショップ';

@@ -4897,7 +4897,7 @@
   "researchErrGeneric": "Research is not available",
   "notifResearchTitle": "Research complete!",
   "notifResearchBody": "Your research is done. Start the next one in the Lab.",
-  "researchPassHint": "With the Research Pass, research samples keep coming in while the app is closed",
+  "researchPassHint": "Research Pass: samples while closed",
   "researchPassHintGo": "Shop",
   "passExpireTitle": "Your pass is ending soon",
   "passExpireBody": "{names} — {days} days left. You can extend it in the Shop",

@@ -14155,7 +14155,7 @@ abstract class AppLocalizations {
   /// No description provided for @researchPassHint.
   ///
   /// In en, this message translates to:
-  /// **'With the Research Pass, research samples keep coming in while the app is closed'**
+  /// **'Research Pass: samples while closed'**
   String get researchPassHint;
 
   /// No description provided for @researchPassHintGo.

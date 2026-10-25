@@ -928,15 +928,31 @@ class _ResearchScreenState extends ConsumerState<ResearchScreen> {
               ),
               child: Row(
                 children: [
-                  _sampleIcon(16),
-                  const SizedBox(width: 6),
+                  // 연구 패스 그림(상점 카드와 같은 그림) — 무엇을 사라는 건지 한눈에.
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(6),
+                    child: gameImage(
+                      'assets/images/shop/research_pass.webp',
+                      width: 24,
+                      height: 24,
+                      fit: BoxFit.cover,
+                      fallback: _sampleIcon(18),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  // 한 줄(2026-10-25 사장님 — 두 줄은 읽기 어렵다). 좁으면 글자를 줄인다.
                   Expanded(
-                    child: Text(
-                      l.researchPassHint,
-                      style: const TextStyle(
-                        color: Color(0xFFCFE4FF),
-                        fontSize: 11.5,
-                        height: 1.3,
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        l.researchPassHint,
+                        maxLines: 1,
+                        style: const TextStyle(
+                          color: Color(0xFFCFE4FF),
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                     ),
                   ),

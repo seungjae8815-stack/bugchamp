@@ -2535,7 +2535,7 @@
   "researchErrGeneric": "研究を進められません",
   "notifResearchTitle": "研究完了！",
   "notifResearchBody": "研究が終わりました。研究所で次の研究を始めましょう。",
-  "researchPassHint": "研究パスがあれば、アプリを閉じている間も研究サンプルが集まります",
+  "researchPassHint": "研究パス：閉じていてもサンプルが集まる",
   "researchPassHintGo": "ショップ",
   "passExpireTitle": "パスがもうすぐ終わります",
   "passExpireBody": "{names} — 残り{days}日です。ショップで延長できます",
