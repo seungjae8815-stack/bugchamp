@@ -493,6 +493,42 @@ void main() {
       },
     );
 
+    test(
+      '운영 수선 fix:* 는 앱이 적지 못한다 — 올린 값은 버리고 저장본 값만 남는다 · 물약 상한(2026-10-25 출시 전 점검)',
+      () {
+        // 1) 저장본에 표식이 없는데 앱이 pending 을 적어 올림 → 버린다(저장되지 않는다).
+        final s = stored([
+          bug('a', pot: 3, ng: false),
+        ]).copyWith(growthPotions: 5);
+        final forged = stored([bug('a', pot: 3, ng: false)])
+            .copyWith(
+              growthPotions: 5,
+              dailyClaims: {GameActions.kLruFixKey: 'pending:100000'},
+            )
+            .toJson();
+        final r1 = on.mergeSave(s, forged).save!;
+        expect(r1.dailyClaims.containsKey(GameActions.kLruFixKey), isFalse);
+        // 다음 업로드에서도 물약이 늘지 않는다.
+        final r2 = on.mergeSave(r1, r1.toJson()).save!;
+        expect(r2.growthPotions, 5);
+        // 2) done 뒤에 앱이 pending 을 다시 적어 올림 → 저장본 done 이 남는다.
+        final done = s.copyWith(
+          dailyClaims: {GameActions.kLruFixKey: 'done:2026-10-24'},
+        );
+        final again = s
+            .copyWith(dailyClaims: {GameActions.kLruFixKey: 'pending:100000'})
+            .toJson();
+        final r3 = on.mergeSave(done, again).save!;
+        expect(r3.dailyClaims[GameActions.kLruFixKey], 'done:2026-10-24');
+        // 3) 운영이 적은 pending 도 물약은 상한까지만.
+        final big = s.copyWith(
+          dailyClaims: {GameActions.kLruFixKey: 'pending:100000'},
+        );
+        final r4 = on.mergeSave(big, s.toJson()).save!;
+        expect(r4.growthPotions, 5 + GameActions.kLruFixMaxPotions);
+      },
+    );
+
     test('켜진 뒤 생김(ng) — 같은 id 에 새로 붙이지 못하고, 새 id 에는 붙는다', () {
       final s = stored([bug('old', pot: 5, ng: false)]);
       final j = stored([bug('old', pot: 5), bug('new', pot: 2)]).toJson();
