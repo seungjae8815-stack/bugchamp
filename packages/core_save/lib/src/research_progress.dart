@@ -57,14 +57,13 @@ ResearchPrice researchPrice(
   ResearchConfig cfg,
   String id, {
   required ({int gold, int materialsEach}) Function(double minutes) huntAtTop,
+  // 연구 패스가 켜져 있나(2026-10-25 — 시간 −[ResearchConfig.passTimeCut]). 시작하는 순간 기준.
+  bool pass = false,
 }) {
   final def = cfg.byId(id)!;
   final level = (s.researchLevels[id] ?? 0) + 1;
   final cost = cfg.costAt(def, level);
-  final cut = researchEffects(
-    cfg,
-    s.researchLevels,
-  ).of(ResearchEffect.researchTime);
+  final cut = researchTimeCut(cfg, s.researchLevels, pass: pass);
   final base = cfg.timeAt(def, level);
   final ms = (base.inMilliseconds * (1 - cut)).round();
   return ResearchPrice(

@@ -184,10 +184,12 @@ class _ResearchScreenState extends ConsumerState<ResearchScreen> {
   // ── 위: 재화 한 줄 + 연구 시간 ──
 
   Widget _currencies(AppLocalizations l, SaveGame save, ResearchConfig cfg) {
-    final cut = researchEffects(
+    // 연구 효율 + 연구 패스(2026-10-25) — 시작 값과 같은 합.
+    final cut = researchTimeCut(
       cfg,
       save.researchLevels,
-    ).of(ResearchEffect.researchTime);
+      pass: save.researchPassActive(ref.read(clockProvider).now().toUtc()),
+    );
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: _box(),
@@ -274,10 +276,12 @@ class _ResearchScreenState extends ConsumerState<ResearchScreen> {
     final open = cfg.slotsFor(save.topTier, save.researchSlotsBought);
     // 사면 늘 다음 칸 하나(core_save `buyResearchSlot` — 값은 열린 칸 수로 정해진다).
     final buyPrice = researchSlotPrice(save, cfg);
-    final cut = researchEffects(
+    // 연구 효율 + 연구 패스(2026-10-25) — 시작 값과 같은 합.
+    final cut = researchTimeCut(
       cfg,
       save.researchLevels,
-    ).of(ResearchEffect.researchTime);
+      pass: save.researchPassActive(ref.read(clockProvider).now().toUtc()),
+    );
     return Container(
       padding: const EdgeInsets.fromLTRB(8, 6, 8, 8),
       decoration: _box(),

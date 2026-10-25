@@ -61,15 +61,37 @@ void main() {
     }
   });
 
-  test('무과금이 칸을 쉬지 않고 돌리면 175~185일에 다 끝나고, 표본은 병목이 아니다', () {
-    final basis = FitBasis.fromJson(
-      (raw['fitBasis'] as Map).cast<String, dynamic>(),
+  // 2026-10-25 사장님 — 연구 패스면 표본이 아슬아슬하게 딱 맞고, 없으면 표본이 모자라 칸이 논다
+  // (더 오래 켜 두거나 패스). 패스 유저 = 하루 3시간 켜 둠 + research.json pass.fitIdleHours 방치(효율 run_config).
+  final basis = FitBasis.fromJson(
+    (raw['fitBasis'] as Map).cast<String, dynamic>(),
+  );
+  final pass = (raw['pass'] as Map).cast<String, dynamic>();
+  final run =
+      jsonDecode(File('../app/assets/data/run_config.json').readAsStringSync())
+          as Map<String, dynamic>;
+  final idleFactor =
+      (pass['fitIdleHours'] as num) *
+      (run['offlineEfficiency'] as num) /
+      basis.activeHours;
+
+  test('연구 패스 유저는 175~185일에 다 끝나고 표본은 아슬아슬하게 맞는다', () {
+    final r = scheduleResearch(
+      c,
+      basis,
+      idleFactor: idleFactor.toDouble(),
+      passCut: c.passTimeCut,
     );
-    final r = scheduleResearch(c, basis);
     expect(r.completionDay, inInclusiveRange(175, 185));
-    // 표본 합계가 그 기간 표본 수입의 95% 이하 — 시간이 병목이어야 한다.
-    expect(r.samplesSpent / r.samplesEarned, lessThanOrEqualTo(0.95));
-    // 표본이 모자라 칸이 논 시간은 전체 칸 시간의 3% 미만.
-    expect(r.sampleWaitSlotDays / r.slotDays, lessThan(0.03));
+    // 번 표본의 90~100% 를 쓴다(남아돌지 않는다).
+    expect(r.samplesSpent / r.samplesEarned, inInclusiveRange(0.9, 1.0));
+    // 표본이 모자라 칸이 논 시간은 5% 미만.
+    expect(r.sampleWaitSlotDays / r.slotDays, lessThan(0.05));
+  });
+
+  test('패스가 없으면 표본이 병목 — 칸이 10% 넘게 놀고 완료가 늦다(그러나 터무니없지 않게 300일 이하)', () {
+    final r = scheduleResearch(c, basis);
+    expect(r.sampleWaitSlotDays / r.slotDays, greaterThan(0.10));
+    expect(r.completionDay, inInclusiveRange(220, 300));
   });
 }

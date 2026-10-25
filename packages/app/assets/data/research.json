@@ -1,5 +1,5 @@
 {
-  "_comment": "연구소(설계 docs/superpowers/specs/2026-10-22-research-lab-design.md). 시간·비용 곡선 · eliteDropChance · 사냥·육성·장비·경제 effect · fitBasis 는 tool/research_table.dart --fit --write 가 뽑는다 — 손으로 한 칸씩 고치지 않는다(하루 3시간 켜 둔 무과금 · 골드·재료 = 3시간 켜 둔 날 실제 수입의 50% 목표, 한 레벨 상한 사냥 1,210분치 · 약 180일 · 사장님 A안). bossFirstDrop 25 는 사장님 확정값. 시간·비용: Lv1 = first, 한 단계 오를 때마다 × (1 + (growth−1)·decay^(i−1)). kind = ResearchEffect 키. 결투 공격·방어·체력 effect 는 결투 80% 맞추기가 정한다(server tool/duel_build_sim.dart --research-fit — 각 +57% = 다 찍은 쪽 3마리 경기 82% · 1마리 71%, 치명·근성 6b 몫을 남김). 6b: 급소 공략(치명) 최대 +5%p · 근성 단련(탭 반격 문턱) 최대 −0.02 — 다 찍은 쪽 3마리 88.7% · 1마리 77.1%(--research-max, 근성 0.05 면 95.6% 로 95% 기준을 넘음). duelCap 은 그 값(주석용).",
+  "_comment": "연구소(설계 docs/superpowers/specs/2026-10-22-research-lab-design.md). 시간·비용 곡선 · eliteDropChance · 사냥·육성·장비·경제 effect · fitBasis 는 tool/research_table.dart --fit --write 가 뽑는다 — 손으로 한 칸씩 고치지 않는다(하루 3시간 켜 둔 무과금 · 골드·재료 = 3시간 켜 둔 날 실제 수입의 50% 목표, 한 레벨 상한 사냥 1,210분치 · 약 180일 · 사장님 A안). bossFirstDrop 25 는 사장님 확정값. 시간·비용: Lv1 = first, 한 단계 오를 때마다 × (1 + (growth−1)·decay^(i−1)). kind = ResearchEffect 키. 결투 공격·방어·체력 effect 는 결투 80% 맞추기가 정한다.",
   "_treeComment": "tree = 연구소 화면의 트리 칸(col 0~2 · row 위→아래, 분야마다 따로) — 화면은 이 칸에 카드를 놓고 requires 로 선을 긋는다(설계 §11). 선행은 모두 그 연구 Lv5 · 근성 단련은 설계상 회복 연구 + 급소 공략이지만 requires 가 하나라 급소 공략.",
   "instantJellyPerMinute": 1.0,
   "instantJellyExponent": 0.58,
@@ -13,7 +13,13 @@
     100,
     300
   ],
-  "eliteDropChance": 0.0522,
+  "pass": {
+    "_comment": "연구 패스(2026-10-25 사장님) — 패스면 표본이 아슬아슬하게 딱 맞고, 없으면 표본이 모자라 칸이 논다(더 오래 켜 두거나 패스). timeCut = 패스 기간 연구 시간 단축(연구 효율 연구와 합쳐 최대 50%). fitIdleHours·fitSampleShare = tool/research_table.dart --fit 이 표본 드롭을 맞출 때 가정하는 하루 방치 시간·패스 유저 수입 대비 표본 합계 비율.",
+    "timeCut": 0.15,
+    "fitIdleHours": 6,
+    "fitSampleShare": 0.97
+  },
+  "eliteDropChance": 0.0366,
   "eliteDropAmount": 1,
   "bossFirstDrop": 25,
   "bossRepeatDrop": 2,
@@ -44,17 +50,17 @@
       },
       "time": {
         "firstSeconds": 300.0,
-        "growth": 2.8614,
-        "decay": 0.7674
+        "growth": 2.6592,
+        "decay": 0.7966
       },
       "cost": {
         "samplesFirst": 1,
-        "goldMinutesFirst": 43.9894,
-        "materialMinutesFirst": 39.2901,
+        "goldMinutesFirst": 37.7415,
+        "materialMinutesFirst": 33.6709,
         "fossilFrom": 21,
-        "fossilFirst": 74.3,
-        "growth": 1.6329,
-        "decay": 0.7674
+        "fossilFirst": 73.7,
+        "growth": 1.5973,
+        "decay": 0.7966
       }
     },
     {
@@ -82,17 +88,17 @@
       },
       "time": {
         "firstSeconds": 300.0,
-        "growth": 2.8614,
-        "decay": 0.7674
+        "growth": 2.6592,
+        "decay": 0.7966
       },
       "cost": {
         "samplesFirst": 1,
-        "goldMinutesFirst": 43.9894,
-        "materialMinutesFirst": 39.2901,
+        "goldMinutesFirst": 37.7415,
+        "materialMinutesFirst": 33.6709,
         "fossilFrom": 21,
-        "fossilFirst": 74.3,
-        "growth": 1.6329,
-        "decay": 0.7674
+        "fossilFirst": 73.7,
+        "growth": 1.5973,
+        "decay": 0.7966
       }
     },
     {
@@ -120,17 +126,17 @@
       },
       "time": {
         "firstSeconds": 300.0,
-        "growth": 2.8614,
-        "decay": 0.7674
+        "growth": 2.6592,
+        "decay": 0.7966
       },
       "cost": {
         "samplesFirst": 1,
-        "goldMinutesFirst": 43.9894,
-        "materialMinutesFirst": 39.2901,
+        "goldMinutesFirst": 37.7415,
+        "materialMinutesFirst": 33.6709,
         "fossilFrom": 21,
-        "fossilFirst": 74.3,
-        "growth": 1.6329,
-        "decay": 0.7674
+        "fossilFirst": 73.7,
+        "growth": 1.5973,
+        "decay": 0.7966
       }
     },
     {
@@ -158,17 +164,17 @@
       },
       "time": {
         "firstSeconds": 300.0,
-        "growth": 2.8614,
-        "decay": 0.7674
+        "growth": 2.6592,
+        "decay": 0.7966
       },
       "cost": {
         "samplesFirst": 1,
-        "goldMinutesFirst": 43.9894,
-        "materialMinutesFirst": 39.2901,
+        "goldMinutesFirst": 37.7415,
+        "materialMinutesFirst": 33.6709,
         "fossilFrom": 21,
-        "fossilFirst": 74.3,
-        "growth": 1.6329,
-        "decay": 0.7674
+        "fossilFirst": 73.7,
+        "growth": 1.5973,
+        "decay": 0.7966
       }
     },
     {
@@ -196,17 +202,17 @@
       },
       "time": {
         "firstSeconds": 300.0,
-        "growth": 2.8614,
-        "decay": 0.7674
+        "growth": 2.6592,
+        "decay": 0.7966
       },
       "cost": {
         "samplesFirst": 1,
-        "goldMinutesFirst": 43.9894,
-        "materialMinutesFirst": 39.2901,
+        "goldMinutesFirst": 37.7415,
+        "materialMinutesFirst": 33.6709,
         "fossilFrom": 21,
-        "fossilFirst": 74.3,
-        "growth": 1.6329,
-        "decay": 0.7674
+        "fossilFirst": 73.7,
+        "growth": 1.5973,
+        "decay": 0.7966
       }
     },
     {
@@ -234,17 +240,17 @@
       },
       "time": {
         "firstSeconds": 300.0,
-        "growth": 2.8614,
-        "decay": 0.7674
+        "growth": 2.6592,
+        "decay": 0.7966
       },
       "cost": {
         "samplesFirst": 1,
-        "goldMinutesFirst": 43.9894,
-        "materialMinutesFirst": 39.2901,
+        "goldMinutesFirst": 37.7415,
+        "materialMinutesFirst": 33.6709,
         "fossilFrom": 21,
-        "fossilFirst": 74.3,
-        "growth": 1.6329,
-        "decay": 0.7674
+        "fossilFirst": 73.7,
+        "growth": 1.5973,
+        "decay": 0.7966
       }
     },
     {
@@ -272,17 +278,17 @@
       },
       "time": {
         "firstSeconds": 300.0,
-        "growth": 2.8614,
-        "decay": 0.7674
+        "growth": 2.6592,
+        "decay": 0.7966
       },
       "cost": {
         "samplesFirst": 1,
-        "goldMinutesFirst": 43.9894,
-        "materialMinutesFirst": 39.2901,
+        "goldMinutesFirst": 37.7415,
+        "materialMinutesFirst": 33.6709,
         "fossilFrom": 21,
-        "fossilFirst": 74.3,
-        "growth": 1.6329,
-        "decay": 0.7674
+        "fossilFirst": 73.7,
+        "growth": 1.5973,
+        "decay": 0.7966
       }
     },
     {
@@ -310,17 +316,17 @@
       },
       "time": {
         "firstSeconds": 300.0,
-        "growth": 2.8614,
-        "decay": 0.7674
+        "growth": 2.6592,
+        "decay": 0.7966
       },
       "cost": {
         "samplesFirst": 1,
-        "goldMinutesFirst": 43.9894,
-        "materialMinutesFirst": 39.2901,
+        "goldMinutesFirst": 37.7415,
+        "materialMinutesFirst": 33.6709,
         "fossilFrom": 21,
-        "fossilFirst": 74.3,
-        "growth": 1.6329,
-        "decay": 0.7674
+        "fossilFirst": 73.7,
+        "growth": 1.5973,
+        "decay": 0.7966
       }
     },
     {
@@ -348,17 +354,17 @@
       },
       "time": {
         "firstSeconds": 300.0,
-        "growth": 2.8614,
-        "decay": 0.7674
+        "growth": 2.6592,
+        "decay": 0.7966
       },
       "cost": {
         "samplesFirst": 1,
-        "goldMinutesFirst": 43.9894,
-        "materialMinutesFirst": 39.2901,
+        "goldMinutesFirst": 37.7415,
+        "materialMinutesFirst": 33.6709,
         "fossilFrom": 21,
-        "fossilFirst": 74.3,
-        "growth": 1.6329,
-        "decay": 0.7674
+        "fossilFirst": 73.7,
+        "growth": 1.5973,
+        "decay": 0.7966
       }
     },
     {
@@ -386,17 +392,17 @@
       },
       "time": {
         "firstSeconds": 300.0,
-        "growth": 2.8614,
-        "decay": 0.7674
+        "growth": 2.6592,
+        "decay": 0.7966
       },
       "cost": {
         "samplesFirst": 1,
-        "goldMinutesFirst": 43.9894,
-        "materialMinutesFirst": 39.2901,
+        "goldMinutesFirst": 37.7415,
+        "materialMinutesFirst": 33.6709,
         "fossilFrom": 21,
-        "fossilFirst": 74.3,
-        "growth": 1.6329,
-        "decay": 0.7674
+        "fossilFirst": 73.7,
+        "growth": 1.5973,
+        "decay": 0.7966
       }
     },
     {
@@ -424,17 +430,17 @@
       },
       "time": {
         "firstSeconds": 300.0,
-        "growth": 2.8614,
-        "decay": 0.7674
+        "growth": 2.6592,
+        "decay": 0.7966
       },
       "cost": {
         "samplesFirst": 1,
-        "goldMinutesFirst": 43.9894,
-        "materialMinutesFirst": 39.2901,
+        "goldMinutesFirst": 37.7415,
+        "materialMinutesFirst": 33.6709,
         "fossilFrom": 21,
-        "fossilFirst": 74.3,
-        "growth": 1.6329,
-        "decay": 0.7674
+        "fossilFirst": 73.7,
+        "growth": 1.5973,
+        "decay": 0.7966
       }
     },
     {
@@ -459,17 +465,17 @@
       },
       "time": {
         "firstSeconds": 300.0,
-        "growth": 2.8614,
-        "decay": 0.7674
+        "growth": 2.6592,
+        "decay": 0.7966
       },
       "cost": {
         "samplesFirst": 1,
-        "goldMinutesFirst": 43.9894,
-        "materialMinutesFirst": 39.2901,
+        "goldMinutesFirst": 37.7415,
+        "materialMinutesFirst": 33.6709,
         "fossilFrom": 21,
-        "fossilFirst": 74.3,
-        "growth": 1.6329,
-        "decay": 0.7674
+        "fossilFirst": 73.7,
+        "growth": 1.5973,
+        "decay": 0.7966
       }
     },
     {
@@ -497,17 +503,17 @@
       },
       "time": {
         "firstSeconds": 300.0,
-        "growth": 2.8614,
-        "decay": 0.7674
+        "growth": 2.6592,
+        "decay": 0.7966
       },
       "cost": {
         "samplesFirst": 1,
-        "goldMinutesFirst": 43.9894,
-        "materialMinutesFirst": 39.2901,
+        "goldMinutesFirst": 37.7415,
+        "materialMinutesFirst": 33.6709,
         "fossilFrom": 21,
-        "fossilFirst": 74.3,
-        "growth": 1.6329,
-        "decay": 0.7674
+        "fossilFirst": 73.7,
+        "growth": 1.5973,
+        "decay": 0.7966
       }
     },
     {
@@ -535,17 +541,17 @@
       },
       "time": {
         "firstSeconds": 300.0,
-        "growth": 2.8614,
-        "decay": 0.7674
+        "growth": 2.6592,
+        "decay": 0.7966
       },
       "cost": {
         "samplesFirst": 1,
-        "goldMinutesFirst": 43.9894,
-        "materialMinutesFirst": 39.2901,
+        "goldMinutesFirst": 37.7415,
+        "materialMinutesFirst": 33.6709,
         "fossilFrom": 21,
-        "fossilFirst": 74.3,
-        "growth": 1.6329,
-        "decay": 0.7674
+        "fossilFirst": 73.7,
+        "growth": 1.5973,
+        "decay": 0.7966
       }
     },
     {
@@ -573,17 +579,17 @@
       },
       "time": {
         "firstSeconds": 300.0,
-        "growth": 2.8614,
-        "decay": 0.7674
+        "growth": 2.6592,
+        "decay": 0.7966
       },
       "cost": {
         "samplesFirst": 1,
-        "goldMinutesFirst": 43.9894,
-        "materialMinutesFirst": 39.2901,
+        "goldMinutesFirst": 37.7415,
+        "materialMinutesFirst": 33.6709,
         "fossilFrom": 21,
-        "fossilFirst": 74.3,
-        "growth": 1.6329,
-        "decay": 0.7674
+        "fossilFirst": 73.7,
+        "growth": 1.5973,
+        "decay": 0.7966
       }
     },
     {
@@ -611,17 +617,17 @@
       },
       "time": {
         "firstSeconds": 300.0,
-        "growth": 2.8614,
-        "decay": 0.7674
+        "growth": 2.6592,
+        "decay": 0.7966
       },
       "cost": {
         "samplesFirst": 1,
-        "goldMinutesFirst": 43.9894,
-        "materialMinutesFirst": 39.2901,
+        "goldMinutesFirst": 37.7415,
+        "materialMinutesFirst": 33.6709,
         "fossilFrom": 21,
-        "fossilFirst": 74.3,
-        "growth": 1.6329,
-        "decay": 0.7674
+        "fossilFirst": 73.7,
+        "growth": 1.5973,
+        "decay": 0.7966
       }
     },
     {
@@ -649,17 +655,17 @@
       },
       "time": {
         "firstSeconds": 300.0,
-        "growth": 2.8614,
-        "decay": 0.7674
+        "growth": 2.6592,
+        "decay": 0.7966
       },
       "cost": {
         "samplesFirst": 1,
-        "goldMinutesFirst": 43.9894,
-        "materialMinutesFirst": 39.2901,
+        "goldMinutesFirst": 37.7415,
+        "materialMinutesFirst": 33.6709,
         "fossilFrom": 21,
-        "fossilFirst": 74.3,
-        "growth": 1.6329,
-        "decay": 0.7674
+        "fossilFirst": 73.7,
+        "growth": 1.5973,
+        "decay": 0.7966
       }
     },
     {
@@ -687,17 +693,17 @@
       },
       "time": {
         "firstSeconds": 300.0,
-        "growth": 2.8614,
-        "decay": 0.7674
+        "growth": 2.6592,
+        "decay": 0.7966
       },
       "cost": {
         "samplesFirst": 1,
-        "goldMinutesFirst": 43.9894,
-        "materialMinutesFirst": 39.2901,
+        "goldMinutesFirst": 37.7415,
+        "materialMinutesFirst": 33.6709,
         "fossilFrom": 21,
-        "fossilFirst": 74.3,
-        "growth": 1.6329,
-        "decay": 0.7674
+        "fossilFirst": 73.7,
+        "growth": 1.5973,
+        "decay": 0.7966
       }
     },
     {
@@ -722,17 +728,17 @@
       },
       "time": {
         "firstSeconds": 300.0,
-        "growth": 2.8614,
-        "decay": 0.7674
+        "growth": 2.6592,
+        "decay": 0.7966
       },
       "cost": {
         "samplesFirst": 1,
-        "goldMinutesFirst": 43.9894,
-        "materialMinutesFirst": 39.2901,
+        "goldMinutesFirst": 37.7415,
+        "materialMinutesFirst": 33.6709,
         "fossilFrom": 21,
-        "fossilFirst": 74.3,
-        "growth": 1.6329,
-        "decay": 0.7674
+        "fossilFirst": 73.7,
+        "growth": 1.5973,
+        "decay": 0.7966
       }
     },
     {
@@ -760,17 +766,17 @@
       },
       "time": {
         "firstSeconds": 300.0,
-        "growth": 2.8614,
-        "decay": 0.7674
+        "growth": 2.6592,
+        "decay": 0.7966
       },
       "cost": {
         "samplesFirst": 1,
-        "goldMinutesFirst": 43.9894,
-        "materialMinutesFirst": 39.2901,
+        "goldMinutesFirst": 37.7415,
+        "materialMinutesFirst": 33.6709,
         "fossilFrom": 21,
-        "fossilFirst": 74.3,
-        "growth": 1.6329,
-        "decay": 0.7674
+        "fossilFirst": 73.7,
+        "growth": 1.5973,
+        "decay": 0.7966
       }
     },
     {
@@ -798,17 +804,17 @@
       },
       "time": {
         "firstSeconds": 300.0,
-        "growth": 2.8614,
-        "decay": 0.7674
+        "growth": 2.6592,
+        "decay": 0.7966
       },
       "cost": {
         "samplesFirst": 1,
-        "goldMinutesFirst": 43.9894,
-        "materialMinutesFirst": 39.2901,
+        "goldMinutesFirst": 37.7415,
+        "materialMinutesFirst": 33.6709,
         "fossilFrom": 21,
-        "fossilFirst": 74.3,
-        "growth": 1.6329,
-        "decay": 0.7674
+        "fossilFirst": 73.7,
+        "growth": 1.5973,
+        "decay": 0.7966
       }
     },
     {
@@ -836,17 +842,17 @@
       },
       "time": {
         "firstSeconds": 300.0,
-        "growth": 2.8614,
-        "decay": 0.7674
+        "growth": 2.6592,
+        "decay": 0.7966
       },
       "cost": {
         "samplesFirst": 1,
-        "goldMinutesFirst": 43.9894,
-        "materialMinutesFirst": 39.2901,
+        "goldMinutesFirst": 37.7415,
+        "materialMinutesFirst": 33.6709,
         "fossilFrom": 21,
-        "fossilFirst": 74.3,
-        "growth": 1.6329,
-        "decay": 0.7674
+        "fossilFirst": 73.7,
+        "growth": 1.5973,
+        "decay": 0.7966
       }
     },
     {
@@ -874,17 +880,17 @@
       },
       "time": {
         "firstSeconds": 300.0,
-        "growth": 2.8614,
-        "decay": 0.7674
+        "growth": 2.6592,
+        "decay": 0.7966
       },
       "cost": {
         "samplesFirst": 1,
-        "goldMinutesFirst": 43.9894,
-        "materialMinutesFirst": 39.2901,
+        "goldMinutesFirst": 37.7415,
+        "materialMinutesFirst": 33.6709,
         "fossilFrom": 21,
-        "fossilFirst": 74.3,
-        "growth": 1.6329,
-        "decay": 0.7674
+        "fossilFirst": 73.7,
+        "growth": 1.5973,
+        "decay": 0.7966
       }
     },
     {
@@ -912,17 +918,17 @@
       },
       "time": {
         "firstSeconds": 300.0,
-        "growth": 2.8614,
-        "decay": 0.7674
+        "growth": 2.6592,
+        "decay": 0.7966
       },
       "cost": {
         "samplesFirst": 1,
-        "goldMinutesFirst": 43.9894,
-        "materialMinutesFirst": 39.2901,
+        "goldMinutesFirst": 37.7415,
+        "materialMinutesFirst": 33.6709,
         "fossilFrom": 21,
-        "fossilFirst": 74.3,
-        "growth": 1.6329,
-        "decay": 0.7674
+        "fossilFirst": 73.7,
+        "growth": 1.5973,
+        "decay": 0.7966
       }
     },
     {
@@ -947,17 +953,17 @@
       },
       "time": {
         "firstSeconds": 300.0,
-        "growth": 2.8614,
-        "decay": 0.7674
+        "growth": 2.6592,
+        "decay": 0.7966
       },
       "cost": {
         "samplesFirst": 1,
-        "goldMinutesFirst": 43.9894,
-        "materialMinutesFirst": 39.2901,
+        "goldMinutesFirst": 37.7415,
+        "materialMinutesFirst": 33.6709,
         "fossilFrom": 21,
-        "fossilFirst": 74.3,
-        "growth": 1.6329,
-        "decay": 0.7674
+        "fossilFirst": 73.7,
+        "growth": 1.5973,
+        "decay": 0.7966
       }
     },
     {
@@ -985,17 +991,17 @@
       },
       "time": {
         "firstSeconds": 300.0,
-        "growth": 2.8614,
-        "decay": 0.7674
+        "growth": 2.6592,
+        "decay": 0.7966
       },
       "cost": {
         "samplesFirst": 1,
-        "goldMinutesFirst": 43.9894,
-        "materialMinutesFirst": 39.2901,
+        "goldMinutesFirst": 37.7415,
+        "materialMinutesFirst": 33.6709,
         "fossilFrom": 21,
-        "fossilFirst": 74.3,
-        "growth": 1.6329,
-        "decay": 0.7674
+        "fossilFirst": 73.7,
+        "growth": 1.5973,
+        "decay": 0.7966
       }
     },
     {
@@ -1023,17 +1029,17 @@
       },
       "time": {
         "firstSeconds": 300.0,
-        "growth": 2.8614,
-        "decay": 0.7674
+        "growth": 2.6592,
+        "decay": 0.7966
       },
       "cost": {
         "samplesFirst": 1,
-        "goldMinutesFirst": 43.9894,
-        "materialMinutesFirst": 39.2901,
+        "goldMinutesFirst": 37.7415,
+        "materialMinutesFirst": 33.6709,
         "fossilFrom": 21,
-        "fossilFirst": 74.3,
-        "growth": 1.6329,
-        "decay": 0.7674
+        "fossilFirst": 73.7,
+        "growth": 1.5973,
+        "decay": 0.7966
       }
     },
     {
@@ -1058,17 +1064,17 @@
       },
       "time": {
         "firstSeconds": 300.0,
-        "growth": 2.8614,
-        "decay": 0.7674
+        "growth": 2.6592,
+        "decay": 0.7966
       },
       "cost": {
         "samplesFirst": 1,
-        "goldMinutesFirst": 43.9894,
-        "materialMinutesFirst": 39.2901,
+        "goldMinutesFirst": 37.7415,
+        "materialMinutesFirst": 33.6709,
         "fossilFrom": 21,
-        "fossilFirst": 74.3,
-        "growth": 1.6329,
-        "decay": 0.7674
+        "fossilFirst": 73.7,
+        "growth": 1.5973,
+        "decay": 0.7966
       }
     },
     {
@@ -1096,17 +1102,17 @@
       },
       "time": {
         "firstSeconds": 300.0,
-        "growth": 2.8614,
-        "decay": 0.7674
+        "growth": 2.6592,
+        "decay": 0.7966
       },
       "cost": {
         "samplesFirst": 1,
-        "goldMinutesFirst": 43.9894,
-        "materialMinutesFirst": 39.2901,
+        "goldMinutesFirst": 37.7415,
+        "materialMinutesFirst": 33.6709,
         "fossilFrom": 21,
-        "fossilFirst": 74.3,
-        "growth": 1.6329,
-        "decay": 0.7674
+        "fossilFirst": 73.7,
+        "growth": 1.5973,
+        "decay": 0.7966
       }
     }
   ],

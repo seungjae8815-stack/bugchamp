@@ -53,6 +53,7 @@ ResearchPrice? researchPriceOf(
       );
       return (gold: r.gold, materialsEach: r.materialsEach);
     },
+    pass: s.researchPassActive(now),
   );
 }
 

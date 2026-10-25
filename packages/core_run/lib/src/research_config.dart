@@ -228,6 +228,7 @@ class ResearchConfig {
     this.bossRepeatDrop = 0,
     this.bossRepeatChance = 0,
     this.clockSkewSeconds = 300,
+    this.passTimeCut = 0,
   });
 
   final List<ResearchDef> defs;
@@ -248,6 +249,10 @@ class ResearchConfig {
   /// 서버 업로드 검사 — 연구 한 단계에 봐 주는 기기 시계 어긋남 합계(초). 칸의 끝 시각은 앱(기기) 시계로 적힌다 —
   /// 시작 때 새 칸과 끝날 때 저장본 칸에 반씩 나눠 쓴다.
   final int clockSkewSeconds;
+
+  /// 연구 패스가 켜져 있는 동안 연구 시간 단축(2026-10-25 사장님, research.json `pass.timeCut`) —
+  /// 연구 효율 연구와 **더해** [kResearchTimeCutMax] 로 자른다([researchTimeCut]).
+  final double passTimeCut;
 
   /// 칸 수 최대(코드 상수 — 기획 확정 규칙값).
   static const int maxSlots = 3;
@@ -346,6 +351,10 @@ class ResearchConfig {
           (j['bossRepeatChance'] as num?)?.toDouble() ?? d.bossRepeatChance,
       clockSkewSeconds:
           (j['clockSkewSeconds'] as num?)?.toInt() ?? d.clockSkewSeconds,
+      passTimeCut: switch (j['pass']) {
+        final Map<String, dynamic> p => (p['timeCut'] as num?)?.toDouble() ?? 0,
+        _ => 0,
+      },
     );
   }
 }
@@ -361,6 +370,19 @@ class ResearchEffects {
 }
 
 /// [levels](연구 id → 완료 레벨)를 효과로 합친다. 같은 효과 여러 연구는 합.
+/// 연구 시간 단축 합 — 연구 효율 연구 + (연구 패스면) [ResearchConfig.passTimeCut], [kResearchTimeCutMax] 로 자름.
+/// 앱(시작 값·화면)과 서버(시간 예산)가 같은 함수를 쓴다(2026-10-25).
+double researchTimeCut(
+  ResearchConfig c,
+  Map<String, int> levels, {
+  bool pass = false,
+}) {
+  final v =
+      researchEffects(c, levels).of(ResearchEffect.researchTime) +
+      (pass ? c.passTimeCut : 0);
+  return v.clamp(0.0, kResearchTimeCutMax).toDouble();
+}
+
 ResearchEffects researchEffects(ResearchConfig c, Map<String, int> levels) {
   final sum = <ResearchEffect, double>{};
   for (final d in c.defs) {

@@ -50,6 +50,7 @@ void main() {
     bossFirstDrop: 5,
     bossRepeatDrop: 2,
     bossRepeatChance: 0.5,
+    passTimeCut: 0.15,
   );
   final t = DateTime.utc(2026, 10, 22, 12);
 
@@ -71,6 +72,25 @@ void main() {
 
   ResearchPrice priceOf(SaveGame s, String id) =>
       researchPrice(s, cfg, id, huntAtTop: top);
+
+  test('연구 패스 — 연구 시간이 passTimeCut 만큼 짧다(연구 효율과 더해 50% 로 자름, 2026-10-25)', () {
+    final s = rich();
+    final id = cfg.defs.first.id;
+    final plain = researchPrice(s, cfg, id, huntAtTop: top);
+    final withPass = researchPrice(s, cfg, id, huntAtTop: top, pass: true);
+    final cut = researchTimeCut(cfg, s.researchLevels, pass: true);
+    expect(cut, closeTo(cfg.passTimeCut, 1e-9));
+    expect(
+      withPass.time.inMilliseconds,
+      closeTo(plain.time.inMilliseconds * (1 - cfg.passTimeCut), 1000),
+    );
+    // 연구 효율을 다 찍어도 합은 50% 를 넘지 않는다.
+    final maxed = {
+      for (final d in cfg.defs)
+        if (d.effect == ResearchEffect.researchTime) d.id: d.maxLevel,
+    };
+    expect(researchTimeCut(cfg, maxed, pass: true), lessThanOrEqualTo(0.5));
+  });
 
   test('roundtrip_json', () {
     final base = SaveGame.initial(createdAt: t);

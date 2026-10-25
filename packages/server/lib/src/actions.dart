@@ -2877,15 +2877,15 @@ class GameActions {
     // 3. 시간.
     // 시계 어긋남은 한 단계에 두 번 실릴 수 있다(시작 때 새 칸 + 끝날 때 저장본 칸) — 양쪽에 반씩만 봐준다.
     final skew = max(0, cfg.clockSkewSeconds) ~/ 2;
-    final cutNow = researchEffects(cfg, levels).of(ResearchEffect.researchTime);
+    // 연구 패스(2026-10-25) — 이 업로드 구간 어디서든 켜져 있었으면 단축을 봐준다(서버 소유 만료 시각, 너그러운 쪽).
+    final passOn =
+        stored.researchPassExpiresAt?.isAfter(stored.lastSeen) ?? false;
+    final cutNow = researchTimeCut(cfg, levels, pass: passOn);
     // 연구 효율 자기 단계는 그 아래 레벨까지의 단축(앱: 시작할 때의 레벨로 값을 매긴다).
     double cutFor(ResearchDef d, int lv) =>
         d.effect != ResearchEffect.researchTime
         ? cutNow
-        : researchEffects(cfg, {
-            ...levels,
-            d.id: lv - 1,
-          }).of(ResearchEffect.researchTime);
+        : researchTimeCut(cfg, {...levels, d.id: lv - 1}, pass: passOn);
     int secsOf(ResearchDef d, int lv) => max(
       1,
       (cfg.timeAt(d, lv).inMilliseconds * (1 - cutFor(d, lv)) / 1000).round(),

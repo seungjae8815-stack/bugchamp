@@ -200,8 +200,12 @@ class FitBasis {
 
   int slotsAt(ResearchConfig c, double day) => c.slotsFor(topTierAt(day), 0);
 
-  double samplesPerDay(ResearchConfig c, double day) =>
-      _at(elitesPerDay, day) * c.eliteDropChance * c.eliteDropAmount +
+  /// 하루 표본 수입. [idleFactor] = 연구 패스가 방치 중 더하는 정예 몫(방치 시간 × 방치 효율 ÷ 활동 시간, [_PassFit]).
+  double samplesPerDay(ResearchConfig c, double day, {double idleFactor = 0}) =>
+      _at(elitesPerDay, day) *
+          (1 + idleFactor) *
+          c.eliteDropChance *
+          c.eliteDropAmount +
       _at(bossKillsPerDay, day) * c.bossFirstDrop;
 }
 
@@ -231,6 +235,11 @@ class ScheduleResult {
   final matMin = <int, double>{};
   final fossil = <int, double>{};
   final samples = <int, double>{};
+
+  /// 정수 날짜별 번 표본 · 표본이 없어 논 칸·일(2026-10-25 — 초반에 남고 후반에 모자라는지 보려고).
+  final earned = <int, double>{};
+  final sampleWait = <int, double>{};
+  final slotTime = <int, double>{};
 }
 
 /// 무과금이 칸을 쉬지 않고 돌릴 때의 일정. [ignoreSamples] 면 표본을 무한으로 본다(시간 맞추기용).
@@ -239,6 +248,9 @@ ScheduleResult scheduleResearch(
   FitBasis basis, {
   bool ignoreSamples = false,
   double horizonDays = 1000,
+  // 연구 패스(2026-10-25 사장님 — 패스면 표본이 딱 맞고, 없으면 칸이 논다): 방치 표본 몫 · 연구 시간 단축.
+  double idleFactor = 0,
+  double passCut = 0,
 }) {
   final r = ScheduleResult();
   final levels = {for (final d in c.defs) d.id: 0};
@@ -262,7 +274,10 @@ ScheduleResult scheduleResearch(
     if (done()) break;
     // 빈 칸에 다음 레벨이 가장 짧은 것부터 건다.
     final slots = basis.slotsAt(c, t);
-    final cut = researchEffects(c, levels).of(ResearchEffect.researchTime);
+    final cut = math.min(
+      0.5,
+      researchEffects(c, levels).of(ResearchEffect.researchTime) + passCut,
+    );
     final cands =
         [
           for (final d in c.defs)
@@ -313,10 +328,14 @@ ScheduleResult scheduleResearch(
     final dt = next - t;
     r.slotDays += slots * dt;
     r.sampleWaitSlotDays += waiting * dt;
+    final dk = t.floor();
+    r.sampleWait[dk] = (r.sampleWait[dk] ?? 0) + waiting * dt;
+    r.slotTime[dk] = (r.slotTime[dk] ?? 0) + slots * dt;
     r.idleSlotDays += (free - waiting) * dt;
-    final earn = basis.samplesPerDay(c, t) * dt;
+    final earn = basis.samplesPerDay(c, t, idleFactor: idleFactor) * dt;
     bank += earn;
     r.samplesEarned += earn;
+    r.earned[t.floor()] = (r.earned[t.floor()] ?? 0) + earn;
     t = next;
   }
   r.completionDay = done() ? t : double.infinity;
@@ -397,6 +416,32 @@ Map<String, dynamic> _withCurves(
 
 ResearchConfig _cfg(Map<String, dynamic> raw) => ResearchConfig.fromJson(raw);
 
+/// 연구 패스로 맞추기(2026-10-25 사장님) — research.json `pass`: `timeCut`(연구 시간 단축) · `fitIdleHours`(맞출 때 가정하는
+/// 하루 방치 시간) · `fitSampleShare`(표본 합계 = **패스 유저** 180일 수입의 이 비율 — 1 에 가까울수록 아슬아슬).
+/// 방치 효율은 run_config `offlineEfficiency`. 패스 블록이 없으면 예전처럼 무과금 기준(_sampleShare).
+class _PassFit {
+  const _PassFit({this.timeCut = 0, this.idleFactor = 0, this.share = _sampleShare});
+  final double timeCut;
+  final double idleFactor;
+  final double share;
+  bool get on => idleFactor > 0 || timeCut > 0;
+
+  factory _PassFit.of(Map<String, dynamic> raw, double activeHours) {
+    final p = raw['pass'];
+    if (p is! Map) return const _PassFit();
+    final run =
+        jsonDecode(File('../app/assets/data/run_config.json').readAsStringSync())
+            as Map<String, dynamic>;
+    final eff = (run['offlineEfficiency'] as num?)?.toDouble() ?? 0.3;
+    final idleH = (p['fitIdleHours'] as num?)?.toDouble() ?? 0;
+    return _PassFit(
+      timeCut: (p['timeCut'] as num?)?.toDouble() ?? 0,
+      idleFactor: idleH * eff / activeHours,
+      share: (p['fitSampleShare'] as num?)?.toDouble() ?? _sampleShare,
+    );
+  }
+}
+
 /// 10일 묶음마다 하루 골드 분(연구가 쓴) — 고르게 쓰는지 본다.
 List<double> _blocks(ScheduleResult s, Map<int, double> m) => [
   for (var b = 0; b * 10 < _targetDays; b++)
@@ -447,6 +492,7 @@ Map<String, dynamic> _fit(
     bosses += r.bossKills;
   }
   final amount = _cfg(raw).eliteDropAmount;
+  final pf = _PassFit.of(raw, basis.activeHours);
 
   // 감쇠 td · 비용 모양 α · 보스 첫 처치 표본 drop 이 정해지면 나머지는 모두 따라 나온다:
   //   시간 증가율 = Lv10 이 12시간이 되는 값 · 비용 증가율 = 1 + α(시간 증가율 − 1)(같은 감쇠)
@@ -485,7 +531,8 @@ Map<String, dynamic> _fit(
       }
     }
     final chance = _round(
-      (sampleSum / _sampleShare - bosses * drop) / (elites * amount),
+      (sampleSum / pf.share - bosses * drop) /
+          (elites * (1 + pf.idleFactor) * amount),
       4,
     );
     return _withCurves(
@@ -502,7 +549,13 @@ Map<String, dynamic> _fit(
   }
 
   ScheduleResult run(Map<String, dynamic> j, {bool ignoreSamples = false}) =>
-      scheduleResearch(_cfg(j), basis, ignoreSamples: ignoreSamples);
+      scheduleResearch(
+        _cfg(j),
+        basis,
+        ignoreSamples: ignoreSamples,
+        idleFactor: pf.idleFactor,
+        passCut: pf.timeCut,
+      );
 
   /// 완료일이 [_targetDays] 가 되는 감쇠(클수록 후반이 길어 늦게 끝난다).
   double fitDecay(double alpha, int drop, {required bool ignoreSamples}) {
@@ -591,7 +644,12 @@ String _dur(double sec) {
   return '${(sec / 86400).toStringAsFixed(2)}일';
 }
 
-void _report(ResearchConfig c, List<IncomeDay> inc, FitBasis basis) {
+void _report(
+  ResearchConfig c,
+  List<IncomeDay> inc,
+  FitBasis basis, {
+  _PassFit pf = const _PassFit(),
+}) {
   stdout.writeln('── 연구별 레벨 표(시간은 연구 효율 0% 기준) ──');
   var topJelly = 0, jellyAll = 0;
   var maxGold = 0.0;
@@ -616,7 +674,13 @@ void _report(ResearchConfig c, List<IncomeDay> inc, FitBasis basis) {
       }
     }
   }
-  final s = scheduleResearch(c, basis);
+  // 비용 비율은 **설계 경로**(패스가 있으면 패스 유저)로 잰다 — 맞추기와 같은 일정.
+  final s = scheduleResearch(
+    c,
+    basis,
+    idleFactor: pf.idleFactor,
+    passCut: pf.timeCut,
+  );
   final s180 = inc.where((r) => r.day < _targetDays).toList();
   var gSum = 0.0, mSum = 0.0, fSum = 0.0;
   for (final v in s.goldMin.values) {
@@ -736,5 +800,56 @@ void main(List<String> args) {
       stdout.writeln('→ $jsonPath 에 반영했습니다');
     }
   }
-  _report(_cfg(raw), inc, basis);
+  final pf = _PassFit.of(raw, basis.activeHours);
+  _report(_cfg(raw), inc, basis, pf: pf);
+  if (pf.on) _passCompare(_cfg(raw), basis, pf);
+}
+
+/// 패스 있음 / 없음 비교(2026-10-25) — 같은 연구 표로 완료일과 "표본이 없어 칸이 논 시간".
+void _passCompare(ResearchConfig c, FitBasis basis, _PassFit pf) {
+  stdout.writeln('');
+  stdout.writeln('── 연구 패스 있음 / 없음 (하루 ${basis.activeHours}h 켜 둠) ──');
+  void blocks(ScheduleResult r) {
+    final rows = <String>[];
+    for (var b = 0; b * 20 < 300; b++) {
+      double sum(Map<int, double> m) => [
+        for (var d = b * 20; d < b * 20 + 20; d++) m[d] ?? 0,
+      ].fold(0.0, (a, x) => a + x);
+      final slot = sum(r.slotTime);
+      if (slot <= 0) break;
+      rows.add(
+        '${b * 20}~: 번 ${(sum(r.earned) / 20).toStringAsFixed(0)}/일 · 쓴 ${(sum(r.samples) / 20).toStringAsFixed(0)}/일 · 논 칸 ${(sum(r.sampleWait) / slot * 100).toStringAsFixed(0)}%',
+      );
+    }
+    for (final x in rows) {
+      stdout.writeln('      $x');
+    }
+  }
+
+  void line(String name, ScheduleResult r) => stdout.writeln(
+    '  $name: 완료 ${r.completionDay.isFinite ? '${r.completionDay.toStringAsFixed(0)}일' : '1000일 넘음'} · '
+    '표본이 없어 논 칸 ${(r.sampleWaitSlotDays / r.slotDays * 100).toStringAsFixed(0)}% · '
+    '표본 쓴/번 ${(r.samplesSpent / r.samplesEarned * 100).toStringAsFixed(0)}%',
+  );
+  final withPass = scheduleResearch(
+    c,
+    basis,
+    idleFactor: pf.idleFactor,
+    passCut: pf.timeCut,
+  );
+  line(
+    '패스(방치 표본 · 시간 −${(pf.timeCut * 100).toStringAsFixed(0)}%)',
+    withPass,
+  );
+  blocks(withPass);
+  final noPass = scheduleResearch(c, basis);
+  line('패스 없음', noPass);
+  blocks(noPass);
+  // 패스 없이 더 오래 켜 두면 — 활동 시간에 비례해 정예가 는다고 본다(추정).
+  for (final h in [4.0, 5.0, 6.0]) {
+    line(
+      '패스 없음 · ${h.toStringAsFixed(0)}h 켜 둠(추정)',
+      scheduleResearch(c, basis, idleFactor: h / basis.activeHours - 1),
+    );
+  }
 }
