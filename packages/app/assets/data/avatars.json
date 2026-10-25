@@ -26,7 +26,7 @@
    "image": "assets/images/avatars/avatar_03.webp",
    "name": {
     "ko": "사마귀 검객",
-    "en": "Mantis Fighter",
+    "en": "Mantis Swordsman",
     "ja": "カマキリ剣士"
    }
   },
@@ -44,8 +44,8 @@
    "image": "assets/images/avatars/avatar_05.webp",
    "name": {
     "ko": "꿀벌 요리사",
-    "en": "Honey Bee",
-    "ja": "ミツバチ"
+    "en": "Chef Bee",
+    "ja": "ミツバチのコック"
    }
   },
   {

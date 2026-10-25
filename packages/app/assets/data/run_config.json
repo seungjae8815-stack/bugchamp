@@ -274,8 +274,8 @@
    },
    "bossName": {
     "ko": "숲의 지배자",
-    "en": "Forest Warden",
-    "ja": "森の主"
+    "en": "Forest Overlord",
+    "ja": "森の支配者"
    },
    "bossFlip": false,
    "habitatKinds": [
@@ -306,7 +306,7 @@
    },
    "bossName": {
     "ko": "물가의 포식자",
-    "en": "Stream Stalker",
+    "en": "Riverside Predator",
     "ja": "水辺の捕食者"
    },
    "bossFlip": true,
@@ -366,7 +366,7 @@
    },
    "bossName": {
     "ko": "밤의 군주",
-    "en": "Night Sovereign",
+    "en": "Lord of Night",
     "ja": "夜の君主"
    },
    "bossFlip": true,

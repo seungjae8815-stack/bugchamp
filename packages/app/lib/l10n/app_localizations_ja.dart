@@ -18,10 +18,10 @@ class AppLocalizationsJa extends AppLocalizations {
   String get navCollect => '採集';
 
   @override
-  String get navStorage => 'コレクション';
+  String get navStorage => '採集箱';
 
   @override
-  String get navStorageShort => '収集';
+  String get navStorageShort => '採集箱';
 
   @override
   String get navBattle => '戦闘';
@@ -874,11 +874,11 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String zoneLabel(int n) {
-    return '狩り場 $n';
+    return '狩場 $n';
   }
 
   @override
-  String get zoneFinalLabel => '最終狩り場';
+  String get zoneFinalLabel => '最終狩場';
 
   @override
   String get bossChallenge => 'ボスに挑戦';
@@ -900,14 +900,14 @@ class AppLocalizationsJa extends AppLocalizations {
   String get bossIntroTitle => 'ボスが現れた！';
 
   @override
-  String get bossIntroBody => '倒すと次の狩り場へ進めます。';
+  String get bossIntroBody => '倒すと次の狩場へ進めます。';
 
   @override
   String get bossIntroAuto =>
       '自動挑戦をオンにしておきますか？ゲージがたまると少しあとで自動でボスに挑戦します。設定でいつでも変更できます。';
 
   @override
-  String get bossIntroOk => 'わかった';
+  String get bossIntroOk => 'わかりました';
 
   @override
   String get settingsGameplay => 'ゲーム';
@@ -974,11 +974,11 @@ class AppLocalizationsJa extends AppLocalizations {
   String get whatsNewTranscend => '工房超越 — 工房の最大等級で超越するとオプション最大値が上がります';
 
   @override
-  String get whatsNewHuntDefense => '狩りの体力・防御・回復の強化がはっきり効きます(狩り場のモンスター数値を変更)';
+  String get whatsNewHuntDefense => '狩りの体力・防御・回復の強化がはっきり効きます(狩場のモンスター数値を変更)';
 
   @override
   String get whatsNewMissionSwap =>
-      'ミッション目標に上限 · 報酬は今の狩り場10分分 · ゼリー5個で別のミッションに変更できます';
+      'ミッション目標に上限 · 報酬は今の狩場10分分 · ゼリー5個で別のミッションに変更できます';
 
   @override
   String get whatsNewTrainEqual => '訓練ポイントはすべての虫が同じ基準(最大102)になりました';
@@ -1020,7 +1020,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get install => '設置';
 
   @override
-  String get storageTitle => 'コレクション';
+  String get storageTitle => '採集箱';
 
   @override
   String get storageEmpty => 'まだ昆虫がいません。\n採集で集めましょう!';
@@ -1041,7 +1041,7 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get storageFullBanner => '採集ボックスが満杯です\n虫が入りません';
+  String get storageFullBanner => '採集箱が満杯です\n虫が入りません';
 
   @override
   String get storageFullSnack => '採集箱がいっぱいです。分解するか拡張してください。';
@@ -1752,7 +1752,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get giftAdMoreTitle => '本日の無料2倍！';
 
   @override
-  String get giftAdMoreBody => 'このプレゼントを2倍で受け取れます。';
+  String get giftAdMoreBody => 'このギフトを2倍で受け取れます。';
 
   @override
   String get giftAdMoreYes => '2倍で受け取る';
@@ -1995,7 +1995,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get synthTitle => '合成（★強化）';
 
   @override
-  String get synthConfirm => 'この昆虫が消えます';
+  String get synthConfirm => '以下の虫が消えます';
 
   @override
   String get synthConfirmTitle => '合成の確認';
@@ -2214,7 +2214,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get disassembleEquipped => '装備中の虫は分解できません';
 
   @override
-  String get disassembleIncubating => '孵化中のタマゴは分解できません';
+  String get disassembleIncubating => '孵化中の卵は分解できません';
 
   @override
   String get disassembleFailed => '分解できません';
@@ -2314,10 +2314,10 @@ class AppLocalizationsJa extends AppLocalizations {
   String get upAttackSpeedDesc => '秒間の攻撃回数が増え、狩りが速くなります。';
 
   @override
-  String get upCritDesc => 'クリティカルの発生確率が上がります。';
+  String get upCritDesc => '会心の発生確率が上がります。';
 
   @override
-  String get upCritDamageDesc => 'クリティカル時の追加ダメージ倍率が大きくなります。';
+  String get upCritDamageDesc => '会心時の追加ダメージ倍率が大きくなります。';
 
   @override
   String get upBossDamageDesc => 'ボスに与えるダメージがさらに増えます。';
@@ -2371,8 +2371,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get materialSapDesc => '固まって結晶になった樹液。上級ステータス強化の追加コストと訓練ポイント・突破に使われます。';
 
   @override
-  String get materialJellyDesc =>
-      '特別なプレミアム通貨。ショップのクラフト（オールインワンポーション）と特別商品に使われます。';
+  String get materialJellyDesc => '特別なプレミアム通貨。ショップのクラフト（オールインワン薬）と特別商品に使われます。';
 
   @override
   String get materialFossil => '化石のかけら';
@@ -2401,7 +2400,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String eventRewardRank(String round, int rank) {
-    return '$round 回 $rank位';
+    return '第$round回 $rank位';
   }
 
   @override
@@ -2419,22 +2418,22 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String badgeChampion(int round) {
-    return '$round回 チャンピオン';
+    return '第$round回 チャンピオン';
   }
 
   @override
   String badgeSilver(int round) {
-    return '$round回 2位';
+    return '第$round回 2位';
   }
 
   @override
   String badgeBronze(int round) {
-    return '$round回 3位';
+    return '第$round回 3位';
   }
 
   @override
   String badgeFinalist(int round) {
-    return '$round回 入賞';
+    return '第$round回 入賞';
   }
 
   @override
@@ -2467,7 +2466,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String buffCooldownAsk(String t, int n) {
-    return '次の無料起動まで $t。\nゼリー $n個で今すぐ起動しますか？';
+    return '次の無料発動まで $t。\nゼリー $n個で今すぐ発動しますか？';
   }
 
   @override
@@ -2477,7 +2476,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String buffBtnJelly(int n) {
-    return '$n個で起動';
+    return '$n個で発動';
   }
 
   @override
@@ -2511,7 +2510,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get tierNextBody =>
-      'ステージ・レベル・強化・ゴールド・素材が最初に戻ります。\n\n昆虫・装備・図鑑・ゼリー・スキルはそのまま残ります。\n\nランキングは難易度が優先です —難易度を上げるとレベルが低くても上位になります。\n\nモンスターがずっと強くなります。';
+      'ステージ・レベル・強化・ゴールド・素材が最初に戻ります。\n\n昆虫・装備・図鑑・ゼリー・スキルはそのまま残ります。\n\nランキングは難易度が優先です — 難易度を上げるとレベルが低くても上位になります。\n\nモンスターがずっと強くなります。';
 
   @override
   String get tierNextGo => '進む';
@@ -2659,7 +2658,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get rankSuffix => '位';
 
   @override
-  String get rankFirstCheck => '初めてのランキング確認です！';
+  String get rankFirstCheck => '初めてのランキング確認です。がんばってください！';
 
   @override
   String get rankUnchanged => '前回と同じ順位です';
@@ -2809,7 +2808,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get notifHatchTitle => '孵化完了！';
 
   @override
-  String get notifHatchBody => '卵が孵化しました。採集ボックスで確認してください。';
+  String get notifHatchBody => '卵が孵化しました。採集箱で確認してください。';
 
   @override
   String get settingsNotify => '通知';
@@ -2931,7 +2930,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get mailConfirm => '確認';
 
   @override
-  String get gachaTitle => '虫のタマゴガチャ';
+  String get gachaTitle => '虫の卵ガチャ';
 
   @override
   String get gachaDesc => 'ポテンシャル3★以上確定 (野生では5★が出ません) · 色違い確率10倍';
@@ -2947,7 +2946,7 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get gachaResultTitle => 'タマゴから出たのは…';
+  String get gachaResultTitle => '卵から出たのは…';
 
   @override
   String get gachaPickTitle => 'カードを選んでください';
@@ -2956,10 +2955,10 @@ class AppLocalizationsJa extends AppLocalizations {
   String get gachaPickHint => '3枚から1枚。開けるまで分かりません';
 
   @override
-  String get gachaResultHint => 'タマゴは孵化器で育てましょう';
+  String get gachaResultHint => '卵は孵化器で育てましょう';
 
   @override
-  String get gachaStorageFull => 'コレクションがいっぱいです';
+  String get gachaStorageFull => '採集箱がいっぱいです';
 
   @override
   String get gachaOff => '現在利用できません';
@@ -3077,7 +3076,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get optEvade => '回避';
 
   @override
-  String get optGold => '金貨獲得';
+  String get optGold => 'ゴールド獲得';
 
   @override
   String get optMaterial => '素材獲得';
@@ -3297,10 +3296,10 @@ class AppLocalizationsJa extends AppLocalizations {
   String get skillSweepLocked => 'ボス撃破が先';
 
   @override
-  String get skillGradeUpShort => 'カケラ昇級';
+  String get skillGradeUpShort => 'かけら昇級';
 
   @override
-  String get skillShardsTitle => '所持カケラ';
+  String get skillShardsTitle => '所持かけら';
 
   @override
   String get skillWildShort => '万能';
@@ -3468,7 +3467,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get skillActiveSoon => 'アクティブスキルは近日公開';
 
   @override
-  String get skillHowToGet => '狩場のボス（初回撃破で確定）とエリートモンスターからスキルのかけらが手に入ります';
+  String get skillHowToGet => '狩場のボス（初回撃破で確定）と精鋭モンスターからスキルのかけらが手に入ります';
 
   @override
   String skillCooldown(String s) {
@@ -3568,7 +3567,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get statLevelBonus => 'レベルボーナス（攻撃・体力）';
 
   @override
-  String get statGoldGain => '金貨獲得';
+  String get statGoldGain => 'ゴールド獲得';
 
   @override
   String get statMaterialGain => '素材獲得';
@@ -3892,7 +3891,7 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get gateGearWeak => '装備が弱い — 鍛冶で攻撃オプションを集めよう';
+  String get gateGearWeak => '装備が弱いです — 製錬で攻撃オプションを集めましょう';
 
   @override
   String get regionElementTitle => '地域の属性';
@@ -3924,7 +3923,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String elementWheelRestrain(String mult) {
-    return '相剋 — 赤い矢印の先の相手にぶつかるとダメージ$mult倍';
+    return '相克 — 赤い矢印の先の相手にぶつかるとダメージ$mult倍';
   }
 
   @override
@@ -3989,7 +3988,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String eventSoonBanner(String when) {
-    return '王蟲選抜大会・$when 開幕';
+    return '王虫選抜大会 待機中・$when 開幕';
   }
 
   @override
@@ -4123,7 +4122,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String badgeParticipant(int round) {
-    return '$round回 参加';
+    return '第$round回 参加';
   }
 
   @override
@@ -4456,7 +4455,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get duelRestrainHit => '相克！';
 
   @override
-  String get duelCritHit => 'クリティカル！';
+  String get duelCritHit => '会心！';
 
   @override
   String get duelWeakHit => '弱点！';
@@ -4554,7 +4553,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get trainingMaxed => '最大';
 
   @override
-  String get trainingBusy => '訓練所は一度に1匹だけです';
+  String get trainingBusy => '訓練所が空いてから始められます（一度に1匹）';
 
   @override
   String get trainingNoMaterials => '素材が足りません';
@@ -4723,7 +4722,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get cardVital => '急所狙い';
 
   @override
-  String get cardVitalDesc => 'クリティカル確率 +10%p';
+  String get cardVitalDesc => '会心確率 +10%p';
 
   @override
   String get cardBreath => '息を整える';
@@ -5049,19 +5048,19 @@ class AppLocalizationsJa extends AppLocalizations {
   String get fairyErrGeneric => '今はできません';
 
   @override
-  String get fairyGradeCommon => 'ノーマル';
+  String get fairyGradeCommon => '一般';
 
   @override
   String get fairyGradeRare => 'レア';
 
   @override
-  String get fairyGradeEpic => 'エピック';
+  String get fairyGradeEpic => '英雄';
 
   @override
-  String get fairyGradeLegendary => 'レジェンド';
+  String get fairyGradeLegendary => '伝説';
 
   @override
-  String get fairyGradeMythic => 'ミシック';
+  String get fairyGradeMythic => '神話';
 
   @override
   String get fairyStatAttack => '攻撃力';
@@ -5076,7 +5075,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get fairyStatAttackSpeed => '攻撃速度';
 
   @override
-  String get fairyStatCritDamage => 'クリティカルダメージ';
+  String get fairyStatCritDamage => '会心ダメージ';
 
   @override
   String get fairyStatBossDamage => 'ボスダメージ';
@@ -5106,7 +5105,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String fairySkillCrits(String s) {
-    return '$s秒間 すべての攻撃がクリティカル';
+    return '$s秒間 すべての攻撃が会心';
   }
 
   @override
@@ -5711,7 +5710,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get guildWarForgeHint => '鍛冶でポイント — 高い等級ほど大きく増えます。';
 
   @override
-  String get guildWarHuntHint => 'エリートと狩場のボスを倒すとポイント。';
+  String get guildWarHuntHint => '精鋭と狩場のボスを倒すとポイント。';
 
   @override
   String get guildWarDuelHint => '決闘に勝つとポイント（サーバーが確定した勝利のみ）。';
@@ -5796,18 +5795,18 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String duelPickDeployed(int n) {
-    return '出撃中 · $n番';
+    return '出陣中 · $n番';
   }
 
   @override
   String get fairyDexHelp =>
-      '妖精図鑑は、これまでに手に入れた妖精を記録します。妖精8種それぞれに2つの項目があります。\n• 等級の点 — その妖精をその等級で初めて手に入れると、その色の点が灯ります。\n• 属性石 — その妖精をその追加能力値で初めて手に入れると、その属性石が明るくなります。\n巣で卵を孵化させるか、合成で新しい妖精を手に入れると記録され、分解しても記録は残ります。マスを集めるほど下の報酬（妖精の粉・加速器・化石）がもらえます。能力値は上がりません。';
+      '妖精図鑑は、これまでに手に入れた妖精を記録します。妖精8種それぞれに2つの項目があります。\n• 等級の点 — その妖精をその等級で初めて手に入れると、その色の点が灯ります。\n• 属性石 — その妖精をその付加能力で初めて手に入れると、その属性石が明るくなります。\n巣で卵を孵化させるか、合成で新しい妖精を手に入れると記録され、分解しても記録は残ります。マスを集めるほど下の報酬（妖精の粉・加速器・化石）がもらえます。能力値は上がりません。';
 
   @override
   String get fairyDexLegendGrades => '等級の点（点灯 = その等級で入手済み）';
 
   @override
-  String get fairyDexLegendSubs => '属性石（明るい = その追加能力値で入手済み）';
+  String get fairyDexLegendSubs => '属性石（明るい = その付加能力で入手済み）';
 
   @override
   String fairyDexRewards(int n, int max) {
@@ -5840,10 +5839,10 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get guideSpecialtyTitle => '特技（戦い方）';
+  String get guideSpecialtyTitle => '得意技（戦い方）';
 
   @override
-  String get guideSpecialtyBody => '種ごとに決まった特技が決闘での戦い方を決めます。';
+  String get guideSpecialtyBody => '種ごとに決まった得意技が決闘での戦い方を決めます。';
 
   @override
   String get guideSpecialtyStrike => '突進して体当たりし、相手をひっくり返します。';
@@ -5944,7 +5943,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String guideDuelBody(int sec, String weak) {
-    return '1戦は円形の闘技場で行う$sec秒の1対1の取っ組み合いです。場外・ひっくり返し・気絶で勝ち、時間切れなら残り体力%で判定します。1試合は3匹の勝ち抜き戦です。横・後ろにぶつかるとダメージ×$weak、クリティカルと回避もあります。';
+    return '1戦は円形の闘技場で行う$sec秒の1対1の取っ組み合いです。場外・ひっくり返し・気絶で勝ち、時間切れなら残り体力%で判定します。1試合は3匹の勝ち抜き戦です。横・後ろにぶつかるとダメージ×$weak、会心と回避もあります。';
   }
 
   @override
@@ -5952,7 +5951,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String guideTrainBody(String perStar, String levels, String bt) {
-    return '虫ごとに訓練ポイントが貯まります — ポテンシャルの星1つにつき${perStar}pt · 修練$levelsレベルごとに1pt · 突破段階ごとに${bt}pt。ポイントを下の枠に選んで振ります。枠ごとに上限があり、上限の合計はポイントよりずっと多いので全部は振れません — 何に振るかが戦略です。枠の上限は気質・特技・血統特性によって虫ごとに違います。';
+    return '虫ごとに訓練ポイントが貯まります — ポテンシャルの星1つにつき${perStar}pt · 修練$levelsレベルごとに1pt · 突破段階ごとに${bt}pt。ポイントを下の枠に選んで振ります。枠ごとに上限があり、上限の合計はポイントよりずっと多いので全部は振れません — 何に振るかが戦略です。枠の上限は気質・得意技・血統特性によって虫ごとに違います。';
   }
 
   @override
@@ -5970,7 +5969,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String fairyStoneEffect(String stat, String p) {
-    return '孵化した妖精のサブ能力が$p%の確率で「$stat」になります';
+    return '孵化した妖精の付加能力が$p%の確率で「$stat」になります';
   }
 
   @override
@@ -6029,11 +6028,11 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get fairyHelpSubHead => 'サブ能力（妖精ごとに1つ）';
+  String get fairyHelpSubHead => '付加能力（妖精ごとに1つ）';
 
   @override
   String fairyHelpSub(String p) {
-    return '孵化時に下のうち1つが付きます。大きさは基本範囲の$p×能力ごとの比重です。属性石を入れると狙ったサブ能力が出やすくなります。';
+    return '孵化時に下のうち1つが付きます。大きさは基本範囲の$p×能力ごとの比重です。属性石を入れると狙った付加能力が出やすくなります。';
   }
 
   @override
@@ -6046,7 +6045,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String fairyHelpMerge(String n) {
-    return '同じ種類・等級$n匹 → 1つ上の等級1匹。基本・サブ能力は新しく決まるので、合成のたびにより良い妖精を狙えます。';
+    return '同じ種類・等級$n体 → 1つ上の等級1体。基本・付加能力は新しく決まるので、合成のたびにより良い妖精を狙えます。';
   }
 
   @override
@@ -6066,7 +6065,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String fairyMergeInvestedConfirm(String n, String dust) {
-    return 'レベルを上げた妖精$n匹が素材になります。使った粉のうち$dustが戻ります。合成しますか？';
+    return 'レベルを上げた妖精$n体が素材になります。使った粉のうち$dustが戻ります。合成しますか？';
   }
 
   @override
@@ -6097,7 +6096,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String fairyReleaseValuableNote(String n) {
-    return 'レベルを上げた妖精、または伝説以上の妖精が$n匹含まれています。';
+    return 'レベルを上げた妖精、または伝説以上の妖精が$n体含まれています。';
   }
 
   @override
@@ -6827,7 +6826,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get guideTrainPushNote =>
-      '押し出す力 — ぶつかった時に相手を押す力です。突きのひっくり返し・押し、挟みの噛みつき押し、投げの投げる力が強くなります。体重級と違い重さ(踏ん張り)は増えません。以前の速度枠のポイントはそのまま押し出す力になりました。';
+      '押し出す力 — ぶつかった時に相手を押す力です。打撃のひっくり返し・押し、はさみの噛みつき押し、投げの投げる力が強くなります。体格と違い重さ(踏ん張り)は増えません。以前の速度枠のポイントはそのまま押し出す力になりました。';
 
   @override
   String get guideTrainPresetBody =>
@@ -6835,12 +6834,12 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String trainTechFlip(String v) {
-    return '叩き: ひっくり返し確率 $v';
+    return '打撃: ひっくり返し確率 $v';
   }
 
   @override
   String trainTechBite(String v) {
-    return '挟み: 噛む力 $v';
+    return 'はさみ: 噛む力 $v';
   }
 
   @override
@@ -6956,7 +6955,7 @@ class AppLocalizationsJa extends AppLocalizations {
     String jEl,
     String jTm,
   ) {
-    return '入手: 精鋭モンスター(五行石 $elite%、放置中は「採集の手」バフ中のみ) · ボス再討伐(五行石 $bossEl% · 気質石 $bossTm%) · 深淵$every層ごとの初到達(五行石 $abEl · 気質石 $abTm) · 「採集の手」で確率×2 · なければゼリー $jEl·$jTm';
+    return '入手: 精鋭モンスター(五行石 $elite%、放置中は「採集の手」バフ中のみ) · ボス再討伐(五行石 $bossEl% · 気質石 $bossTm%) · 深淵$every階ごとの初到達(五行石 $abEl · 気質石 $abTm) · 「採集の手」で確率×2 · なければゼリー $jEl·$jTm';
   }
 
   @override
@@ -7099,7 +7098,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get guideDuelPower =>
-      '戦闘力は実際の勝率を反映します — 攻撃・体力・防御だけでなく、回避・会心・回復力・押し出す力・体重・技・根性も含まれます。戦闘力が2倍なら約67%で勝ちます。';
+      '戦闘力は実際の勝率を反映します — 攻撃・体力・防御だけでなく、回避・会心・回復力・押し出す力・体格・技・根性も含まれます。戦闘力が2倍なら約67%で勝ちます。';
 
   @override
   String get guideGearTitle => '装備 — 磨き・星強化';
@@ -7130,11 +7129,11 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get guideHuntDefenseBody =>
-      'モンスターの攻撃は狩り場ごとに決まっています。体力・打たれ強さ(防御)・回復力を上げると受けるダメージがそのまま減り、同じ狩り場で強くなるほど痛くなくなります。ボスで詰まったら、その狩り場で強化して再挑戦しましょう。';
+      'モンスターの攻撃は狩場ごとに決まっています。体力・打たれ強さ(防御)・回復力を上げると受けるダメージがそのまま減り、同じ狩場で強くなるほど痛くなくなります。ボスで詰まったら、その狩場で強化して再挑戦しましょう。';
 
   @override
   String guideMissionRewardBody(String minutes, String times) {
-    return 'ミッション報酬は今の狩り場で$minutes分狩った分(ゴールド・キチン)なので、どの難易度でもちょうどいい大きさです。製錬ミッションのゼリーは1日$times回まで、その後はゼリーなしで次のミッションへ進みます。';
+    return 'ミッション報酬は今の狩場で$minutes分狩った分(ゴールド・キチン)なので、どの難易度でもちょうどいい大きさです。製錬ミッションのゼリーは1日$times回まで、その後はゼリーなしで次のミッションへ進みます。';
   }
 
   @override
@@ -7499,7 +7498,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String guideTrainBodyGrade(String perGrade, String levels, String bt) {
-    return '虫ごとに訓練ポイントが貯まります — 個体等級1段階ごとに${perGrade}pt · 修練$levelsレベルごとに1pt · 突破段階ごとに${bt}pt。ポイントを下の枠に選んで振ります。枠ごとに上限があり、上限の合計はポイントよりずっと多いので全部は振れません — 何に振るかが戦略です。枠の上限は気質・特技・血統特性によって虫ごとに違います。';
+    return '虫ごとに訓練ポイントが貯まります — 個体等級1段階ごとに${perGrade}pt · 修練$levelsレベルごとに1pt · 突破段階ごとに${bt}pt。ポイントを下の枠に選んで振ります。枠ごとに上限があり、上限の合計はポイントよりずっと多いので全部は振れません — 何に振るかが戦略です。枠の上限は気質・得意技・血統特性によって虫ごとに違います。';
   }
 
   @override
@@ -7761,7 +7760,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get whatsNew21Passive =>
-      'ペットパッシブが個体等級・希少度に応じて大きくなります — アップデート前の虫はほとんど下がったため、虫ごとに無料リロール5回をお渡しします';
+      'ペットパッシブが個体等級・希少度に応じて大きくなります — アップデート前の虫はほとんど下がったため、虫ごとに無料再抽選5回をお渡しします';
 
   @override
   String get whatsNew21Egg =>
@@ -7775,7 +7774,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get whatsNew21Train => '修練のコストが上がりました（高いレベルほど多く）';
 
   @override
-  String get whatsNew21Duel => '突きの得意技を調整し、種ごとの決闘倍率を合わせ直しました';
+  String get whatsNew21Duel => '打撃の得意技を調整し、種ごとの決闘倍率を合わせ直しました';
 
   @override
   String get whatsNew21Gear => '装備「スキルクールタイム短縮」オプション・星素材の繰り越し・妖精再抽選の属性石';
@@ -7786,7 +7785,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get whatsNew21Stats =>
-      'ゴールド・経験値・クリティカルダメージのボーナスが加算から乗算になり強くなります · 装備・妖精のクリティカルダメージは表示のみ1/10(効果は同じか強い) · ホームの戦闘力にスキル・妖精・図鑑・回避・回復を反映';
+      'ゴールド・経験値・会心ダメージのボーナスが加算から乗算になり強くなります · 装備・妖精の会心ダメージは表示のみ1/10(効果は同じか強い) · ホームの戦闘力にスキル・妖精・図鑑・回避・回復を反映';
 
   @override
   String get whatsNew21Badge => '大会バッジが金・銀・銅・入賞・参加に分かれます';
@@ -7891,16 +7890,16 @@ class AppLocalizationsJa extends AppLocalizations {
   String get polishChanged => 'その間に装備が変わったため新しい値を反映できませんでした（費用は支払い済みです）';
 
   @override
-  String get igNoPotion => '成長薬が足りません';
+  String get igNoPotion => '成長ポーションが足りません';
 
   @override
   String get igLegacyRollNone => '無料ロールは残っていません';
 
   @override
-  String get passiveRerollNoFree => '無料リロールを使い切りました';
+  String get passiveRerollNoFree => '無料再抽選を使い切りました';
 
   @override
-  String get passiveRerollPending => '前のリロール結果を先に選んでください';
+  String get passiveRerollPending => '前の再抽選の結果を先に選んでください';
 
   @override
   String passiveRerollRange(String min, String max) {
@@ -7914,7 +7913,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String igLegacyRollAllPotions(int n, String total) {
-    return '「$n回まとめて」は薬を合計$total個使います';
+    return '「$n回まとめて」はポーションを合計$total個使います';
   }
 
   @override
@@ -7977,7 +7976,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String igLegacyPotionHint(String n) {
-    return '成長薬1個ごとに振った後すべての能力 +$n点（100まで） — 値は下がりません';
+    return '成長ポーション1個ごとに振った後すべての能力 +$n点（100まで） — 値は下がりません';
   }
 
   @override
@@ -8150,12 +8149,12 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String guideRarityBody(String wild, String gacha) {
-    return '希少度は種ではなく昆虫ごとに決まります。同じ種でも一般から伝説まであります。希少度は宝石（◆）の色、個体等級は名札で表示されます。\n野生・交配：$wild\n卵ガチャ：$gacha';
+    return '希少度は種ではなく昆虫ごとに決まります。同じ種でも一般から伝説まであります。希少度は宝石（◆）の色、個体等級は名札で表示されます。\n野生・ペアリング：$wild\n卵ガチャ：$gacha';
   }
 
   @override
   String guideRarityEffect(String hunt, String duel) {
-    return '希少度が高いほど、ペットとして装備したときの狩り貢献が大きくなり（$hunt）、決闘・大会の体力・攻撃・防御が上がります（伝説 $duel）。エッセンスに変えたときの価値も上がり、孵化・交配の時間は長くなります。';
+    return '希少度が高いほど、ペットとして装備したときの狩り貢献が大きくなり（$hunt）、決闘・大会の体力・攻撃・防御が上がります（伝説 $duel）。エッセンスに変えたときの価値も上がり、孵化・ペアリングの時間は長くなります。';
   }
 
   @override
@@ -8165,7 +8164,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String guidePotionCost(String costs, String max, String bonus) {
-    return '等級アップに必要な同種のエッセンス：$costs（一般→高級から順に）。成長薬は1回に$max個まで一緒に使え、1個につき新しく振った能力値品質に+$bonus点加わります（100点まで）。';
+    return '等級アップに必要な同種のエッセンス：$costs（一般→上級から順に）。成長ポーションは1回に$max個まで一緒に使え、1個につき新しく振った能力値品質に+$bonus点加わります（100点まで）。';
   }
 
   @override
@@ -8180,7 +8179,7 @@ class AppLocalizationsJa extends AppLocalizations {
     String cap,
     String mult,
   ) {
-    return '成長薬はゼリー$jelly個で1日$daily個まで買えます。無料では精鋭（$elite）、ボス初撃破（$bossFirst個）、ボス再撃破（$bossChance）、その日最初のミッション、深淵$every階ごと（$abyss個）で手に入ります。精鋭・ボスの確率ドロップは1日$cap個までで、採集家の手が有効なら確率×$multです。';
+    return '成長ポーションはゼリー$jelly個で1日$daily個まで買えます。無料では精鋭（$elite）、ボス初撃破（$bossFirst個）、ボス再撃破（$bossChance）、その日最初のミッション、深淵$every階ごと（$abyss個）で手に入ります。精鋭・ボスの確率ドロップは1日$cap個までで、「採集の手」が有効なら確率×$multです。';
   }
 
   @override
@@ -8188,7 +8187,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String guideZoneBody(String zones, String kills, String mins) {
-    return '難易度（かんたん・ふつう・むずかしい・極限）ごとに狩場$zonesか所と最終ボスがあります。狩場でモンスターを$kills匹倒すとボス挑戦が開き、ボスを倒すと次の狩場へ進みます。狩場を初めてクリアすると、その狩場の$mins分ぶんのゴールドがもらえます。';
+    return '難易度（やさしい・ふつう・むずかしい・極限）ごとに狩場$zonesか所と最終ボスがあります。狩場でモンスターを$kills匹倒すとボス挑戦が開き、ボスを倒すと次の狩場へ進みます。狩場を初めてクリアすると、その狩場の$mins分ぶんのゴールドがもらえます。';
   }
 
   @override
@@ -8202,7 +8201,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String guideAbyssBody(String every, String fossil, String top) {
-    return '深淵：極限の最終ボスを倒すと開く終わりのない階層です。階ごとにモンスターが強くなり、ゴールドも増えます。$every階ごとに初めて到達すると化石$fossil個・スキルの欠片・決闘石・成長薬がもらえます。毎週月曜午前9時（KST）に1階から再スタートし、週間ランキング上位はゼリーがもらえます（1位$top個）。';
+    return '深淵：極限の最終ボスを倒すと開く終わりのない階層です。階ごとにモンスターが強くなり、ゴールドも増えます。$every階ごとに初めて到達すると化石$fossil個・スキルのかけら・決闘石・成長ポーションがもらえます。毎週月曜午前9時（KST）に1階から再スタートし、週間ランキング上位はゼリーがもらえます（1位$top個）。';
   }
 
   @override
@@ -8223,12 +8222,12 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String guideSkillBody(String n, String first, String max) {
-    return 'スキルは$n種（一般・希少・英雄・伝説）で、アクティブ・パッシブが同じ枠を使います。枠は最初$firstつで、新しい難易度に初めて行くたびに増え、最大$maxつです。スキルは自動で発動し、自分で押すとタイミングボーナスがあります。狩り専用で、決闘・大会には入りません。';
+    return 'スキルは$n種（一般・レア・英雄・伝説）で、アクティブ・パッシブが同じ枠を使います。枠は最初$firstつで、新しい難易度に初めて行くたびに増え、最大$maxつです。スキルは自動で発動し、自分で押すとタイミングボーナスがあります。狩り専用で、決闘・大会には入りません。';
   }
 
   @override
   String guideSkillGrow(String unlock, String ratio) {
-    return 'そのスキルの欠片$unlock個で解放し、欠片と時間で修練（レベルアップ）します。同じ等級の欠片$ratio個で1段階上の等級の万能欠片1個を作る昇級もあります。万能欠片はその等級のどのスキルにも使えます。';
+    return 'そのスキルのかけら$unlock個で解放し、かけらと時間で修練（レベルアップ）します。同じ等級のかけら$ratio個で1段階上の等級の万能のかけら1個を作る昇級もあります。万能のかけらはその等級のどのスキルにも使えます。';
   }
 
   @override
@@ -8242,7 +8241,7 @@ class AppLocalizationsJa extends AppLocalizations {
     String pity,
     String freeSweep,
   ) {
-    return '欠片はボス初撃破（$first個確定）、ボス再撃破（$repeatの確率）、精鋭（$eliteの確率）で出ます。スキルガチャは1日$freeDraw回無料、その後はゼリー$jelly個で1スキルの欠片$shards個、$pity回目は伝説確定です。ボス掃討は倒したことのある最高難易度基準の欠片を確定でくれ、1日$freeSweep回無料です。';
+    return 'かけらはボス初撃破（$first個確定）、ボス再撃破（$repeatの確率）、精鋭（$eliteの確率）で出ます。スキルガチャは1日$freeDraw回無料、その後はゼリー$jelly個で1スキルのかけら$shards個、$pity回目は伝説確定です。ボス掃討は倒したことのある最高難易度基準のかけらを確定でくれ、1日$freeSweep回無料です。';
   }
 
   @override
@@ -8275,16 +8274,16 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get guideFairyBody =>
-      '妖精は狩りを手伝う仲間です。同行妖精は1匹だけ選べ、その妖精の基本・付加能力値とスキルが狩りに加わります（スキルは自動で使います）。妖精は狩りだけを助け、決闘・大会・ギルドボスには入りません。';
+      '妖精は狩りを手伝う仲間です。同行の妖精は1体だけ選べ、その妖精の基本・付加能力とスキルが狩りに加わります（スキルは自動で使います）。妖精は狩りだけを助け、決闘・大会・ギルドボスには入りません。';
 
   @override
   String guideFairyEgg(String hatch, String elite, String gacha, String pity) {
-    return '妖精は妖精の卵を妖精の巣（1枠）で孵化させて手に入れます。孵化時間は$hatchで、加速器で短縮できます。卵はボス初撃破で確定、精鋭撃破で$eliteの確率で出ます。妖精の卵ガチャ（ゼリー$gacha）は$pity回以内に伝説以上が確定です。卵の等級は最初から決まっていて、種類・付加能力値は巣に入れたときに決まります。';
+    return '妖精は妖精の卵を妖精の巣（1枠）で孵化させて手に入れます。孵化時間は$hatchで、加速器で短縮できます。卵はボス初撃破で確定、精鋭撃破で$eliteの確率で出ます。妖精の卵ガチャ（ゼリー$gacha）は$pity回以内に伝説以上が確定です。卵の等級は最初から決まっていて、種類・付加能力は巣に入れたときに決まります。';
   }
 
   @override
   String guideFairyStone(String stone, String reroll, String cap) {
-    return '卵を巣に入れるときに属性石を一緒に入れると、その付加能力値が$stoneの確率で出ます。持っている妖精は再抽選（ゼリー$reroll、1日$cap回）で付加能力値と品質を振り直せます。品質は下がらず、気に入らなければ今の値を維持できます。';
+    return '卵を巣に入れるときに属性石を一緒に入れると、その付加能力が$stoneの確率で出ます。持っている妖精は再抽選（ゼリー$reroll、1日$cap回）で付加能力と品質を振り直せます。品質は下がらず、気に入らなければ今の値を維持できます。';
   }
 
   @override
@@ -8295,20 +8294,21 @@ class AppLocalizationsJa extends AppLocalizations {
     String maxLv,
     String refund,
   ) {
-    return '同じ種類・同じ等級の妖精$merge匹を合成すると1等級上の妖精1匹になります（英雄→伝説のみ$mergeEpic匹）。素材がすべて同じ付加能力値ならその付加が引き継がれます。レベルは妖精の粉で上げ（レベルごとに能力値+$level）、等級ごとに最大レベル（$maxLv）が違います。レベルを上げた妖精を合成・分解すると使った粉の$refundが戻ります。';
+    return '同じ種類・同じ等級の妖精$merge体を合成すると1等級上の妖精1体になります（英雄→伝説のみ$mergeEpic体）。素材がすべて同じ付加能力ならその付加が引き継がれます。レベルは妖精の粉で上げ（レベルごとに能力値+$level）、等級ごとに最大レベル（$maxLv）が違います。レベルを上げた妖精を合成・分解すると使った粉の$refundが戻ります。';
   }
 
   @override
   String guideFairyBox(String base, String step, String max, String dex) {
-    return '妖精箱は妖精と卵を合わせて基本$base枠で、ゼリーで$step枠ずつ最大$max枠まで広げられます。いっぱいになると新しい卵は妖精の粉に変わります。いらない妖精や卵は分解して粉に変え、卵の自動分解をオンにすると選んだ等級以下の新しい卵がすぐ粉になります。妖精図鑑（$dex枠）を埋めるほど粉・加速器・化石がもらえます。';
+    return '妖精ボックスは妖精と卵を合わせて基本$base枠で、ゼリーで$step枠ずつ最大$max枠まで広げられます。いっぱいになると新しい卵は妖精の粉に変わります。いらない妖精や卵は分解して粉に変え、卵の自動分解をオンにすると選んだ等級以下の新しい卵がすぐ粉になります。妖精図鑑（$dex枠）を埋めるほど粉・加速器・化石がもらえます。';
   }
 
   @override
   String get whatsNew23RedDot =>
-      '逃すと損するものに赤い点が付きます — 今日の無料ガチャ・掃討、空いた孵化器・交配枠、終わった修練・工房・突破、受け取れる図鑑・リーグ報酬、決闘チケット';
+      '逃すと損するものに赤い点が付きます — 今日の無料ガチャ・掃討、空いた孵化器・ペアリング枠、終わった修練・工房・突破、受け取れる図鑑・リーグ報酬、決闘チケット';
 
   @override
-  String get whatsNew23Guide => '攻略本に希少度・成長薬・狩場と深淵・バフ・スキル・図鑑・採集箱・妖精の説明が加わりました';
+  String get whatsNew23Guide =>
+      '攻略ガイドに希少度・成長ポーション・狩場と深淵・バフ・スキル・図鑑・採集箱・妖精の説明が加わりました';
 
   @override
   String get whatsNew23Mail => 'お昼・夕方の報酬の「もう一度受け取る」を後から郵便でも受け取れます';
@@ -8323,21 +8323,21 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get whatsNew24Polish =>
-      '装備の研磨がずっと安くなりました — 化石コスト60%引き下げ、同じ行を磨くたびの値上がり幅も縮小（7回目から据え置き）';
+      '装備の磨きがずっと安くなりました — 化石コスト60%引き下げ、同じ行を磨くたびの値上がり幅も縮小（7回目から据え置き）';
 
   @override
   String get whatsNew24Haptic => '設定で振動をオフにできます';
 
   @override
   String get whatsNew25Polish =>
-      '装備オプションの値が小数第1位まで表示されます — 研磨で0.1上がったこともすぐ分かります（例：68.3/69）';
+      '装備オプションの値が小数第1位まで表示されます — 磨きで0.1上がったこともすぐ分かります（例：68.3/69）';
 
   @override
-  String get whatsNew25Trait => '交配する虫を選ぶとき、血統特性（強靭・猛烈など）が名前で表示されます';
+  String get whatsNew25Trait => 'ペアリングする虫を選ぶとき、血統特性（強靭・猛烈など）が名前で表示されます';
 
   @override
   String get whatsNew25Fix =>
-      '王虫選抜大会のバナーが長くなってずれる問題、決闘の無料チャージボタンの大きさ、設定の攻略本の赤い点が切れる問題を直しました';
+      '王虫選抜大会のバナーが長くなってずれる問題、決闘の無料チャージボタンの大きさ、設定の攻略ガイドの赤い点が切れる問題を直しました';
 
   @override
   String get whatsNew26Lab =>
@@ -8426,10 +8426,10 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get researchHowToGet =>
-      '研究標本はエリート・ボスがドロップします。ゴールド・素材のコストは到達した最も高い狩り場が基準です。';
+      '研究標本は精鋭・ボスがドロップします。ゴールド・素材のコストは到達した最も高い狩場が基準です。';
 
   @override
-  String get researchUnitPp => 'pt';
+  String get researchUnitPp => '%p';
 
   @override
   String get researchErrMaxLevel => 'すでに最大レベルです';
@@ -8462,7 +8462,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get notifResearchBody => '研究が終わりました。研究所で次の研究を始めましょう。';
 
   @override
-  String get researchPassHint => '研究パス：閉じていてもサンプルが集まる';
+  String get researchPassHint => '研究パス：閉じていても標本が集まる';
 
   @override
   String get researchPassHintGo => 'ショップ';
@@ -8547,7 +8547,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get researchFxDuelHp => '決闘体力';
 
   @override
-  String get researchFxInjuryTime => '負傷回復時間';
+  String get researchFxInjuryTime => 'ケガの回復時間';
 
   @override
   String get researchFxHuntCritDmg => '狩り会心ダメージ';
@@ -8565,19 +8565,19 @@ class AppLocalizationsJa extends AppLocalizations {
   String get researchFxSkillCooldown => 'スキルクールタイム';
 
   @override
-  String get researchFxForgeTime => '工房ランクアップ・超越時間';
+  String get researchFxForgeTime => '工房アップグレード・超越時間';
 
   @override
   String get researchFxStarTime => '星強化時間';
 
   @override
-  String get researchFxPolishCost => '仕上げコスト';
+  String get researchFxPolishCost => '磨きコスト';
 
   @override
   String get researchFxTraitChance => '血統特性の発現確率';
 
   @override
-  String get researchFxPotionChance => '成長薬のドロップ確率';
+  String get researchFxPotionChance => '成長ポーションのドロップ確率';
 
   @override
   String get researchFxSalvageMat => '分解・放生の素材';

@@ -106,12 +106,12 @@ void main() {
 
   final base = SaveGame.initial(createdAt: t0).copyWith(lastSeen: t0);
 
-  testWidgets('빈 세이브 — 칸 1 비어 있음 · 2·3 은 어려움·극한에서 열림', (tester) async {
+  testWidgets('빈 세이브 — 칸 1 비어 있음 · 2·3 은 극한·심연에서 열림', (tester) async {
     await pump(tester, base);
     expect(tester.takeException(), isNull);
     expect(find.text('비어 있음'), findsOneWidget);
-    expect(find.text('어려움에서 열림'), findsOneWidget);
     expect(find.text('극한에서 열림'), findsOneWidget);
+    expect(find.text('심연에서 열림'), findsOneWidget);
   });
 
   Future<void> settle(WidgetTester tester) async {
@@ -315,8 +315,8 @@ void main() {
     );
   });
 
-  testWidgets('어려움(2칸) — 구매 버튼은 3번째 칸 하나뿐이고 값은 3번째 칸 값', (tester) async {
-    await pump(tester, base.copyWith(maxTierReached: 2, difficultyTier: 2));
+  testWidgets('극한(2칸) — 구매 버튼은 3번째 칸 하나뿐이고 값은 3번째 칸 값', (tester) async {
+    await pump(tester, base.copyWith(maxTierReached: 3, difficultyTier: 3));
     expect(find.byKey(const Key('researchBuySlot')), findsOneWidget);
     final cfg = _data().researchConfig!;
     expect(

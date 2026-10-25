@@ -170,7 +170,7 @@
    },
    "desc": {
     "ko": "장수풍뎅이 계열이 황금빛으로\n그 계열 분해·방생 재료 +30%\n부화·짝짓기 시간 −25%\n구매 즉시 젤리 100 + 영웅 등급 장수풍뎅이 알",
-    "en": "Rhinoceros beetles turn gold\n+30% materials from that family\n−25% incubation & pairing time\nBonus: 100 jelly + an Epic-grade Rhino Beetle egg",
+    "en": "Rhinoceros beetles turn gold\n+30% materials from that family\n−25% incubation & pairing time\nBonus: 100 jelly + an Epic-grade Rhinoceros Beetle egg",
     "ja": "カブトムシ系が黄金色に\nその系統の分解・放生素材+30%\n孵化・ペアリング時間−25%\n購入特典 ゼリー100＋英雄等級のカブトムシの卵"
    },
    "image": "skin_gold_rhino"
@@ -190,7 +190,7 @@
    },
    "desc": {
     "ko": "사슴벌레 계열이 알비노로\n그 계열 분해·방생 재료 +30%\n부화·짝짓기 시간 −25%\n구매 즉시 젤리 100 + 영웅 등급 사슴벌레 알",
-    "en": "Stag beetles turn albino\n+30% materials from that family\n−25% incubation & pairing time\nBonus: 100 jelly + an Epic-grade Stag Beetle egg",
+    "en": "Stag beetles turn albino\n+30% materials from that family\n−25% incubation & pairing time\nBonus: 100 jelly + an Epic-grade Miyama Stag Beetle egg",
     "ja": "クワガタ系がアルビノに\nその系統の分解・放生素材+30%\n孵化・ペアリング時間−25%\n購入特典 ゼリー100＋英雄等級のミヤマクワガタの卵"
    },
    "image": "skin_albino_stag"
@@ -340,7 +340,7 @@
    },
    "desc": {
     "ko": "곤충학자·무한 버프·성장·연구 패스를 한 번에 (40% 할인)",
-    "en": "Entomologist, Buff, Growth & Research passes in one (40% off)",
+    "en": "Entomologist, Endless Buff, Growth & Research passes in one (40% off)",
     "ja": "昆虫学者・無限バフ・成長・研究パスをまとめて（40%オフ）"
    },
    "image": "all_pass"

@@ -937,7 +937,7 @@ abstract class AppLocalizations {
   /// No description provided for @breedingInProgress.
   ///
   /// In en, this message translates to:
-  /// **'Breeding'**
+  /// **'Laying eggs'**
   String get breedingInProgress;
 
   /// No description provided for @breedCooldownLeft.
@@ -1249,7 +1249,7 @@ abstract class AppLocalizations {
   /// No description provided for @offlineBugsBlocked.
   ///
   /// In en, this message translates to:
-  /// **'Your collection box was full —\n{count, plural, =1{1 egg was} other{{count} eggs were}} not collected'**
+  /// **'Your storage was full —\n{count, plural, =1{1 egg was} other{{count} eggs were}} not collected'**
   String offlineBugsBlocked(int count);
 
   /// No description provided for @fairyRerollPending.
@@ -1321,7 +1321,7 @@ abstract class AppLocalizations {
   /// No description provided for @offlineRowFairyStone.
   ///
   /// In en, this message translates to:
-  /// **'Element stone'**
+  /// **'Attribute Stone'**
   String get offlineRowFairyStone;
 
   /// No description provided for @offlineRowDuelStone.
@@ -1363,7 +1363,7 @@ abstract class AppLocalizations {
   /// No description provided for @offlineRareNote.
   ///
   /// In en, this message translates to:
-  /// **'Element stones, duel stones and growth potions drop while idle only with Gatherer\'s Touch on · a day = {hours} idle hours'**
+  /// **'Attribute stones, duel stones and growth potions drop while idle only with Gatherer\'s Touch on · a day = {hours} idle hours'**
   String offlineRareNote(int hours);
 
   /// No description provided for @offlineRareDaily.
@@ -1771,7 +1771,7 @@ abstract class AppLocalizations {
   /// No description provided for @whatsNewAvatar.
   ///
   /// In en, this message translates to:
-  /// **'Profile pictures — tap your portrait (top-left), then the picture on your card, and pick from 21 (shown in chat, rankings, duels, events)'**
+  /// **'Profile pictures — tap your portrait (top-left), then the picture on your card, and pick from 21 (shown in chat, rankings, duels, contests)'**
   String get whatsNewAvatar;
 
   /// No description provided for @whatsNewDuelPower.
@@ -1909,7 +1909,7 @@ abstract class AppLocalizations {
   /// No description provided for @storageFullBanner.
   ///
   /// In en, this message translates to:
-  /// **'Your collection is full\nNo new bugs will be added'**
+  /// **'Your storage is full\nNo new bugs will be added'**
   String get storageFullBanner;
 
   /// No description provided for @storageFullSnack.
@@ -2257,7 +2257,7 @@ abstract class AppLocalizations {
   /// No description provided for @eventPeriodLabel.
   ///
   /// In en, this message translates to:
-  /// **'Event period'**
+  /// **'Contest period'**
   String get eventPeriodLabel;
 
   /// No description provided for @eventFlyerHeadline.
@@ -2353,7 +2353,7 @@ abstract class AppLocalizations {
   /// No description provided for @eventClosed.
   ///
   /// In en, this message translates to:
-  /// **'No event is running'**
+  /// **'No contest is running'**
   String get eventClosed;
 
   /// No description provided for @battleNeedServer.
@@ -2401,7 +2401,7 @@ abstract class AppLocalizations {
   /// No description provided for @eventNeedServer.
   ///
   /// In en, this message translates to:
-  /// **'The event needs an online connection'**
+  /// **'The contest needs an online connection'**
   String get eventNeedServer;
 
   /// No description provided for @eventTickets.
@@ -2647,7 +2647,7 @@ abstract class AppLocalizations {
   /// No description provided for @eventRules.
   ///
   /// In en, this message translates to:
-  /// **'Event rules'**
+  /// **'Contest rules'**
   String get eventRules;
 
   /// No description provided for @storageFilterButton.
@@ -4279,7 +4279,7 @@ abstract class AppLocalizations {
   /// No description provided for @materialFossilDesc.
   ///
   /// In en, this message translates to:
-  /// **'A shard of petrified insect. One is spent per hammer strike at the workshop.'**
+  /// **'A shard of petrified insect. One is spent per hammer strike at the forge.'**
   String get materialFossilDesc;
 
   /// No description provided for @saveBrokenTitle.
@@ -4315,7 +4315,7 @@ abstract class AppLocalizations {
   /// No description provided for @eventRewardTitle.
   ///
   /// In en, this message translates to:
-  /// **'Championship results are in'**
+  /// **'Bug King Trials results are in'**
   String get eventRewardTitle;
 
   /// No description provided for @eventRewardRank.
@@ -4987,7 +4987,7 @@ abstract class AppLocalizations {
   /// No description provided for @titleStoreTagline.
   ///
   /// In en, this message translates to:
-  /// **'Idle Insect RPG'**
+  /// **'Idle Collect & Battle'**
   String get titleStoreTagline;
 
   /// No description provided for @nicknameChangeCostHint.
@@ -5029,7 +5029,7 @@ abstract class AppLocalizations {
   /// No description provided for @notifHatchBody.
   ///
   /// In en, this message translates to:
-  /// **'An egg has hatched. Check your collection.'**
+  /// **'An egg has hatched. Check your storage.'**
   String get notifHatchBody;
 
   /// No description provided for @settingsNotify.
@@ -5605,13 +5605,13 @@ abstract class AppLocalizations {
   /// No description provided for @forgeTitle.
   ///
   /// In en, this message translates to:
-  /// **'Workshop'**
+  /// **'Forge'**
   String get forgeTitle;
 
   /// No description provided for @forgeHammer.
   ///
   /// In en, this message translates to:
-  /// **'Forge'**
+  /// **'Smelt'**
   String get forgeHammer;
 
   /// No description provided for @forgeAuto.
@@ -5653,13 +5653,13 @@ abstract class AppLocalizations {
   /// No description provided for @forgeLevel.
   ///
   /// In en, this message translates to:
-  /// **'Workshop Lv.{lv}'**
+  /// **'Forge Lv.{lv}'**
   String forgeLevel(int lv);
 
   /// No description provided for @forgeStep.
   ///
   /// In en, this message translates to:
-  /// **'Workshop upgrade {cur}/{max}'**
+  /// **'Forge upgrade {cur}/{max}'**
   String forgeStep(int cur, int max);
 
   /// No description provided for @forgeUpgrading.
@@ -5983,7 +5983,7 @@ abstract class AppLocalizations {
   /// No description provided for @skillGradeUpHint.
   ///
   /// In en, this message translates to:
-  /// **'Unused shards → {grade} universal ×{n}!'**
+  /// **'Unused shards → {grade} wild ×{n}!'**
   String skillGradeUpHint(String grade, String n);
 
   /// No description provided for @skillGradeUpHintGo.
@@ -6277,7 +6277,7 @@ abstract class AppLocalizations {
   /// No description provided for @forgeGradeButton.
   ///
   /// In en, this message translates to:
-  /// **'Workshop grade'**
+  /// **'Forge grade'**
   String get forgeGradeButton;
 
   /// No description provided for @statHp.
@@ -6325,7 +6325,7 @@ abstract class AppLocalizations {
   /// No description provided for @charPetHint.
   ///
   /// In en, this message translates to:
-  /// **'Manage pets in the collection box'**
+  /// **'Manage pets in Storage'**
   String get charPetHint;
 
   /// No description provided for @forgeAutoShort.
@@ -6751,7 +6751,7 @@ abstract class AppLocalizations {
   /// No description provided for @forgeResultFeed.
   ///
   /// In en, this message translates to:
-  /// **'Star food'**
+  /// **'Star material'**
   String get forgeResultFeed;
 
   /// No description provided for @forgeFeedHint.
@@ -6973,7 +6973,7 @@ abstract class AppLocalizations {
   /// No description provided for @eventSoonBanner.
   ///
   /// In en, this message translates to:
-  /// **'Bug King Championship · opens {when}'**
+  /// **'Bug King Trials · opens {when}'**
   String eventSoonBanner(String when);
 
   /// No description provided for @eventFlyerPrizeTag.
@@ -7765,7 +7765,7 @@ abstract class AppLocalizations {
   /// No description provided for @bugInfoTemperament.
   ///
   /// In en, this message translates to:
-  /// **'Temper'**
+  /// **'Temperament'**
   String get bugInfoTemperament;
 
   /// No description provided for @bugInfoSize.
@@ -7879,7 +7879,7 @@ abstract class AppLocalizations {
   /// No description provided for @trainingCapHint.
   ///
   /// In en, this message translates to:
-  /// **'Max levels differ by potential, temper, specialty and bloodline trait'**
+  /// **'Max levels differ by potential, temperament, specialty and bloodline trait'**
   String get trainingCapHint;
 
   /// No description provided for @trainingLevel.
@@ -8371,7 +8371,7 @@ abstract class AppLocalizations {
   /// No description provided for @fairyNestReady.
   ///
   /// In en, this message translates to:
-  /// **'Ready to hatch!'**
+  /// **'Hatched!'**
   String get fairyNestReady;
 
   /// No description provided for @fairyNestLeft.
@@ -8587,7 +8587,7 @@ abstract class AppLocalizations {
   /// No description provided for @fairyRerollStoneTitle.
   ///
   /// In en, this message translates to:
-  /// **'Add element stone'**
+  /// **'Add attribute stone'**
   String get fairyRerollStoneTitle;
 
   /// No description provided for @fairyRerollStoneHint.
@@ -9091,7 +9091,7 @@ abstract class AppLocalizations {
   /// No description provided for @guildLeaderLeaveNote.
   ///
   /// In en, this message translates to:
-  /// **'Leadership passes to a deputy (or the most active member).'**
+  /// **'Leadership passes to a deputy (or the top contributor).'**
   String get guildLeaderLeaveNote;
 
   /// No description provided for @guildKick.
@@ -9589,7 +9589,7 @@ abstract class AppLocalizations {
   /// No description provided for @guildSkillNote.
   ///
   /// In en, this message translates to:
-  /// **'Buffs apply to every guildmate while hunting (offline gold too). They don\'t apply to duels or events. Leaving the guild removes them. Guild level +1 = 1 point.'**
+  /// **'Buffs apply to every guildmate while hunting (offline gold too). They don\'t apply to duels or contests. Leaving the guild removes them. Guild level +1 = 1 point.'**
   String get guildSkillNote;
 
   /// No description provided for @guildSkillValue.
@@ -9979,7 +9979,7 @@ abstract class AppLocalizations {
   /// No description provided for @fairyDexHelp.
   ///
   /// In en, this message translates to:
-  /// **'The Fairy Codex records every fairy you have ever obtained. Each of the 8 fairies has two rows to fill:\n• Grade dots — a dot lights up the first time you get that fairy at that grade.\n• Stat stones — a stone lights up the first time you get that fairy with that bonus stat.\nA fairy is recorded when it hatches from an egg in the nest or is made by merging, and records stay even if you release the fairy. Fill cells to earn rewards below (fairy dust, accelerators, fossils). It does not give stats.'**
+  /// **'The Fairy Codex records every fairy you have ever obtained. Each of the 8 fairies has two rows to fill:\n• Grade dots — a dot lights up the first time you get that fairy at that grade.\n• Attribute stones — a stone lights up the first time you get that fairy with that bonus stat.\nA fairy is recorded when it hatches from an egg in the nest or is made by merging, and records stay even if you release the fairy. Fill cells to earn rewards below (fairy dust, accelerators, fossils). It does not give stats.'**
   String get fairyDexHelp;
 
   /// No description provided for @fairyDexLegendGrades.
@@ -9991,7 +9991,7 @@ abstract class AppLocalizations {
   /// No description provided for @fairyDexLegendSubs.
   ///
   /// In en, this message translates to:
-  /// **'Stat stones (bright = obtained with that bonus stat)'**
+  /// **'Attribute stones (bright = obtained with that bonus stat)'**
   String get fairyDexLegendSubs;
 
   /// No description provided for @fairyDexRewards.
@@ -10033,7 +10033,7 @@ abstract class AppLocalizations {
   /// No description provided for @guideElementBody.
   ///
   /// In en, this message translates to:
-  /// **'Each bug has one element. In duels, when a bug clashes with an element it restrains, it deals {mult}x damage. The red arrows show who beats whom. Arenas have an element too: bugs matching it gain HP/ATK/DEF and bugs the arena beats lose some (duels: set when picking an opponent; event: every wave).'**
+  /// **'Each bug has one element. In duels, when a bug clashes with an element it restrains, it deals {mult}x damage. The red arrows show who beats whom. Arenas have an element too: bugs matching it gain HP/ATK/DEF and bugs the arena beats lose some (duels: set when picking an opponent; contest: every wave).'**
   String guideElementBody(String mult);
 
   /// No description provided for @guideElementLine.
@@ -10238,7 +10238,7 @@ abstract class AppLocalizations {
   /// No description provided for @eventHudShort.
   ///
   /// In en, this message translates to:
-  /// **'King\nCup'**
+  /// **'King\nTrials'**
   String get eventHudShort;
 
   /// No description provided for @fairyStoneName.
@@ -10250,7 +10250,7 @@ abstract class AppLocalizations {
   /// No description provided for @fairyStoneEffect.
   ///
   /// In en, this message translates to:
-  /// **'The hatched fairy\'s sub-stat becomes {stat} with {p}% chance'**
+  /// **'The hatched fairy\'s bonus stat becomes {stat} with {p}% chance'**
   String fairyStoneEffect(String stat, String p);
 
   /// No description provided for @fairyRerollStoneEffect.
@@ -10262,7 +10262,7 @@ abstract class AppLocalizations {
   /// No description provided for @fairyStoneBuyTitle.
   ///
   /// In en, this message translates to:
-  /// **'Buy element stone'**
+  /// **'Buy attribute stone'**
   String get fairyStoneBuyTitle;
 
   /// No description provided for @fairyStoneBuyAction.
@@ -10346,13 +10346,13 @@ abstract class AppLocalizations {
   /// No description provided for @fairyHelpSubHead.
   ///
   /// In en, this message translates to:
-  /// **'Sub-stat (one per fairy)'**
+  /// **'Bonus stat (one per fairy)'**
   String get fairyHelpSubHead;
 
   /// No description provided for @fairyHelpSub.
   ///
   /// In en, this message translates to:
-  /// **'Rolled at hatching from the list below — {p} of the base range × the stat\'s weight. An element stone raises the chance of the one you want.'**
+  /// **'Rolled at hatching from the list below — {p} of the base range × the stat\'s weight. An attribute stone raises the chance of the one you want.'**
   String fairyHelpSub(String p);
 
   /// No description provided for @fairyHelpSubLine.
@@ -10370,7 +10370,7 @@ abstract class AppLocalizations {
   /// No description provided for @fairyHelpMerge.
   ///
   /// In en, this message translates to:
-  /// **'{n} fairies of the same kind and grade → 1 of the next grade. Base and sub stats are rolled again, so you can aim for a better one.'**
+  /// **'{n} fairies of the same kind and grade → 1 of the next grade. Base and bonus stats are rolled again, so you can aim for a better one.'**
   String fairyHelpMerge(String n);
 
   /// No description provided for @fairyGachaOverflowWarn.
@@ -10514,7 +10514,7 @@ abstract class AppLocalizations {
   /// No description provided for @bugLockedToast.
   ///
   /// In en, this message translates to:
-  /// **'Locked — it won\'t be used for merging or dismantling'**
+  /// **'Locked — it won\'t be used for merging or disassembly'**
   String get bugLockedToast;
 
   /// No description provided for @bugUnlockedToast.
@@ -10526,7 +10526,7 @@ abstract class AppLocalizations {
   /// No description provided for @disassembleLocked.
   ///
   /// In en, this message translates to:
-  /// **'Locked bugs can\'t be dismantled. Unlock it first.'**
+  /// **'Locked bugs can\'t be disassembled. Unlock it first.'**
   String get disassembleLocked;
 
   /// No description provided for @trainingSumShort.
@@ -10856,7 +10856,7 @@ abstract class AppLocalizations {
   /// No description provided for @forgeUpRushTitle.
   ///
   /// In en, this message translates to:
-  /// **'Finish workshop upgrade now'**
+  /// **'Finish forge upgrade now'**
   String get forgeUpRushTitle;
 
   /// No description provided for @forgeUpRushConfirm.
@@ -11246,7 +11246,7 @@ abstract class AppLocalizations {
   /// No description provided for @guildMissionOwnerTag.
   ///
   /// In en, this message translates to:
-  /// **'Leader'**
+  /// **'Host'**
   String get guildMissionOwnerTag;
 
   /// No description provided for @guildMissionTeamTitle.
@@ -11384,7 +11384,7 @@ abstract class AppLocalizations {
   /// No description provided for @duelCommanderBadge.
   ///
   /// In en, this message translates to:
-  /// **'Leader'**
+  /// **'Commander'**
   String get duelCommanderBadge;
 
   /// No description provided for @duelTeamAuraHelpCommander.
@@ -11588,7 +11588,7 @@ abstract class AppLocalizations {
   /// No description provided for @trainPresetFill.
   ///
   /// In en, this message translates to:
-  /// **'Fill {n} spare points'**
+  /// **'Fill {n} spare points as suggested'**
   String trainPresetFill(String n);
 
   /// No description provided for @trainPresetRespec.
@@ -11786,7 +11786,7 @@ abstract class AppLocalizations {
   /// No description provided for @duelStoneTemperament.
   ///
   /// In en, this message translates to:
-  /// **'Temper stone'**
+  /// **'Temperament stone'**
   String get duelStoneTemperament;
 
   /// No description provided for @duelStoneOwned.
@@ -11804,7 +11804,7 @@ abstract class AppLocalizations {
   /// No description provided for @duelStoneChangeTemperament.
   ///
   /// In en, this message translates to:
-  /// **'Change temper'**
+  /// **'Change temperament'**
   String get duelStoneChangeTemperament;
 
   /// No description provided for @duelStoneWhere.
@@ -11843,7 +11843,7 @@ abstract class AppLocalizations {
   /// No description provided for @duelStoneHint.
   ///
   /// In en, this message translates to:
-  /// **'Set element or temper to any value (bloodline trait stays). Changes are inherited by offspring.'**
+  /// **'Set element or temperament to any value (bloodline trait stays). Changes are inherited by offspring.'**
   String get duelStoneHint;
 
   /// No description provided for @duelStonePickElement.
@@ -11855,7 +11855,7 @@ abstract class AppLocalizations {
   /// No description provided for @duelStonePickTemperament.
   ///
   /// In en, this message translates to:
-  /// **'Pick a new temper'**
+  /// **'Pick a new temperament'**
   String get duelStonePickTemperament;
 
   /// No description provided for @duelStoneAsk.
@@ -12029,7 +12029,7 @@ abstract class AppLocalizations {
   /// No description provided for @guideTrainStoneBody.
   ///
   /// In en, this message translates to:
-  /// **'Duel stones — an Element stone sets a bug\'s element and a Temper stone its temperament to the value you choose (bloodline trait stays; the new value is inherited by offspring). Get them from elites, bosses and the Abyss, or buy with jelly (Element {el} · Temper {tm}).'**
+  /// **'Duel stones — an Element stone sets a bug\'s element and a Temperament stone its temperament to the value you choose (bloodline trait stays; the new value is inherited by offspring). Get them from elites, bosses and the Abyss, or buy with jelly (Element {el} · Temper {tm}).'**
   String guideTrainStoneBody(String el, String tm);
 
   /// No description provided for @guideDuelPower.
@@ -12660,7 +12660,7 @@ abstract class AppLocalizations {
   /// No description provided for @bugLockedToastGrade.
   ///
   /// In en, this message translates to:
-  /// **'Locked — it won\'t be converted to essence or dismantled'**
+  /// **'Locked — it won\'t be converted to essence or disassembled'**
   String get bugLockedToastGrade;
 
   /// No description provided for @trainPtNoPointsGrade.
@@ -13050,7 +13050,7 @@ abstract class AppLocalizations {
   /// No description provided for @guideAuraBody.
   ///
   /// In en, this message translates to:
-  /// **'Each species has a duel role (Attacker, Defender, Tank). Every bug in a 3-bug duel (league, defense team, guild war) boosts its role stat for the whole team (not in events).'**
+  /// **'Each species has a duel role (Attacker, Defender, Vitality). Every bug in a 3-bug duel (league, defense team, guild war) boosts its role stat for the whole team (not in contests).'**
   String get guideAuraBody;
 
   /// No description provided for @guideAuraSize.
@@ -13098,13 +13098,13 @@ abstract class AppLocalizations {
   /// No description provided for @whatsNew21Gear.
   ///
   /// In en, this message translates to:
-  /// **'Gear \'Skill cooldown\' option · star materials carry over · element stones for fairy rerolls'**
+  /// **'Gear \'Skill cooldown\' option · star materials carry over · attribute stones for fairy rerolls'**
   String get whatsNew21Gear;
 
   /// No description provided for @whatsNew21Buff.
   ///
   /// In en, this message translates to:
-  /// **'Buffs now apply while the app is closed · Gatherer\'s Touch also doubles rare drops (element stones, duel stones, growth potions) · free activation takes 1 minute (instant with jelly or the Endless Buff Pass)'**
+  /// **'Buffs now apply while the app is closed · Gatherer\'s Touch also doubles rare drops (attribute stones, duel stones, growth potions) · free activation takes 1 minute (instant with jelly or the Endless Buff Pass)'**
   String get whatsNew21Buff;
 
   /// No description provided for @whatsNew21Stats.
@@ -13116,7 +13116,7 @@ abstract class AppLocalizations {
   /// No description provided for @whatsNew21Badge.
   ///
   /// In en, this message translates to:
-  /// **'Event badges are now gold, silver, bronze, finalist and participant'**
+  /// **'Contest badges are now gold, silver, bronze, finalist and participant'**
   String get whatsNew21Badge;
 
   /// No description provided for @passiveRerollFree.
@@ -13374,7 +13374,7 @@ abstract class AppLocalizations {
   /// No description provided for @whatsNew22Arena.
   ///
   /// In en, this message translates to:
-  /// **'Arenas now have an element — matching bugs +10%, bugs the arena beats −10% (duels: shown when picking an opponent; event: changes every wave)'**
+  /// **'Arenas now have an element — matching bugs +10%, bugs the arena beats −10% (duels: shown when picking an opponent; contest: changes every wave)'**
   String get whatsNew22Arena;
 
   /// No description provided for @whatsNew22LegacyRoll.
@@ -13434,7 +13434,7 @@ abstract class AppLocalizations {
   /// No description provided for @fairyErrNoStone.
   ///
   /// In en, this message translates to:
-  /// **'You don\'t have that element stone'**
+  /// **'You don\'t have that attribute stone'**
   String get fairyErrNoStone;
 
   /// No description provided for @fairyErrNestEmpty.
@@ -13750,7 +13750,7 @@ abstract class AppLocalizations {
   /// No description provided for @guideZoneTier.
   ///
   /// In en, this message translates to:
-  /// **'Entering a difficulty for the first time restarts upgrades, level, gold and common materials (jelly, fossils, bugs, gear, skills and the Bug Book stay). Difficulties you have reached can be revisited freely from the roadmap. While the app is closed, hunting rewards pile up for up to {hours} hours; gold you hunt with the app open gets +{bonus}.'**
+  /// **'Entering a difficulty for the first time restarts upgrades, level, gold and common materials (jelly, fossils, bugs, gear, skills and the Bug Dex stay). Difficulties you have reached can be revisited freely from the roadmap. While the app is closed, hunting rewards pile up for up to {hours} hours; gold you hunt with the app open gets +{bonus}.'**
   String guideZoneTier(String hours, String bonus);
 
   /// No description provided for @guideAbyssBody.
@@ -13792,7 +13792,7 @@ abstract class AppLocalizations {
   /// No description provided for @guideSkillGrow.
   ///
   /// In en, this message translates to:
-  /// **'Unlock a skill with {unlock} of its shards, then train (level up) it with shards and time. Grade up turns {ratio} shards of one grade into 1 wildcard shard of the next grade; wildcard shards work for any skill of that grade.'**
+  /// **'Unlock a skill with {unlock} of its shards, then train (level up) it with shards and time. Grade up turns {ratio} shards of one grade into 1 wild shard of the next grade; wild shards work for any skill of that grade.'**
   String guideSkillGrow(String unlock, String ratio);
 
   /// No description provided for @guideSkillGet.
@@ -13813,7 +13813,7 @@ abstract class AppLocalizations {
   /// No description provided for @guideDexTitle.
   ///
   /// In en, this message translates to:
-  /// **'Bug Book'**
+  /// **'Bug Dex'**
   String get guideDexTitle;
 
   /// No description provided for @guideDexBody.
@@ -13855,25 +13855,25 @@ abstract class AppLocalizations {
   /// No description provided for @guideFairyBody.
   ///
   /// In en, this message translates to:
-  /// **'Fairies are companions that help you hunt. You pick one companion fairy, and its main and sub stats plus its skill are added to hunting (it casts the skill on its own). Fairies help hunting only — never duels, contests or guild bosses.'**
+  /// **'Fairies are companions that help you hunt. You pick one companion fairy, and its base and bonus stats plus its skill are added to hunting (it casts the skill on its own). Fairies help hunting only — never duels, contests or guild bosses.'**
   String get guideFairyBody;
 
   /// No description provided for @guideFairyEgg.
   ///
   /// In en, this message translates to:
-  /// **'Hatch fairy eggs in the fairy nest (one slot) to get fairies. Hatching takes {hatch}, shortened with accelerators. Eggs are guaranteed from first boss kills and drop from elites at {elite}. Fairy egg draws ({gacha} jelly) guarantee Legendary or better within {pity} draws. An egg’s grade is fixed from the start; its kind and sub stat are set when it goes into the nest.'**
+  /// **'Hatch fairy eggs in the fairy nest (one slot) to get fairies. Hatching takes {hatch}, shortened with accelerators. Eggs are guaranteed from first boss kills and drop from elites at {elite}. Fairy egg draws ({gacha} jelly) guarantee Legendary or better within {pity} draws. An egg’s grade is fixed from the start; its kind and bonus stat are set when it goes into the nest.'**
   String guideFairyEgg(String hatch, String elite, String gacha, String pity);
 
   /// No description provided for @guideFairyStone.
   ///
   /// In en, this message translates to:
-  /// **'Put an attribute stone in with the egg and that sub stat appears with {stone} chance. Fairies you own can be rerolled ({reroll} jelly, {cap} a day) for a new sub stat and quality — quality never goes down, and you can keep the current result if you prefer.'**
+  /// **'Put an attribute stone in with the egg and that bonus stat appears with {stone} chance. Fairies you own can be rerolled ({reroll} jelly, {cap} a day) for a new bonus stat and quality — quality never goes down, and you can keep the current result if you prefer.'**
   String guideFairyStone(String stone, String reroll, String cap);
 
   /// No description provided for @guideFairyMerge.
   ///
   /// In en, this message translates to:
-  /// **'Merge {merge} fairies of the same kind and grade into one fairy of the next grade (Epic → Legendary takes {mergeEpic}). If all materials share a sub stat, it carries over. Level up with fairy dust (+{level} stats per level); each grade has its own max level ({maxLv}). Merging or disassembling a leveled fairy refunds {refund} of the dust spent.'**
+  /// **'Merge {merge} fairies of the same kind and grade into one fairy of the next grade (Epic → Legendary takes {mergeEpic}). If all materials share a bonus stat, it carries over. Level up with fairy dust (+{level} stats per level); each grade has its own max level ({maxLv}). Merging or releasing a leveled fairy refunds {refund} of the dust spent.'**
   String guideFairyMerge(
     String merge,
     String mergeEpic,
@@ -13885,7 +13885,7 @@ abstract class AppLocalizations {
   /// No description provided for @guideFairyBox.
   ///
   /// In en, this message translates to:
-  /// **'The fairy box holds {base} fairies and eggs combined, expandable by {step} with jelly up to {max}. When it is full, new eggs become fairy dust. Disassemble unwanted fairies and eggs into dust, or turn on auto-disassemble so new eggs at or below the chosen grade become dust right away. Filling the fairy book ({dex} entries) rewards dust, accelerators and fossils.'**
+  /// **'The fairy box holds {base} fairies and eggs combined, expandable by {step} with jelly up to {max}. When it is full, new eggs become fairy dust. Release unwanted fairies and eggs into dust, or turn on auto-release so new eggs at or below the chosen grade become dust right away. Filling the Fairy Codex ({dex} entries) rewards dust, accelerators and fossils.'**
   String guideFairyBox(String base, String step, String max, String dex);
 
   /// No description provided for @whatsNew23RedDot.
@@ -13897,7 +13897,7 @@ abstract class AppLocalizations {
   /// No description provided for @whatsNew23Guide.
   ///
   /// In en, this message translates to:
-  /// **'The guide now explains rarity, growth potions, zones and the Abyss, buffs, skills, the Bug Book, storage and fairies'**
+  /// **'The guide now explains rarity, growth potions, zones and the Abyss, buffs, skills, the Bug Dex, storage and fairies'**
   String get whatsNew23Guide;
 
   /// No description provided for @whatsNew23Mail.

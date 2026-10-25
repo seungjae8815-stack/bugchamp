@@ -473,7 +473,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get breedingNoMate => 'No same-species ♂ adult';
 
   @override
-  String get breedingInProgress => 'Breeding';
+  String get breedingInProgress => 'Laying eggs';
 
   @override
   String breedCooldownLeft(Object time) {
@@ -656,7 +656,7 @@ class AppLocalizationsEn extends AppLocalizations {
       other: '$count eggs were',
       one: '1 egg was',
     );
-    return 'Your collection box was full —\n$_temp0 not collected';
+    return 'Your storage was full —\n$_temp0 not collected';
   }
 
   @override
@@ -705,7 +705,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get offlineRowMaterials => 'Materials';
 
   @override
-  String get offlineRowFairyStone => 'Element stone';
+  String get offlineRowFairyStone => 'Attribute Stone';
 
   @override
   String get offlineRowDuelStone => 'Duel stone';
@@ -732,7 +732,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String offlineRareNote(int hours) {
-    return 'Element stones, duel stones and growth potions drop while idle only with Gatherer\'s Touch on · a day = $hours idle hours';
+    return 'Attribute stones, duel stones and growth potions drop while idle only with Gatherer\'s Touch on · a day = $hours idle hours';
   }
 
   @override
@@ -988,7 +988,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get whatsNewAvatar =>
-      'Profile pictures — tap your portrait (top-left), then the picture on your card, and pick from 21 (shown in chat, rankings, duels, events)';
+      'Profile pictures — tap your portrait (top-left), then the picture on your card, and pick from 21 (shown in chat, rankings, duels, contests)';
 
   @override
   String get whatsNewDuelPower =>
@@ -1078,7 +1078,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get storageFullBanner =>
-      'Your collection is full\nNo new bugs will be added';
+      'Your storage is full\nNo new bugs will be added';
 
   @override
   String get storageFullSnack =>
@@ -1283,7 +1283,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get eventPeriodLabel => 'Event period';
+  String get eventPeriodLabel => 'Contest period';
 
   @override
   String get eventFlyerHeadline =>
@@ -1341,7 +1341,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get eventClosed => 'No event is running';
+  String get eventClosed => 'No contest is running';
 
   @override
   String get battleNeedServer => 'Duels need an online connection';
@@ -1369,7 +1369,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get squadTrainingBadge => 'Training';
 
   @override
-  String get eventNeedServer => 'The event needs an online connection';
+  String get eventNeedServer => 'The contest needs an online connection';
 
   @override
   String eventTickets(int n, int max) {
@@ -1523,7 +1523,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Physical prizes ship within Korea only. Rankings and in-game rewards are open to everyone.';
 
   @override
-  String get eventRules => 'Event rules';
+  String get eventRules => 'Contest rules';
 
   @override
   String get storageFilterButton => 'Filter';
@@ -2447,7 +2447,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get materialFossilDesc =>
-      'A shard of petrified insect. One is spent per hammer strike at the workshop.';
+      'A shard of petrified insect. One is spent per hammer strike at the forge.';
 
   @override
   String get saveBrokenTitle => 'Couldn\'t open your save';
@@ -2468,7 +2468,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get saveBrokenSupport => 'Contact support';
 
   @override
-  String get eventRewardTitle => 'Championship results are in';
+  String get eventRewardTitle => 'Bug King Trials results are in';
 
   @override
   String eventRewardRank(String round, int rank) {
@@ -2868,7 +2868,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get titleStoreName => 'Bug Champ';
 
   @override
-  String get titleStoreTagline => 'Idle Insect RPG';
+  String get titleStoreTagline => 'Idle Collect & Battle';
 
   @override
   String nicknameChangeCostHint(int cost) {
@@ -2895,7 +2895,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get notifHatchTitle => 'Hatched!';
 
   @override
-  String get notifHatchBody => 'An egg has hatched. Check your collection.';
+  String get notifHatchBody => 'An egg has hatched. Check your storage.';
 
   @override
   String get settingsNotify => 'Notifications';
@@ -3212,10 +3212,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get charEmptySlot => 'Empty';
 
   @override
-  String get forgeTitle => 'Workshop';
+  String get forgeTitle => 'Forge';
 
   @override
-  String get forgeHammer => 'Forge';
+  String get forgeHammer => 'Smelt';
 
   @override
   String get forgeAuto => 'Auto forge';
@@ -3239,12 +3239,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String forgeLevel(int lv) {
-    return 'Workshop Lv.$lv';
+    return 'Forge Lv.$lv';
   }
 
   @override
   String forgeStep(int cur, int max) {
-    return 'Workshop upgrade $cur/$max';
+    return 'Forge upgrade $cur/$max';
   }
 
   @override
@@ -3451,7 +3451,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String skillGradeUpHint(String grade, String n) {
-    return 'Unused shards → $grade universal ×$n!';
+    return 'Unused shards → $grade wild ×$n!';
   }
 
   @override
@@ -3654,7 +3654,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get charTabSkills => 'Skills';
 
   @override
-  String get forgeGradeButton => 'Workshop grade';
+  String get forgeGradeButton => 'Forge grade';
 
   @override
   String get statHp => 'Health';
@@ -3678,7 +3678,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get charNoPet => 'No pet';
 
   @override
-  String get charPetHint => 'Manage pets in the collection box';
+  String get charPetHint => 'Manage pets in Storage';
 
   @override
   String get forgeAutoShort => 'Auto';
@@ -3952,7 +3952,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get forgeResultFeed => 'Star food';
+  String get forgeResultFeed => 'Star material';
 
   @override
   String forgeFeedHint(String slot, String have, String need) {
@@ -4094,7 +4094,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String eventSoonBanner(String when) {
-    return 'Bug King Championship · opens $when';
+    return 'Bug King Trials · opens $when';
   }
 
   @override
@@ -4590,7 +4590,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get bugInfoSpecialty => 'Specialty';
 
   @override
-  String get bugInfoTemperament => 'Temper';
+  String get bugInfoTemperament => 'Temperament';
 
   @override
   String get bugInfoSize => 'Size';
@@ -4653,7 +4653,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get trainingCapHint =>
-      'Max levels differ by potential, temper, specialty and bloodline trait';
+      'Max levels differ by potential, temperament, specialty and bloodline trait';
 
   @override
   String trainingLevel(int lv, int cap) {
@@ -4941,7 +4941,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get fairyNestCollect => 'Collect';
 
   @override
-  String get fairyNestReady => 'Ready to hatch!';
+  String get fairyNestReady => 'Hatched!';
 
   @override
   String fairyNestLeft(String t) {
@@ -5078,7 +5078,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get fairyRerollTitle => 'Fairy reroll';
 
   @override
-  String get fairyRerollStoneTitle => 'Add element stone';
+  String get fairyRerollStoneTitle => 'Add attribute stone';
 
   @override
   String get fairyRerollStoneHint =>
@@ -5379,7 +5379,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get guildLeaderLeaveNote =>
-      'Leadership passes to a deputy (or the most active member).';
+      'Leadership passes to a deputy (or the top contributor).';
 
   @override
   String get guildKick => 'Remove from guild';
@@ -5675,7 +5675,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get guildSkillNote =>
-      'Buffs apply to every guildmate while hunting (offline gold too). They don\'t apply to duels or events. Leaving the guild removes them. Guild level +1 = 1 point.';
+      'Buffs apply to every guildmate while hunting (offline gold too). They don\'t apply to duels or contests. Leaving the guild removes them. Guild level +1 = 1 point.';
 
   @override
   String guildSkillValue(String now, String max) {
@@ -5935,7 +5935,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get fairyDexHelp =>
-      'The Fairy Codex records every fairy you have ever obtained. Each of the 8 fairies has two rows to fill:\n• Grade dots — a dot lights up the first time you get that fairy at that grade.\n• Stat stones — a stone lights up the first time you get that fairy with that bonus stat.\nA fairy is recorded when it hatches from an egg in the nest or is made by merging, and records stay even if you release the fairy. Fill cells to earn rewards below (fairy dust, accelerators, fossils). It does not give stats.';
+      'The Fairy Codex records every fairy you have ever obtained. Each of the 8 fairies has two rows to fill:\n• Grade dots — a dot lights up the first time you get that fairy at that grade.\n• Attribute stones — a stone lights up the first time you get that fairy with that bonus stat.\nA fairy is recorded when it hatches from an egg in the nest or is made by merging, and records stay even if you release the fairy. Fill cells to earn rewards below (fairy dust, accelerators, fossils). It does not give stats.';
 
   @override
   String get fairyDexLegendGrades =>
@@ -5943,7 +5943,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get fairyDexLegendSubs =>
-      'Stat stones (bright = obtained with that bonus stat)';
+      'Attribute stones (bright = obtained with that bonus stat)';
 
   @override
   String fairyDexRewards(int n, int max) {
@@ -5968,7 +5968,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String guideElementBody(String mult) {
-    return 'Each bug has one element. In duels, when a bug clashes with an element it restrains, it deals ${mult}x damage. The red arrows show who beats whom. Arenas have an element too: bugs matching it gain HP/ATK/DEF and bugs the arena beats lose some (duels: set when picking an opponent; event: every wave).';
+    return 'Each bug has one element. In duels, when a bug clashes with an element it restrains, it deals ${mult}x damage. The red arrows show who beats whom. Arenas have an element too: bugs matching it gain HP/ATK/DEF and bugs the arena beats lose some (duels: set when picking an opponent; contest: every wave).';
   }
 
   @override
@@ -6100,7 +6100,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get eventHudShort => 'King\nCup';
+  String get eventHudShort => 'King\nTrials';
 
   @override
   String fairyStoneName(String stat) {
@@ -6109,7 +6109,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String fairyStoneEffect(String stat, String p) {
-    return 'The hatched fairy\'s sub-stat becomes $stat with $p% chance';
+    return 'The hatched fairy\'s bonus stat becomes $stat with $p% chance';
   }
 
   @override
@@ -6118,7 +6118,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get fairyStoneBuyTitle => 'Buy element stone';
+  String get fairyStoneBuyTitle => 'Buy attribute stone';
 
   @override
   String get fairyStoneBuyAction => 'Buy';
@@ -6169,11 +6169,11 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get fairyHelpSubHead => 'Sub-stat (one per fairy)';
+  String get fairyHelpSubHead => 'Bonus stat (one per fairy)';
 
   @override
   String fairyHelpSub(String p) {
-    return 'Rolled at hatching from the list below — $p of the base range × the stat\'s weight. An element stone raises the chance of the one you want.';
+    return 'Rolled at hatching from the list below — $p of the base range × the stat\'s weight. An attribute stone raises the chance of the one you want.';
   }
 
   @override
@@ -6186,7 +6186,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String fairyHelpMerge(String n) {
-    return '$n fairies of the same kind and grade → 1 of the next grade. Base and sub stats are rolled again, so you can aim for a better one.';
+    return '$n fairies of the same kind and grade → 1 of the next grade. Base and bonus stats are rolled again, so you can aim for a better one.';
   }
 
   @override
@@ -6290,14 +6290,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get bugLockedToast =>
-      'Locked — it won\'t be used for merging or dismantling';
+      'Locked — it won\'t be used for merging or disassembly';
 
   @override
   String get bugUnlockedToast => 'Unlocked';
 
   @override
   String get disassembleLocked =>
-      'Locked bugs can\'t be dismantled. Unlock it first.';
+      'Locked bugs can\'t be disassembled. Unlock it first.';
 
   @override
   String trainingSumShort(int n) {
@@ -6505,7 +6505,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get forgeUpRushTitle => 'Finish workshop upgrade now';
+  String get forgeUpRushTitle => 'Finish forge upgrade now';
 
   @override
   String forgeUpRushConfirm(int jelly, String grade) {
@@ -6741,7 +6741,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get guildMemberFailed => 'Couldn\'t load member info';
 
   @override
-  String get guildMissionOwnerTag => 'Leader';
+  String get guildMissionOwnerTag => 'Host';
 
   @override
   String get guildMissionTeamTitle => 'Members on this mission';
@@ -6826,7 +6826,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get duelCommanderBadge => 'Leader';
+  String get duelCommanderBadge => 'Commander';
 
   @override
   String get duelTeamAuraHelpCommander =>
@@ -6968,7 +6968,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String trainPresetFill(String n) {
-    return 'Fill $n spare points';
+    return 'Fill $n spare points as suggested';
   }
 
   @override
@@ -7093,7 +7093,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get duelStoneElement => 'Element stone';
 
   @override
-  String get duelStoneTemperament => 'Temper stone';
+  String get duelStoneTemperament => 'Temperament stone';
 
   @override
   String duelStoneOwned(String n) {
@@ -7104,7 +7104,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get duelStoneChangeElement => 'Change element';
 
   @override
-  String get duelStoneChangeTemperament => 'Change temper';
+  String get duelStoneChangeTemperament => 'Change temperament';
 
   @override
   String duelStoneWhere(
@@ -7135,13 +7135,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get duelStoneHint =>
-      'Set element or temper to any value (bloodline trait stays). Changes are inherited by offspring.';
+      'Set element or temperament to any value (bloodline trait stays). Changes are inherited by offspring.';
 
   @override
   String get duelStonePickElement => 'Pick a new element';
 
   @override
-  String get duelStonePickTemperament => 'Pick a new temper';
+  String get duelStonePickTemperament => 'Pick a new temperament';
 
   @override
   String duelStoneAsk(String from, String to, String stone) {
@@ -7256,7 +7256,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String guideTrainStoneBody(String el, String tm) {
-    return 'Duel stones — an Element stone sets a bug\'s element and a Temper stone its temperament to the value you choose (bloodline trait stays; the new value is inherited by offspring). Get them from elites, bosses and the Abyss, or buy with jelly (Element $el · Temper $tm).';
+    return 'Duel stones — an Element stone sets a bug\'s element and a Temperament stone its temperament to the value you choose (bloodline trait stays; the new value is inherited by offspring). Get them from elites, bosses and the Abyss, or buy with jelly (Element $el · Temper $tm).';
   }
 
   @override
@@ -7687,7 +7687,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get bugLockedToastGrade =>
-      'Locked — it won\'t be converted to essence or dismantled';
+      'Locked — it won\'t be converted to essence or disassembled';
 
   @override
   String get trainPtNoPointsGrade =>
@@ -7929,7 +7929,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get guideAuraBody =>
-      'Each species has a duel role (Attacker, Defender, Tank). Every bug in a 3-bug duel (league, defense team, guild war) boosts its role stat for the whole team (not in events).';
+      'Each species has a duel role (Attacker, Defender, Vitality). Every bug in a 3-bug duel (league, defense team, guild war) boosts its role stat for the whole team (not in contests).';
 
   @override
   String guideAuraSize(String base, String perPoint, String cap) {
@@ -7962,11 +7962,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get whatsNew21Gear =>
-      'Gear \'Skill cooldown\' option · star materials carry over · element stones for fairy rerolls';
+      'Gear \'Skill cooldown\' option · star materials carry over · attribute stones for fairy rerolls';
 
   @override
   String get whatsNew21Buff =>
-      'Buffs now apply while the app is closed · Gatherer\'s Touch also doubles rare drops (element stones, duel stones, growth potions) · free activation takes 1 minute (instant with jelly or the Endless Buff Pass)';
+      'Buffs now apply while the app is closed · Gatherer\'s Touch also doubles rare drops (attribute stones, duel stones, growth potions) · free activation takes 1 minute (instant with jelly or the Endless Buff Pass)';
 
   @override
   String get whatsNew21Stats =>
@@ -7974,7 +7974,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get whatsNew21Badge =>
-      'Event badges are now gold, silver, bronze, finalist and participant';
+      'Contest badges are now gold, silver, bronze, finalist and participant';
 
   @override
   String passiveRerollFree(String n) {
@@ -8144,7 +8144,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get whatsNew22Arena =>
-      'Arenas now have an element — matching bugs +10%, bugs the arena beats −10% (duels: shown when picking an opponent; event: changes every wave)';
+      'Arenas now have an element — matching bugs +10%, bugs the arena beats −10% (duels: shown when picking an opponent; contest: changes every wave)';
 
   @override
   String get whatsNew22LegacyRoll =>
@@ -8180,7 +8180,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get fairyErrNoEgg => 'You have no fairy eggs';
 
   @override
-  String get fairyErrNoStone => 'You don\'t have that element stone';
+  String get fairyErrNoStone => 'You don\'t have that attribute stone';
 
   @override
   String get fairyErrNestEmpty => 'The nest is empty';
@@ -8391,7 +8391,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String guideZoneTier(String hours, String bonus) {
-    return 'Entering a difficulty for the first time restarts upgrades, level, gold and common materials (jelly, fossils, bugs, gear, skills and the Bug Book stay). Difficulties you have reached can be revisited freely from the roadmap. While the app is closed, hunting rewards pile up for up to $hours hours; gold you hunt with the app open gets +$bonus.';
+    return 'Entering a difficulty for the first time restarts upgrades, level, gold and common materials (jelly, fossils, bugs, gear, skills and the Bug Dex stay). Difficulties you have reached can be revisited freely from the roadmap. While the app is closed, hunting rewards pile up for up to $hours hours; gold you hunt with the app open gets +$bonus.';
   }
 
   @override
@@ -8422,7 +8422,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String guideSkillGrow(String unlock, String ratio) {
-    return 'Unlock a skill with $unlock of its shards, then train (level up) it with shards and time. Grade up turns $ratio shards of one grade into 1 wildcard shard of the next grade; wildcard shards work for any skill of that grade.';
+    return 'Unlock a skill with $unlock of its shards, then train (level up) it with shards and time. Grade up turns $ratio shards of one grade into 1 wild shard of the next grade; wild shards work for any skill of that grade.';
   }
 
   @override
@@ -8440,7 +8440,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get guideDexTitle => 'Bug Book';
+  String get guideDexTitle => 'Bug Dex';
 
   @override
   String guideDexBody(String lv) {
@@ -8469,16 +8469,16 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get guideFairyBody =>
-      'Fairies are companions that help you hunt. You pick one companion fairy, and its main and sub stats plus its skill are added to hunting (it casts the skill on its own). Fairies help hunting only — never duels, contests or guild bosses.';
+      'Fairies are companions that help you hunt. You pick one companion fairy, and its base and bonus stats plus its skill are added to hunting (it casts the skill on its own). Fairies help hunting only — never duels, contests or guild bosses.';
 
   @override
   String guideFairyEgg(String hatch, String elite, String gacha, String pity) {
-    return 'Hatch fairy eggs in the fairy nest (one slot) to get fairies. Hatching takes $hatch, shortened with accelerators. Eggs are guaranteed from first boss kills and drop from elites at $elite. Fairy egg draws ($gacha jelly) guarantee Legendary or better within $pity draws. An egg’s grade is fixed from the start; its kind and sub stat are set when it goes into the nest.';
+    return 'Hatch fairy eggs in the fairy nest (one slot) to get fairies. Hatching takes $hatch, shortened with accelerators. Eggs are guaranteed from first boss kills and drop from elites at $elite. Fairy egg draws ($gacha jelly) guarantee Legendary or better within $pity draws. An egg’s grade is fixed from the start; its kind and bonus stat are set when it goes into the nest.';
   }
 
   @override
   String guideFairyStone(String stone, String reroll, String cap) {
-    return 'Put an attribute stone in with the egg and that sub stat appears with $stone chance. Fairies you own can be rerolled ($reroll jelly, $cap a day) for a new sub stat and quality — quality never goes down, and you can keep the current result if you prefer.';
+    return 'Put an attribute stone in with the egg and that bonus stat appears with $stone chance. Fairies you own can be rerolled ($reroll jelly, $cap a day) for a new bonus stat and quality — quality never goes down, and you can keep the current result if you prefer.';
   }
 
   @override
@@ -8489,12 +8489,12 @@ class AppLocalizationsEn extends AppLocalizations {
     String maxLv,
     String refund,
   ) {
-    return 'Merge $merge fairies of the same kind and grade into one fairy of the next grade (Epic → Legendary takes $mergeEpic). If all materials share a sub stat, it carries over. Level up with fairy dust (+$level stats per level); each grade has its own max level ($maxLv). Merging or disassembling a leveled fairy refunds $refund of the dust spent.';
+    return 'Merge $merge fairies of the same kind and grade into one fairy of the next grade (Epic → Legendary takes $mergeEpic). If all materials share a bonus stat, it carries over. Level up with fairy dust (+$level stats per level); each grade has its own max level ($maxLv). Merging or releasing a leveled fairy refunds $refund of the dust spent.';
   }
 
   @override
   String guideFairyBox(String base, String step, String max, String dex) {
-    return 'The fairy box holds $base fairies and eggs combined, expandable by $step with jelly up to $max. When it is full, new eggs become fairy dust. Disassemble unwanted fairies and eggs into dust, or turn on auto-disassemble so new eggs at or below the chosen grade become dust right away. Filling the fairy book ($dex entries) rewards dust, accelerators and fossils.';
+    return 'The fairy box holds $base fairies and eggs combined, expandable by $step with jelly up to $max. When it is full, new eggs become fairy dust. Release unwanted fairies and eggs into dust, or turn on auto-release so new eggs at or below the chosen grade become dust right away. Filling the Fairy Codex ($dex entries) rewards dust, accelerators and fossils.';
   }
 
   @override
@@ -8503,7 +8503,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get whatsNew23Guide =>
-      'The guide now explains rarity, growth potions, zones and the Abyss, buffs, skills, the Bug Book, storage and fairies';
+      'The guide now explains rarity, growth potions, zones and the Abyss, buffs, skills, the Bug Dex, storage and fairies';
 
   @override
   String get whatsNew23Mail =>

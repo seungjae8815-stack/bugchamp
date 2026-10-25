@@ -22,7 +22,7 @@
 The Research Lab is here
 
 - Research Lab: 29 long-term upgrades for hunting, raising, duels, gear and economy, paid with gold and materials
-- The bottom tabs now have two pages. Use the button at the right end to switch to Gear, Skills, Fairies and Research
+- The bottom tabs now have two pages. Use the button at the right end to switch to Gear, Skills, Fairy and Lab
 - Female bugs now show female art and female sizes. Duel strength is unchanged
 - Bigger storage slots and pictures, with Egg Laying and Incubator buttons on one row
 - New Research Pass and All-in-One Pass
@@ -36,7 +36,7 @@ The Research Lab is here
 - 研究所：狩り、育成、決闘、装備、経済を強化する29種類の研究を、ゴールドと素材でじっくり進めます
 - 下部タブが2ページになりました。右端のボタンで装備、スキル、妖精、研究所に切り替えます
 - メスの虫がメスの絵とメスのサイズで表示されます。決闘の強さはそのままです
-- 収集箱のマスと絵を大きくし、産卵と孵化器のボタンを1行にまとめました
+- 採集箱のマスと絵を大きくし、産卵と孵化器のボタンを1行にまとめました
 - 研究パスとオールインワンパスが新登場
 - 昆虫学者パスの放置ゴールドが2倍になりました
 - ログアウトしても進行はアカウントに残り、同じアカウントで再ログインすると戻ります

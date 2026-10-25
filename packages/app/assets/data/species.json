@@ -244,7 +244,7 @@
       "femaleSizeMaxMm": 55,
       "desc": {
         "ko": "Y자 뿔이 위풍당당한 장수풍뎅이. 곤충계의 대표 장사.",
-        "en": "A mighty rhinoceros beetle with a proud Y-horn.",
+        "en": "A mighty rhinoceros beetle with a proud Y-horn, the strongman of the insect world.",
         "ja": "Y字の角が堂々としたカブトムシ。昆虫界を代表する力持ち。"
       },
       "passive": {
@@ -433,7 +433,7 @@
       "femaleSizeMaxMm": 58,
       "desc": {
         "ko": "아주 긴 줄무늬 더듬이를 가진 큰 갈색 하늘소. 참나무의 주인.",
-        "en": "A big brown oak longhorn with extra-long banded antennae.",
+        "en": "A big brown longhorn with extra-long banded antennae. Lord of the oaks.",
         "ja": "とても長い縞模様の触角を持つ大きな茶色のカミキリムシ。クヌギの主。"
       },
       "passive": {
@@ -462,8 +462,8 @@
       "sizeMaxMm": 38,
       "desc": {
         "ko": "수컷은 머리 앞이 사슴뿔처럼 갈라져 뻗고 앞다리가 아주 긴 꽃무지. 그 뿔로 들이받는다.",
-        "en": "A flower chafer whose males bear antler-like horns on the head and very long forelegs.",
-        "ja": "オスは頭の先が鹿の角のように分かれて伸び、前脚がとても長いハナムグリ。"
+        "en": "A flower chafer whose males bear antler-like horns on the head and very long forelegs. It rams with those horns.",
+        "ja": "オスは頭の先が鹿の角のように分かれて伸び、前脚がとても長いハナムグリ。その角で体当たりする。"
       },
       "passive": {
         "stat": "bugFind",
@@ -493,7 +493,7 @@
       "femaleSizeMaxMm": 50,
       "desc": {
         "ko": "두껍고 힘센 큰턱을 가진 거대한 검은 사슴벌레. 왕의 품격.",
-        "en": "A giant black stag beetle with thick, powerful jaws.",
+        "en": "A giant black stag beetle with thick, powerful jaws and a kingly bearing.",
         "ja": "太く力強い大アゴを持つ巨大な黒いクワガタ。王の風格。"
       },
       "passive": {

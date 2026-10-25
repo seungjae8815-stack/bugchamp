@@ -21,7 +21,7 @@
 <en-US>
 🔬 Research Lab update
 
-• Research Lab: 29 upgrades for hunt, raising, duels
+• Research Lab: 29 upgrades for hunting, raising, duels
 • Two-page bottom tabs (⇄)
 • Female bug art and sizes
 • Bigger storage, new passes
@@ -32,5 +32,5 @@
 • 研究所：狩り・育成・決闘を強化する研究29種
 • 下部タブ2ページ（⇄）
 • メスの虫の絵とサイズ
-• 収集箱を見やすく、新パス
+• 採集箱を大きく、新パス
 </ja-JP>

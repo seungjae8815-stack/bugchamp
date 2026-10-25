@@ -11,8 +11,8 @@
    },
    "boss": {
     "ko": "숲의 지배자",
-    "en": "Forest Warden",
-    "ja": "森の主"
+    "en": "Forest Overlord",
+    "ja": "森の支配者"
    },
    "startStage": 1,
    "endStage": 100,
@@ -32,7 +32,7 @@
    },
    "boss": {
     "ko": "물가의 포식자",
-    "en": "Stream Stalker",
+    "en": "Riverside Predator",
     "ja": "水辺の捕食者"
    },
    "startStage": 101,
@@ -74,7 +74,7 @@
    },
    "boss": {
     "ko": "밤의 군주",
-    "en": "Night Sovereign",
+    "en": "Lord of Night",
     "ja": "夜の君主"
    },
    "startStage": 301,
@@ -158,7 +158,7 @@
    },
    "boss": {
     "ko": "심연의 집게왕",
-    "en": "Abyss Pincer King",
+    "en": "Deepcave Pincer King",
     "ja": "深淵のハサミ王"
    },
    "startStage": 701,
@@ -179,8 +179,8 @@
    },
    "boss": {
     "ko": "태고의 여왕개미",
-    "en": "Primal Ant Queen",
-    "ja": "太古の女王アリ"
+    "en": "Primordial Ant Queen",
+    "ja": "太古の女王蟻"
    },
    "startStage": 801,
    "endStage": 900,
@@ -221,8 +221,8 @@
    },
    "boss": {
     "ko": "태초의 왕충",
-    "en": "Primordial King",
-    "ja": "太初の王虫"
+    "en": "The First Sovereign",
+    "ja": "太初の王蟲"
    },
    "startStage": 1001,
    "endStage": 1100,
@@ -246,8 +246,8 @@
    },
    "desc": {
     "ko": "이끼 낀 참나무 껍질을 두른 거대한 사슴벌레. 뿔 사이에 버섯이 자란다.",
-    "en": "An ancient stag beetle armored in mossy oak bark.",
-    "ja": "苔むした樫の樹皮をまとう巨大なクワガタ。"
+    "en": "A giant stag beetle armored in mossy oak bark. Mushrooms grow between its horns.",
+    "ja": "苔むした樫の樹皮をまとう巨大なクワガタ。角の間にキノコが生えている。"
    }
   },
   "e02": {
@@ -258,8 +258,8 @@
    },
    "desc": {
     "ko": "젖은 갑옷을 번뜩이는 물장군. 낫 같은 앞다리로 먹이를 붙든다.",
-    "en": "A giant water scorpion with raptorial forelegs.",
-    "ja": "濡れた鎧を光らせるタガメ。"
+    "en": "A giant water bug gleaming in wet armor. It seizes prey with sickle-like forelegs.",
+    "ja": "濡れた鎧を光らせるタガメ。鎌のような前脚で獲物を捕らえる。"
    }
   },
   "e03": {
@@ -270,8 +270,8 @@
    },
    "desc": {
     "ko": "가시 왕관을 쓴 에메랄드빛 메뚜기. 한 번 뛰면 들판을 건넌다.",
-    "en": "An emerald grasshopper queen crowned with thorns.",
-    "ja": "棘の王冠をかぶるエメラルドのバッタ。"
+    "en": "An emerald grasshopper queen crowned with thorns. One leap carries her across the field.",
+    "ja": "棘の王冠をかぶるエメラルドのバッタ。ひと跳びで野原を渡る。"
    }
   },
   "e04": {
@@ -282,20 +282,20 @@
    },
    "desc": {
     "ko": "달무늬가 박힌 벨벳 날개. 날갯짓마다 은빛 가루가 떨어진다.",
-    "en": "A moth lord with moon-marked velvet wings.",
-    "ja": "月紋のビロードの翅を持つ蛾の君主。"
+    "en": "A moth lord with moon-marked velvet wings. Silver dust falls with every wingbeat.",
+    "ja": "月紋のビロードの翅を持つ蛾の君主。羽ばたくたびに銀色の粉が舞い落ちる。"
    }
   },
   "e05": {
    "name": {
     "ko": "무쇠턱 폭군",
-    "en": "Irondaw Tyrant",
+    "en": "Ironjaw Tyrant",
     "ja": "鉄顎の暴君"
    },
    "desc": {
     "ko": "녹슨 철판을 덧댄 장수풍뎅이. 뿔 하나로 바위를 가른다.",
-    "en": "A rhinoceros beetle clad in rusted iron plates.",
-    "ja": "錆びた鉄板をまとうカブトムシ。"
+    "en": "A rhinoceros beetle clad in rusted iron plates. Its single horn splits boulders.",
+    "ja": "錆びた鉄板をまとうカブトムシ。角ひとつで岩を割る。"
    }
   },
   "e06": {
@@ -306,8 +306,8 @@
    },
    "desc": {
     "ko": "초록빛 독침을 세운 말벌 여제. 날개 소리만으로 벌레들이 흩어진다.",
-    "en": "A wasp empress bearing a glowing green stinger.",
-    "ja": "緑に光る毒針を持つスズメバチの女帝。"
+    "en": "A wasp empress bearing a glowing green stinger. The hum of her wings alone scatters other bugs.",
+    "ja": "緑に光る毒針を持つスズメバチの女帝。羽音だけで虫たちが逃げ散る。"
    }
   },
   "e07": {
@@ -318,8 +318,8 @@
    },
    "desc": {
     "ko": "관절마다 그림자가 새어 나오는 사마귀. 낫이 보이면 이미 늦었다.",
-    "en": "A mantis trailing shadow from every joint.",
-    "ja": "関節から影が漏れるカマキリ。"
+    "en": "A mantis trailing shadow from every joint. Once you see its scythe, it is already too late.",
+    "ja": "関節から影が漏れるカマキリ。鎌が見えた時にはもう遅い。"
    }
   },
   "e08": {
@@ -330,8 +330,8 @@
    },
    "desc": {
     "ko": "동굴 바닥에서 자란 집게벌레. 옆구리의 푸른 점이 어둠에 빛난다.",
-    "en": "A cave earwig king with bioluminescent flanks.",
-    "ja": "洞窟の底で育ったハサミムシの王。"
+    "en": "An earwig king raised on the cave floor. The blue spots on its flanks glow in the dark.",
+    "ja": "洞窟の底で育ったハサミムシの王。脇腹の青い斑点が闇に光る。"
    }
   },
   "e09": {
@@ -342,8 +342,8 @@
    },
    "desc": {
     "ko": "청동빛 배에 옛 문양이 새겨진 여왕개미. 수액 결정이 등에서 자란다.",
-    "en": "A queen ant with tribal carvings on a bronze abdomen.",
-    "ja": "青銅の腹に古の紋を刻む女王蟻。"
+    "en": "A queen ant with ancient patterns carved into her bronze abdomen. Sap crystals grow from her back.",
+    "ja": "青銅の腹に古の紋を刻む女王蟻。背中から樹液の結晶が生えている。"
    }
   },
   "e10": {
@@ -354,8 +354,8 @@
    },
    "desc": {
     "ko": "금과 에메랄드로 빛나는 풍뎅이. 등껍질에 햇살 무늬가 새겨져 있다.",
-    "en": "A golden scarab whose shell is engraved with sun rays.",
-    "ja": "金とエメラルドに輝くコガネムシ。"
+    "en": "A scarab gleaming with gold and emerald. Its shell is engraved with sun rays.",
+    "ja": "金とエメラルドに輝くコガネムシ。背の殻に陽光の紋が刻まれている。"
    }
   },
   "e_final": {
@@ -366,8 +366,8 @@
    },
    "desc": {
     "ko": "모든 곤충의 시작이라 불리는 왕. 쉬움의 끝에서 기다린다.",
-    "en": "The king said to be the origin of all insects.",
-    "ja": "すべての昆虫の始まりと呼ばれる王。"
+    "en": "The king said to be the origin of all insects. It waits at the end of Easy.",
+    "ja": "すべての昆虫の始まりと呼ばれる王。「やさしい」の果てで待つ。"
    }
   },
   "n01": {
@@ -378,8 +378,8 @@
    },
    "desc": {
     "ko": "유리처럼 깨질 듯 단단한 검은 턱. 빛을 되쏘아 눈을 멀게 한다.",
-    "en": "A stag beetle with obsidian-hard black mandibles.",
-    "ja": "ガラスのように硬い黒い顎を持つクワガタ。"
+    "en": "A stag beetle with black mandibles as hard as glass. It reflects light to blind its foes.",
+    "ja": "ガラスのように硬い黒い顎を持つクワガタ。光を跳ね返して目をくらませる。"
    }
   },
   "n02": {
@@ -390,8 +390,8 @@
    },
    "desc": {
     "ko": "안개 낀 늪을 순찰하는 잠자리. 네 날개가 따로 움직인다.",
-    "en": "A dragonfly queen patrolling the fog-bound marsh.",
-    "ja": "霧の沼を巡回するトンボの女王。"
+    "en": "A dragonfly queen patrolling the fog-bound marsh. Each of her four wings moves on its own.",
+    "ja": "霧の沼を巡回するトンボの女王。4枚の翅がそれぞれ別々に動く。"
    }
   },
   "n03": {
@@ -402,8 +402,8 @@
    },
    "desc": {
     "ko": "등줄기마다 가시가 솟은 메뚜기. 착지하는 곳이 곧 전장이다.",
-    "en": "A locust general bristling with spines.",
-    "ja": "背に棘を並べたバッタの将軍。"
+    "en": "A locust general bristling with spines. Wherever it lands becomes a battlefield.",
+    "ja": "背に棘を並べたバッタの将軍。降り立った場所がそのまま戦場になる。"
    }
   },
   "n04": {
@@ -414,8 +414,8 @@
    },
    "desc": {
     "ko": "날개에서 서리가 떨어지는 흰 나방. 지나간 자리가 얼어붙는다.",
-    "en": "A white moth shedding frost from its wings.",
-    "ja": "翅から霜を落とす白い蛾。"
+    "en": "A white moth shedding frost from its wings. Everything it passes freezes over.",
+    "ja": "翅から霜を落とす白い蛾。通った跡が凍りつく。"
    }
   },
   "n05": {
@@ -426,8 +426,8 @@
    },
    "desc": {
     "ko": "쇳덩이를 굴리는 소똥구리. 그 공에 맞으면 성벽도 무너진다.",
-    "en": "A dung beetle that rolls a ball of solid steel.",
-    "ja": "鉄塊を転がすフンコロガシ。"
+    "en": "A dung beetle that rolls a ball of solid steel. One hit from it can bring down a castle wall.",
+    "ja": "鉄塊を転がすフンコロガシ。その玉に当たれば城壁も崩れる。"
    }
   },
   "n06": {
@@ -438,8 +438,8 @@
    },
    "desc": {
     "ko": "모래 아래 숨어 기다리는 개미귀신. 발을 딛는 순간 바닥이 사라진다.",
-    "en": "An antlion waiting beneath a pit of sand.",
-    "ja": "砂の下で待ち構える蟻地獄。"
+    "en": "An antlion waiting beneath a pit of sand. The moment you step in, the ground vanishes.",
+    "ja": "砂の下で待ち構える蟻地獄。足を踏み入れた瞬間、地面が消える。"
    }
   },
   "n07": {
@@ -450,8 +450,8 @@
    },
    "desc": {
     "ko": "빛 대신 어둠을 뿌리는 반딧불. 밝을수록 주변이 어두워진다.",
-    "en": "A firefly that sheds darkness instead of light.",
-    "ja": "光の代わりに闇を撒くホタル。"
+    "en": "A firefly that sheds darkness instead of light. The brighter it glows, the darker it gets.",
+    "ja": "光の代わりに闇を撒くホタル。明るく光るほど周りが暗くなる。"
    }
   },
   "n08": {
@@ -462,8 +462,8 @@
    },
    "desc": {
     "ko": "깊은 물에서 올라온 물장군. 껍질에 아직 물이 흐른다.",
-    "en": "A giant water bug risen from the deep.",
-    "ja": "深い水から現れたタガメ。"
+    "en": "A giant water bug risen from the deep. Water still runs down its shell.",
+    "ja": "深い水から現れたタガメ。殻にはまだ水が流れている。"
    }
   },
   "n09": {
@@ -474,8 +474,8 @@
    },
    "desc": {
     "ko": "더듬이가 채찍처럼 긴 하늘소. 등껍질이 돌처럼 단단하다.",
-    "en": "A longhorn beetle with stone-hard armor.",
-    "ja": "石のように硬い甲羅のカミキリ。"
+    "en": "A longhorn beetle with whip-long antennae. Its shell is as hard as stone.",
+    "ja": "鞭のように長い触角のカミキリ。甲羅は石のように硬い。"
    }
   },
   "n10": {
@@ -486,8 +486,8 @@
    },
    "desc": {
     "ko": "금을 입힌 뿔을 세운 장수풍뎅이. 부딪히면 종소리가 난다.",
-    "en": "A hercules beetle with gilded horns.",
-    "ja": "金を帯びた角のヘラクレスオオカブト。"
+    "en": "A hercules beetle with gilded horns. Strike it and it rings like a bell.",
+    "ja": "金を帯びた角のヘラクレスオオカブト。ぶつかると鐘の音が響く。"
    }
   },
   "n_final": {
@@ -498,8 +498,8 @@
    },
    "desc": {
     "ko": "날갯소리가 천둥이 되는 왕벌. 보통의 끝을 지킨다.",
-    "en": "A hornet king whose wingbeat becomes thunder.",
-    "ja": "羽音が雷となる王蜂。"
+    "en": "A hornet king whose wingbeat becomes thunder. It guards the end of Normal.",
+    "ja": "羽音が雷となる王蜂。「ふつう」の果てを守る。"
    }
   },
   "h01": {
@@ -510,8 +510,8 @@
    },
    "desc": {
     "ko": "등딱지 틈으로 용암이 흐르는 딱정벌레. 닿으면 갑옷이 녹는다.",
-    "en": "A beetle with magma flowing between its plates.",
-    "ja": "甲羅の隙間から溶岩が流れる甲虫。"
+    "en": "A beetle with magma flowing between its plates. Its touch melts armor.",
+    "ja": "甲羅の隙間から溶岩が流れる甲虫。触れれば鎧が溶ける。"
    }
   },
   "h02": {
@@ -522,8 +522,8 @@
    },
    "desc": {
     "ko": "검은 보석으로 깎은 듯한 사마귀. 한 번의 낫질로 승부를 낸다.",
-    "en": "A mantis empress carved from black onyx.",
-    "ja": "黒瑪瑙から削り出したようなカマキリ。"
+    "en": "A mantis empress carved from black onyx. A single slash decides the fight.",
+    "ja": "黒瑪瑙から削り出したようなカマキリ。一振りの鎌で勝負を決める。"
    }
   },
   "h03": {
@@ -534,8 +534,8 @@
    },
    "desc": {
     "ko": "온몸이 독가시인 거대 애벌레. 밟는 자리마다 풀이 시든다.",
-    "en": "A vast caterpillar covered in venomous spines.",
-    "ja": "全身が毒棘の巨大なイモムシ。"
+    "en": "A vast caterpillar covered in venomous spines. Grass withers wherever it crawls.",
+    "ja": "全身が毒棘の巨大なイモムシ。這った跡の草が枯れる。"
    }
   },
   "h04": {
@@ -546,8 +546,8 @@
    },
    "desc": {
     "ko": "울음소리가 재를 부르는 매미. 숲이 회색으로 변한다.",
-    "en": "A cicada lord whose cry summons ash.",
-    "ja": "鳴き声が灰を呼ぶ蝉の主。"
+    "en": "A cicada lord whose cry summons ash. The forest turns gray.",
+    "ja": "鳴き声が灰を呼ぶ蝉の主。森が灰色に染まる。"
    }
   },
   "h05": {
@@ -558,8 +558,8 @@
    },
    "desc": {
     "ko": "꼬리 집게가 절단기인 집게벌레. 무엇이든 두 동강 낸다.",
-    "en": "An earwig whose tail pincers cut like shears.",
-    "ja": "尾のハサミが断裁機のハサミムシ。"
+    "en": "An earwig whose tail pincers cut like shears. It slices anything in two.",
+    "ja": "尾のハサミが断裁機のハサミムシ。何でも真っ二つにする。"
    }
   },
   "h06": {
@@ -570,8 +570,8 @@
    },
    "desc": {
     "ko": "배가 붉게 가득 찬 모기 여왕. 빨아들인 만큼 회복한다.",
-    "en": "A mosquito queen who heals with every drain.",
-    "ja": "吸った分だけ回復する蚊の女王。"
+    "en": "A mosquito queen with a belly swollen red. She heals as much as she drains.",
+    "ja": "腹を赤く満たした蚊の女王。吸った分だけ回復する。"
    }
   },
   "h07": {
@@ -582,8 +582,8 @@
    },
    "desc": {
     "ko": "반투명한 몸으로 흔들리는 하루살이. 때린 자리에 아무것도 없다.",
-    "en": "A translucent mayfly that blurs where struck.",
-    "ja": "半透明の体で揺らぐカゲロウ。"
+    "en": "A mayfly flickering in a translucent body. Where you strike, nothing is there.",
+    "ja": "半透明の体で揺らぐカゲロウ。打った場所には何もない。"
    }
   },
   "h08": {
@@ -594,8 +594,8 @@
    },
    "desc": {
     "ko": "등이 불타는 개미 군주. 발자국마다 불씨가 남는다.",
-    "en": "An ant lord burning along its back.",
-    "ja": "背が燃える蟻の王。"
+    "en": "An ant lord burning along its back. Embers linger in every footprint.",
+    "ja": "背が燃える蟻の王。足跡ごとに火の粉が残る。"
    }
   },
   "h09": {
@@ -606,8 +606,8 @@
    },
    "desc": {
     "ko": "수정으로 이루어진 풍뎅이. 깨진 조각도 스스로 붙는다.",
-    "en": "A scarab of living crystal that mends itself.",
-    "ja": "水晶でできたコガネムシ。"
+    "en": "A scarab made of crystal. Even its broken shards fuse back together.",
+    "ja": "水晶でできたコガネムシ。砕けた欠片もひとりでにくっつく。"
    }
   },
   "h10": {
@@ -618,8 +618,8 @@
    },
    "desc": {
     "ko": "별자리 무늬 날개를 펴는 거대 나방. 밤하늘이 좁아 보인다.",
-    "en": "An emperor moth with constellations on its wings.",
-    "ja": "星座の紋を広げる巨大な蛾。"
+    "en": "A giant moth spreading constellation-patterned wings. The night sky looks small beside it.",
+    "ja": "星座の紋の翅を広げる巨大な蛾。夜空さえ狭く見える。"
    }
   },
   "h_final": {
@@ -630,8 +630,8 @@
    },
    "desc": {
     "ko": "나뭇가지인 줄 알았던 재앙. 어려움의 끝에 서 있다.",
-    "en": "The calamity you mistook for a branch.",
-    "ja": "枝だと思っていた災厄。"
+    "en": "The calamity you mistook for a branch. It stands at the end of Hard.",
+    "ja": "枝だと思っていた災厄。「むずかしい」の果てに立つ。"
    }
   },
   "x01": {
@@ -642,8 +642,8 @@
    },
    "desc": {
     "ko": "몸 안에 밤하늘을 담은 사슴벌레. 빛을 삼킨다.",
-    "en": "A stag beetle holding a night sky inside.",
-    "ja": "体に夜空を宿すクワガタ。"
+    "en": "A stag beetle holding a night sky inside. It swallows light.",
+    "ja": "体に夜空を宿すクワガタ。光を飲み込む。"
    }
   },
   "x02": {
@@ -654,8 +654,8 @@
    },
    "desc": {
     "ko": "날개에 성운이 흐르는 잠자리. 지나간 자리에 별가루가 남는다.",
-    "en": "A dragonfly with nebulae drifting in its wings.",
-    "ja": "翅に星雲が流れるトンボ。"
+    "en": "A dragonfly with nebulae drifting in its wings. Stardust lingers in its wake.",
+    "ja": "翅に星雲が流れるトンボ。通った跡に星の粉が残る。"
    }
   },
   "x03": {
@@ -666,8 +666,8 @@
    },
    "desc": {
     "ko": "별 하나를 꼬리에 매단 반딧불 왕. 눈을 뜨기 어렵다.",
-    "en": "A firefly king carrying a star at his tail.",
-    "ja": "尾に星を宿すホタルの王。"
+    "en": "A firefly king carrying a star at his tail. It is hard to keep your eyes open.",
+    "ja": "尾に星を宿すホタルの王。まぶしくて目を開けていられない。"
    }
   },
   "x04": {
@@ -678,8 +678,8 @@
    },
    "desc": {
     "ko": "검은 강철로 벼려진 장수풍뎅이. 돌진 한 번이 지진이다.",
-    "en": "A hercules beetle forged in black steel.",
-    "ja": "黒鋼で鍛えたヘラクレスオオカブト。"
+    "en": "A hercules beetle forged in black steel. A single charge is an earthquake.",
+    "ja": "黒鋼で鍛えたヘラクレスオオカブト。一度の突進が地震になる。"
    }
   },
   "x05": {
@@ -690,8 +690,8 @@
    },
    "desc": {
     "ko": "숨결이 서리인 여왕개미. 가까이 가면 발이 얼어붙는다.",
-    "en": "An ant queen whose breath is frost.",
-    "ja": "吐息が霜となる女王蟻。"
+    "en": "An ant queen whose breath is frost. Come close and your feet freeze in place.",
+    "ja": "吐息が霜となる女王蟻。近づけば足が凍りつく。"
    }
   },
   "x06": {
@@ -702,8 +702,8 @@
    },
    "desc": {
     "ko": "번개를 두르고 날아드는 말벌. 침에 닿으면 몸이 굳는다.",
-    "en": "A hornet cloaked in lightning.",
-    "ja": "雷をまとって飛ぶスズメバチ。"
+    "en": "A hornet cloaked in lightning. One touch of its sting leaves you rigid.",
+    "ja": "雷をまとって飛ぶスズメバチ。針に触れれば体がこわばる。"
    }
   },
   "x07": {
@@ -714,8 +714,8 @@
    },
    "desc": {
     "ko": "빛이 닿지 않는 물에서 온 물방개. 옆구리 불빛이 유일한 경고다.",
-    "en": "A diving beetle from lightless water.",
-    "ja": "光の届かぬ水から来たゲンゴロウ。"
+    "en": "A diving beetle from lightless water. The glow on its flanks is the only warning.",
+    "ja": "光の届かぬ水から来たゲンゴロウ。脇腹の光が唯一の警告だ。"
    }
   },
   "x08": {
@@ -726,8 +726,8 @@
    },
    "desc": {
     "ko": "작은 태양을 등에 인 풍뎅이. 곁에 서면 숨이 막힌다.",
-    "en": "A scarab bearing a small sun on its back.",
-    "ja": "小さな太陽を背負うスカラベ。"
+    "en": "A scarab bearing a small sun on its back. Standing beside it takes your breath away.",
+    "ja": "小さな太陽を背負うスカラベ。そばに立つと息が詰まる。"
    }
   },
   "x09": {
@@ -738,8 +738,8 @@
    },
    "desc": {
     "ko": "죽은 뒤에도 낫을 휘두르는 사마귀. 그림자만 남았다.",
-    "en": "A mantis still swinging its scythes after death.",
-    "ja": "死してなお鎌を振るうカマキリ。"
+    "en": "A mantis still swinging its scythes after death. Only its shadow remains.",
+    "ja": "死してなお鎌を振るうカマキリ。影だけが残った。"
    }
   },
   "x10": {
@@ -750,8 +750,8 @@
    },
    "desc": {
     "ko": "땅속에서 수백 년을 기다린 매미. 울면 시간이 늘어진다.",
-    "en": "A cicada that waited centuries underground.",
-    "ja": "地中で数百年待った蝉。"
+    "en": "A cicada that waited centuries underground. When it sings, time stretches.",
+    "ja": "地中で数百年待った蝉。鳴くと時間が引き伸ばされる。"
    }
   },
   "x_final": {
@@ -762,8 +762,8 @@
    },
    "desc": {
     "ko": "모든 곤충이 여기서 나왔다고 전해진다. 이 게임의 끝.",
-    "en": "All insects are said to have come from here.",
-    "ja": "すべての蟲がここから生まれたという。"
+    "en": "All insects are said to have come from here. The end of this game.",
+    "ja": "すべての蟲がここから生まれたという。このゲームの終着点。"
    }
   }
  }

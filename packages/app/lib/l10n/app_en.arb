@@ -256,7 +256,7 @@
   "breedingPickFather": "Pick father (♂ · same species)",
   "breedingNoFemales": "No breedable ♀ adults",
   "breedingNoMate": "No same-species ♂ adult",
-  "breedingInProgress": "Breeding",
+  "breedingInProgress": "Laying eggs",
   "breedCooldownLeft": "Ready in {time}",
   "breedingGotEgg": "Got an egg! Raise it in the incubator",
   "leaderboardLocalNote": "Local ranking · online sync coming",
@@ -380,7 +380,7 @@
     }
   },
   "offlineTitle": "Welcome back!",
-  "offlineBugsBlocked": "Your collection box was full —\n{count, plural, =1{1 egg was} other{{count} eggs were}} not collected",
+  "offlineBugsBlocked": "Your storage was full —\n{count, plural, =1{1 egg was} other{{count} eggs were}} not collected",
   "fairyRerollPending": "Pick reroll result",
   "offlineBugs": "🥚 Collected {count, plural, =1{1 bug egg} other{{count} bug eggs}}",
   "@offlineBugs": {"placeholders": {"count": {"type": "int"}}},
@@ -401,7 +401,7 @@
   "@offlineApprox": {"placeholders": {"value": {"type": "String"}}},
   "offlineRowEggs": "Bug eggs",
   "offlineRowMaterials": "Materials",
-  "offlineRowFairyStone": "Element stone",
+  "offlineRowFairyStone": "Attribute Stone",
   "offlineRowDuelStone": "Duel stone",
   "offlineRowPotion": "Growth potion",
   "buffWaitTitle": "Activating {name}…",
@@ -410,7 +410,7 @@
   "buffWaitJelly": "Turn on now for {cost} jelly",
   "@buffWaitJelly": {"placeholders": {"cost": {"type": "int"}}},
   "offlineRareBuffOnly": "Buff only",
-  "offlineRareNote": "Element stones, duel stones and growth potions drop while idle only with Gatherer's Touch on · a day = {hours} idle hours",
+  "offlineRareNote": "Attribute stones, duel stones and growth potions drop while idle only with Gatherer's Touch on · a day = {hours} idle hours",
   "@offlineRareNote": {"placeholders": {"hours": {"type": "int"}}},
   "offlineRareDaily": "~{count}/day",
   "@offlineRareDaily": {"placeholders": {"count": {"type": "String"}}},
@@ -577,7 +577,7 @@
     }
   },
   "whatsNewOk": "OK",
-  "whatsNewAvatar": "Profile pictures — tap your portrait (top-left), then the picture on your card, and pick from 21 (shown in chat, rankings, duels, events)",
+  "whatsNewAvatar": "Profile pictures — tap your portrait (top-left), then the picture on your card, and pick from 21 (shown in chat, rankings, duels, contests)",
   "whatsNewDuelPower": "Duel combat power now reflects every stat — real win chances",
   "whatsNewPolish": "Gear refining — pick the option type and keep the old or new value",
   "whatsNewStar": "Star upgrade — feed same-slot gear to add stars and boost options (up to 5)",
@@ -654,7 +654,7 @@
       }
     }
   },
-  "storageFullBanner": "Your collection is full\nNo new bugs will be added",
+  "storageFullBanner": "Your storage is full\nNo new bugs will be added",
   "storageFullSnack": "Storage is full. Release a bug or expand your storage.",
   "storageExpand": "+{n} slots · {jelly} jelly",
   "@storageExpand": {
@@ -762,7 +762,7 @@
       }
     }
   },
-  "eventPeriodLabel": "Event period",
+  "eventPeriodLabel": "Contest period",
   "eventFlyerHeadline": "Looking for the bug handler who goes furthest",
   "eventFlyerPrize": "1st place gets a real live beetle",
   "eventFlyerPrizeNote": "Ships within Korea, sent directly by the seller",
@@ -779,7 +779,7 @@
   "eventFlyerLogin": "Sign in to appear in the ranking (guests can still play)",
   "eventTitle": "Bug King Trials",
   "eventBanner": "Bug King Trials · {n} tickets",
-  "eventClosed": "No event is running",
+  "eventClosed": "No contest is running",
   "battleNeedServer": "Duels need an online connection",
   "eventQuitFailed": "Couldn't quit — check your connection and try again",
   "eventBugUnavailable": "That bug can't enter — please pick another one",
@@ -788,7 +788,7 @@
   "@injuryHealConfirm": {"placeholders": {"n": {"type": "int"}}},
   "trainingInstantTitle": "Finish training now",
   "squadTrainingBadge": "Training",
-  "eventNeedServer": "The event needs an online connection",
+  "eventNeedServer": "The contest needs an online connection",
   "eventTickets": "Tickets {n}/{max}",
   "@eventTickets": {
     "placeholders": {
@@ -856,7 +856,7 @@
   "eventRankEmpty": "No entries yet",
   "eventAnonWarn": "Guest accounts don't appear in the ranking. Sign in to take part.",
   "eventKoreaOnly": "Physical prizes ship within Korea only. Rankings and in-game rewards are open to everyone.",
-  "eventRules": "Event rules",
+  "eventRules": "Contest rules",
   "@autoPreviewLine": {
     "placeholders": {
       "name": {
@@ -1410,13 +1410,13 @@
   "materialSapDesc": "Hardened crystallized tree sap. Used for advanced upgrade costs, training points and breakthroughs.",
   "materialJellyDesc": "A special premium currency. Used for crafting (All-in-One Potion) and special goods.",
   "materialFossil": "Fossil Shard",
-  "materialFossilDesc": "A shard of petrified insect. One is spent per hammer strike at the workshop.",
+  "materialFossilDesc": "A shard of petrified insect. One is spent per hammer strike at the forge.",
   "saveBrokenTitle": "Couldn't open your save",
   "saveBrokenUpdate": "This account’s save is newer than the app.\nUpdate to the latest version to continue where you left off.",
   "saveBrokenCorrupt": "Your save couldn't be read.\nThe original is kept safely on this device and was not overwritten.",
   "saveBrokenKeep": "The game is paused to protect your progress. Continuing could erase your save.",
   "saveBrokenSupport": "Contact support",
-  "eventRewardTitle": "Championship results are in",
+  "eventRewardTitle": "Bug King Trials results are in",
   "eventRewardRank": "Round {round} — rank {rank}",
   "@eventRewardRank": {
     "placeholders": {
@@ -1668,7 +1668,7 @@
   "guestWarnBody": "This is a temporary device account. If you delete the app or switch devices, your bugs and rank are gone. Sign in to keep them safe.",
   "guestWarnPurchaseBody": "Thanks for your purchase! You're playing as a guest, so deleting the app or switching devices will lose your purchases and progress. Link a Google (or Apple) account to keep them safe.",
   "titleStoreName": "Bug Champ",
-  "titleStoreTagline": "Idle Insect RPG",
+  "titleStoreTagline": "Idle Collect & Battle",
   "nicknameChangeCostHint": "Costs {cost} jelly to change",
   "@nicknameChangeCostHint": {
     "placeholders": {
@@ -1696,7 +1696,7 @@
     }
   },
   "notifHatchTitle": "Hatched!",
-  "notifHatchBody": "An egg has hatched. Check your collection.",
+  "notifHatchBody": "An egg has hatched. Check your storage.",
   "settingsNotify": "Notifications",
   "notifyOfflineFull": "Offline rewards full",
   "notifyHatchDone": "Hatching complete",
@@ -1869,8 +1869,8 @@
   "charSkills": "Skills",
   "charPower": "Power",
   "charEmptySlot": "Empty",
-  "forgeTitle": "Workshop",
-  "forgeHammer": "Forge",
+  "forgeTitle": "Forge",
+  "forgeHammer": "Smelt",
   "forgeAuto": "Auto forge",
   "forgeResultKeep": "Equip",
   "forgeResultDrop": "Sell",
@@ -1884,8 +1884,8 @@
   },
   "forgeCurrent": "Equipped",
   "forgeNoFossil": "No fossil shards",
-  "forgeLevel": "Workshop Lv.{lv}",
-  "forgeStep": "Workshop upgrade {cur}/{max}",
+  "forgeLevel": "Forge Lv.{lv}",
+  "forgeStep": "Forge upgrade {cur}/{max}",
   "forgeUpgrading": "Upgrading",
   "forgeReady": "Done!",
   "forgeRush": "Rush",
@@ -2131,7 +2131,7 @@
   },
   "skillGradeUpPick": "Pick shards to use",
   "@skillGradeUpHint": {"placeholders": {"grade": {"type": "String"}, "n": {"type": "String"}}},
-  "skillGradeUpHint": "Unused shards → {grade} universal ×{n}!",
+  "skillGradeUpHint": "Unused shards → {grade} wild ×{n}!",
   "skillGradeUpHintGo": "Upgrade",
   "skillEquip": "Equip",
   "skillUnequip": "Unequip",
@@ -2438,7 +2438,7 @@
   "charTabStats": "Stats",
   "charTabPets": "Pets",
   "charTabSkills": "Skills",
-  "forgeGradeButton": "Workshop grade",
+  "forgeGradeButton": "Forge grade",
   "statHp": "Health",
   "statLevelBonus": "Level bonus (ATK·HP)",
   "statGoldGain": "Gold Gain",
@@ -2446,7 +2446,7 @@
   "statBugFind": "Bug Find",
   "statEvade": "Evasion",
   "charNoPet": "No pet",
-  "charPetHint": "Manage pets in the collection box",
+  "charPetHint": "Manage pets in Storage",
   "forgeAutoShort": "Auto",
   "forgeStackFull": "The anvil is full",
   "forgeStackHint": "Tap to open",
@@ -2690,7 +2690,7 @@
       }
     }
   },
-  "forgeResultFeed": "Star food",
+  "forgeResultFeed": "Star material",
   "forgeFeedHint": "Can feed your equipped {slot} as star material ({have}/{need})",
   "@forgeFeedHint": {
     "placeholders": {
@@ -2791,7 +2791,7 @@
   "eventOpensInHours": "Starts in {n}h",
   "eventOpensInMinutes": "Starts in {n}m",
   "eventSeeFlyer": "See the flyer",
-  "eventSoonBanner": "Bug King Championship · opens {when}",
+  "eventSoonBanner": "Bug King Trials · opens {when}",
   "@eventOpensOn": {
     "placeholders": {
       "m": {
@@ -3105,7 +3105,7 @@
   "bugInfoDef": "Defense",
   "bugInfoSpd": "Speed",
   "bugInfoSpecialty": "Specialty",
-  "bugInfoTemperament": "Temper",
+  "bugInfoTemperament": "Temperament",
   "bugInfoSize": "Size",
   "bugInfoPotential": "Potential",
   "squadDetailTitle": "Squad",
@@ -3126,7 +3126,7 @@
   "@trainingNow": {"placeholders": {"stat": {"type": "String"}, "level": {"type": "int"}}},
   "trainingDone": "Training complete!",
   "trainingPickBug": "Bug to train",
-  "trainingCapHint": "Max levels differ by potential, temper, specialty and bloodline trait",
+  "trainingCapHint": "Max levels differ by potential, temperament, specialty and bloodline trait",
   "trainingLevel": "{lv} / {cap}",
   "@trainingLevel": {"placeholders": {"lv": {"type": "int"}, "cap": {"type": "int"}}},
   "trainingStart": "Train",
@@ -3228,7 +3228,7 @@
   "fairyNestNoEgg": "No eggs to place",
   "fairyNestPut": "Place in nest",
   "fairyNestCollect": "Collect",
-  "fairyNestReady": "Ready to hatch!",
+  "fairyNestReady": "Hatched!",
   "fairyNestLeft": "{t} left",
   "@fairyNestLeft": {"placeholders": {"t": {"type": "String"}}},
   "fairyNestKindHint": "The kind is random among {n}",
@@ -3275,7 +3275,7 @@
   "fairyMergeEpicNote": "Epic → Legendary merges need {n} fairies.",
   "fairyReroll": "Reroll ({left} left)",
   "fairyRerollTitle": "Fairy reroll",
-  "fairyRerollStoneTitle": "Add element stone",
+  "fairyRerollStoneTitle": "Add attribute stone",
   "fairyRerollStoneHint": "Raises the chance of that bonus stat (uses 1 stone).",
   "fairyRerollConfirm": "Rerolls the base and bonus values. The bonus stat itself may change too. Values never go below the current ones, and you can keep the current result if you prefer.\n\nUses per day are limited.",
   "fairyRerollPick": "Which one do you want?",
@@ -3383,7 +3383,7 @@
   "guildLeaveConfirm": "After leaving, you can't join another guild for {hours} hours. Leave?",
   "@guildLeaveConfirm": {"placeholders": {"hours": {"type": "int"}}},
   "guildLeaveLastConfirm": "You're the last member — the guild will be disbanded. Leave?",
-  "guildLeaderLeaveNote": "Leadership passes to a deputy (or the most active member).",
+  "guildLeaderLeaveNote": "Leadership passes to a deputy (or the top contributor).",
   "guildKick": "Remove from guild",
   "guildKickConfirm": "Remove {name} from the guild?",
   "@guildKickConfirm": {"placeholders": {"name": {"type": "String"}}},
@@ -3486,7 +3486,7 @@
   "guildSkillMission": "Mission rewards",
   "guildSkillHeader": "Skill points left: {n}",
   "@guildSkillHeader": {"placeholders": {"n": {"type": "int"}}},
-  "guildSkillNote": "Buffs apply to every guildmate while hunting (offline gold too). They don't apply to duels or events. Leaving the guild removes them. Guild level +1 = 1 point.",
+  "guildSkillNote": "Buffs apply to every guildmate while hunting (offline gold too). They don't apply to duels or contests. Leaving the guild removes them. Guild level +1 = 1 point.",
   "guildSkillValue": "+{now}% (max +{max}%)",
   "@guildSkillValue": {"placeholders": {"now": {"type": "String"}, "max": {"type": "String"}}},
   "guildSkillNoPoints": "No skill points left",
@@ -3579,9 +3579,9 @@
   "@guildWarClaimed": {"placeholders": {"coins": {"type": "int"}, "jelly": {"type": "int"}}},
   "duelPickDeployed": "In slot {n}",
   "@duelPickDeployed": {"placeholders": {"n": {"type": "int"}}},
-  "fairyDexHelp": "The Fairy Codex records every fairy you have ever obtained. Each of the 8 fairies has two rows to fill:\n• Grade dots — a dot lights up the first time you get that fairy at that grade.\n• Stat stones — a stone lights up the first time you get that fairy with that bonus stat.\nA fairy is recorded when it hatches from an egg in the nest or is made by merging, and records stay even if you release the fairy. Fill cells to earn rewards below (fairy dust, accelerators, fossils). It does not give stats.",
+  "fairyDexHelp": "The Fairy Codex records every fairy you have ever obtained. Each of the 8 fairies has two rows to fill:\n• Grade dots — a dot lights up the first time you get that fairy at that grade.\n• Attribute stones — a stone lights up the first time you get that fairy with that bonus stat.\nA fairy is recorded when it hatches from an egg in the nest or is made by merging, and records stay even if you release the fairy. Fill cells to earn rewards below (fairy dust, accelerators, fossils). It does not give stats.",
   "fairyDexLegendGrades": "Grade dots (lit = obtained at that grade)",
-  "fairyDexLegendSubs": "Stat stones (bright = obtained with that bonus stat)",
+  "fairyDexLegendSubs": "Attribute stones (bright = obtained with that bonus stat)",
   "fairyDexRewards": "Codex rewards · {n}/{max} collected",
   "@fairyDexRewards": {"placeholders": {"n": {"type": "int"}, "max": {"type": "int"}}},
   "fairyDexClaimed": "Codex reward received!",
@@ -3591,7 +3591,7 @@
   "guideIntro": "Every bug is different even within a species. Tap a topic to see what each term means.",
   "guideElementTitle": "Elements (Wood·Fire·Earth·Metal·Water)",
   "@guideElementBody": {"placeholders": {"mult": {"type": "String"}}},
-  "guideElementBody": "Each bug has one element. In duels, when a bug clashes with an element it restrains, it deals {mult}x damage. The red arrows show who beats whom. Arenas have an element too: bugs matching it gain HP/ATK/DEF and bugs the arena beats lose some (duels: set when picking an opponent; event: every wave).",
+  "guideElementBody": "Each bug has one element. In duels, when a bug clashes with an element it restrains, it deals {mult}x damage. The red arrows show who beats whom. Arenas have an element too: bugs matching it gain HP/ATK/DEF and bugs the arena beats lose some (duels: set when picking an opponent; contest: every wave).",
   "@guideElementLine": {"placeholders": {"a": {"type": "String"}, "b": {"type": "String"}}},
   "guideElementLine": "{a} beats {b}",
   "guideSpecialtyTitle": "Specialty (fighting style)",
@@ -3634,14 +3634,14 @@
   "guideTrainBody": "Every bug earns training points — {perStar} per potential star · 1 every {levels} train levels · {bt} per breakthrough tier. Spend them on the slots below. Each slot has a cap, and the caps add up to far more than your points, so you can't fill everything — what you pick is your strategy. Slot caps differ by temperament, specialty and bloodline trait.",
   "@bugInfoSizeDetail": {"placeholders": {"mm": {"type": "String"}, "min": {"type": "String"}, "max": {"type": "String"}, "mult": {"type": "String"}}},
   "bugInfoSizeDetail": "{mm}mm (range {min}–{max}) · stats ×{mult}",
-  "eventHudShort": "King\nCup",
+  "eventHudShort": "King\nTrials",
   "@fairyStoneName": {"placeholders": {"stat": {"type": "String"}}},
   "fairyStoneName": "{stat} stone",
   "@fairyStoneEffect": {"placeholders": {"stat": {"type": "String"}, "p": {"type": "String"}}},
-  "fairyStoneEffect": "The hatched fairy's sub-stat becomes {stat} with {p}% chance",
+  "fairyStoneEffect": "The hatched fairy's bonus stat becomes {stat} with {p}% chance",
   "fairyRerollStoneEffect": "The rerolled bonus stat becomes {stat} with {p}% chance",
   "@fairyRerollStoneEffect": {"placeholders": {"stat": {"type": "String"}, "p": {"type": "String"}}},
-  "fairyStoneBuyTitle": "Buy element stone",
+  "fairyStoneBuyTitle": "Buy attribute stone",
   "fairyStoneBuyAction": "Buy",
   "fairyEquippedTag": "Equipped",
   "fairyMergeEquipped": "Your companion fairy can't be merged",
@@ -3659,14 +3659,14 @@
   "fairyHelpGradeLine": "{grade}: {lo} ~ {hi} \u00b7 max Lv.{max}",
   "@fairyHelpLevel": {"placeholders": {"p": {"type": "String"}}},
   "fairyHelpLevel": "Each level adds +{p} of the value (Lv.1 basis).",
-  "fairyHelpSubHead": "Sub-stat (one per fairy)",
+  "fairyHelpSubHead": "Bonus stat (one per fairy)",
   "@fairyHelpSub": {"placeholders": {"p": {"type": "String"}}},
-  "fairyHelpSub": "Rolled at hatching from the list below \u2014 {p} of the base range \u00d7 the stat's weight. An element stone raises the chance of the one you want.",
+  "fairyHelpSub": "Rolled at hatching from the list below \u2014 {p} of the base range \u00d7 the stat's weight. An attribute stone raises the chance of the one you want.",
   "@fairyHelpSubLine": {"placeholders": {"stat": {"type": "String"}, "grade": {"type": "String"}, "lo": {"type": "String"}, "hi": {"type": "String"}}},
   "fairyHelpSubLine": "{stat}: {grade} {lo} ~ {hi}",
   "fairyHelpMergeHead": "Merge",
   "@fairyHelpMerge": {"placeholders": {"n": {"type": "String"}}},
-  "fairyHelpMerge": "{n} fairies of the same kind and grade \u2192 1 of the next grade. Base and sub stats are rolled again, so you can aim for a better one.",
+  "fairyHelpMerge": "{n} fairies of the same kind and grade \u2192 1 of the next grade. Base and bonus stats are rolled again, so you can aim for a better one.",
   "@fairyNestKindHint": {"placeholders": {"n": {"type": "String"}}},
   "@fairyGachaOverflowWarn": {"placeholders": {"free": {"type": "String"}, "lost": {"type": "String"}}},
   "fairyGachaOverflowWarn": "Your fairy box has {free} free slots \u2014 {lost} eggs will turn into fairy dust.",
@@ -3705,9 +3705,9 @@
   "bugLock": "Lock",
   "bugLocked": "Locked",
   "bugUnlock": "Unlock",
-  "bugLockedToast": "Locked \u2014 it won't be used for merging or dismantling",
+  "bugLockedToast": "Locked \u2014 it won't be used for merging or disassembly",
   "bugUnlockedToast": "Unlocked",
-  "disassembleLocked": "Locked bugs can't be dismantled. Unlock it first.",
+  "disassembleLocked": "Locked bugs can't be disassembled. Unlock it first.",
   "@trainingSumShort": {"placeholders": {"n": {"type": "int"}}},
   "trainingSumShort": "Train Lv.{n}",
   "reviewAskTitle": "Enjoying Bug Champ?",
@@ -3786,7 +3786,7 @@
   "forgeExpandConfirm": "Spend {jelly} Jelly to add {n} anvil slots?",
   "@forgeRerollConfirm": {"placeholders": {"jelly": {"type": "int"}, "option": {"type": "String"}}},
   "forgeRerollConfirm": "Spend {jelly} Jelly to reroll '{option}'?\nGrade and slot stay the same.",
-  "forgeUpRushTitle": "Finish workshop upgrade now",
+  "forgeUpRushTitle": "Finish forge upgrade now",
   "@forgeUpRushConfirm": {"placeholders": {"jelly": {"type": "int"}, "grade": {"type": "String"}}},
   "forgeUpRushConfirm": "Spend {jelly} Jelly to finish the {grade} upgrade now?",
   "@exchangeConfirmGold": {"placeholders": {"jelly": {"type": "int"}, "amount": {"type": "String"}}},
@@ -3867,7 +3867,7 @@
   "guildMemberNone": "None",
   "guildMemberNoSave": "Couldn't load this member's details",
   "guildMemberFailed": "Couldn't load member info",
-  "guildMissionOwnerTag": "Leader",
+  "guildMissionOwnerTag": "Host",
   "guildMissionTeamTitle": "Members on this mission",
   "guildMissionRewardSuccess": "Success reward",
   "guildMissionExpShort": "Guild EXP {n}",
@@ -3898,7 +3898,7 @@
   "@duelRoleChip": {"placeholders": {"role": {"type": "String"}, "pct": {"type": "String"}}},
   "duelTeamAura": "Team aura: {list}",
   "@duelTeamAura": {"placeholders": {"list": {"type": "String"}}},
-  "duelCommanderBadge": "Leader",
+  "duelCommanderBadge": "Commander",
   "duelTeamAuraHelpCommander": "Each bug's Command grows the aura of its own role (all three count). The flag marks the bug with the most Command.",
   "duelTeamAuraTitle": "Team aura",
   "duelTeamAuraNone": "Team aura: none",
@@ -3950,7 +3950,7 @@
   "trainPresetHint": "Builds that tested strong · ★ suggested for this specialty",
   "trainPresetNext": "Next suggested slot: {slot}",
   "@trainPresetNext": {"placeholders": {"slot": {"type": "String"}}},
-  "trainPresetFill": "Fill {n} spare points",
+  "trainPresetFill": "Fill {n} spare points as suggested",
   "@trainPresetFill": {"placeholders": {"n": {"type": "String"}}},
   "trainPresetRespec": "Respec to this build",
   "trainPresetFilled": "Filled with the suggested build",
@@ -3994,11 +3994,11 @@
   "trainEditPreview": "Editing — this is what you'll get",
   "duelStoneTitle": "Duel stones",
   "duelStoneElement": "Element stone",
-  "duelStoneTemperament": "Temper stone",
+  "duelStoneTemperament": "Temperament stone",
   "duelStoneOwned": "×{n}",
   "@duelStoneOwned": {"placeholders": {"n": {"type": "String"}}},
   "duelStoneChangeElement": "Change element",
-  "duelStoneChangeTemperament": "Change temper",
+  "duelStoneChangeTemperament": "Change temperament",
   "duelStoneWhere": "Found from: elites (element {elite}%, while idle only with Gatherer's Touch on) · repeat boss kills (element {bossEl}% · temperament {bossTm}%) · first clear of every {every} abyss floors (element {abEl} · temperament {abTm}) · Gatherer's Touch doubles the chance · or jelly {jEl}/{jTm}",
   "@duelStoneWhere": {
     "placeholders": {
@@ -4051,9 +4051,9 @@
     }
   },
   "duelStoneCurrent": "Current",
-  "duelStoneHint": "Set element or temper to any value (bloodline trait stays). Changes are inherited by offspring.",
+  "duelStoneHint": "Set element or temperament to any value (bloodline trait stays). Changes are inherited by offspring.",
   "duelStonePickElement": "Pick a new element",
-  "duelStonePickTemperament": "Pick a new temper",
+  "duelStonePickTemperament": "Pick a new temperament",
   "duelStoneAsk": "Change {from} → {to}? Uses 1 {stone}.",
   "@duelStoneAsk": {"placeholders": {"from": {"type": "String"}, "to": {"type": "String"}, "stone": {"type": "String"}}},
   "duelStoneBuyTitle": "Buy {stone}",
@@ -4113,7 +4113,7 @@
   "guideTrainCostBody": "Materials (chitin, mineral, sap) and training time are paid only the first time you spend a point, rising a little each time. Jelly can skip the wait; a bug in training can't enter duels or the contest.",
   "guideTrainRespecBody": "Respec — redistribute your paid points. No materials are needed, but you wait {base} min + {per} min per point (up to {max} h) and the bug can't fight meanwhile. Jelly can skip the wait.",
   "@guideTrainRespecBody": {"placeholders": {"base": {"type": "String"}, "per": {"type": "String"}, "max": {"type": "String"}}},
-  "guideTrainStoneBody": "Duel stones — an Element stone sets a bug's element and a Temper stone its temperament to the value you choose (bloodline trait stays; the new value is inherited by offspring). Get them from elites, bosses and the Abyss, or buy with jelly (Element {el} · Temper {tm}).",
+  "guideTrainStoneBody": "Duel stones — an Element stone sets a bug's element and a Temperament stone its temperament to the value you choose (bloodline trait stays; the new value is inherited by offspring). Get them from elites, bosses and the Abyss, or buy with jelly (Element {el} · Temper {tm}).",
   "@guideTrainStoneBody": {"placeholders": {"el": {"type": "String"}, "tm": {"type": "String"}}},
   "guideDuelPower": "Combat power reflects real win chances — not just attack, HP and defense but also evasion, crit, recovery, push, weight, technique and grit. Twice the power wins about 67% of the time.",
   "guideGearTitle": "Gear — refining & stars",
@@ -4323,7 +4323,7 @@
   "eventFlyerRule1Grade": "Your bug fights **as raised** — grade, stat quality, train levels, breakthroughs and training points all count (same stats as Duels)",
   "eventNormalizeBodyGrade": "Fights with the same stats as Duels — grade, stat quality, train levels, breakthroughs, training points and traits all count. Losing by ring-out or flip costs {pct}% HP and you retry the same wave. When HP runs out, the run ends.",
   "@eventNormalizeBodyGrade": {"placeholders": {"pct": {"type": "int"}}},
-  "bugLockedToastGrade": "Locked — it won't be converted to essence or dismantled",
+  "bugLockedToastGrade": "Locked — it won't be converted to essence or disassembled",
   "trainPtNoPointsGrade": "No points left — raise level, breakthrough or grade",
   "guildWarBreedHintGrade": "Finish breeding, collect hatched eggs and raise grades. Jelly-rushed completions don't count.",
   "whatsNew20Grade": "Every bug now has a grade (Common–Legendary). Turn same-species bugs into essence to grade up",
@@ -4403,7 +4403,7 @@
   "guidePassiveReroll": "Reroll: spend {essence} essence of that species or {jelly} jelly to reroll the size, then keep the new or current value. The type never changes.",
   "@guidePassiveReroll": {"placeholders": {"essence": {"type": "String"}, "jelly": {"type": "String"}}},
   "guideAuraTitle": "Team roles & Command",
-  "guideAuraBody": "Each species has a duel role (Attacker, Defender, Tank). Every bug in a 3-bug duel (league, defense team, guild war) boosts its role stat for the whole team (not in events).",
+  "guideAuraBody": "Each species has a duel role (Attacker, Defender, Vitality). Every bug in a 3-bug duel (league, defense team, guild war) boosts its role stat for the whole team (not in contests).",
   "guideAuraSize": "Per bug = grade base {base} + {perPoint} per point in the 'Command' training slot. The team total caps at {cap} per stat — stacking one role hits the cap, so mix roles.",
   "@guideAuraSize": {"placeholders": {"base": {"type": "String"}, "perPoint": {"type": "String"}, "cap": {"type": "String"}}},
   "whatsNew21Grade": "Wild and bred eggs are all Common now. Grade them up with essence (cost lowered to 4/4/5/6)",
@@ -4412,10 +4412,10 @@
   "whatsNew21Aura": "New duel team role auras and a 'Command' training slot — every bug gets one free respec (no wait)",
   "whatsNew21Train": "Training level-up costs went up (more at higher levels)",
   "whatsNew21Duel": "Strike specialty reworked and per-species duel scaling rebalanced",
-  "whatsNew21Gear": "Gear 'Skill cooldown' option · star materials carry over · element stones for fairy rerolls",
-  "whatsNew21Buff": "Buffs now apply while the app is closed · Gatherer's Touch also doubles rare drops (element stones, duel stones, growth potions) · free activation takes 1 minute (instant with jelly or the Endless Buff Pass)",
+  "whatsNew21Gear": "Gear 'Skill cooldown' option · star materials carry over · attribute stones for fairy rerolls",
+  "whatsNew21Buff": "Buffs now apply while the app is closed · Gatherer's Touch also doubles rare drops (attribute stones, duel stones, growth potions) · free activation takes 1 minute (instant with jelly or the Endless Buff Pass)",
   "whatsNew21Stats": "Gold, XP and crit damage bonuses now multiply instead of add, so they hit harder · gear and fairy crit damage now shows 1/10 the number (same or stronger effect) · home power now includes skills, fairies, dex, evasion and regen",
-  "whatsNew21Badge": "Event badges are now gold, silver, bronze, finalist and participant",
+  "whatsNew21Badge": "Contest badges are now gold, silver, bronze, finalist and participant",
   "passiveRerollFree": "Free reroll ({n} left)",
   "@passiveRerollFree": {"placeholders": {"n": {"type": "String"}}},
   "passiveRerollFreeHint": "Bugs from before 1.0.21 get {n} free passive-size rerolls.",
@@ -4475,7 +4475,7 @@
   "maxShort": "MAX",
   "whatsNew22Rarity": "Rarity is now rolled per bug — the same species can be Common to Legendary. Your existing bugs got a new rarity and passive type too",
   "whatsNew22RarityUp": "Raise rarity: use 3 bugs of the same species and rarity to raise one step. In storage the gem (◆) shows rarity, a green arrow means it can go up, and you can raise them all at once",
-  "whatsNew22Arena": "Arenas now have an element — matching bugs +10%, bugs the arena beats −10% (duels: shown when picking an opponent; event: changes every wave)",
+  "whatsNew22Arena": "Arenas now have an element — matching bugs +10%, bugs the arena beats −10% (duels: shown when picking an opponent; contest: changes every wave)",
   "whatsNew22LegacyRoll": "Bugs that were high grade before the update get their missed stat rolls for free (bug details → grade)",
   "whatsNew22Polish": "Gear refining now always gives a better value (the cost rises each time)",
   "whatsNew22Convenience": "Free ticket refills stop at full · hold ＋/－ when editing training · Max button for leveling · text overflow and messages fixed",
@@ -4486,7 +4486,7 @@
   "fairyErrBoxMax": "The fairy box is already at its maximum size",
   "fairyErrNestBusy": "There's already an egg in the nest",
   "fairyErrNoEgg": "You have no fairy eggs",
-  "fairyErrNoStone": "You don't have that element stone",
+  "fairyErrNoStone": "You don't have that attribute stone",
   "fairyErrNestEmpty": "The nest is empty",
   "fairyErrNotReady": "It hasn't hatched yet",
   "fairyErrAlreadyReady": "It has already hatched — tap Collect",
@@ -4623,7 +4623,7 @@
     }
   },
   "guideZoneFall": "Failing a boss challenge empties that zone’s gauge. Falling to a normal monster in your highest reachable zone drops you one zone back (with the boss challenge open) — beat that boss again to climb back. In Zone 1 only the gauge empties.",
-  "guideZoneTier": "Entering a difficulty for the first time restarts upgrades, level, gold and common materials (jelly, fossils, bugs, gear, skills and the Bug Book stay). Difficulties you have reached can be revisited freely from the roadmap. While the app is closed, hunting rewards pile up for up to {hours} hours; gold you hunt with the app open gets +{bonus}.",
+  "guideZoneTier": "Entering a difficulty for the first time restarts upgrades, level, gold and common materials (jelly, fossils, bugs, gear, skills and the Bug Dex stay). Difficulties you have reached can be revisited freely from the roadmap. While the app is closed, hunting rewards pile up for up to {hours} hours; gold you hunt with the app open gets +{bonus}.",
   "@guideZoneTier": {
     "placeholders": {
       "hours": {
@@ -4692,7 +4692,7 @@
       }
     }
   },
-  "guideSkillGrow": "Unlock a skill with {unlock} of its shards, then train (level up) it with shards and time. Grade up turns {ratio} shards of one grade into 1 wildcard shard of the next grade; wildcard shards work for any skill of that grade.",
+  "guideSkillGrow": "Unlock a skill with {unlock} of its shards, then train (level up) it with shards and time. Grade up turns {ratio} shards of one grade into 1 wild shard of the next grade; wild shards work for any skill of that grade.",
   "@guideSkillGrow": {
     "placeholders": {
       "unlock": {
@@ -4732,7 +4732,7 @@
       }
     }
   },
-  "guideDexTitle": "Bug Book",
+  "guideDexTitle": "Bug Dex",
   "guideDexBody": "Each species has three marks: Discovered (obtained once), Conquered (trained to level {lv}) and Variant (got a variant). Fill all three for Complete (👑). Records stay even after you disassemble a bug or turn it into essence.",
   "@guideDexBody": {
     "placeholders": {
@@ -4775,8 +4775,8 @@
   },
   "guideStorageEssence": "Disassemble unwanted bugs for materials, or turn them into essence (larva or older). Essence is used to grade up that species. Lock a bug you want to keep and it is never used for disassembly, essence or rarity up. Equipped, hatching and training bugs cannot be converted either.",
   "guideFairyTitle": "Fairies",
-  "guideFairyBody": "Fairies are companions that help you hunt. You pick one companion fairy, and its main and sub stats plus its skill are added to hunting (it casts the skill on its own). Fairies help hunting only — never duels, contests or guild bosses.",
-  "guideFairyEgg": "Hatch fairy eggs in the fairy nest (one slot) to get fairies. Hatching takes {hatch}, shortened with accelerators. Eggs are guaranteed from first boss kills and drop from elites at {elite}. Fairy egg draws ({gacha} jelly) guarantee Legendary or better within {pity} draws. An egg’s grade is fixed from the start; its kind and sub stat are set when it goes into the nest.",
+  "guideFairyBody": "Fairies are companions that help you hunt. You pick one companion fairy, and its base and bonus stats plus its skill are added to hunting (it casts the skill on its own). Fairies help hunting only — never duels, contests or guild bosses.",
+  "guideFairyEgg": "Hatch fairy eggs in the fairy nest (one slot) to get fairies. Hatching takes {hatch}, shortened with accelerators. Eggs are guaranteed from first boss kills and drop from elites at {elite}. Fairy egg draws ({gacha} jelly) guarantee Legendary or better within {pity} draws. An egg’s grade is fixed from the start; its kind and bonus stat are set when it goes into the nest.",
   "@guideFairyEgg": {
     "placeholders": {
       "hatch": {
@@ -4793,7 +4793,7 @@
       }
     }
   },
-  "guideFairyStone": "Put an attribute stone in with the egg and that sub stat appears with {stone} chance. Fairies you own can be rerolled ({reroll} jelly, {cap} a day) for a new sub stat and quality — quality never goes down, and you can keep the current result if you prefer.",
+  "guideFairyStone": "Put an attribute stone in with the egg and that bonus stat appears with {stone} chance. Fairies you own can be rerolled ({reroll} jelly, {cap} a day) for a new bonus stat and quality — quality never goes down, and you can keep the current result if you prefer.",
   "@guideFairyStone": {
     "placeholders": {
       "stone": {
@@ -4807,7 +4807,7 @@
       }
     }
   },
-  "guideFairyMerge": "Merge {merge} fairies of the same kind and grade into one fairy of the next grade (Epic → Legendary takes {mergeEpic}). If all materials share a sub stat, it carries over. Level up with fairy dust (+{level} stats per level); each grade has its own max level ({maxLv}). Merging or disassembling a leveled fairy refunds {refund} of the dust spent.",
+  "guideFairyMerge": "Merge {merge} fairies of the same kind and grade into one fairy of the next grade (Epic → Legendary takes {mergeEpic}). If all materials share a bonus stat, it carries over. Level up with fairy dust (+{level} stats per level); each grade has its own max level ({maxLv}). Merging or releasing a leveled fairy refunds {refund} of the dust spent.",
   "@guideFairyMerge": {
     "placeholders": {
       "merge": {
@@ -4827,7 +4827,7 @@
       }
     }
   },
-  "guideFairyBox": "The fairy box holds {base} fairies and eggs combined, expandable by {step} with jelly up to {max}. When it is full, new eggs become fairy dust. Disassemble unwanted fairies and eggs into dust, or turn on auto-disassemble so new eggs at or below the chosen grade become dust right away. Filling the fairy book ({dex} entries) rewards dust, accelerators and fossils.",
+  "guideFairyBox": "The fairy box holds {base} fairies and eggs combined, expandable by {step} with jelly up to {max}. When it is full, new eggs become fairy dust. Release unwanted fairies and eggs into dust, or turn on auto-release so new eggs at or below the chosen grade become dust right away. Filling the Fairy Codex ({dex} entries) rewards dust, accelerators and fossils.",
   "@guideFairyBox": {
     "placeholders": {
       "base": {
@@ -4845,7 +4845,7 @@
     }
   },
   "whatsNew23RedDot": "Red dots now point out what you would miss — free daily draws and sweeps, empty incubator and breeding slots, finished timers, rewards to claim and duel tickets",
-  "whatsNew23Guide": "The guide now explains rarity, growth potions, zones and the Abyss, buffs, skills, the Bug Book, storage and fairies",
+  "whatsNew23Guide": "The guide now explains rarity, growth potions, zones and the Abyss, buffs, skills, the Bug Dex, storage and fairies",
   "whatsNew23Mail": "You can now claim the lunch and dinner \"Claim again\" bonus later from the mailbox",
   "whatsNew23Fix": "Fixed some windows that could not be closed on iPhone (new close button). The Hall of Fame and next round notice stay visible after a contest ends",
   "whatsNew24Art": "Bug art redrawn to match the real insects — giant, flat and two-spotted stag beetles, lesser rhino beetle, relict and saw longhorns, jumping mantis, longheaded grasshopper, stag-horned chafer, species-specific grubs and pupae, and 4 skins",
