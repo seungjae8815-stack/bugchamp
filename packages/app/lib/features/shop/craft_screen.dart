@@ -79,9 +79,14 @@ class _StoreSection extends ConsumerWidget {
     final starter = save.starterBought
         ? null
         : cfg.sorted.where((p) => p.type == IapType.starter).firstOrNull;
+    // 올인원 패스는 스타터 **바로 밑**(2026-10-25 사장님) — 뽑기·교환소보다 위.
+    final allPass = cfg.sorted
+        .where((p) => p.type == IapType.allPass)
+        .firstOrNull;
+    final top = [?starter, ?allPass];
     final products = [
       for (final p in cfg.sorted)
-        if (p != starter) p,
+        if (!top.contains(p)) p,
     ];
     // 스토어가 붙어 있으면 현지 통화 가격으로 덮어쓴다(없으면 원화 참고값).
     final prices = ref.watch(storePricesProvider).value ?? const {};
@@ -90,24 +95,22 @@ class _StoreSection extends ConsumerWidget {
     return ListView.separated(
       padding: const EdgeInsets.all(12),
       // +1 = 알 뽑기, +1 = 교환소, +1 = 복원 줄, 개발자 모드면 배너까지.
-      itemCount:
-          products.length + 3 + (devMode ? 1 : 0) + (starter != null ? 1 : 0),
+      itemCount: products.length + 3 + (devMode ? 1 : 0) + top.length,
       separatorBuilder: (_, _) => const SizedBox(height: 8),
       itemBuilder: (context, i) {
         if (devMode && i == 0) return _devBanner(l);
         var j = devMode ? i - 1 : i;
-        if (starter != null) {
-          if (j == 0) {
-            return StoreProductCard(
-              product: starter,
-              save: save,
-              now: now,
-              locale: locale,
-              storePrice: prices[starter.id],
-            );
-          }
-          j -= 1;
+        if (j < top.length) {
+          final p = top[j];
+          return StoreProductCard(
+            product: p,
+            save: save,
+            now: now,
+            locale: locale,
+            storePrice: prices[p.id],
+          );
         }
+        j -= top.length;
         // 젤리 소비처(뽑기·교환소)를 상품보다 **위**에 둔다 — 젤리를 이미
         // 가진 사람이 쓸 곳을 먼저 봐야, 젤리가 남아서 안 사는 상태가 끊긴다.
         if (j == 0) {
