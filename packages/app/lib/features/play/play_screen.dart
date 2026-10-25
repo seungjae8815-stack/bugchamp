@@ -16,6 +16,7 @@ import 'pet_attackers.dart';
 import 'offline_reward_table.dart';
 import 'buff_wait_dialog.dart';
 import '../shop/craft_screen.dart' show StoreProductCard;
+import '../../domain/pass_expiry.dart';
 import '../../domain/store_iap_service.dart' show storePricesProvider;
 import '../character/fairy_panel.dart' show openFairyWindow;
 import '../../ui/sheet_close.dart';
@@ -757,6 +758,10 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     // 선물 예약 초기화 + 만료 정리(첫 진입 시).
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) controller.maybeSpawnGift();
+    });
+    // 패스 만료 안내(2026-10-25) — 다른 시작 팝업(방치 보상 등)이 닫힌 뒤.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) unawaited(_passExpiryNoticeOnce());
     });
     // 1.0.21 업데이트 직후 한 번 — 장착해 둔 알을 내렸으면 펫을 다시 채우고 알린다 · 무료 다시 찍기 선물을 알린다.
     final eggsOff = controller.pendingEggUnequip;
@@ -5241,6 +5246,82 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
   /// 스타터 패키지 소개 — 아직 안 산 계정에 **사냥터 보스를 깬 직후 한 번만**(2026-10-02 출시 점검).
   /// 계정당 1회 상품이라 부담이 적고 첫 결제 전환에 효과가 크다. 기록은 기기에만(한 번 보여 주면 끝).
   /// 결제는 여기서 하지 않고 상점으로 보낸다(상점 맨 위에 스타터가 있다).
+  /// 패스 만료 안내(2026-10-25 사장님) — 3일 이하 남았을 때 한 번, 하루 이하 남았을 때 한 번.
+  /// 같은 만료 시각·단계는 다시 띄우지 않는다(기기 기록 — 다시 깔면 한 번 더 뜰 수 있다, 스타터 소개와 같은 수준).
+  /// 여러 패스가 함께 끝나면 한 창에 이름을 모은다. "상점으로"는 상점 탭으로 보낸다.
+  Future<void> _passExpiryNoticeOnce({bool preview = false}) async {
+    await StartupPopupGate.whenIdle();
+    if (!mounted) return;
+    final data = ref.read(gameDataProvider).value;
+    final iap = data?.iapConfig;
+    final save = ref.read(saveControllerProvider).value;
+    if (iap == null || save == null) return;
+    final now = ref.read(clockProvider).now().toUtc();
+    final prefs = await SharedPreferences.getInstance();
+    final due = <({IapProduct product, DateTime until, PassExpiryStage stage})>[
+      for (final p in activePasses(save, iap, now))
+        if (passExpiryStage(p.until, now) case final st?)
+          if (preview ||
+              prefs.getBool(
+                    'pass_expiry_${p.product.id}_'
+                    '${p.until.millisecondsSinceEpoch}_${st.name}',
+                  ) !=
+                  true)
+            (product: p.product, until: p.until, stage: st),
+    ];
+    if (due.isEmpty || !mounted) return;
+    final l = AppLocalizations.of(context);
+    final locale = Localizations.localeOf(context).languageCode;
+    final names = due
+        .map((d) => d.product.name?.resolve(locale) ?? d.product.id)
+        .join(', ');
+    final soonest = due
+        .map((d) => d.until)
+        .reduce((a, b) => a.isBefore(b) ? a : b);
+    final today = due.any((d) => d.stage == PassExpiryStage.today);
+    StartupPopupGate.hold();
+    try {
+      final go = await showGameDialog<bool>(
+        context,
+        title: l.passExpireTitle,
+        icon: Icons.workspace_premium_rounded,
+        content: Text(
+          today
+              ? l.passExpireToday(names)
+              : l.passExpireBody(names, '${passDaysLeft(soonest, now)}'),
+          textAlign: TextAlign.center,
+          style: const TextStyle(
+            color: Color(0xD9FFFFFF),
+            fontSize: 13,
+            height: 1.45,
+          ),
+        ),
+        actions: [
+          gameDialogButton(
+            l.actionClose,
+            () => Navigator.pop(context, false),
+            primary: false,
+          ),
+          gameDialogButton(l.passExpireGo, () => Navigator.pop(context, true)),
+        ],
+      );
+      if (!preview) {
+        for (final d in due) {
+          await prefs.setBool(
+            'pass_expiry_${d.product.id}_'
+            '${d.until.millisecondsSinceEpoch}_${d.stage.name}',
+            true,
+          );
+        }
+      }
+      if (go == true && mounted) {
+        ref.read(tabIndexProvider.notifier).set(kShopTabIndex);
+      }
+    } finally {
+      StartupPopupGate.release();
+    }
+  }
+
   Future<void> _offerStarterOnce({bool preview = false}) async {
     final save = ref.read(saveControllerProvider).value;
     if (save == null || (save.starterBought && !preview)) return;
@@ -8219,6 +8300,11 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                       _devBtn('스타터 소개 미리보기', () {
                         Navigator.pop(context);
                         _offerStarterOnce(preview: true);
+                      }),
+                      // 패스가 3일 이하 남았을 때만 내용이 있다(없으면 아무것도 안 뜬다).
+                      _devBtn('패스 만료 안내 미리보기', () {
+                        Navigator.pop(context);
+                        _passExpiryNoticeOnce(preview: true);
                       }),
                     ]),
                     // 스킬은 보스 조각으로만 열린다(§2.8) — 실기기에서

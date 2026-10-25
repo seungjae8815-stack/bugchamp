@@ -331,6 +331,7 @@
    "kind": "timed",
    "type": "allPass",
    "priceKrw": 16500,
+   "discountPct": 40,
    "sort": 21,
    "name": {
     "ko": "올인원 패스 (30일)",

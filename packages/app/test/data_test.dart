@@ -13,6 +13,24 @@ Map<String, dynamic> _readJson(String rel) =>
     jsonDecode(File(rel).readAsStringSync()) as Map<String, dynamic>;
 
 void main() {
+  // 묶음 할인 배지는 **사실**이어야 한다(2026-10-25) — 올인원 패스 = 패스 4종을 따로 살 때 대비 할인율.
+  test('iap.json — 올인원 패스 할인 배지(discountPct)가 패스 4종 합계 대비 실제 할인율과 같다', () {
+    final cfg = IapConfig.fromJson(_readJson('assets/data/iap.json'));
+    final all = cfg.byId('all_pass')!;
+    final sum = [
+      'idle_pass',
+      'buff_pass',
+      'growth_pass',
+      'research_pass',
+    ].map((id) => cfg.byId(id)!.priceKrw).fold<int>(0, (a, b) => a + b);
+    final real = ((1 - all.priceKrw / sum) * 100).round();
+    expect(all.discountPct, real);
+    // 다른 상품에는 할인 배지를 붙이지 않는다(근거 없는 할인 표기 금지).
+    for (final p in cfg.products) {
+      if (p.id != 'all_pass') expect(p.discountPct, 0, reason: p.id);
+    }
+  });
+
   group('species.json', () {
     final root = _readJson('assets/data/species.json');
     final list = (root['species'] as List).cast<Map<String, dynamic>>();

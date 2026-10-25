@@ -335,6 +335,28 @@ class StoreProductCard extends ConsumerWidget {
                         ),
                       ),
                     ),
+                    // 묶음 할인 배지(2026-10-25 — 올인원 패스: 4종을 따로 살 때보다 40% 싸다).
+                    if (product.discountPct > 0) ...[
+                      const SizedBox(width: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 1,
+                        ),
+                        decoration: BoxDecoration(
+                          color: const Color(0x33E0533F),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          '-${product.discountPct}%',
+                          style: const TextStyle(
+                            color: Color(0xFFFF8A75),
+                            fontSize: 10.5,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                      ),
+                    ],
                     if (product.bonusPct > 0) ...[
                       const SizedBox(width: 6),
                       Container(

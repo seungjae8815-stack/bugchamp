@@ -37,6 +37,10 @@ class NotificationService {
   static const int researchIdBase = 920;
   static const int researchIdCount = 3;
 
+  /// 패스 만료 안내(2026-10-25) — 패스 4종 × 2번(3일 전·12시간 전).
+  static const int passIdBase = 930;
+  static const int passIdCount = 8;
+
   /// 야간 휴식 시작·종료 시각(로컬). 이 사이에 잡힌 알림은 아침으로 미룬다.
   static const int quietFromHour = 22;
   static const int quietToHour = 8;
@@ -314,6 +318,50 @@ class NotificationService {
       } catch (e) {
         debugPrint('scheduleResearch failed: $e');
       }
+    }
+  }
+
+  /// 패스 만료 안내 — [times] 마다 1회(이미 지난 시각은 건너뛴다). 연구 알림과 같은 방식.
+  Future<void> schedulePassExpiry(
+    List<DateTime> times, {
+    required String title,
+    required String body,
+    bool quiet = true,
+  }) async {
+    if (!_ready) return;
+    await cancelPassExpiry();
+    final now = tz.TZDateTime.now(tz.local);
+    var i = 0;
+    for (final t in times) {
+      if (i >= passIdCount) break;
+      final at = _avoidQuiet(
+        tz.TZDateTime.from(t.toLocal(), tz.local),
+        quiet: quiet,
+      );
+      if (!at.isAfter(now)) continue;
+      try {
+        await _plugin.zonedSchedule(
+          passIdBase + i,
+          title,
+          body,
+          at,
+          _details,
+          androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+          uiLocalNotificationDateInterpretation:
+              UILocalNotificationDateInterpretation.absoluteTime,
+        );
+        i++;
+      } catch (e) {
+        debugPrint('schedulePassExpiry failed: $e');
+      }
+    }
+  }
+
+  Future<void> cancelPassExpiry() async {
+    for (var i = 0; i < passIdCount; i++) {
+      try {
+        await _plugin.cancel(passIdBase + i);
+      } catch (_) {}
     }
   }
 

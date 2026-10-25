@@ -147,6 +147,7 @@ class IapProduct {
     this.desc,
     this.sort = 0,
     this.bonusPct = 0,
+    this.discountPct = 0,
     this.skinId,
     this.grant = const IapGrant(),
     this.image,
@@ -188,6 +189,10 @@ class IapProduct {
   /// 젤리 팩 보너스 표기(%). 0이면 미표기.
   final int bonusPct;
 
+  /// 묶음 할인 표기(%) — 묶인 상품을 따로 살 때보다 싼 만큼(올인원 패스 40%, 2026-10-25). 0이면 미표기.
+  /// ⚠️ 실제 가격에서 계산한 사실만 적는다(`iap_products_test` 가 묶음 합과 대조).
+  final int discountPct;
+
   /// 스킨 상품이면 적용 스킨 id.
   final String? skinId;
 
@@ -207,6 +212,7 @@ class IapProduct {
     sort: (json['sort'] as num?)?.toInt() ?? 0,
     hidden: json['hidden'] == true,
     bonusPct: (json['bonusPct'] as num?)?.toInt() ?? 0,
+    discountPct: (json['discountPct'] as num?)?.toInt() ?? 0,
     skinId: json['skinId'] as String?,
     image: json['image'] as String?,
     iosId: json['iosId'] as String?,

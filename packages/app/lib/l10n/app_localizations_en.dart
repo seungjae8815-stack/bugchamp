@@ -8664,6 +8664,35 @@ class AppLocalizationsEn extends AppLocalizations {
       'Your research is done. Start the next one in the Lab.';
 
   @override
+  String get researchPassHint =>
+      'With the Research Pass, research samples keep coming in while the app is closed';
+
+  @override
+  String get researchPassHintGo => 'Shop';
+
+  @override
+  String get passExpireTitle => 'Your pass is ending soon';
+
+  @override
+  String passExpireBody(String names, String days) {
+    return '$names — $days days left. You can extend it in the Shop';
+  }
+
+  @override
+  String passExpireToday(String names) {
+    return '$names — ends today. You can extend it in the Shop';
+  }
+
+  @override
+  String get passExpireGo => 'Go to Shop';
+
+  @override
+  String get notifPassTitle => 'Your pass is ending soon';
+
+  @override
+  String get notifPassBody => 'Extend it in the Shop to keep your benefits';
+
+  @override
   String get notifyResearchDone => 'Research complete';
 
   @override

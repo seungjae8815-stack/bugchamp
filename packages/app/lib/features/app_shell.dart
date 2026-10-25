@@ -1,3 +1,4 @@
+import '../domain/pass_expiry.dart';
 import '../domain/guild_service.dart' show kGuildOpen, guildHasRequestsProvider;
 import 'guild/guild_screen.dart';
 import 'dart:async';
@@ -179,6 +180,21 @@ class _AppShellState extends ConsumerState<AppShell>
       } else {
         unawaited(svc.cancelResearch());
       }
+      // 패스 만료 3일 전·12시간 전(2026-10-25 사장님) — 앱을 꺼 둔 사이 패스가 끊기지 않게.
+      final iap = ref.read(gameDataProvider).value?.iapConfig;
+      if (notify.enabled && save != null && iap != null) {
+        final now = ref.read(clockProvider).now().toUtc();
+        unawaited(
+          svc.schedulePassExpiry(
+            passExpiryNotifyTimes(activePasses(save, iap, now), now),
+            title: l.notifPassTitle,
+            body: l.notifPassBody,
+            quiet: notify.quietHours,
+          ),
+        );
+      } else {
+        unawaited(svc.cancelPassExpiry());
+      }
       // 깜짝선물은 10~25분마다 생긴다 — 매번 알리면 성가시므로 백그라운드
       // 진입 후 몇 개 쌓였을 무렵 **한 번만** 알린다.
       if (notify.enabled && notify.gift) {
@@ -198,6 +214,7 @@ class _AppShellState extends ConsumerState<AppShell>
       svc.cancelOfflineFull();
       unawaited(svc.cancelHatches());
       unawaited(svc.cancelResearch());
+      unawaited(svc.cancelPassExpiry());
       unawaited(svc.cancelGift());
       // 복귀 즉시 서버와 통신을 확인한다. 안 하면 다음 60초 주기까지
       // **백그라운드에서 끊긴 줄 모르고** 놀고, 반대로 백그라운드에서
@@ -288,6 +305,7 @@ class _AppShellState extends ConsumerState<AppShell>
     if (!np.enabled || !np.hatchDone) unawaited(svc.cancelHatches());
     if (!np.enabled || !np.researchDone) unawaited(svc.cancelResearch());
     if (!np.enabled || !np.gift) unawaited(svc.cancelGift());
+    if (!np.enabled) unawaited(svc.cancelPassExpiry());
     unawaited(_syncDailyNotifications());
   }
 

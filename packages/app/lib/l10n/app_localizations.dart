@@ -14152,6 +14152,54 @@ abstract class AppLocalizations {
   /// **'Your research is done. Start the next one in the Lab.'**
   String get notifResearchBody;
 
+  /// No description provided for @researchPassHint.
+  ///
+  /// In en, this message translates to:
+  /// **'With the Research Pass, research samples keep coming in while the app is closed'**
+  String get researchPassHint;
+
+  /// No description provided for @researchPassHintGo.
+  ///
+  /// In en, this message translates to:
+  /// **'Shop'**
+  String get researchPassHintGo;
+
+  /// No description provided for @passExpireTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Your pass is ending soon'**
+  String get passExpireTitle;
+
+  /// No description provided for @passExpireBody.
+  ///
+  /// In en, this message translates to:
+  /// **'{names} — {days} days left. You can extend it in the Shop'**
+  String passExpireBody(String names, String days);
+
+  /// No description provided for @passExpireToday.
+  ///
+  /// In en, this message translates to:
+  /// **'{names} — ends today. You can extend it in the Shop'**
+  String passExpireToday(String names);
+
+  /// No description provided for @passExpireGo.
+  ///
+  /// In en, this message translates to:
+  /// **'Go to Shop'**
+  String get passExpireGo;
+
+  /// No description provided for @notifPassTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Your pass is ending soon'**
+  String get notifPassTitle;
+
+  /// No description provided for @notifPassBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Extend it in the Shop to keep your benefits'**
+  String get notifPassBody;
+
   /// No description provided for @notifyResearchDone.
   ///
   /// In en, this message translates to:

@@ -8475,6 +8475,34 @@ class AppLocalizationsKo extends AppLocalizations {
   String get notifResearchBody => '연구가 끝났어요. 연구소에서 다음 연구를 시작해 보세요.';
 
   @override
+  String get researchPassHint => '연구 패스가 있으면 앱을 꺼 둔 동안에도 연구 표본이 모여요';
+
+  @override
+  String get researchPassHintGo => '상점';
+
+  @override
+  String get passExpireTitle => '패스가 곧 끝나요';
+
+  @override
+  String passExpireBody(String names, String days) {
+    return '$names — $days일 남았어요. 상점에서 연장할 수 있어요';
+  }
+
+  @override
+  String passExpireToday(String names) {
+    return '$names — 오늘 끝나요. 상점에서 연장할 수 있어요';
+  }
+
+  @override
+  String get passExpireGo => '상점으로';
+
+  @override
+  String get notifPassTitle => '패스가 곧 끝나요';
+
+  @override
+  String get notifPassBody => '상점에서 연장하면 혜택이 끊기지 않아요';
+
+  @override
   String get notifyResearchDone => '연구 완료';
 
   @override

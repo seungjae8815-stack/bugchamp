@@ -8462,6 +8462,34 @@ class AppLocalizationsJa extends AppLocalizations {
   String get notifResearchBody => '研究が終わりました。研究所で次の研究を始めましょう。';
 
   @override
+  String get researchPassHint => '研究パスがあれば、アプリを閉じている間も研究サンプルが集まります';
+
+  @override
+  String get researchPassHintGo => 'ショップ';
+
+  @override
+  String get passExpireTitle => 'パスがもうすぐ終わります';
+
+  @override
+  String passExpireBody(String names, String days) {
+    return '$names — 残り$days日です。ショップで延長できます';
+  }
+
+  @override
+  String passExpireToday(String names) {
+    return '$names — 今日で終わります。ショップで延長できます';
+  }
+
+  @override
+  String get passExpireGo => 'ショップへ';
+
+  @override
+  String get notifPassTitle => 'パスがもうすぐ終わります';
+
+  @override
+  String get notifPassBody => 'ショップで延長すると特典が途切れません';
+
+  @override
   String get notifyResearchDone => '研究完了';
 
   @override

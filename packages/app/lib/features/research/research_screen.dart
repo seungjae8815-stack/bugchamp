@@ -911,6 +911,48 @@ class _ResearchScreenState extends ConsumerState<ResearchScreen> {
               style: const TextStyle(color: Color(0xFFFF8A80), fontSize: 12),
             ),
           ],
+          // 표본이 모자라고 연구 패스가 없으면 패스 안내(2026-10-25 사장님 — 복귀 팝업의 "버프 켜러 가기"와 같은 방식).
+          // 사실만 적는다: 연구 패스는 방치(오프라인) 중에도 표본을 모은다.
+          if (st.price case final p?
+              when p.samples > save.researchSamples &&
+                  !save.researchPassActive(
+                    ref.read(clockProvider).now().toUtc(),
+                  )) ...[
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.fromLTRB(10, 6, 6, 6),
+              decoration: BoxDecoration(
+                color: const Color(0x228FC3FF),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: const Color(0x558FC3FF)),
+              ),
+              child: Row(
+                children: [
+                  _sampleIcon(16),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      l.researchPassHint,
+                      style: const TextStyle(
+                        color: Color(0xFFCFE4FF),
+                        fontSize: 11.5,
+                        height: 1.3,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  _smallButton(
+                    key: const Key('researchPassHintShop'),
+                    onPressed: () {
+                      Navigator.of(sheetContext).pop();
+                      ref.read(tabIndexProvider.notifier).set(kShopTabIndex);
+                    },
+                    child: Text(l.researchPassHintGo),
+                  ),
+                ],
+              ),
+            ),
+          ],
           const SizedBox(height: 12),
           Row(
             children: [
