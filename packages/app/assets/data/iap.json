@@ -320,9 +320,9 @@
     "ja": "研究パス（30日）"
    },
    "desc": {
-    "ko": "앱을 꺼 둔 사이에도 연구 표본이 모여요\n방치 8시간 = 사냥 약 2시간 반치 표본\n연구 시간 −15%\n곤충학자 패스와 함께면 16시간까지",
-    "en": "Research samples while the app is closed\n8h idle = about 2.5h of hunting in samples\nResearch time −15%\nUp to 16h with the Entomologist Pass",
-    "ja": "アプリを閉じている間も研究サンプル\n放置8時間＝狩り約2時間半分のサンプル\n研究時間−15%\n昆虫学者パスと一緒なら16時間まで"
+    "ko": "앱을 꺼 둔 사이에도 연구 표본이 모여요\n곤충학자 패스가 있으면 16시간까지 모여요\n연구 시간도 15% 줄어요",
+    "en": "Research samples keep coming while the app is closed\nUp to 16h with the Entomologist Pass\nResearch time is also 15% shorter",
+    "ja": "アプリを閉じている間も研究サンプルが集まります\n昆虫学者パスがあれば16時間まで集まります\n研究時間も15%短くなります"
    },
    "image": "research_pass"
   },
