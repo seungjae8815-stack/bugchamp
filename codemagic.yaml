@@ -83,6 +83,9 @@ workflows:
             sed -i '' "s#__GOOGLE_IOS_CLIENT_ID__#$GOOGLE_IOS_CLIENT_ID#; s#__GOOGLE_IOS_REVERSED_CLIENT_ID__#$rev#" ios/Runner/Info.plist
             echo "✅ GOOGLE_IOS_CLIENT_ID 주입 (${#GOOGLE_IOS_CLIENT_ID}자)"
           else
+            # 자리표시자(밑줄)를 그대로 두면 App Store 업로드가 90158(URL 스킴 형식)로 거절된다(2026-10-25 1.0.26).
+            # 형식만 맞는 무해한 스킴으로 바꾼다 — 클라이언트 ID 가 비어 있어 앱은 여전히 구글 버튼을 숨긴다.
+            sed -i '' "s#__GOOGLE_IOS_REVERSED_CLIENT_ID__#com.bugchamp.app.nogoogle#" ios/Runner/Info.plist
             echo "⚠️ GOOGLE_IOS_CLIENT_ID 비어 있음 — iOS 에서 구글 로그인 버튼이 숨겨진다"
           fi
           flutter build ipa --release \
