@@ -30,3 +30,4 @@ packages/app/supabase.env.json
 __pycache__/
 
 .superpowers/
+docs/_iap_review/
