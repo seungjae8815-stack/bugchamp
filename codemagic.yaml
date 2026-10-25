@@ -78,7 +78,15 @@ workflows:
           cd packages/app
           # iOS 구글 로그인(2026-10-24) — 선택 변수. 있으면 Info.plist 자리표시자에 클라이언트 ID·URL 스킴을 넣는다.
           # 없으면 자리표시자가 남고 앱이 iOS 구글 버튼을 숨긴다(빌드는 막지 않는다).
-          if [ -n "${GOOGLE_IOS_CLIENT_ID:-}" ]; then
+          GOOGLE_IOS_CLIENT_ID="$(printf '%s' "${GOOGLE_IOS_CLIENT_ID:-}" | tr -d ' \r\n\t')"
+          if [ -n "$GOOGLE_IOS_CLIENT_ID" ]; then
+            # 붙여 넣다 다른 값(웹 ID·URL 스킴)을 넣으면 로그인 창이 열리지 않는 빌드가 조용히 나간다 — 여기서 막는다.
+            if ! printf '%s' "$GOOGLE_IOS_CLIENT_ID" | grep -Eq '^[0-9]+-[a-z0-9]+\.apps\.googleusercontent\.com$'; then
+              echo "❌ GOOGLE_IOS_CLIENT_ID 형식이 아님(xxxx-yyyy.apps.googleusercontent.com 이어야 함)"; exit 1
+            fi
+            if [ "$GOOGLE_IOS_CLIENT_ID" = "$(printf '%s' "${GOOGLE_WEB_CLIENT_ID:-}" | tr -d ' \r\n\t')" ]; then
+              echo "❌ GOOGLE_IOS_CLIENT_ID 가 웹 클라이언트 ID 와 같음 — iOS 유형으로 따로 만든 ID 를 넣어야 함"; exit 1
+            fi
             rev="com.googleusercontent.apps.${GOOGLE_IOS_CLIENT_ID%.apps.googleusercontent.com}"
             sed -i '' "s#__GOOGLE_IOS_CLIENT_ID__#$GOOGLE_IOS_CLIENT_ID#; s#__GOOGLE_IOS_REVERSED_CLIENT_ID__#$rev#" ios/Runner/Info.plist
             echo "✅ GOOGLE_IOS_CLIENT_ID 주입 (${#GOOGLE_IOS_CLIENT_ID}자)"
