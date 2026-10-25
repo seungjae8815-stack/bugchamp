@@ -9,7 +9,7 @@ class AppLocalizationsJa extends AppLocalizations {
   AppLocalizationsJa([String locale = 'ja']) : super(locale);
 
   @override
-  String get appTitle => 'バグチャンプ';
+  String get appTitle => '昆虫チャンプ';
 
   @override
   String get navHome => 'ホーム';
@@ -31,7 +31,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String battleTrophies(int n) {
-    return 'トロフィー $n';
+    return '星 $n';
   }
 
   @override
@@ -491,7 +491,7 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get rankKindTrophies => 'トロフィー';
+  String get rankKindTrophies => '星';
 
   @override
   String get leaderboardUnranked => '圏外';
@@ -3952,7 +3952,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String leagueNeedTrophy(int n) {
-    return 'トロフィー$n';
+    return '星$n';
   }
 
   @override
@@ -6161,7 +6161,7 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get reviewAskTitle => 'バグチャンプ、楽しんでいますか？';
+  String get reviewAskTitle => '昆虫チャンプ、楽しんでいますか？';
 
   @override
   String get reviewAskBody =>
@@ -8347,10 +8347,15 @@ class AppLocalizationsJa extends AppLocalizations {
   String get whatsNew26Tabs => '下部タブが2ページになりました — ⇄ボタンで装備・スキル・妖精・研究所を切り替えます';
 
   @override
-  String get whatsNew26Pass => '新商品：研究パス（研究時間短縮）とオールインワンパス（パス4種セット）';
+  String get whatsNew26Pass =>
+      '新商品：研究パス（アプリを閉じている間も研究サンプルが集まり、研究時間−15%）とオールインワンパス（パス4種セット）・昆虫学者パスの放置ゴールドが2倍になりました';
 
   @override
   String get whatsNew26SexSize => 'メスの虫がメスの絵とメスのサイズで表示されます — 決闘の強さはそのままです';
+
+  @override
+  String get whatsNew26Account =>
+      'アカウント：iPhoneでもGoogleでログインできます・ログアウトするとこの端末は最初から始まります（進行はアカウントに残り、再ログインで戻ります）';
 
   @override
   String get researchSamples => '研究標本';

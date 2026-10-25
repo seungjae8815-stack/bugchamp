@@ -31,7 +31,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String battleTrophies(int n) {
-    return '트로피 $n';
+    return '별 $n';
   }
 
   @override
@@ -493,7 +493,7 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
-  String get rankKindTrophies => '트로피';
+  String get rankKindTrophies => '별';
 
   @override
   String get leaderboardUnranked => '순위권 밖';
@@ -3959,7 +3959,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String leagueNeedTrophy(int n) {
-    return '트로피 $n';
+    return '별 $n';
   }
 
   @override
@@ -8360,10 +8360,15 @@ class AppLocalizationsKo extends AppLocalizations {
   String get whatsNew26Tabs => '하단 탭이 두 쪽이 됐어요 — ⇄ 버튼으로 장비·스킬·요정·연구소를 오가요';
 
   @override
-  String get whatsNew26Pass => '새 상품: 연구 패스(연구 시간 단축)와 올인원 패스(패스 4종 묶음)';
+  String get whatsNew26Pass =>
+      '새 상품: 연구 패스(앱을 꺼 둔 사이에도 연구 표본이 모이고 연구 시간 −15%)와 올인원 패스(패스 4종 묶음) · 곤충학자 패스의 방치 골드가 2배가 됐어요';
 
   @override
   String get whatsNew26SexSize => '암컷 곤충이 암컷 그림과 암컷 크기로 보여요 — 결투 힘은 그대로예요';
+
+  @override
+  String get whatsNew26Account =>
+      '계정: 아이폰에서도 구글로 로그인할 수 있어요 · 로그아웃하면 이 기기는 처음부터 시작해요(진행은 계정에 남아 다시 로그인하면 돌아와요)';
 
   @override
   String get researchSamples => '연구 표본';

@@ -31,7 +31,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String battleTrophies(int n) {
-    return 'Trophies $n';
+    return 'Stars $n';
   }
 
   @override
@@ -504,7 +504,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get rankKindTrophies => 'Trophies';
+  String get rankKindTrophies => 'Stars';
 
   @override
   String get leaderboardUnranked => 'Unranked';
@@ -4057,7 +4057,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String leagueNeedTrophy(int n) {
-    return '$n trophies';
+    return '$n stars';
   }
 
   @override
@@ -8546,11 +8546,15 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get whatsNew26Pass =>
-      'New offers: the Research Pass (faster research) and the All-in-One Pass (bundles four passes)';
+      'New offers: the Research Pass (research samples keep coming while the app is closed, research time −15%) and the All-in-One Pass (bundles four passes) · The Entomologist Pass now doubles idle gold';
 
   @override
   String get whatsNew26SexSize =>
       'Female bugs now show female art and female sizes — duel strength is unchanged';
+
+  @override
+  String get whatsNew26Account =>
+      'Account: Google sign-in now works on iPhone too · Signing out starts this device fresh (your progress stays on your account and returns when you sign in again)';
 
   @override
   String get researchSamples => 'Research Samples';

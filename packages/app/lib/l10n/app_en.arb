@@ -10,7 +10,7 @@
   "navStorageShort": "Storage",
   "navBattle": "Battle",
   "battleTitle": "Bug Duel",
-  "battleTrophies": "Trophies {n}",
+  "battleTrophies": "Stars {n}",
   "@battleTrophies": {
     "placeholders": {
       "n": {
@@ -272,7 +272,7 @@
       }
     }
   },
-  "rankKindTrophies": "Trophies",
+  "rankKindTrophies": "Stars",
   "leaderboardUnranked": "Unranked",
   "rankKindLevel": "Level",
   "rankKindStage": "Progress",
@@ -2769,7 +2769,7 @@
   "battleStarting": "Battle start!",
   "sideMineTeam": "My team",
   "sideFoeTeam": "Opponent",
-  "leagueNeedTrophy": "{n} trophies",
+  "leagueNeedTrophy": "{n} stars",
   "@leagueNeedTrophy": {
     "placeholders": {
       "n": {
@@ -4856,8 +4856,9 @@
   "whatsNew25Fix": "Fixed the contest banner stretching, the free ticket refill button size, and the red dot cut off on the Guide button in Settings",
   "whatsNew26Lab": "The Research Lab is here — 29 long-term researches paid with gold and materials boost hunting, nurturing and duels",
   "whatsNew26Tabs": "The bottom tabs now have two pages — tap the ⇄ button to switch between Gear, Skills, Fairies and the Lab",
-  "whatsNew26Pass": "New offers: the Research Pass (faster research) and the All-in-One Pass (bundles four passes)",
+  "whatsNew26Pass": "New offers: the Research Pass (research samples keep coming while the app is closed, research time −15%) and the All-in-One Pass (bundles four passes) · The Entomologist Pass now doubles idle gold",
   "whatsNew26SexSize": "Female bugs now show female art and female sizes — duel strength is unchanged",
+  "whatsNew26Account": "Account: Google sign-in now works on iPhone too · Signing out starts this device fresh (your progress stays on your account and returns when you sign in again)",
   "researchSamples": "Research Samples",
   "researchSlotEmpty": "Empty",
   "researchSlotOpensAt": "Opens at {tier}",

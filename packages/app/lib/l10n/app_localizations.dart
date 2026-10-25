@@ -145,7 +145,7 @@ abstract class AppLocalizations {
   /// No description provided for @battleTrophies.
   ///
   /// In en, this message translates to:
-  /// **'Trophies {n}'**
+  /// **'Stars {n}'**
   String battleTrophies(int n);
 
   /// No description provided for @battleMyTeam.
@@ -991,7 +991,7 @@ abstract class AppLocalizations {
   /// No description provided for @rankKindTrophies.
   ///
   /// In en, this message translates to:
-  /// **'Trophies'**
+  /// **'Stars'**
   String get rankKindTrophies;
 
   /// No description provided for @leaderboardUnranked.
@@ -6925,7 +6925,7 @@ abstract class AppLocalizations {
   /// No description provided for @leagueNeedTrophy.
   ///
   /// In en, this message translates to:
-  /// **'{n} trophies'**
+  /// **'{n} stars'**
   String leagueNeedTrophy(int n);
 
   /// No description provided for @seasonRewardNow.
@@ -13963,7 +13963,7 @@ abstract class AppLocalizations {
   /// No description provided for @whatsNew26Pass.
   ///
   /// In en, this message translates to:
-  /// **'New offers: the Research Pass (faster research) and the All-in-One Pass (bundles four passes)'**
+  /// **'New offers: the Research Pass (research samples keep coming while the app is closed, research time −15%) and the All-in-One Pass (bundles four passes) · The Entomologist Pass now doubles idle gold'**
   String get whatsNew26Pass;
 
   /// No description provided for @whatsNew26SexSize.
@@ -13971,6 +13971,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Female bugs now show female art and female sizes — duel strength is unchanged'**
   String get whatsNew26SexSize;
+
+  /// No description provided for @whatsNew26Account.
+  ///
+  /// In en, this message translates to:
+  /// **'Account: Google sign-in now works on iPhone too · Signing out starts this device fresh (your progress stays on your account and returns when you sign in again)'**
+  String get whatsNew26Account;
 
   /// No description provided for @researchSamples.
   ///

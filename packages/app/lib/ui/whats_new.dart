@@ -27,12 +27,13 @@ const _kFreshSave = Duration(minutes: 30);
 /// 그림이 없으면 [icon] 으로 그린다.
 typedef WhatsNewItem = ({IconData icon, String? image, String text});
 
-/// 1.0.26 업데이트 내용(2026-10-22 — 연구소 · 하단 탭 두 쪽 · 연구 패스/올인원 패스).
+/// 1.0.26 업데이트 내용(2026-10-22 — 연구소 · 하단 탭 두 쪽 · 연구 패스/올인원 패스 · 2026-10-25 곤충학자 패스 2배 · 계정).
 List<WhatsNewItem> whatsNewItems(AppLocalizations l) => [
   (icon: Icons.science_rounded, image: null, text: l.whatsNew26Lab),
   (icon: Icons.swap_horiz_rounded, image: null, text: l.whatsNew26Tabs),
   (icon: Icons.workspace_premium_rounded, image: null, text: l.whatsNew26Pass),
   (icon: Icons.female_rounded, image: null, text: l.whatsNew26SexSize),
+  (icon: Icons.account_circle_rounded, image: null, text: l.whatsNew26Account),
 ];
 
 /// 지금 세이브가 막 시작한 유저의 것인가.
