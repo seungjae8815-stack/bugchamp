@@ -274,10 +274,18 @@ class _AppShellState extends ConsumerState<AppShell>
     await _backToTitle();
   }
 
-  Future<void> _backToTitle() => Navigator.of(context).pushAndRemoveUntil(
-    MaterialPageRoute<void>(builder: (_) => const TitleScreen()),
-    (_) => false,
-  );
+  /// 타이틀로 되돌리는 중 — 복귀 확인·주기 확인이 겹쳐 타이틀을 두 번 쌓지 않게(2026-10-27 — 첫 타이틀이 치워지는 동안
+  /// 띄운 업데이트 안내가 둘째 타이틀 위에 남아 `_showSoftUpdate` 크래시가 났다).
+  bool _leaving = false;
+
+  Future<void> _backToTitle() async {
+    if (_leaving) return;
+    _leaving = true;
+    await Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute<void>(builder: (_) => const TitleScreen()),
+      (_) => false,
+    );
+  }
 
   /// 첫 프레임 후 1회: 알림 권한 요청 + 일일 보상 시각(daily.json)마다 반복 예약.
   /// 그 뒤로는 설정 스위치가 바뀔 때마다 예약을 다시 맞춘다([_onNotifyChanged]).

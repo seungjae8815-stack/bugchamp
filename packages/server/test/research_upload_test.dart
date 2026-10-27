@@ -111,6 +111,35 @@ void main() {
     expect(reasons(s, json), contains('research'));
   });
 
+  test('상한에 걸리면 무엇을 되돌렸는지 상세를 남긴다(2026-10-27 운영 요약)', () {
+    final s = stored(levels: {'jaw': 1});
+    final json = s.copyWith(researchLevels: {'jaw': 20}).toJson();
+    final r = actions.mergeSave(s, json);
+    final d = (r.extra['clampDetail'] as Map?)?['research']?.toString() ?? '';
+    expect(d, contains('jaw 20→1'));
+    expect(d, contains('시간·젤리 판정 실패'));
+  });
+
+  test('끝났지만 아직 안 받은 칸(연구 완료 버튼 전)은 업로드마다 그대로 남아도 걸리지 않는다', () {
+    final slot = ResearchSlot(
+      id: 'jaw',
+      level: 3,
+      endsAt: t0.subtract(const Duration(hours: 5)),
+    );
+    final s = stored(levels: {'jaw': 2}, slots: [slot]);
+    final json = s.toJson();
+    expect(reasons(s, json), isNot(contains('research')));
+    final out = up(s, json);
+    expect(out.researchSlots.single.id, 'jaw');
+    expect(out.researchLevels['jaw'], 2);
+    // 나중에 받으면(레벨 3 · 칸 비움) 그것도 그대로 인정.
+    final claimed = s
+        .copyWith(researchLevels: {'jaw': 3}, researchSlots: const [])
+        .toJson();
+    expect(reasons(s, claimed), isNot(contains('research')));
+    expect(up(s, claimed).researchLevels['jaw'], 3);
+  });
+
   test('clock_forward — 끝나기 직전으로 위조한 진행 칸도 이미 흐른 몫을 센다', () {
     final s = stored(levels: {'jaw': 4});
     // 1분 경과인데 Lv5 칸이 1초 남았다 = 그 레벨 시간이 다 흘렀다는 주장(시계 어긋남 여유로는 모자란다).

@@ -118,6 +118,14 @@ Future<T?> showGameDialog<T>(
   List<Widget> actions = const [],
   bool barrierDismissible = true,
 }) {
+  // 치워지는 화면에서는 띄우지 않는다(2026-10-27 1.0.26 크래시 `_showOfflineReward`·`_showSoftUpdate`).
+  // 타이틀로 되돌리는(`pushAndRemoveUntil`) 동안 옛 화면은 애니메이션이 끝날 때까지 mounted 라 팝업이 **새 화면 위에**
+  // 떴고, 옛 화면이 내려간 뒤 버튼이 그 화면의 context 로 `Navigator.pop` 을 불러 `navigator!` 에서 죽었다.
+  // 치워지는 라우트는 `removing` 이라 `isActive` 가 false 다(시트가 위에 덮인 화면은 여전히 active — 그대로 뜬다).
+  final host = context.mounted ? ModalRoute.of(context) : null;
+  if (!context.mounted || (host != null && !host.isActive)) {
+    return Future<T?>.value();
+  }
   return showDialog<T>(
     context: context,
     barrierColor: const Color(0xB3000000),

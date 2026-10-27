@@ -1870,7 +1870,15 @@ class GameActions {
         materialCap: materialAllow,
         fossilCap: fossilAllowOut,
       );
-      if (!identical(rs, capped)) clampReasons.add('research');
+      if (!identical(rs, capped)) {
+        clampReasons.add('research');
+        clampDetail['research'] = _researchClampNote(
+          stored,
+          capped,
+          verdict,
+          elapsed,
+        );
+      }
       capped = rs;
     }
     {
@@ -3061,6 +3069,46 @@ class GameActions {
   /// (안 줄이면 이월 창 안에서 위조 → 환불을 되풀이해 골드를 찍어 낼 수 있었다 — 직접 올린 골드와 같은 허용치를 쓴다).
   /// 재료·화석은 각 업로드 허용치 안에서. 젤리는 걸린 칸 구매의 칸 값만 돌려준다(즉시 완료 젤리는 돌려주지 않는다 — §2.6).
   /// 바뀐 게 없으면 [capped] 를 그대로 돌려준다.
+  /// 연구 판정이 **무엇을** 되돌렸나 — 운영 요약·로그(2026-10-27: 세 계정이 몇 시간 간격으로 `research` 에 걸렸는데
+  /// 사유만으로는 정상 유저가 잘못 걸리는지 알 수 없었다. 젤리·등급과 같은 자리 `[save/clamp] <uid> research …`).
+  String _researchClampNote(
+    SaveGame stored,
+    SaveGame client,
+    _ResearchVerdict v,
+    Duration elapsed,
+  ) {
+    final parts = <String>[];
+    if (!v.ok) parts.add('시간·젤리 판정 실패');
+    final lv = [
+      for (final id in {...client.researchLevels.keys, ...v.levels.keys})
+        if ((client.researchLevels[id] ?? 0) != (v.levels[id] ?? 0))
+          '$id ${client.researchLevels[id] ?? 0}→${v.levels[id] ?? 0}'
+              '(저장본 ${stored.researchLevels[id] ?? 0})',
+    ];
+    if (lv.isNotEmpty) parts.add('레벨 ${lv.join(', ')}');
+    String slotsOf(List<ResearchSlot> xs) =>
+        xs.map((r) => '${r.id}${r.level}').join('/');
+    if (slotsOf(client.researchSlots) != slotsOf(v.slots)) {
+      parts.add(
+        '진행 칸 ${slotsOf(client.researchSlots)}→${slotsOf(v.slots)}'
+        '(저장본 ${slotsOf(stored.researchSlots)})',
+      );
+    }
+    if (client.researchSlotsBought != v.bought) {
+      parts.add(
+        '산 칸 ${client.researchSlotsBought}→${v.bought}'
+        '(저장본 ${stored.researchSlotsBought})',
+      );
+    }
+    if (client.researchSamples != v.samples) {
+      parts.add(
+        '표본 저장본 ${stored.researchSamples} · 업로드 ${client.researchSamples}'
+        ' → ${v.samples}(경과 ${elapsed.inSeconds}초)',
+      );
+    }
+    return parts.isEmpty ? '환불만' : parts.join(' · ');
+  }
+
   SaveGame _applyResearch(
     SaveGame stored,
     SaveGame capped,
