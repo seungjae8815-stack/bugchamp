@@ -2682,6 +2682,8 @@ Handler buildHandler({
           arena: offer['arena'] is String
               ? Element.fromKeyOrNull(offer['arena'] as String)
               : null,
+          // 판마다 경기장(2026-10-26) — 안다고 알린 앱만. 옛 앱은 첫 경기장만 그려서 판정과 그림이 갈린다.
+          arenaPerBout: body['arenaPerBout'] == true,
         );
         await store.saveSession(sessionId, user.id, session.toJson());
         // 제안은 한 번만 쓴다(같은 제안으로 5점 상대를 거듭 고르지 못하게).

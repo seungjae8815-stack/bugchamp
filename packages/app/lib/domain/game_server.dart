@@ -1064,6 +1064,8 @@ class HttpGameServer implements GameServer {
     'teamBugIds': teamBugIds,
     'offerId': offerId,
     'pick': pick,
+    // 판마다 경기장을 그릴 줄 안다(2026-10-26) — 서버가 `nextArena` 를 싣고 판정도 판마다 바꾼다.
+    'arenaPerBout': true,
   });
 
   @override

@@ -119,4 +119,77 @@ void main() {
     expect(finished, isNotNull);
     expect(finished!.done, isTrue);
   });
+
+  test(
+    '로컬 결투도 판마다 경기장이 바뀐다(2026-10-26) — 다음 판 경기장 = 공용 함수 · 앞 판과 다르다',
+    () async {
+      const on = DuelParams(arenaSame: 0.10, arenaRestrained: 0.10);
+      for (var seed = 1; seed <= 10; seed++) {
+        final d = LocalDuelDriver(
+          seed: seed,
+          mine: mine,
+          foe: foe,
+          params: on,
+          battle: const BattleConfig(),
+          trophies: 100,
+          rewardMult: 1,
+          arena: Element.fire,
+        );
+        var prev = Element.fire;
+        for (var i = 0; ; i++) {
+          final s = (await d.next(0.6))!;
+          if (s.done) {
+            expect(s.nextArena, isNull);
+            break;
+          }
+          expect(s.nextArena, duelBoutArenaOf(Element.fire, seed, i + 1));
+          expect(s.nextArena, isNot(prev));
+          prev = s.nextArena!;
+        }
+      }
+    },
+  );
+
+  testWidgets('결투장 — 다음 판 경기장을 받으면 경기장 줄이 바뀐다', (tester) async {
+    const on = DuelParams(arenaSame: 0.10, arenaRestrained: 0.10);
+    DuelStep? finished;
+    final seen = <String>{};
+    await tester.pumpWidget(
+      _wrap(
+        DuelArenaScreen(
+          mine: mine,
+          foe: foe,
+          driver: LocalDuelDriver(
+            seed: 9,
+            mine: mine,
+            foe: foe,
+            params: on,
+            battle: const BattleConfig(),
+            trophies: 100,
+            rewardMult: 1,
+            arena: Element.fire,
+          ),
+          params: on,
+          arena: Element.fire,
+          arenaEffect: true,
+          onFinished: (s) async => finished = s,
+        ),
+      ),
+    );
+    await tester.tap(find.text('go'));
+    await tester.pump();
+    for (var i = 0; i < 1500 && finished == null; i++) {
+      for (final e in find.textContaining(' 경기장').evaluate()) {
+        final w = e.widget;
+        if (w is Text && w.data != null) seen.add(w.data!);
+      }
+      final throwBtn = find.textContaining('던지기!');
+      if (throwBtn.evaluate().isNotEmpty) await tester.tap(throwBtn);
+      final skip = find.text('건너뛰기');
+      if (skip.evaluate().isNotEmpty) await tester.tap(skip);
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+    expect(finished, isNotNull);
+    expect(seen.length, greaterThan(1), reason: '본 경기장: $seen');
+  });
 }

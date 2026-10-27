@@ -175,6 +175,37 @@ void main() {
     });
   });
 
+  test('희귀도 필터는 사냥으로 얻는 알에도 걸린다 — 기준 미만 알은 들어오지 않는다(2026-10-26 문의)', () {
+    for (final min in [Grade.uncommon, Grade.rare, Grade.epic]) {
+      final s = SaveGame.initial(
+        createdAt: t0,
+      ).copyWith(lastSeen: t0, bugFilterMinGrade: min);
+      var id = 0;
+      final d = rollIdleDrops(
+        save: s,
+        rolls: 20000,
+        species: species,
+        run: run,
+        pet: pets,
+        bugFind: 1,
+        materialFind: 0,
+        now: t0,
+        rng: Random(7),
+        newId: () => 'f${id++}',
+      );
+      final byId = {for (final sp in species) sp.id: sp};
+      expect(d.bugs, isNotEmpty, reason: '$min');
+      for (final b in d.bugs) {
+        expect(b.stage, LifeStage.egg);
+        expect(
+          pets.rarityOf(b, byId[b.speciesId]!).index,
+          greaterThanOrEqualTo(min.index),
+          reason: '$min · ${b.id}',
+        );
+      }
+    }
+  });
+
   test('분해 기술 — 방치 정산 자동 방생 재료 × (1 + v)', () {
     final s = SaveGame.initial(
       createdAt: t0,

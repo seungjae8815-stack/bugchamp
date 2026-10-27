@@ -51,15 +51,11 @@ class _ResearchScreenState extends ConsumerState<ResearchScreen> {
   @override
   void initState() {
     super.initState();
-    // 남은 시간을 1초마다 다시 그리고, 끝난 연구는 바로 반영한다 — 사냥이 멈추면 커밋도 멈춘다.
+    // 남은 시간을 1초마다 다시 그린다. 끝난 연구는 자동으로 받지 않는다 — 칸의 "연구 완료" 버튼(2026-10-26).
     _tick = Timer.periodic(const Duration(seconds: 1), (_) {
       final s = ref.read(saveControllerProvider).value;
       if (!mounted || s == null || s.researchSlots.isEmpty) return;
-      final now = ref.read(clockProvider).now().toUtc();
-      if (s.researchSlots.any((r) => !now.isBefore(r.endsAt))) {
-        unawaited(ref.read(saveControllerProvider.notifier).claimResearchDue());
-      }
-      // 다른 탭에 있는 동안(IndexedStack 이 살려 둔다)은 다시 그리지 않는다 — 수령만 한다.
+      // 다른 탭에 있는 동안(IndexedStack 이 살려 둔다)은 다시 그리지 않는다.
       if (ref.read(tabIndexProvider) == kResearchTabIndex) setState(() {});
     });
   }
@@ -80,7 +76,7 @@ class _ResearchScreenState extends ConsumerState<ResearchScreen> {
     final save = ref.watch(saveControllerProvider).value;
     final cfg = data?.researchConfig;
 
-    // 연구가 끝나 레벨이 오르면(자동 수령·즉시 완료) 연구소를 보고 있을 때만 알린다.
+    // 연구가 끝나 레벨이 오르면(연구 완료 버튼·즉시 완료) 연구소를 보고 있을 때만 알린다.
     ref.listen<AsyncValue<SaveGame>>(saveControllerProvider, (prev, next) {
       final a = prev?.value, b = next.value;
       if (a == null || b == null || cfg == null) return;
@@ -381,11 +377,13 @@ class _ResearchScreenState extends ConsumerState<ResearchScreen> {
         ? 1.0
         : (1 - left.inSeconds / total.inSeconds).clamp(0.0, 1.0);
     final name = def == null ? r.id : _name(def, locale);
+    // 끝난 칸 — 남은 시간·막대 대신 "연구 완료" 버튼(눌러야 레벨이 오르고 칸이 빈다, 2026-10-26).
+    final ready = !now.isBefore(r.endsAt);
     return GestureDetector(
       key: Key('researchSlotCard_${r.id}'),
       onTap: def == null ? null : () => _openSheet(def.id),
       child: _slotFrame(
-        border: const Color(0xAA4FC3F7),
+        border: ready ? kHoney : const Color(0xAA4FC3F7),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -425,24 +423,34 @@ class _ResearchScreenState extends ConsumerState<ResearchScreen> {
                 ),
               ],
             ),
-            const SizedBox(height: 3),
-            Text(
-              formatShortDuration(left),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(color: Colors.white70, fontSize: 10.5),
-            ),
-            const SizedBox(height: 3),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(3),
-              child: LinearProgressIndicator(
-                key: Key('researchSlotBar_${r.id}'),
-                value: progress,
-                minHeight: 5,
-                backgroundColor: const Color(0x33FFFFFF),
-                color: const Color(0xFF4FC3F7),
+            if (ready) ...[
+              const SizedBox(height: 4),
+              _smallButton(
+                key: Key('researchSlotClaim_${r.id}'),
+                compact: true,
+                onPressed: () => _claim(l, r.id),
+                child: Text(l.researchClaim),
               ),
-            ),
+            ] else ...[
+              const SizedBox(height: 3),
+              Text(
+                formatShortDuration(left),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(color: Colors.white70, fontSize: 10.5),
+              ),
+              const SizedBox(height: 3),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(3),
+                child: LinearProgressIndicator(
+                  key: Key('researchSlotBar_${r.id}'),
+                  value: progress,
+                  minHeight: 5,
+                  backgroundColor: const Color(0x33FFFFFF),
+                  color: const Color(0xFF4FC3F7),
+                ),
+              ),
+            ],
           ],
         ),
       ),
@@ -674,6 +682,8 @@ class _ResearchScreenState extends ConsumerState<ResearchScreen> {
                     const SizedBox(height: 2),
                     Text(
                       switch (st.slot) {
+                        final r? when !now.isBefore(r.endsAt) =>
+                          l.researchReady,
                         final r? => formatShortDuration(
                           r.endsAt.difference(now),
                         ),
@@ -982,7 +992,15 @@ class _ResearchScreenState extends ConsumerState<ResearchScreen> {
           const SizedBox(height: 12),
           Row(
             children: [
-              if (slot != null && left != null) ...[
+              if (slot != null && left != null && left <= Duration.zero) ...[
+                const Spacer(),
+                _smallButton(
+                  key: Key('researchSheetClaim_${def.id}'),
+                  // 시트는 열어 둔다 — 받고 나면 같은 자리에 다음 레벨 "연구" 버튼이 뜬다.
+                  onPressed: () => _claim(l, slot.id),
+                  child: Text(l.researchClaim),
+                ),
+              ] else if (slot != null && left != null) ...[
                 Expanded(
                   child: Text(
                     formatShortDuration(left),
@@ -1123,6 +1141,12 @@ class _ResearchScreenState extends ConsumerState<ResearchScreen> {
     );
     if (!ok || !mounted) return;
     final err = await _ctrl.finishResearchWithJelly(id);
+    if (err != null && mounted) showCenterToast(context, _errText(l, err));
+  }
+
+  /// 끝난 연구 받기("연구 완료" 버튼) — 레벨이 오르고 칸이 빈다. 알림은 레벨이 오르면 [build] 의 listen 이 띄운다.
+  Future<void> _claim(AppLocalizations l, String id) async {
+    final err = await _ctrl.claimResearchNow(id);
     if (err != null && mounted) showCenterToast(context, _errText(l, err));
   }
 

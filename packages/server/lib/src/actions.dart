@@ -2844,9 +2844,10 @@ class GameActions {
         stored.abyssUnlocked ||
         (client.abyssUnlocked &&
             tier >= abyssTier(run) &&
-            {...stored.bossDex, ...client.bossDex}.contains(
-              run.bossArtId(abyssTier(run), run.zonesPerTier),
-            ));
+            {
+              ...stored.bossDex,
+              ...client.bossDex,
+            }.contains(run.bossArtId(abyssTier(run), run.zonesPerTier)));
     // 한 번 사면 **다음 칸 하나**(core_save `buyResearchSlot`): 열린 칸이 n 이면 값 `slotJelly[n−1]` · 산 수 → n
     // (어려움 진행도 2칸이면 0 → 2 로 한 번에 뛴다). 저장본 산 수에서 올린 값까지 차례로 사 보고, 그 사이 난이도가
     // 올랐을 수 있어 저장본 난이도·이번 난이도 둘 다로 재서 맞는 길 중 싼 값을 받는다.
@@ -4246,8 +4247,8 @@ class GameActions {
       a: mine.team[ia],
       b: session.foe[ib],
       params: p,
-      // 경기장 오행(2026-10-16) — 제안 때 보여 준 경기장(옛 세션은 null = 효과 없음).
-      arena: p.arenaOn ? session.arena : null,
+      // 경기장 오행(2026-10-16) — 1판은 제안 때 보여 준 경기장, 새 앱은 판마다 바뀐다(2026-10-26). 옛 세션은 null = 효과 없음.
+      arena: p.arenaOn ? session.arenaOfBout(i) : null,
       launchA: q,
       hpA: session.hpA,
       hpB: session.hpB,
@@ -4296,6 +4297,9 @@ class GameActions {
       'winsA': next.winsA,
       'winsB': next.winsB,
       'done': done,
+      // 다음 판 경기장 — 앱이 조준 화면부터 바꿔 그린다(판마다 바뀌는 세션만).
+      if (!done && session.arenaPerBout && p.arenaOn)
+        'nextArena': ?session.arenaOfBout(i + 1)?.key,
     };
     if (!done)
       return (result: ActionResult.ok(save, extra: extra), session: next);

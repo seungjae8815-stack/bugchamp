@@ -5830,7 +5830,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String guideElementBody(String mult) {
-    return '虫にはそれぞれ五行属性が一つあります。決闘で相剋の相手にぶつかるとダメージが$mult倍になります。赤い矢印が勝つ向きです。土俵にも五行があり、土俵と同じ五行の虫は体力・攻撃・防御が上がり、土俵が勝つ五行の虫は下がります（決闘は相手を選ぶとき、大会はウェーブごとに決まります）。';
+    return '虫にはそれぞれ五行属性が一つあります。決闘で相剋の相手にぶつかるとダメージが$mult倍になります。赤い矢印が勝つ向きです。土俵にも五行があり、土俵と同じ五行の虫は体力・攻撃・防御が上がり、土俵が勝つ五行の虫は下がります（決闘は毎戦、大会はウェーブごとに変わります）。';
   }
 
   @override
@@ -7862,6 +7862,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get arenaStatsNote => '（体力・攻撃・防御）';
 
   @override
+  String get arenaPerBoutHint => '1戦目の土俵です — 毎戦変わります';
+
+  @override
   String get igLegacyRoll => '取り逃した能力ロール';
 
   @override
@@ -8402,6 +8405,12 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get researchStart => '研究';
+
+  @override
+  String get researchClaim => '研究完了';
+
+  @override
+  String get researchReady => '完了！';
 
   @override
   String get researchRunning => '研究中';

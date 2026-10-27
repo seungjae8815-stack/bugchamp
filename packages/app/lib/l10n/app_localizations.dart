@@ -10033,7 +10033,7 @@ abstract class AppLocalizations {
   /// No description provided for @guideElementBody.
   ///
   /// In en, this message translates to:
-  /// **'Each bug has one element. In duels, when a bug clashes with an element it restrains, it deals {mult}x damage. The red arrows show who beats whom. Arenas have an element too: bugs matching it gain HP/ATK/DEF and bugs the arena beats lose some (duels: set when picking an opponent; contest: every wave).'**
+  /// **'Each bug has one element. In duels, when a bug clashes with an element it restrains, it deals {mult}x damage. The red arrows show who beats whom. Arenas have an element too: bugs matching it gain HP/ATK/DEF and bugs the arena beats lose some (duels: changes every bout; contest: every wave).'**
   String guideElementBody(String mult);
 
   /// No description provided for @guideElementLine.
@@ -13221,6 +13221,12 @@ abstract class AppLocalizations {
   /// **'(HP/ATK/DEF)'**
   String get arenaStatsNote;
 
+  /// No description provided for @arenaPerBoutHint.
+  ///
+  /// In en, this message translates to:
+  /// **'First bout\'s arena — it changes every bout'**
+  String get arenaPerBoutHint;
+
   /// No description provided for @igLegacyRoll.
   ///
   /// In en, this message translates to:
@@ -14049,6 +14055,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Research'**
   String get researchStart;
+
+  /// No description provided for @researchClaim.
+  ///
+  /// In en, this message translates to:
+  /// **'Complete'**
+  String get researchClaim;
+
+  /// No description provided for @researchReady.
+  ///
+  /// In en, this message translates to:
+  /// **'Done!'**
+  String get researchReady;
 
   /// No description provided for @researchRunning.
   ///

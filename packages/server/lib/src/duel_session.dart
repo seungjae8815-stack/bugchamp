@@ -28,6 +28,7 @@ class DuelSession {
     this.pendingLaunch,
     this.pendingIndex,
     this.arena,
+    this.arenaPerBout = false,
     this.researchLevels,
   });
 
@@ -77,6 +78,17 @@ class DuelSession {
   /// null = 옛 세션(경기장 효과 없음 — 그 시절 판정 그대로).
   final Element? arena;
 
+  /// 판마다 경기장이 바뀌는 경기(2026-10-26 사장님 확정) — 앱이 안다고 알렸을 때만(`/duel/start` 의 `arenaPerBout`).
+  /// false = 옛 앱(경기 내내 [arena] 하나 — 그 앱은 첫 경기장만 그린다).
+  final bool arenaPerBout;
+
+  /// [bout] 번째 판의 경기장(1판 = [arena]). null = 경기장 효과 없음(옛 세션).
+  Element? arenaOfBout(int bout) {
+    final a = arena;
+    if (a == null || !arenaPerBout) return a;
+    return duelBoutArenaOf(a, seed, bout);
+  }
+
   /// 시작 때의 연구 레벨(2026-10-22 연구소) — 내 팀은 판마다 세이브에서 다시 만드는데, 시작과 탭 반격 사이에
   /// 연구가 끝나면 같은 seed 로 다시 계산한 판이 멈춘 판과 갈린다. 경기 내내 이 값으로 입힌다.
   /// null = 옛 세션(그때 세이브의 연구 레벨).
@@ -120,6 +132,7 @@ class DuelSession {
     pendingLaunch: clearClutch ? null : pendingLaunch ?? this.pendingLaunch,
     pendingIndex: clearClutch ? null : pendingIndex ?? this.pendingIndex,
     arena: arena,
+    arenaPerBout: arenaPerBout,
     researchLevels: researchLevels,
   );
 
@@ -145,6 +158,7 @@ class DuelSession {
     'pendLaunch': ?pendingLaunch,
     'pendIdx': ?pendingIndex,
     'arena': ?arena?.key,
+    if (arenaPerBout) 'apb': true,
     'rsL': ?researchLevels,
   };
 
@@ -185,6 +199,7 @@ class DuelSession {
     arena: j['arena'] is String
         ? Element.fromKeyOrNull(j['arena'] as String)
         : null,
+    arenaPerBout: j['apb'] == true,
     researchLevels: researchLevelsSnapshot(j['rsL']),
   );
 }

@@ -1918,10 +1918,20 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
                   const SheetCloseButton(),
                 ],
               ),
-              // 경기장 오행(2026-10-16) — 고르기 전에 보여 준다(출정 곤충을 바꿀 수 있게. 경기를 치를 때까지 그대로).
+              // 경기장 오행(2026-10-16) — 고르기 전에 1판 경기장을 보여 준다(출정 곤충을 바꿀 수 있게).
+              // 2판부터는 판마다 바뀐다(2026-10-26 사장님 확정 — 판이 시작될 때 공개).
               if (arena != null) ...[
                 const SizedBox(height: 4),
                 arenaEffectLine(l, arena, _duelParams(data)),
+                const SizedBox(height: 2),
+                Text(
+                  l.arenaPerBoutHint,
+                  style: const TextStyle(
+                    color: Color(0x99FFFFFF),
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
               ],
               const SizedBox(height: 2),
               Text(

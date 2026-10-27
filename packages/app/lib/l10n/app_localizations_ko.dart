@@ -5839,7 +5839,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String guideElementBody(String mult) {
-    return '곤충마다 오행 속성이 하나 있어요. 결투에서 상극 관계인 상대와 부딪히면 피해가 $mult배가 돼요. 빨간 화살표가 이기는 방향이에요. 경기장에도 오행이 있어서, 경기장과 같은 오행 곤충은 체력·공격·방어가 오르고 경기장이 이기는 오행 곤충은 내려가요(결투는 상대를 고를 때, 대회는 웨이브마다 정해져요).';
+    return '곤충마다 오행 속성이 하나 있어요. 결투에서 상극 관계인 상대와 부딪히면 피해가 $mult배가 돼요. 빨간 화살표가 이기는 방향이에요. 경기장에도 오행이 있어서, 경기장과 같은 오행 곤충은 체력·공격·방어가 오르고 경기장이 이기는 오행 곤충은 내려가요(결투는 판마다, 대회는 웨이브마다 바뀌어요).';
   }
 
   @override
@@ -7875,6 +7875,9 @@ class AppLocalizationsKo extends AppLocalizations {
   String get arenaStatsNote => '(체력·공격·방어)';
 
   @override
+  String get arenaPerBoutHint => '첫 판 경기장이에요 — 판마다 바뀌어요';
+
+  @override
   String get igLegacyRoll => '놓친 능력치 굴리기';
 
   @override
@@ -8415,6 +8418,12 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get researchStart => '연구';
+
+  @override
+  String get researchClaim => '연구 완료';
+
+  @override
+  String get researchReady => '완료!';
 
   @override
   String get researchRunning => '연구 중';

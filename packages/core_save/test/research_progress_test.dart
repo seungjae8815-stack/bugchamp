@@ -212,6 +212,25 @@ void main() {
     expect(c.researchSlots.length, 1);
   });
 
+  test('claim_slot — 끝난 칸 하나만 받는다 · 끝나기 전·없는 칸은 실패', () {
+    final s = rich();
+    final n = startResearch(s, cfg, 'a', t, priceOf(s, 'a')).save!;
+    final end = n.researchSlots.single.endsAt;
+    expect(
+      claimResearchSlot(
+        n,
+        cfg,
+        'a',
+        end.subtract(const Duration(seconds: 1)),
+      ).error,
+      'not_done',
+    );
+    expect(claimResearchSlot(n, cfg, 'zz', end).error, 'not_running');
+    final c = claimResearchSlot(n, cfg, 'a', end);
+    expect(c.save!.researchLevels['a'], 1);
+    expect(c.save!.researchSlots, isEmpty);
+  });
+
   test('finish_now_spends_jelly', () {
     final s = rich();
     final n = startResearch(s, cfg, 'a', t, priceOf(s, 'a')).save!;
@@ -240,10 +259,7 @@ void main() {
     expect(buyResearchSlot(poor, cfg).error, 'not_enough_jelly');
     // 진행도로 이미 3칸(심연)이면 사 봐야 소용없다.
     expect(
-      buyResearchSlot(
-        rich(tier: 3).copyWith(abyssUnlocked: true),
-        cfg,
-      ).error,
+      buyResearchSlot(rich(tier: 3).copyWith(abyssUnlocked: true), cfg).error,
       'max_slots',
     );
   });

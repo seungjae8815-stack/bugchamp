@@ -234,17 +234,59 @@ void main() {
     expect(other.onPressed, isNull);
   });
 
-  testWidgets('끝난 연구는 로드할 때 자동으로 반영된다', (tester) async {
+  testWidgets('끝난 연구는 자동으로 받지 않고 "연구 완료" 버튼을 눌러야 반영된다(2026-10-26)', (
+    tester,
+  ) async {
     final c = await pump(
       tester,
       base.copyWith(
         researchSlots: [ResearchSlot(id: 'jaw', level: 1, endsAt: t0)],
       ),
     );
-    final s = c.read(saveControllerProvider).requireValue;
+    var s = c.read(saveControllerProvider).requireValue;
+    expect(s.researchLevels['jaw'], isNull);
+    expect(s.researchSlots.single.id, 'jaw');
+    // 몇 초가 지나도(1초 타이머) 그대로 칸에 남는다.
+    for (var i = 0; i < 3; i++) {
+      await tester.pump(const Duration(seconds: 1));
+    }
+    s = c.read(saveControllerProvider).requireValue;
+    expect(s.researchSlots, hasLength(1));
+    expect(find.byKey(const Key('researchSlotBar_jaw')), findsNothing);
+    await tester.tap(find.byKey(const Key('researchSlotClaim_jaw')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+    s = c.read(saveControllerProvider).requireValue;
     expect(s.researchLevels['jaw'], 1);
     expect(s.researchSlots, isEmpty);
+    expect(tester.takeException(), isNull);
   });
+
+  for (final loc in ['ko', 'en', 'ja']) {
+    testWidgets('작은 폰(320x568) · 큰 글씨 1.3 · $loc — 끝난 칸의 연구 완료 버튼이 넘치지 않는다', (
+      tester,
+    ) async {
+      await pump(
+        tester,
+        rich(base).copyWith(
+          researchSlots: [ResearchSlot(id: 'jaw', level: 1, endsAt: t0)],
+        ),
+        size: const Size(320, 568),
+        scale: 1.3,
+        locale: loc,
+      );
+      expect(tester.takeException(), isNull);
+      expect(find.byKey(const Key('researchSlotClaim_jaw')), findsOneWidget);
+      expect(
+        tester.getSize(find.byKey(const Key('researchSlotCard_jaw'))).height,
+        lessThanOrEqualTo(72),
+      );
+      await tester.tap(find.byKey(const Key('researchCard_jaw')));
+      await settle(tester);
+      expect(find.byKey(const Key('researchSheetClaim_jaw')), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+  }
 
   for (final loc in ['ko', 'en', 'ja']) {
     testWidgets('작은 폰(320x568) · 큰 글씨 1.3 · $loc — 진행 중 칸까지 넘치지 않는다', (

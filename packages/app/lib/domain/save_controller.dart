@@ -367,10 +367,6 @@ class SaveController extends AsyncNotifier<SaveGame> {
 
     save = _applySeason(save, data, now);
 
-    // 연구소 — 꺼 둔 사이 끝난 연구를 레벨에 반영한다(누르지 않아도 효과가 붙게).
-    final researchCfg = data.researchConfig;
-    if (researchCfg != null) save = claimResearch(save, researchCfg, now);
-
     save = save.copyWith(lastSeen: now);
     await repo.save(save);
     return save;
@@ -797,13 +793,8 @@ class SaveController extends AsyncNotifier<SaveGame> {
         now,
       ),
     );
-    // 연구소 — 끝난 연구를 레벨에 반영(누르지 않아도 효과가 붙게, 어느 경로로 저장돼도 한 곳에서).
-    final researchCfg = data?.researchConfig;
-    final stamped =
-        (researchCfg == null
-                ? trained
-                : claimResearch(trained, researchCfg, now))
-            .copyWith(lastSeen: now, saveRev: save.saveRev + 1);
+    // 연구소 — 끝난 연구는 자동으로 받지 않는다(2026-10-26 — 칸의 "연구 완료" 버튼, [claimResearchNow]).
+    final stamped = trained.copyWith(lastSeen: now, saveRev: save.saveRev + 1);
     state = AsyncData(stamped);
     await _repo.save(stamped);
   }
@@ -948,14 +939,15 @@ class SaveController extends AsyncNotifier<SaveGame> {
     return null;
   }
 
-  /// 끝난 연구를 반영한다(사냥이 멈춰 커밋이 없을 때 연구소 화면이 부른다). 끝난 칸이 없으면 아무것도 안 한다.
-  Future<void> claimResearchDue() async {
+  /// 끝난 연구 칸 하나를 받는다("연구 완료" 버튼, 2026-10-26). 실패 이유: `none` · `not_running` · `not_done`.
+  Future<String?> claimResearchNow(String id) async {
     final cfg = ref.read(gameDataProvider).value?.researchConfig;
-    final s = state.value;
-    if (cfg == null || s == null) return;
+    if (cfg == null) return 'none';
     final now = ref.read(clockProvider).now().toUtc();
-    if (!s.researchSlots.any((r) => !now.isBefore(r.endsAt))) return;
-    await _commit(s);
+    final r = claimResearchSlot(state.requireValue, cfg, id, now);
+    if (r.save == null) return r.error;
+    await _commit(r.save!);
+    return null;
   }
 
   /// 진행 중 공방 초월을 젤리로 즉시 끝낸다(값표는 공방 등급업과 같다). 실패 이유: `none` · `not_enough_jelly`.

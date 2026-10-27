@@ -88,6 +88,23 @@ void main() {
     expect(seen.length, Element.values.length);
   });
 
+  test('결투 판별 경기장 — 1판 = 제안 경기장 · 판마다 앞 판과 다르다 · seed 로 정해진다 · 5종이 다 나온다', () {
+    final seen = <Element>{};
+    for (var s = 0; s < 200; s++) {
+      for (final first in Element.values) {
+        expect(duelBoutArenaOf(first, s, 0), first);
+        for (var i = 1; i < 5; i++) {
+          final prev = duelBoutArenaOf(first, s, i - 1);
+          final now = duelBoutArenaOf(first, s, i);
+          expect(now, isNot(prev), reason: 'seed $s · $first · 판 $i');
+          expect(duelBoutArenaOf(first, s, i), now);
+          seen.add(now);
+        }
+      }
+    }
+    expect(seen.length, Element.values.length);
+  });
+
   test('대회 경기장 — 같은 회차·같은 웨이브면 같다(재도전해도) · 꺼지면 null', () {
     expect(eventArenaOf(777, 3, on), eventArenaOf(777, 3, on));
     expect(eventArenaOf(777, 3, off), isNull);

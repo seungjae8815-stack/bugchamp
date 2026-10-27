@@ -308,6 +308,24 @@ Element duelArenaOf(int matchSeed) =>
       matchSeed ^ 0x51ed27,
     ).nextInt(Element.values.length)];
 
+/// 결투 [boutIndex] 번째 판의 경기장(2026-10-26 사장님 확정 — 승자 연속이라 이긴 곤충이 같은 경기장에 계속 서 있었다).
+/// 1판(0) = [first](제안 때 보여 준 경기장), 그 뒤는 판마다 **바로 앞 판과 다른** 경기장을 [matchSeed] 로 굴린다.
+/// 서버 판정·앱 로컬 결투가 같은 함수.
+Element duelBoutArenaOf(Element first, int matchSeed, int boutIndex) {
+  var a = first;
+  for (var i = 1; i <= boutIndex; i++) {
+    final others = [
+      for (final e in Element.values)
+        if (e != a) e,
+    ];
+    a =
+        others[math.Random(
+          duelBoutSeed(matchSeed ^ 0x2a7e1d, i),
+        ).nextInt(others.length)];
+  }
+  return a;
+}
+
 /// 경기장 [arena] 위의 [bug] 능력치 배율(같은 오행 + · 경기장이 이기는 오행 −). [arena] 가 null 이거나 꺼져 있으면 1.
 double duelArenaMult(Element bug, Element? arena, DuelParams p) {
   if (arena == null || !p.arenaOn) return 1;

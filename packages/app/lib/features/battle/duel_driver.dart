@@ -14,6 +14,7 @@ class DuelStep {
     this.save,
     this.gold = 0,
     this.trophyDelta = 0,
+    this.nextArena,
   });
 
   final DuelBout bout;
@@ -27,6 +28,9 @@ class DuelStep {
   final Map<String, dynamic>? save;
   final int gold;
   final int trophyDelta;
+
+  /// 다음 판 경기장(2026-10-26 — 결투는 판마다 바뀐다). null = 그대로(옛 서버·대회·빠른 결투).
+  final Element? nextArena;
 
   bool get won => winsA > winsB;
 
@@ -83,6 +87,9 @@ class ServerDuelDriver implements DuelDriver {
       save: res.save,
       gold: (d['gold'] as num?)?.toInt() ?? 0,
       trophyDelta: (d['trophyDelta'] as num?)?.toInt() ?? 0,
+      nextArena: d['nextArena'] is String
+          ? Element.fromKeyOrNull(d['nextArena'] as String)
+          : null,
     );
   }
 }
@@ -145,8 +152,14 @@ class LocalDuelDriver implements DuelDriver {
 
   final int seed;
 
-  /// 경기장 오행(2026-10-16) — 서버 결투와 같은 효과(같은 엔진 함수).
+  /// 경기장 오행(2026-10-16) — 서버 결투와 같은 효과(같은 엔진 함수). 1판 경기장이고 판마다 바뀐다(2026-10-26).
   final Element? arena;
+
+  Element? _arenaOf(int bout) {
+    final a = arena;
+    return a == null ? null : duelBoutArenaOf(a, seed, bout);
+  }
+
   final List<DuelBug> mine;
   final List<DuelBug> foe;
   final DuelParams params;
@@ -189,7 +202,7 @@ class LocalDuelDriver implements DuelDriver {
       a: mine[st.ia],
       b: foe[st.ib],
       params: params,
-      arena: arena,
+      arena: _arenaOf(i),
       launchA: launch,
       hpA: st.hpA,
       hpB: st.hpB,
@@ -221,6 +234,7 @@ class LocalDuelDriver implements DuelDriver {
       done: done,
       gold: rw?.gold ?? 0,
       trophyDelta: rw?.trophyDelta ?? 0,
+      nextArena: done ? null : _arenaOf(i + 1),
     );
   }
 }

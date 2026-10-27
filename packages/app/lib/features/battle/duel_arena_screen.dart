@@ -500,7 +500,8 @@ class _DuelArenaScreenState extends State<DuelArenaScreen>
       _bout++;
       _ia = _winsB;
       _ib = widget.foeIndex?.call() ?? _winsA;
-      _arena = widget.arenaNow;
+      // 결투는 판마다 경기장이 바뀐다(2026-10-26) — 진행기가 다음 판 경기장을 주면 그것, 아니면 호출자 규칙.
+      _arena = s.nextArena ?? widget.arenaNow;
       _step = null;
       _go(_Phase.aim);
       if (!widget.driver.interactive) _throw(widget.params.launchAuto);

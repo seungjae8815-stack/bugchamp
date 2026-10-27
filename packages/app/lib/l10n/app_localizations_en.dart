@@ -5968,7 +5968,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String guideElementBody(String mult) {
-    return 'Each bug has one element. In duels, when a bug clashes with an element it restrains, it deals ${mult}x damage. The red arrows show who beats whom. Arenas have an element too: bugs matching it gain HP/ATK/DEF and bugs the arena beats lose some (duels: set when picking an opponent; contest: every wave).';
+    return 'Each bug has one element. In duels, when a bug clashes with an element it restrains, it deals ${mult}x damage. The red arrows show who beats whom. Arenas have an element too: bugs matching it gain HP/ATK/DEF and bugs the arena beats lose some (duels: changes every bout; contest: every wave).';
   }
 
   @override
@@ -8050,6 +8050,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get arenaStatsNote => '(HP/ATK/DEF)';
 
   @override
+  String get arenaPerBoutHint => 'First bout\'s arena — it changes every bout';
+
+  @override
   String get igLegacyRoll => 'Missed stat rolls';
 
   @override
@@ -8602,6 +8605,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get researchStart => 'Research';
+
+  @override
+  String get researchClaim => 'Complete';
+
+  @override
+  String get researchReady => 'Done!';
 
   @override
   String get researchRunning => 'In progress';

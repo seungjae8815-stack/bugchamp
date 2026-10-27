@@ -75,7 +75,7 @@
   "sizeStatExp": 0,
   "_restrain1009Comment": "2026-10-09 사장님 확정(출시 전 점검): 오행 상극 1.3 → 1.2 — 상극 쪽 승률 83~85% → 77~78%(duel_sim 7번 표, 1500판, 탭 반격 켬/끔).",
   "restrainMult": 1.2,
-  "_arenaComment": "경기장 오행(2026-10-16 사장님 확정, docs/design_arena_element.md) — 결투는 경기마다(서버가 제안 때 정해 보여 주고 경기를 치를 때까지 유지), 대회는 웨이브마다(회차 seed). 경기장과 같은 오행 곤충 체력·공격·방어 +arenaSame · 경기장이 이기는(상극) 오행 −arenaRestrained. 둘 다 0 이면 꺼짐. 판정은 서버 — 앱 번들과 서버가 같아야 한다.",
+  "_arenaComment": "경기장 오행(2026-10-16 사장님 확정, docs/design_arena_element.md) — 결투는 1판을 서버가 제안 때 정해 보여 주고 2판부터 판마다 앞 판과 다르게(2026-10-26, duelBoutArenaOf), 대회는 웨이브마다(회차 seed). 경기장과 같은 오행 곤충 체력·공격·방어 +arenaSame · 경기장이 이기는(상극) 오행 −arenaRestrained. 둘 다 0 이면 꺼짐. 판정은 서버 — 앱 번들과 서버가 같아야 한다.",
   "arenaSame": 0.10,
   "arenaRestrained": 0.10,
   "launchBonusMax": 0.10,

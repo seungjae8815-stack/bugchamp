@@ -550,4 +550,57 @@ void main() {
       expect(sess2['done'], isTrue);
     });
   });
+
+  group('판마다 경기장(2026-10-26)', () {
+    DuelSession withArena(int seed, {required bool perBout}) =>
+        DuelSession.fromJson({
+          ...sessionOf(seed, foeOf(1)).toJson(),
+          'arena': Element.fire.key,
+          if (perBout) 'apb': true,
+        });
+
+    test('새 앱 세션 — 다음 판 경기장을 실어 주고, 판마다 앞 판과 다르다 · 1판은 옛 세션과 같은 판', () {
+      final s = myBase();
+      for (var seed = 1; seed <= 20; seed++) {
+        var sess = withArena(seed, perBout: true);
+        expect(DuelSession.fromJson(sess.toJson()).arenaPerBout, isTrue);
+        final first = throwWith(off, s, sess, clutch: false);
+        final old = throwWith(
+          off,
+          s,
+          withArena(seed, perBout: false),
+          clutch: false,
+        );
+        expect(
+          jsonEncode(first.result.extra['bout']),
+          jsonEncode(old.result.extra['bout']),
+          reason: '1판 = 제안 경기장(seed $seed)',
+        );
+        expect(old.result.extra.containsKey('nextArena'), isFalse);
+        var r = first;
+        var prev = Element.fire;
+        for (var i = 0; ; i++) {
+          expect(r.result.isOk, isTrue, reason: r.result.error);
+          if (r.result.extra['done'] == true) {
+            expect(r.result.extra.containsKey('nextArena'), isFalse);
+            break;
+          }
+          final next = Element.fromKeyOrNull('${r.result.extra['nextArena']}');
+          expect(next, duelBoutArenaOf(Element.fire, seed, i + 1));
+          expect(next, isNot(prev), reason: 'seed $seed · 판 ${i + 1}');
+          prev = next!;
+          sess = r.session!;
+          expect(sess.arenaOfBout(i + 1), next);
+          r = throwWith(off, s, sess, clutch: false);
+        }
+      }
+    });
+
+    test('옛 앱 세션은 경기 내내 제안 경기장 하나', () {
+      final sess = withArena(7, perBout: false);
+      for (var i = 0; i < 5; i++) {
+        expect(sess.arenaOfBout(i), Element.fire);
+      }
+    });
+  });
 }

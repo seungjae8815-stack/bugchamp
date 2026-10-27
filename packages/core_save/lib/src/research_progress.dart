@@ -99,11 +99,7 @@ ResearchOp startResearch(
     return const ResearchOp.fail('already_running');
   }
   if (s.researchSlots.length >=
-      cfg.slotsFor(
-        s.topTier,
-        s.researchSlotsBought,
-        abyss: s.abyssUnlocked,
-      )) {
+      cfg.slotsFor(s.topTier, s.researchSlotsBought, abyss: s.abyssUnlocked)) {
     return const ResearchOp.fail('slots_full');
   }
   if (price.samples < 0 ||
@@ -142,7 +138,34 @@ ResearchOp startResearch(
   );
 }
 
+/// 끝난 칸 하나를 받는다(2026-10-26 사장님 확정 — 앱은 끝난 칸에 "연구 완료" 버튼을 띄우고 눌러야 레벨이 오른다.
+/// 예전엔 저장할 때마다 [claimResearch] 로 바로 반영해 칸이 말없이 사라졌다). 실패: `not_running` · `not_done`.
+ResearchOp claimResearchSlot(
+  SaveGame s,
+  ResearchConfig cfg,
+  String id,
+  DateTime now,
+) {
+  final slot = s.researchSlots.where((r) => r.id == id).firstOrNull;
+  if (slot == null) return const ResearchOp.fail('not_running');
+  if (now.isBefore(slot.endsAt)) return const ResearchOp.fail('not_done');
+  return ResearchOp.ok(
+    s.copyWith(
+      researchLevels: {
+        ...s.researchLevels,
+        id: math.max(s.researchLevels[id] ?? 0, slot.level),
+      },
+      researchSlots: [
+        for (final r in s.researchSlots)
+          if (r.id != id) r,
+      ],
+    ),
+    extra: {'level': slot.level},
+  );
+}
+
 /// 끝난 칸을 모두 레벨에 반영하고 비운다. 끝난 칸이 없으면 그대로.
+/// 앱은 더 이상 자동으로 부르지 않는다([claimResearchSlot]) — 서버 결투가 "끝났지만 아직 안 받은 칸"까지 셀 때만 쓴다.
 SaveGame claimResearch(SaveGame s, ResearchConfig cfg, DateTime now) {
   final done = [
     for (final r in s.researchSlots)
@@ -199,10 +222,10 @@ ResearchOp finishResearchNow(
 /// 예전(`slotJelly[산 수]`, 산 수 + 1)은 어려움에서 첫 구매가 칸을 늘리지 않았다.
 ResearchOp buyResearchSlot(SaveGame s, ResearchConfig cfg) {
   final n = cfg.slotsFor(
-        s.topTier,
-        s.researchSlotsBought,
-        abyss: s.abyssUnlocked,
-      );
+    s.topTier,
+    s.researchSlotsBought,
+    abyss: s.abyssUnlocked,
+  );
   if (n >= ResearchConfig.maxSlots || n - 1 >= cfg.slotJelly.length) {
     return const ResearchOp.fail('max_slots');
   }
@@ -221,10 +244,10 @@ ResearchOp buyResearchSlot(SaveGame s, ResearchConfig cfg) {
 /// 지금 칸을 하나 더 사는 값 — 더 살 수 없으면 null(화면 가격표와 [buyResearchSlot] 이 같은 값).
 int? researchSlotPrice(SaveGame s, ResearchConfig cfg) {
   final n = cfg.slotsFor(
-        s.topTier,
-        s.researchSlotsBought,
-        abyss: s.abyssUnlocked,
-      );
+    s.topTier,
+    s.researchSlotsBought,
+    abyss: s.abyssUnlocked,
+  );
   if (n >= ResearchConfig.maxSlots || n - 1 >= cfg.slotJelly.length) {
     return null;
   }
