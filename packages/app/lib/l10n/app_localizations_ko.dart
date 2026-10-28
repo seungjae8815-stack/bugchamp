@@ -8374,6 +8374,14 @@ class AppLocalizationsKo extends AppLocalizations {
       '계정: 아이폰에서도 구글로 로그인할 수 있어요 · 로그아웃하면 이 기기는 처음부터 시작해요(진행은 계정에 남아 다시 로그인하면 돌아와요)';
 
   @override
+  String get whatsNew27Arena =>
+      '결투 경기장이 판마다 바뀌어요 — 첫 판은 상대를 고를 때 보여 준 경기장, 다음 판부터는 앞 판과 다른 경기장이에요';
+
+  @override
+  String get whatsNew27Research =>
+      '연구가 끝나면 칸에 \'연구 완료\' 버튼이 떠요 — 눌러서 받아야 레벨이 올라요';
+
+  @override
   String get researchSamples => '연구 표본';
 
   @override

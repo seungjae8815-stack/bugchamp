@@ -8361,6 +8361,13 @@ class AppLocalizationsJa extends AppLocalizations {
       'アカウント：iPhoneでもGoogleでログインできます・ログアウトするとこの端末は最初から始まります（進行はアカウントに残り、再ログインで戻ります）';
 
   @override
+  String get whatsNew27Arena =>
+      '決闘の土俵が毎戦変わります — 1戦目は相手を選ぶときに表示された土俵、2戦目からは前の戦いと違う土俵です';
+
+  @override
+  String get whatsNew27Research => '研究が終わると枠に「研究完了」ボタンが出ます — 押して受け取るとレベルが上がります';
+
+  @override
   String get researchSamples => '研究標本';
 
   @override

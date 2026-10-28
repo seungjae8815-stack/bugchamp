@@ -14,7 +14,10 @@ import 'game_dialog.dart';
 import 'popup_gate.dart';
 
 /// 이 빌드의 "업데이트 내용" 판. 내용([whatsNewItems])을 바꾸면 이 값도 바꾼다 — 기기마다 판마다 한 번 뜬다.
-const kWhatsNewVersion = '1.0.26';
+const kWhatsNewVersion = '1.0.27';
+
+/// 바로 앞 판 — 이 판을 못 보고 건너뛴 기기(1.0.25 이하에서 바로 올라옴)는 그 내용도 이어서 보여 준다.
+const kPrevWhatsNewVersion = '1.0.26';
 
 /// 기기 플래그 — 마지막으로 보여 준 판(세이브가 아니라 기기 설정: 진행·보상과 무관한 안내라서).
 const kWhatsNewSeenKey = 'whatsNew.seen';
@@ -27,8 +30,17 @@ const _kFreshSave = Duration(minutes: 30);
 /// 그림이 없으면 [icon] 으로 그린다.
 typedef WhatsNewItem = ({IconData icon, String? image, String text});
 
+/// 1.0.27 업데이트 내용(2026-10-28 — 결투 경기장 판마다 · 연구 완료 버튼). [withPrev] 면 1.0.26 판을 뒤에 붙인다
+/// (1.0.26 을 건너뛰고 올라온 기기 — 연구소를 모른 채 넘어가지 않게).
+List<WhatsNewItem> whatsNewItems(AppLocalizations l, {bool withPrev = false}) =>
+    [
+      (icon: Icons.stadium_rounded, image: null, text: l.whatsNew27Arena),
+      (icon: Icons.task_alt_rounded, image: null, text: l.whatsNew27Research),
+      if (withPrev) ..._whatsNew26(l),
+    ];
+
 /// 1.0.26 업데이트 내용(2026-10-22 — 연구소 · 하단 탭 두 쪽 · 연구 패스/올인원 패스 · 2026-10-25 곤충학자 패스 2배 · 계정).
-List<WhatsNewItem> whatsNewItems(AppLocalizations l) => [
+List<WhatsNewItem> _whatsNew26(AppLocalizations l) => [
   (icon: Icons.science_rounded, image: null, text: l.whatsNew26Lab),
   (icon: Icons.swap_horiz_rounded, image: null, text: l.whatsNew26Tabs),
   (icon: Icons.workspace_premium_rounded, image: null, text: l.whatsNew26Pass),
@@ -56,7 +68,9 @@ Future<void> showWhatsNewOnStart(BuildContext context, WidgetRef ref) async {
       debugPrint('업데이트 내용 플래그 읽기 실패(건너뜀): $e');
       return;
     }
-    if (prefs.getString(kWhatsNewSeenKey) == kWhatsNewVersion) return;
+    final seen = prefs.getString(kWhatsNewSeenKey);
+    if (seen == kWhatsNewVersion) return;
+    final withPrev = seen != kPrevWhatsNewVersion;
     if (!context.mounted) return;
     // 저장본이 다 읽힐 때까지 기다린다(2026-10-15 에뮬 확인) — 서버에 못 닿으면(오프라인·서버 없음) 동기화가
     // 저장본을 읽지 않고 끝나서, `.value` 로 보면 늘 비어 있어 업데이트 안내가 영영 안 떴다.
@@ -84,7 +98,7 @@ Future<void> showWhatsNewOnStart(BuildContext context, WidgetRef ref) async {
       title: l.whatsNewTitle,
       subtitle: l.whatsNewSubtitle(kWhatsNewVersion),
       icon: Icons.campaign_rounded,
-      content: WhatsNewBody(items: whatsNewItems(l)),
+      content: WhatsNewBody(items: whatsNewItems(l, withPrev: withPrev)),
       actions: [
         gameDialogButton(l.whatsNewOk, () {
           if (nav.mounted && nav.canPop()) nav.pop();

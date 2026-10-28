@@ -13984,6 +13984,18 @@ abstract class AppLocalizations {
   /// **'Account: Google sign-in now works on iPhone too · Signing out starts this device fresh (your progress stays on your account and returns when you sign in again)'**
   String get whatsNew26Account;
 
+  /// No description provided for @whatsNew27Arena.
+  ///
+  /// In en, this message translates to:
+  /// **'The duel arena now changes every bout — the first bout uses the arena shown when you pick an opponent, and each later bout gets a different one'**
+  String get whatsNew27Arena;
+
+  /// No description provided for @whatsNew27Research.
+  ///
+  /// In en, this message translates to:
+  /// **'When a research finishes, a \'Complete\' button appears in its slot — tap it to collect the level'**
+  String get whatsNew27Research;
+
   /// No description provided for @researchSamples.
   ///
   /// In en, this message translates to:
