@@ -751,6 +751,7 @@ class SaveGame {
     this.abyssRankMark,
     this.abyssFloorAt,
     this.jellySlackAt,
+    this.researchDropSlackAt,
     this.salvageJellyDay,
     this.salvageJellyCount = 0,
     this.topTierAt,
@@ -1067,6 +1068,11 @@ class SaveGame {
   /// 서버가 쓴 만큼 앞으로 민다([abyssFloorAt] 과 같은 결) — 업로드마다 정액(300)을 주던 시절엔 60초마다
   /// 올리는 세이브 편집이 하루 수십만 젤리가 됐다. null = 아직 쓴 적 없음(여유가 가득).
   final DateTime? jellySlackAt;
+
+  /// 연구 표본 업로드 **드롭 여유의 기준 시각**(서버 소유, 2026-10-28) — [jellySlackAt] 과 같은 결.
+  /// 여유(가장 큰 드롭 한 번)가 직전 업로드부터 1분에 걸쳐 차오르던 시절, 10초 만에 다시 올린 업로드의 정예 표본 1개가
+  /// 잘렸다(운영 요약 `research … 표본 88 → 89 → 88`). 이제 이 시각부터 시간으로만 차오르고 쓴 만큼 민다. null = 가득.
+  final DateTime? researchDropSlackAt;
 
   /// 분해 젤리 업로드 근거의 **서버 하루 기록**(서버 소유, 2026-10-23) — 날짜(`jSD`)와 그날 인정한 젤리(`jSN`).
   /// 하루 상한을 넘는 분해 근거는 세지 않는다(새 곤충을 넣었다 지우는 반복을 하루 몫으로 묶는다).
@@ -1752,6 +1758,7 @@ class SaveGame {
     String? abyssRankMark,
     DateTime? abyssFloorAt,
     DateTime? jellySlackAt,
+    DateTime? researchDropSlackAt,
     String? salvageJellyDay,
     int? salvageJellyCount,
     DateTime? topTierAt,
@@ -1907,6 +1914,7 @@ class SaveGame {
     abyssRankMark: abyssRankMark ?? this.abyssRankMark,
     abyssFloorAt: abyssFloorAt ?? this.abyssFloorAt,
     jellySlackAt: jellySlackAt ?? this.jellySlackAt,
+    researchDropSlackAt: researchDropSlackAt ?? this.researchDropSlackAt,
     salvageJellyDay: salvageJellyDay ?? this.salvageJellyDay,
     salvageJellyCount: salvageJellyCount ?? this.salvageJellyCount,
     topTierAt: topTierAt ?? this.topTierAt,
@@ -2199,6 +2207,9 @@ class SaveGame {
     jellySlackAt: json['jSA'] is String
         ? DateTime.tryParse(json['jSA'] as String)?.toUtc()
         : null,
+    researchDropSlackAt: json['rDA'] is String
+        ? DateTime.tryParse(json['rDA'] as String)?.toUtc()
+        : null,
     topTierAt: json['tTA'] is String
         ? DateTime.tryParse(json['tTA'] as String)?.toUtc()
         : null,
@@ -2481,6 +2492,8 @@ class SaveGame {
     if (abyssRankMark != null) 'abyRk': abyssRankMark,
     if (abyssFloorAt != null) 'abyssFloorAt': abyssFloorAt!.toIso8601String(),
     if (jellySlackAt != null) 'jSA': jellySlackAt!.toIso8601String(),
+    if (researchDropSlackAt != null)
+      'rDA': researchDropSlackAt!.toIso8601String(),
     if (salvageJellyDay != null) 'jSD': salvageJellyDay,
     if (salvageJellyCount > 0) 'jSN': salvageJellyCount,
     if (topTierAt != null) 'tTA': topTierAt!.toIso8601String(),

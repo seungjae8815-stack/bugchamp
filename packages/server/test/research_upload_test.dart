@@ -559,6 +559,93 @@ void main() {
     expect(up(s, s.copyWith(researchSamples: 3).toJson()).researchSamples, 3);
   });
 
+  test('10초 만에 다시 올린 업로드의 정예 표본 1개는 그대로 — 판정도 실패하지 않는다(2026-10-28 운영 요약)', () {
+    // 운영 요약: `research 시간·젤리 판정 실패 · 표본 저장본 88 · 업로드 89 → 88(경과 10초)`.
+    final slot = ResearchSlot(
+      id: 'jaw',
+      level: 3,
+      endsAt: t0.add(const Duration(hours: 2)),
+    );
+    final s = stored(
+      elapsed: const Duration(seconds: 10),
+      samples: 88,
+      levels: {'jaw': 2},
+      slots: [slot],
+    );
+    final json = s.copyWith(researchSamples: 89).toJson();
+    expect(reasons(s, json), isNot(contains('research')));
+    final out = up(s, json);
+    expect(out.researchSamples, 89);
+    expect(out.researchSlots.single.id, 'jaw');
+    // 여유를 썼으니 기준 시각이 앞으로 갔다(서버 소유).
+    expect(out.researchDropSlackAt, isNotNull);
+  });
+
+  test('표본이 넘쳐도 같은 업로드에 시작한 연구는 되돌리지 않는다 — 표본만 자른다', () {
+    final s = stored(elapsed: const Duration(seconds: 10), samples: 1000);
+    final cost = rc.costAt(jaw, 1).samples;
+    // 연구를 시작하면서(표본 지불) 정예 표본도 얻었다 — 운 좋은 1개 + 위조 500.
+    final legit = s
+        .copyWith(
+          researchSamples: 1000 - cost + 1,
+          researchSlots: [
+            ResearchSlot(
+              id: 'jaw',
+              level: 1,
+              endsAt: t0.add(rc.timeAt(jaw, 1)),
+            ),
+          ],
+        )
+        .toJson();
+    expect(reasons(s, legit), isNot(contains('research')));
+    expect(up(s, legit).researchSamples, 1000 - cost + 1);
+    final json = s
+        .copyWith(
+          researchSamples: 1000 - cost + 500,
+          researchSlots: [
+            ResearchSlot(
+              id: 'jaw',
+              level: 1,
+              endsAt: t0.add(rc.timeAt(jaw, 1)),
+            ),
+          ],
+        )
+        .toJson();
+    final out = up(s, json);
+    expect(out.researchSlots.single.id, 'jaw', reason: '연구 시작은 그대로');
+    expect(out.researchSamples, lessThan(1000 - cost + 10));
+    expect(out.researchSamples, greaterThanOrEqualTo(1000 - cost));
+  });
+
+  test('표본 여유는 시간으로만 찬다 — 1초마다 쪼개 올려도 1분에 가장 큰 드롭 한 번 몫', () {
+    final maxDrop = rc.eliteDropAmount > rc.bossRepeatDrop
+        ? rc.eliteDropAmount
+        : rc.bossRepeatDrop;
+    var s = stored(elapsed: const Duration(seconds: 1), samples: 0);
+    var at = t0;
+    for (var i = 0; i < 60; i++) {
+      final a = GameActions(config: cfg, now: () => at);
+      final r = a.mergeSave(
+        s,
+        s.copyWith(researchSamples: s.researchSamples + maxDrop).toJson(),
+      );
+      s = r.save!.copyWith(lastSeen: at);
+      at = at.add(const Duration(seconds: 1));
+    }
+    // 1분 동안: 여유(가장 큰 드롭 한 번, 처음엔 가득) + 1분 차오름 + 경과 시간 몫 — 쪼개 올린 60번 × 드롭이 아니다.
+    expect(s.researchSamples, lessThanOrEqualTo(maxDrop * 4));
+  });
+
+  test('표본 여유 기준 시각은 서버 소유 — 앱이 지워도 저장본 값', () {
+    final at = t0.subtract(const Duration(seconds: 5));
+    final s = stored(
+      elapsed: const Duration(seconds: 10),
+      samples: 10,
+    ).copyWith(researchDropSlackAt: at);
+    final json = s.toJson()..remove('rDA');
+    expect(up(s, json).researchDropSlackAt, at);
+  });
+
   test('samples — 연구 패스가 켜진 동안의 방치 몫은 경과 시간만큼 더 인정', () {
     const gap = Duration(hours: 8);
     final noPass = stored(elapsed: gap, samples: 0);
@@ -842,7 +929,7 @@ void main() {
     expect(buy(tomorrow).researchSlotsBought, 0);
   });
 
-  test('새로 시작한 단계의 표본 값을 치르지 않으면 되돌린다', () {
+  test('새로 시작한 단계의 표본 값을 치르지 않으면 서버가 뺀다 · 저장본에 모자라면 되돌린다(2026-10-28)', () {
     // 표본 값이 60초 업로드 표본 허용치(3)보다 큰 단계 — 젤리로 즉시 완료했다고 본다.
     var lv = 1;
     while (rc.costAt(jaw, lv).samples <= 5) {
@@ -861,9 +948,22 @@ void main() {
       materials: {MaterialKind.jelly: 1000},
     );
     expect(up(s, done(100).toJson()).researchLevels['jaw'], lv);
+    // 표본을 그대로 두고 레벨만 올렸다 — 레벨은 인정하되 값만큼 표본이 빠진다(공짜 레벨 없음).
     final json = done(price + 100).toJson();
-    expect(up(s, json).researchLevels['jaw'], lv - 1);
+    final out = up(s, json);
+    expect(out.researchLevels['jaw'], lv);
+    expect(out.researchSamples, lessThan(100 + 10));
     expect(reasons(s, json), contains('research'));
+    // 저장본 표본이 값보다 모자라면(허용치로도) 되돌린다.
+    final poor = stored(levels: {'jaw': lv - 1}, samples: 0, jelly: jelly);
+    final forged = poor
+        .copyWith(
+          researchLevels: {'jaw': lv},
+          researchSamples: 0,
+          materials: {MaterialKind.jelly: 1000},
+        )
+        .toJson();
+    expect(up(poor, forged).researchLevels['jaw'], lv - 1);
   });
 
   test('선행 연구가 열리지 않은 연구는 시작할 수 없다', () {
@@ -918,10 +1018,14 @@ void main() {
       total = out.researchSamples;
       s = out.copyWith(lastSeen: t);
     }
-    // 한 번에 60초를 올린 업로드의 허용치보다 많지 않다.
+    // 한 번에 60초를 올린 업로드의 허용치 + 처음 가득 찬 드롭 여유 한 번보다 많지 않다
+    // (여유는 서버 소유 기준 시각에서 시간으로만 다시 찬다 — 2026-10-28).
     final once = stored(samples: 0);
     final big = up(once, once.copyWith(researchSamples: 1000).toJson());
-    expect(total, lessThanOrEqualTo(big.researchSamples));
+    final maxDrop = rc.eliteDropAmount > rc.bossRepeatDrop
+        ? rc.eliteDropAmount
+        : rc.bossRepeatDrop;
+    expect(total, lessThanOrEqualTo(big.researchSamples + maxDrop));
     // 30분 공백이면 60초보다 크게 열린다(패스 없음 — 온라인 몫만).
     final gap = stored(elapsed: const Duration(minutes: 30), samples: 0);
     final long = up(gap, gap.copyWith(researchSamples: 1000).toJson());

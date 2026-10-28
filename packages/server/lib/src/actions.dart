@@ -201,6 +201,8 @@ class GameActions {
     // 젤리 시간 여유 기준 시각 · 최고 난이도에 들어선 시각(2026-10-23) — 앱이 고치면 여유가 늘 가득이고 난이도 시간 제한이 사라진다.
     'jSA',
     'tTA',
+    // 연구 표본 드롭 여유 기준 시각(2026-10-28) — 지우면 여유가 늘 가득이다.
+    'rDA',
     // 분해 젤리 근거의 서버 하루 기록(2026-10-23) — 지우면 하루 상한이 다시 찬다.
     'jSD',
     'jSN',
@@ -1880,6 +1882,9 @@ class GameActions {
         );
       }
       capped = rs;
+      final slackAt = verdict.sampleSlackAt;
+      if (slackAt != null)
+        capped = capped.copyWith(researchDropSlackAt: slackAt);
     }
     {
       final gr = _enforceGrade(stored, capped, t);
@@ -2986,14 +2991,23 @@ class GameActions {
         cfg.bossRepeatDrop /
         max(1, config.run.bossUnlockKills);
     final onlineSecs = secsUpTo(_researchOnlineMaxElapsed);
+    // 운 좋은 드롭 여유(가장 큰 드롭 [_researchDropSlack] 번) — 서버 소유 기준 시각(`researchDropSlackAt`)부터
+    // [_researchDropSlackWindow] 에 걸쳐 차오르고 쓴 만큼 민다(2026-10-28). 직전 업로드부터 다시 차오르던 시절엔
+    // 10초 만에 다시 올린 업로드의 정예 표본 1개가 잘렸다. 1초씩 쪼개 올려도 시간으로만 차므로 모으지 못한다.
+    final slackMax =
+        _researchDropSlack * max<int>(cfg.eliteDropAmount, cfg.bossRepeatDrop);
+    final window = _researchDropSlackWindow.inMilliseconds;
+    final full = t.subtract(_researchDropSlackWindow);
+    final anchor = stored.researchDropSlackAt;
+    final slackBase = anchor == null || anchor.isBefore(full) ? full : anchor;
+    final slackAvail =
+        slackMax *
+        (t.difference(slackBase).inMilliseconds / window).clamp(0.0, 1.0);
     var drops =
-        _researchDropSlack *
-            max<int>(cfg.eliteDropAmount, cfg.bossRepeatDrop) *
-            min(1.0, onlineSecs / _researchDropSlackWindow.inSeconds) +
         onlineSecs *
-            kRareDropKillsPerSecondCap *
-            (eliteRate + bossRate) *
-            kRareDropAllowanceMargin;
+        kRareDropKillsPerSecondCap *
+        (eliteRate + bossRate) *
+        kRareDropAllowanceMargin;
     if (stored.researchPassActive(stored.lastSeen) ||
         stored.researchPassActive(t)) {
       // 방치 정산 몫(연구 패스가 켜진 동안만) — 24시간까지.
@@ -3003,20 +3017,27 @@ class GameActions {
           eliteRate *
           kRareDropAllowanceMargin;
     }
-    final int allow = newBosses * cfg.bossFirstDrop + drops.floor();
-    if (samples - stored.researchSamples > allow) {
-      samples = stored.researchSamples + allow;
-    }
-    // 이번 업로드에 시작한 단계의 표본 값 — 줄어든 표본 + 늘 수 있었던 몫으로 치러야 한다
-    // (표본을 그대로 두고 레벨만 올린 업로드가 시간·젤리만으로 통과하지 못하게).
+    final sure = newBosses * cfg.bossFirstDrop + drops;
+    final int allow = (sure + slackAvail).floor();
+    // 이번 업로드에 시작한 단계의 표본 값 — 저장본에서 그 값을 치른 뒤를 기준으로 늘 수 있었던 몫([allow])만 인정한다
+    // (표본을 그대로 두고 레벨만 올린 업로드는 표본이 빠진다 · 저장본 + 허용치로도 못 치르면 판정 실패).
+    // ⚠️ 2026-10-28: 예전엔 "줄어든 표본 + 허용치 < 값"이면 판정 전체를 실패시켜, 짧은 간격에 정예 표본 1개만 더 얻어도
+    // (허용치 0) 같은 업로드의 연구 시작까지 되돌렸다 — 시작한 단계가 없어도(값 0) 걸렸다
+    // (운영 요약 `research 시간·젤리 판정 실패 · 표본 88 → 89 → 88(경과 10초)`). 이제 넘친 표본만 자른다.
     final samplesNeed = started.fold<int>(
       0,
       (a, s) => a + max(0, cfg.costAt(s.d, s.lv).samples),
     );
-    if (stored.researchSamples - max<int>(0, client.researchSamples) + allow <
-        samplesNeed) {
-      ok = false;
-    }
+    final paidBase = stored.researchSamples - samplesNeed;
+    if (paidBase + allow < 0) ok = false;
+    if (samples - paidBase > allow) samples = max(0, paidBase + allow);
+    // 여유를 쓴 만큼 기준 시각을 민다 — 근거(새 보스·경과 시간 몫)로 설명되는 몫은 여유를 쓰지 않는다.
+    final slackUsed = (samples - paidBase - sure).clamp(0.0, slackAvail);
+    final DateTime? slackAt = slackUsed <= 0 || slackMax <= 0
+        ? null
+        : slackBase.add(
+            Duration(milliseconds: (slackUsed / slackMax * window).round()),
+          );
     // 선행 연구 — 시작한 단계는 선행 연구가 저장본 + 인정한 레벨에서 열려 있어야 한다(앱 `startResearch` 의 `locked`).
     for (final s in started) {
       final req = s.d.requires;
@@ -3031,6 +3052,7 @@ class GameActions {
         samples: samples,
         refundJelly: slotRefund,
         refundJellyCap: jelly.refundCap,
+        sampleSlackAt: slackAt,
       );
     }
 
@@ -3056,6 +3078,7 @@ class GameActions {
       refundFossil: pFossil,
       refundJelly: slotRefund,
       refundJellyCap: jelly.refundCap,
+      sampleSlackAt: slackAt,
     );
   }
 
@@ -3064,11 +3087,6 @@ class GameActions {
   static int _refundTo(int now, int price, int had, int capGain) =>
       max(now, min(now + max(0, price), had + capGain));
 
-  /// 판정([_judgeResearch])을 병합 세이브에 입힌다. 걸린 판정이면 환불까지 —
-  /// 골드는 업로드 골드 허용치([goldCap] = mergeSave 의 maxGain) 안에서만 돌려주고, 돌려준 만큼 **허용치 이월(`gC`)을 줄인다**
-  /// (안 줄이면 이월 창 안에서 위조 → 환불을 되풀이해 골드를 찍어 낼 수 있었다 — 직접 올린 골드와 같은 허용치를 쓴다).
-  /// 재료·화석은 각 업로드 허용치 안에서. 젤리는 걸린 칸 구매의 칸 값만 돌려준다(즉시 완료 젤리는 돌려주지 않는다 — §2.6).
-  /// 바뀐 게 없으면 [capped] 를 그대로 돌려준다.
   /// 연구 판정이 **무엇을** 되돌렸나 — 운영 요약·로그(2026-10-27: 세 계정이 몇 시간 간격으로 `research` 에 걸렸는데
   /// 사유만으로는 정상 유저가 잘못 걸리는지 알 수 없었다. 젤리·등급과 같은 자리 `[save/clamp] <uid> research …`).
   String _researchClampNote(
@@ -3109,6 +3127,11 @@ class GameActions {
     return parts.isEmpty ? '환불만' : parts.join(' · ');
   }
 
+  /// 판정([_judgeResearch])을 병합 세이브에 입힌다. 걸린 판정이면 환불까지 —
+  /// 골드는 업로드 골드 허용치([goldCap] = mergeSave 의 maxGain) 안에서만 돌려주고, 돌려준 만큼 **허용치 이월(`gC`)을 줄인다**
+  /// (안 줄이면 이월 창 안에서 위조 → 환불을 되풀이해 골드를 찍어 낼 수 있었다 — 직접 올린 골드와 같은 허용치를 쓴다).
+  /// 재료·화석은 각 업로드 허용치 안에서. 젤리는 걸린 칸 구매의 칸 값만 돌려준다(즉시 완료 젤리는 돌려주지 않는다 — §2.6).
+  /// 바뀐 게 없으면 [capped] 를 그대로 돌려준다.
   SaveGame _applyResearch(
     SaveGame stored,
     SaveGame capped,
@@ -7130,6 +7153,7 @@ class _ResearchVerdict {
     this.refundFossil = 0,
     this.refundJelly = 0,
     this.refundJellyCap = 0,
+    this.sampleSlackAt,
   });
 
   final bool ok;
@@ -7144,4 +7168,7 @@ class _ResearchVerdict {
   /// 걸린 칸 구매의 젤리 환불(기기가 낸 칸 값)과 그 상한(저장본 위로 늘 수 있는 몫).
   final int refundJelly;
   final int refundJellyCap;
+
+  /// 표본 드롭 여유를 썼으면 새 기준 시각(서버 소유 `researchDropSlackAt`) — null 이면 그대로.
+  final DateTime? sampleSlackAt;
 }
