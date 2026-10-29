@@ -3091,10 +3091,10 @@ class StorageScreen extends ConsumerWidget {
       actions: [
         gameDialogButton(
           l.rarityAutoShowList,
-          () => Navigator.pop(context, 'list'),
+          popOnTap(context, 'list'),
           primary: false,
         ),
-        gameDialogButton(l.rarityAutoRun, () => Navigator.pop(context, 'run')),
+        gameDialogButton(l.rarityAutoRun, popOnTap(context, 'run')),
       ],
     );
     if (!context.mounted || go == null) return;

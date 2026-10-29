@@ -571,7 +571,7 @@ class _AppShellState extends ConsumerState<AppShell>
             ),
             primary: false,
           ),
-        gameDialogButton(l.eventRewardClaim, () => Navigator.pop(context)),
+        gameDialogButton(l.eventRewardClaim, popOnTap(context)),
       ],
     );
   }
@@ -606,9 +606,7 @@ class _AppShellState extends ConsumerState<AppShell>
           gameRewardList(context, materials: {MaterialKind.jelly: r.jelly}),
         ],
       ),
-      actions: [
-        gameDialogButton(l.eventRewardClaim, () => Navigator.pop(context)),
-      ],
+      actions: [gameDialogButton(l.eventRewardClaim, popOnTap(context))],
     );
   }
 
@@ -664,9 +662,7 @@ class _AppShellState extends ConsumerState<AppShell>
           ],
         ],
       ),
-      actions: [
-        gameDialogButton(l.eventRewardClaim, () => Navigator.pop(context)),
-      ],
+      actions: [gameDialogButton(l.eventRewardClaim, popOnTap(context))],
     );
   }
 
@@ -692,12 +688,12 @@ class _AppShellState extends ConsumerState<AppShell>
       actions: [
         gameDialogButton(
           l.actionCancel,
-          () => Navigator.pop(context, false),
+          popOnTap(context, false),
           primary: false,
         ),
         gameDialogButton(
           l.exitAction,
-          () => Navigator.pop(context, true),
+          popOnTap(context, true),
           color: const Color(0xFFC85454),
         ),
       ],

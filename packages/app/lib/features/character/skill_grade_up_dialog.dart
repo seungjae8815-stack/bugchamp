@@ -62,10 +62,7 @@ class _SkillGradeUpDialogState extends ConsumerState<SkillGradeUpDialog> {
         fallback: const Icon(Icons.diamond_rounded, size: 22),
       ),
       actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: Text(l.actionCancel),
-        ),
+        TextButton(onPressed: popOnTap(context), child: Text(l.actionCancel)),
         FilledButton(
           onPressed: times <= 0 ? null : () => _make(l, to, times),
           child: Text(

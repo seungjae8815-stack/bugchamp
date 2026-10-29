@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:app/l10n/app_localizations.dart';
 import 'package:app/ui/game_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -77,4 +78,44 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('close'), findsNothing);
   });
+
+  testWidgets(
+    '보상 팝업을 띄운 칸이 사라진 뒤에 닫아도 죽지 않는다(2026-10-29 1.0.27 showRewardPopup 크래시)',
+    (tester) async {
+      // 받은 우편·선물처럼 팝업을 띄운 칸이 받고 나면 목록에서 빠진다.
+      final show = ValueNotifier(true);
+      late BuildContext itemCtx;
+      await tester.pumpWidget(
+        MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          locale: const Locale('ko'),
+          home: Scaffold(
+            body: ValueListenableBuilder<bool>(
+              valueListenable: show,
+              builder: (_, v, _) => v
+                  ? Builder(
+                      builder: (c) {
+                        itemCtx = c;
+                        return const Text('item');
+                      },
+                    )
+                  : const Text('empty'),
+            ),
+          ),
+        ),
+      );
+      unawaited(showRewardPopup(itemCtx, title: 'reward', gold: 10));
+      await tester.pumpAndSettle();
+      show.value = false; // 칸이 사라진다 — 팝업은 남아 있다.
+      await tester.pumpAndSettle();
+      expect(itemCtx.mounted, isFalse);
+      expect(find.text('reward'), findsOneWidget);
+      await tester.tap(find.byType(FilledButton).last);
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      expect(find.text('reward'), findsNothing, reason: '닫혀야 한다');
+      expect(find.text('empty'), findsOneWidget, reason: '아래 화면까지 닫으면 안 된다');
+    },
+  );
 }

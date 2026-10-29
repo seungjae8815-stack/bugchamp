@@ -359,12 +359,7 @@ class _GuildMemberSheetState extends ConsumerState<GuildMemberSheet> {
               title: itemName(cfg, l, locale, it),
               iconWidget: itemImage(it, size: 40),
               content: ItemOptionList(item: it, config: cfg),
-              actions: [
-                gameDialogButton(
-                  l.actionClose,
-                  () => Navigator.of(context).pop(),
-                ),
-              ],
+              actions: [gameDialogButton(l.actionClose, popOnTap(context))],
             ),
       child: Container(
         key: ValueKey('guildMemberItem:${it.slot.key}'),

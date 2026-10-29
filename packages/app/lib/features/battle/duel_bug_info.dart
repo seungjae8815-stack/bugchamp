@@ -148,14 +148,14 @@ Future<bool?> showDuelBugInfo(
       ],
     ),
     actions: confirm == null
-        ? [gameDialogButton(l.actionClose, () => Navigator.pop(context))]
+        ? [gameDialogButton(l.actionClose, popOnTap(context))]
         : [
             gameDialogButton(
               l.actionCancel,
-              () => Navigator.pop(context, false),
+              popOnTap(context, false),
               primary: false,
             ),
-            gameDialogButton(confirm, () => Navigator.pop(context, true)),
+            gameDialogButton(confirm, popOnTap(context, true)),
           ],
   );
 }

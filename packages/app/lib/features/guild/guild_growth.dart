@@ -239,11 +239,7 @@ Future<void> showGuildAttendDialog(BuildContext context) {
     ),
     content: const GuildAttendCard(),
     actions: [
-      gameDialogButton(
-        l.actionClose,
-        () => Navigator.of(context).pop(),
-        primary: false,
-      ),
+      gameDialogButton(l.actionClose, popOnTap(context), primary: false),
     ],
   );
 }
@@ -462,12 +458,12 @@ class GuildSkillScreen extends ConsumerWidget {
                   actions: [
                     gameDialogButton(
                       l.actionCancel,
-                      () => Navigator.pop(context, false),
+                      popOnTap(context, false),
                       primary: false,
                     ),
                     gameDialogButton(
                       l.guildSkillReset,
-                      () => Navigator.pop(context, true),
+                      popOnTap(context, true),
                     ),
                   ],
                 );

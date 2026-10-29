@@ -715,7 +715,7 @@ class _EventBattleScreenState extends ConsumerState<EventBattleScreen>
           ),
         ],
       ),
-      actions: [gameDialogButton(l.actionClose, () => Navigator.pop(context))],
+      actions: [gameDialogButton(l.actionClose, popOnTap(context))],
     );
   }
 
@@ -919,7 +919,7 @@ class _EventBattleScreenState extends ConsumerState<EventBattleScreen>
           SizedBox(
             width: double.infinity,
             child: FilledButton(
-              onPressed: () => Navigator.of(context).pop(),
+              onPressed: popOnTap(context),
               style: FilledButton.styleFrom(
                 backgroundColor: _honey,
                 foregroundColor: kHoneyInk,

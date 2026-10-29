@@ -328,11 +328,7 @@ class _GuildMissionTabState extends ConsumerState<GuildMissionTab> {
         ],
       ),
       actions: [
-        gameDialogButton(
-          l.actionCancel,
-          () => Navigator.pop(context),
-          primary: false,
-        ),
+        gameDialogButton(l.actionCancel, popOnTap(context), primary: false),
       ],
     );
     if (wait == null || !mounted) return;
@@ -394,9 +390,7 @@ class _GuildMissionTabState extends ConsumerState<GuildMissionTab> {
             ),
         ],
       ),
-      actions: [
-        gameDialogButton(l.eventRewardClaim, () => Navigator.pop(context)),
-      ],
+      actions: [gameDialogButton(l.eventRewardClaim, popOnTap(context))],
     );
   }
 

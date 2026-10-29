@@ -580,7 +580,7 @@ class _EquipCell extends ConsumerWidget {
           );
         },
       ),
-      actions: [gameDialogButton(l.actionClose, () => Navigator.pop(context))],
+      actions: [gameDialogButton(l.actionClose, popOnTap(context))],
     );
   }
 }

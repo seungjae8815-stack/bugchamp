@@ -334,12 +334,12 @@ Future<bool> _confirm(
     actions: [
       gameDialogButton(
         l.actionCancel,
-        () => Navigator.pop(context, false),
+        popOnTap(context, false),
         primary: false,
       ),
       gameDialogButton(
         action,
-        () => Navigator.pop(context, true),
+        popOnTap(context, true),
         color: danger ? const Color(0xFF9A3434) : null,
       ),
     ],
@@ -519,12 +519,12 @@ class _NoGuildState extends ConsumerState<_NoGuild> {
       actions: [
         gameDialogButton(
           l.actionCancel,
-          () => Navigator.pop(context, false),
+          popOnTap(context, false),
           primary: false,
         ),
         gameDialogButton(
           l.guildCreateWithCost(cfg.createJellyCost),
-          () => Navigator.pop(context, true),
+          popOnTap(context, true),
         ),
       ],
     );
@@ -1447,10 +1447,10 @@ class _GuildMenu extends ConsumerWidget {
       actions: [
         gameDialogButton(
           l.actionCancel,
-          () => Navigator.pop(context, false),
+          popOnTap(context, false),
           primary: false,
         ),
-        gameDialogButton(l.guildSave, () => Navigator.pop(context, true)),
+        gameDialogButton(l.guildSave, popOnTap(context, true)),
       ],
     );
     // 폐기하지 않는다 — 닫히는 애니메이션 중에도 입력칸이 쓴다(리스너가 없어 GC 로 충분).
@@ -1480,10 +1480,10 @@ class _GuildMenu extends ConsumerWidget {
       actions: [
         gameDialogButton(
           l.actionCancel,
-          () => Navigator.pop(context, false),
+          popOnTap(context, false),
           primary: false,
         ),
-        gameDialogButton(l.guildSave, () => Navigator.pop(context, true)),
+        gameDialogButton(l.guildSave, popOnTap(context, true)),
       ],
     );
     if (ok != true || pick == now || !context.mounted) return;

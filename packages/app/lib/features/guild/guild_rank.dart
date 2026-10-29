@@ -263,6 +263,6 @@ Future<void> showGuildPermsHelp(
         ],
       ),
     ),
-    actions: [gameDialogButton(l.actionClose, () => Navigator.pop(context))],
+    actions: [gameDialogButton(l.actionClose, popOnTap(context))],
   );
 }

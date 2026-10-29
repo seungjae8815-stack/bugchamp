@@ -872,7 +872,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
             Navigator.pop(context);
             unawaited(_showBuffSheet(l));
           }),
-        gameDialogButton(l.actionClose, () => Navigator.pop(context)),
+        gameDialogButton(l.actionClose, popOnTap(context)),
       ],
     );
   }
@@ -1339,7 +1339,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
         l.regionElementHint,
         style: const TextStyle(color: Color(0xCCFFFFFF), fontSize: 12.5),
       ),
-      actions: [gameDialogButton(l.actionClose, () => Navigator.pop(context))],
+      actions: [gameDialogButton(l.actionClose, popOnTap(context))],
     );
   }
 
@@ -2329,9 +2329,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
           textAlign: TextAlign.center,
           style: const TextStyle(color: Color(0xDDFFFFFF), height: 1.45),
         ),
-        actions: [
-          gameDialogButton(l.actionClose, () => Navigator.pop(context)),
-        ],
+        actions: [gameDialogButton(l.actionClose, popOnTap(context))],
       );
       if (!mounted) return;
       showCenterToast(context, l.tierNextTitle(tierName(l, tier + 1)));
@@ -2351,10 +2349,10 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
         actions: [
           gameDialogButton(
             l.abyssLater,
-            () => Navigator.pop(context, false),
+            popOnTap(context, false),
             primary: false,
           ),
-          gameDialogButton(l.abyssEnter, () => Navigator.pop(context, true)),
+          gameDialogButton(l.abyssEnter, popOnTap(context, true)),
         ],
       );
       if (goAbyss == true && mounted) await _goAbyss();
@@ -2373,7 +2371,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
         if (!last)
           gameDialogButton(
             l.tierStayHere,
-            () => Navigator.pop(context, false),
+            popOnTap(context, false),
             primary: false,
           ),
         gameDialogButton(
@@ -5226,10 +5224,10 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
       actions: [
         gameDialogButton(
           l.reviewAskLater,
-          () => Navigator.pop(context, false),
+          popOnTap(context, false),
           primary: false,
         ),
-        gameDialogButton(l.reviewAction, () => Navigator.pop(context, true)),
+        gameDialogButton(l.reviewAction, popOnTap(context, true)),
       ],
     );
     if (!mounted) return true;
@@ -5299,10 +5297,10 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
         actions: [
           gameDialogButton(
             l.actionClose,
-            () => Navigator.pop(context, false),
+            popOnTap(context, false),
             primary: false,
           ),
-          gameDialogButton(l.passExpireGo, () => Navigator.pop(context, true)),
+          gameDialogButton(l.passExpireGo, popOnTap(context, true)),
         ],
       );
       if (!preview) {
@@ -5351,10 +5349,10 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
       actions: [
         gameDialogButton(
           l.reviewAskLater,
-          () => Navigator.pop(context, false),
+          popOnTap(context, false),
           primary: false,
         ),
-        gameDialogButton(l.starterOfferGo, () => Navigator.pop(context, true)),
+        gameDialogButton(l.starterOfferGo, popOnTap(context, true)),
       ],
     );
     if (!preview) await prefs.setBool('starter_offer_v1', true);
@@ -5418,7 +5416,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
           gameRewardList(context, gold: gold, materials: ch.rewardMaterials),
         ],
       ),
-      actions: [gameDialogButton(l.actionClose, () => Navigator.pop(context))],
+      actions: [gameDialogButton(l.actionClose, popOnTap(context))],
     );
   }
 
@@ -5634,10 +5632,10 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
       actions: [
         gameDialogButton(
           l.bossIntroTurnOff,
-          () => Navigator.pop(context, false),
+          popOnTap(context, false),
           primary: false,
         ),
-        gameDialogButton(l.bossIntroKeepOn, () => Navigator.pop(context, true)),
+        gameDialogButton(l.bossIntroKeepOn, popOnTap(context, true)),
       ],
     );
     if (keep != null) await PlayPrefs.instance.setAutoBoss(keep);
@@ -5666,10 +5664,10 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
       actions: [
         gameDialogButton(
           l.actionCancel,
-          () => Navigator.of(context).pop(false),
+          popOnTap(context, false),
           primary: false,
         ),
-        gameDialogButton(l.bossFlee, () => Navigator.of(context).pop(true)),
+        gameDialogButton(l.bossFlee, popOnTap(context, true)),
       ],
     );
     if (ok != true || !mounted || !_bossChallenge) return;
@@ -5959,13 +5957,10 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
             actions: [
               gameDialogButton(
                 l.actionCancel,
-                () => Navigator.pop(context, false),
+                popOnTap(context, false),
                 primary: false,
               ),
-              gameDialogButton(
-                l.missionSwapFree,
-                () => Navigator.pop(context, true),
-              ),
+              gameDialogButton(l.missionSwapFree, popOnTap(context, true)),
             ],
           ) ==
           true;
@@ -7296,11 +7291,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
         ),
       ),
       actions: [
-        gameDialogButton(
-          l.actionClose,
-          () => Navigator.pop(context),
-          primary: false,
-        ),
+        gameDialogButton(l.actionClose, popOnTap(context), primary: false),
       ],
     );
   }
@@ -7605,11 +7596,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
         ],
       ),
       actions: [
-        gameDialogButton(
-          l.actionClose,
-          () => Navigator.pop(context),
-          primary: false,
-        ),
+        gameDialogButton(l.actionClose, popOnTap(context), primary: false),
       ],
     );
   }
@@ -7691,11 +7678,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
         ],
       ),
       actions: [
-        gameDialogButton(
-          l.actionClose,
-          () => Navigator.pop(context),
-          primary: false,
-        ),
+        gameDialogButton(l.actionClose, popOnTap(context), primary: false),
         // 구글 로그인 — iOS 도 iOS 클라이언트 ID 가 있으면 함께 노출(2026-10-24 스크린타임 문의).
         // Apple 4.8 은 "제3자 로그인이 있으면 애플도 함께"라서 둘을 같이 두면 된다.
         if (auth.googleAvailable && !auth.isSignedIn)
@@ -7777,12 +7760,12 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
       actions: [
         gameDialogButton(
           l.actionClose,
-          () => Navigator.pop(context, false),
+          popOnTap(context, false),
           primary: false,
         ),
         gameDialogButton(
           l.accountSignOut,
-          () => Navigator.pop(context, true),
+          popOnTap(context, true),
           color: const Color(0xFF556070),
         ),
       ],
@@ -7935,10 +7918,10 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
       actions: [
         gameDialogButton(
           l.accountKeepDevice,
-          () => Navigator.pop(context, false),
+          popOnTap(context, false),
           primary: false,
         ),
-        gameDialogButton(l.accountUseCloud, () => Navigator.pop(context, true)),
+        gameDialogButton(l.accountUseCloud, popOnTap(context, true)),
       ],
     );
     if (!mounted || useCloud == null) return;
@@ -8002,11 +7985,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
         ],
       ),
       actions: [
-        gameDialogButton(
-          l.actionClose,
-          () => Navigator.pop(context),
-          primary: false,
-        ),
+        gameDialogButton(l.actionClose, popOnTap(context), primary: false),
         if (cloud.available)
           gameDialogButton(l.cloudRestore, () async {
             Navigator.pop(context);
@@ -8052,12 +8031,12 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
       actions: [
         gameDialogButton(
           l.actionCancel,
-          () => Navigator.pop(context, false),
+          popOnTap(context, false),
           primary: false,
         ),
         gameDialogButton(
           l.cloudRestore,
-          () => Navigator.pop(context, true),
+          popOnTap(context, true),
           color: const Color(0xFFC85454),
         ),
       ],
@@ -8084,11 +8063,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
         ),
       ),
       actions: [
-        gameDialogButton(
-          l.actionCancel,
-          () => Navigator.pop(context),
-          primary: false,
-        ),
+        gameDialogButton(l.actionCancel, popOnTap(context), primary: false),
         gameDialogButton(l.exitAction, () async {
           Navigator.pop(context);
           await ref.read(saveControllerProvider.notifier).resetGame();
@@ -8136,12 +8111,8 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
           ),
         ),
         actions: [
-          gameDialogButton(
-            '취소',
-            () => Navigator.pop(context, false),
-            primary: false,
-          ),
-          gameDialogButton('저장', () => Navigator.pop(context, true)),
+          gameDialogButton('취소', popOnTap(context, false), primary: false),
+          gameDialogButton('저장', popOnTap(context, true)),
         ],
       );
       if (ok != true) return '';
@@ -9437,13 +9408,10 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
       actions: [
         gameDialogButton(
           l.actionCancel,
-          () => Navigator.pop(context, false),
+          popOnTap(context, false),
           primary: false,
         ),
-        gameDialogButton(
-          l.jellyContinueYes,
-          () => Navigator.pop(context, true),
-        ),
+        gameDialogButton(l.jellyContinueYes, popOnTap(context, true)),
       ],
     );
     if (ok != true) return false;
@@ -10593,10 +10561,7 @@ class _SkillFxViewerState extends State<_SkillFxViewer>
           onPressed: () => setState(() => _loop = !_loop),
           child: Text(_loop ? '반복 켬' : '반복 끔'),
         ),
-        FilledButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: const Text('닫기'),
-        ),
+        FilledButton(onPressed: popOnTap(context), child: const Text('닫기')),
       ],
       child: Column(
         mainAxisSize: MainAxisSize.min,

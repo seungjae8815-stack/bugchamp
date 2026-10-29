@@ -8,6 +8,7 @@ import '../../ui/art.dart';
 import '../../ui/event_badge.dart';
 import '../../ui/labels.dart';
 import '../../ui/colors.dart';
+import '../../ui/game_dialog.dart';
 
 const _honey = kHoney;
 const _paper = Color(0xFF1B2A11);
@@ -223,7 +224,7 @@ class EventIntroScreen extends ConsumerWidget {
               child: SizedBox(
                 width: double.infinity,
                 child: FilledButton(
-                  onPressed: () => Navigator.of(context).pop(),
+                  onPressed: popOnTap(context),
                   style: FilledButton.styleFrom(
                     backgroundColor: _honey,
                     foregroundColor: kHoneyInk,

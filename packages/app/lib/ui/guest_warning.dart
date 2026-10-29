@@ -56,8 +56,8 @@ Future<void> maybeWarnGuest(
       ),
     ),
     actions: [
-      gameDialogButton(l.actionClose, () => Navigator.pop(context, false)),
-      gameDialogButton(l.guestNudgeSignIn, () => Navigator.pop(context, true)),
+      gameDialogButton(l.actionClose, popOnTap(context, false)),
+      gameDialogButton(l.guestNudgeSignIn, popOnTap(context, true)),
     ],
   );
   if (signIn != true || !context.mounted) return;

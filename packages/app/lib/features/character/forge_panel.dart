@@ -136,10 +136,10 @@ class _ForgeBarState extends ConsumerState<ForgeBar> {
       actions: [
         gameDialogButton(
           l.actionClose,
-          () => Navigator.pop(context, false),
+          popOnTap(context, false),
           primary: false,
         ),
-        gameDialogButton(l.forgeRush, () => Navigator.pop(context, true)),
+        gameDialogButton(l.forgeRush, popOnTap(context, true)),
       ],
     );
     if (go != true || !mounted) return;
@@ -1461,12 +1461,12 @@ Future<bool> showForgeResult(
             actions: [
               gameDialogButton(
                 l.actionCancel,
-                () => Navigator.pop(context, false),
+                popOnTap(context, false),
                 primary: false,
               ),
               gameDialogButton(
                 l.forgeResultKeep,
-                () => Navigator.pop(context, true),
+                popOnTap(context, true),
                 color: carry ? null : const Color(0xFFB23A2E),
               ),
             ],
@@ -1636,7 +1636,7 @@ Future<bool> showForgeStrikePick(
       ),
     ),
     actions: [
-      gameDialogButton(l.actionClose, () => Navigator.pop(context, false)),
+      gameDialogButton(l.actionClose, popOnTap(context, false)),
       // 시작이 곧 저장이다. 닫기로 나가면 아무것도 안 바뀐다 — 고르다 말고
       // 나갔는데 설정이 바뀌어 있으면 그게 더 놀랍다.
       gameDialogButton(l.forgeStrikeStart, () {
@@ -1916,7 +1916,7 @@ Future<void> showForgeGrade(BuildContext context, WidgetRef ref) async {
     actions: [
       gameDialogButton(
         AppLocalizations.of(context).actionClose,
-        () => Navigator.pop(context),
+        popOnTap(context),
       ),
     ],
   );
@@ -2060,12 +2060,12 @@ class _GradeBodyState extends ConsumerState<_GradeBody> {
       actions: [
         gameDialogButton(
           l.actionCancel,
-          () => Navigator.pop(context, false),
+          popOnTap(context, false),
           primary: false,
         ),
         gameDialogButton(
           l.forgeTranscendAction,
-          () => Navigator.pop(context, true),
+          popOnTap(context, true),
           color: const Color(0xFFB23A2E),
         ),
       ],

@@ -544,7 +544,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
           ],
         ],
       ),
-      actions: [gameDialogButton(l.actionClose, () => Navigator.pop(context))],
+      actions: [gameDialogButton(l.actionClose, popOnTap(context))],
     );
   }
 
@@ -590,7 +590,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
           ],
         ],
       ),
-      actions: [gameDialogButton(l.actionClose, () => Navigator.pop(context))],
+      actions: [gameDialogButton(l.actionClose, popOnTap(context))],
     );
   }
 
@@ -1131,11 +1131,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
             Navigator.pop(context);
             _claimLeague(l);
           }),
-        gameDialogButton(
-          l.actionClose,
-          () => Navigator.pop(context),
-          primary: !claimable,
-        ),
+        gameDialogButton(l.actionClose, popOnTap(context), primary: !claimable),
       ],
     );
   }
@@ -1508,13 +1504,10 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
       actions: [
         gameDialogButton(
           l.actionClose,
-          () => Navigator.pop(context, false),
+          popOnTap(context, false),
           primary: false,
         ),
-        gameDialogButton(
-          l.injuryHealJelly(jelly),
-          () => Navigator.pop(context, true),
-        ),
+        gameDialogButton(l.injuryHealJelly(jelly), popOnTap(context, true)),
       ],
     );
     if (heal == true && mounted) await _healWithJelly(bug, jelly);
@@ -3483,22 +3476,18 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
         if (inTeam)
           gameDialogButton(
             l.squadRelease,
-            () => Navigator.pop(context, 'release'),
+            popOnTap(context, 'release'),
             primary: false,
           )
         else
-          gameDialogButton(
-            l.actionCancel,
-            () => Navigator.pop(context),
-            primary: false,
-          ),
+          gameDialogButton(l.actionCancel, popOnTap(context), primary: false),
         // 칸에서 연 곤충은 이미 그 자리 — 출정 대신 교체.
         if (sheet == null)
-          gameDialogButton(l.squadSwap, () => Navigator.pop(context, 'swap'))
+          gameDialogButton(l.squadSwap, popOnTap(context, 'swap'))
         else
           gameDialogButton(
             injured ? l.injuryTitle : l.squadDeploy,
-            injured ? () {} : () => Navigator.pop(context, 'deploy'),
+            injured ? () {} : popOnTap(context, 'deploy'),
           ),
       ],
     );
@@ -3588,7 +3577,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
         ),
       ),
     ),
-    actions: [gameDialogButton(l.actionClose, () => Navigator.pop(context))],
+    actions: [gameDialogButton(l.actionClose, popOnTap(context))],
   );
 
   /// 현재 편성의 전투력 **합**(빈 슬롯은 0).

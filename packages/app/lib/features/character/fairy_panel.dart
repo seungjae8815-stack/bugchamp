@@ -751,7 +751,7 @@ class _NestDialogState extends ConsumerState<_NestDialog> {
     final f = save.fairy;
     final nest = f.nest;
     final close = TextButton(
-      onPressed: () => Navigator.of(context).pop(),
+      onPressed: popOnTap(context),
       child: Text(l.actionClose),
     );
     if (nest == null) {
@@ -1153,10 +1153,7 @@ class _NewFairyDialog extends ConsumerWidget {
     return GameDialog(
       title: l.fairyNew,
       actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: Text(l.actionClose),
-        ),
+        TextButton(onPressed: popOnTap(context), child: Text(l.actionClose)),
       ],
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -1221,10 +1218,7 @@ class _FairyDetailState extends ConsumerState<_FairyDetailDialog> {
       title: def?.name.resolve(locale) ?? '?',
       subtitle: def?.title.resolve(locale),
       actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: Text(l.actionClose),
-        ),
+        TextButton(onPressed: popOnTap(context), child: Text(l.actionClose)),
       ],
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -1644,7 +1638,7 @@ class _RerollChooseState extends ConsumerState<_RerollChooseDialog> {
             onPressed: _busy
                 ? null
                 : r == null
-                ? () => Navigator.of(context).pop()
+                ? popOnTap(context)
                 : () => _choose(false),
             child: Text(l.actionClose),
           ),
@@ -1692,7 +1686,7 @@ class _RerollChooseState extends ConsumerState<_RerollChooseDialog> {
         // 고르지 않고 닫기 — 결과는 남아 다음에 재굴림을 누르면 다시 뜬다. 연결이 끊겨 두 버튼이 다 실패해도
         // 창에 갇히지 않게(iOS 는 뒤로가기가 없다, 2026-10-04 출시 전 리뷰).
         TextButton(
-          onPressed: _busy ? null : () => Navigator.of(context).pop(),
+          onPressed: _busy ? null : popOnTap(context),
           child: Text(l.actionClose),
         ),
         TextButton(
@@ -1762,10 +1756,7 @@ class _MergeDialogState extends ConsumerState<_MergeDialog> {
     return GameDialog(
       title: l.fairyMerge,
       actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: Text(l.actionCancel),
-        ),
+        TextButton(onPressed: popOnTap(context), child: Text(l.actionCancel)),
         FilledButton(
           onPressed: _picked.length == need && !_busy ? () => _go(main) : null,
           child: Text(l.fairyMerge),
@@ -1885,10 +1876,7 @@ class _MergeHubDialogState extends ConsumerState<_MergeHubDialog> {
         fallback: const Icon(Icons.merge_type_rounded, color: _honey),
       ),
       actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: Text(l.actionCancel),
-        ),
+        TextButton(onPressed: popOnTap(context), child: Text(l.actionCancel)),
         TextButton(
           onPressed: _busy ? null : _auto,
           child: Text(l.fairyAutoMerge),
@@ -2177,11 +2165,7 @@ class _ReleaseHubDialogState extends ConsumerState<_ReleaseHubDialog> {
       ),
       // 다른 팝업과 같은 게임 버튼(기본 머티리얼 버튼은 팝업 배경에 글씨가 묻혔다 — 2026-10-08 실기).
       actions: [
-        gameDialogButton(
-          l.actionClose,
-          () => Navigator.of(context).pop(),
-          primary: false,
-        ),
+        gameDialogButton(l.actionClose, popOnTap(context), primary: false),
         gameDialogButton(
           count > 0 ? '${l.fairyRelease} ($count)' : l.fairyRelease,
           () {
@@ -2445,10 +2429,7 @@ class _GachaDialogState extends ConsumerState<_GachaDialog> {
       title: l.fairyGacha,
       iconWidget: fairyEggImage(FairyGrade.legendary, size: 40),
       actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: Text(l.actionClose),
-        ),
+        TextButton(onPressed: popOnTap(context), child: Text(l.actionClose)),
       ],
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -2613,10 +2594,7 @@ class _DexDialog extends ConsumerWidget {
           '${l.fairyDexGrades('$gradeHave', '${cfg.kinds.length * FairyGrade.values.length}')}'
           ' · ${l.fairyDexSubs('$subHave', '${cfg.kinds.length * subs.length}')}',
       actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: Text(l.actionClose),
-        ),
+        TextButton(onPressed: popOnTap(context), child: Text(l.actionClose)),
       ],
       child: SizedBox(
         width: 300,

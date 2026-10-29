@@ -120,7 +120,7 @@ class _TitleScreenState extends ConsumerState<TitleScreen> {
         style: const TextStyle(color: Color(0xD9FFFFFF), fontSize: 13.5),
       ),
       actions: [
-        gameDialogButton(l.updateLater, () => Navigator.pop(context)),
+        gameDialogButton(l.updateLater, popOnTap(context)),
         gameDialogButton(l.updateNow, () {
           unawaited(openStore());
           Navigator.pop(context);
@@ -181,15 +181,9 @@ class _TitleScreenState extends ConsumerState<TitleScreen> {
         ),
       ),
       actions: [
-        gameDialogButton(
-          l.guestNudgeContinue,
-          () => Navigator.pop(context, false),
-        ),
+        gameDialogButton(l.guestNudgeContinue, popOnTap(context, false)),
         if (auth.available)
-          gameDialogButton(
-            l.guestNudgeSignIn,
-            () => Navigator.pop(context, true),
-          ),
+          gameDialogButton(l.guestNudgeSignIn, popOnTap(context, true)),
       ],
     );
     if (!mounted) return;

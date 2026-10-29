@@ -16,6 +16,7 @@ import 'arena_widgets.dart';
 import 'manual_driver.dart';
 import '../../ui/toast.dart';
 import '../../ui/colors.dart';
+import '../../ui/game_dialog.dart';
 
 /// 표시용 최대 기력(엔진 상수와 일치 — core_battle `_maxEnergy`).
 const _maxEnergyDisplay = 3;
@@ -391,7 +392,7 @@ class _ManualBattleScreenState extends State<ManualBattleScreen>
                 child: Row(
                   children: [
                     IconButton(
-                      onPressed: () => Navigator.pop(context),
+                      onPressed: popOnTap(context),
                       icon: const Icon(
                         Icons.close_rounded,
                         color: Color(0xCCFFFFFF),

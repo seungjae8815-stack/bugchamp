@@ -235,7 +235,7 @@ Future<void> showElementWheel(BuildContext context, {Element? highlight}) {
         ),
       ],
     ),
-    actions: [gameDialogButton(l.actionClose, () => Navigator.pop(context))],
+    actions: [gameDialogButton(l.actionClose, popOnTap(context))],
   );
 }
 

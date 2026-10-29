@@ -59,10 +59,7 @@ class _SkillGachaDialogState extends ConsumerState<SkillGachaDialog> {
           onPressed: () => _showOdds(l),
           child: Text(l.skillGachaOdds),
         ),
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: Text(l.actionClose),
-        ),
+        TextButton(onPressed: popOnTap(context), child: Text(l.actionClose)),
       ],
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -282,10 +279,7 @@ class _SkillSweepDialogState extends ConsumerState<SkillSweepDialog> {
             onPressed: () => _showSweepOdds(l, tier),
             child: Text(l.skillGachaOdds),
           ),
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: Text(l.actionClose),
-        ),
+        TextButton(onPressed: popOnTap(context), child: Text(l.actionClose)),
         FilledButton(
           onPressed: _busy || tier < 0 || limit ? null : () => _sweep(l),
           child: label,

@@ -102,6 +102,23 @@ final _secondaryBtn = _artButtonStyle(
   const Rect.fromLTRB(54, 2, 443, 130),
 );
 
+/// 닫기 버튼 콜백 — `popOnTap(context)` 대신 쓴다(2026-10-29 1.0.27 크래시 `showRewardPopup`).
+///
+/// 버튼을 **만드는 순간** 네비게이터를 잡아 두고, 누를 때 그것으로 닫는다. 바깥 [context] 로 누를 때 찾으면,
+/// 팝업이 떠 있는 사이 그 위젯이 사라졌을 때(받은 우편·선물 칸이 목록에서 빠짐 · 앱 셸이 타이틀로 바뀜)
+/// `Navigator.of` 가 "Null check operator used on a null value" 로 앱을 죽였다(rank_popup 의 2026-10-02 크래시와 같은 꼴).
+/// 어떤 경우에도 던지지 않는다 — 잡을 네비게이터가 없으면 아무것도 안 한다.
+/// ⚠️ [result] 는 **지금** 값을 잡는다 — 누르는 순간의 값(입력칸 등)을 넘기는 곳은 쓰지 않는다.
+VoidCallback popOnTap(BuildContext context, [Object? result]) {
+  NavigatorState? find() =>
+      context.mounted ? Navigator.maybeOf(context, rootNavigator: true) : null;
+  final held = find();
+  return () {
+    final nav = held != null && held.mounted ? held : find();
+    if (nav != null && nav.canPop()) nav.pop(result);
+  };
+}
+
 /// 게임 톤(다크그린 + 허니 테두리)으로 통일된 다이얼로그. 모든 팝업은 이걸 쓴다.
 Future<T?> showGameDialog<T>(
   BuildContext context, {
@@ -503,6 +520,6 @@ Future<void> showRewardPopup(
     subtitle: subtitle,
     icon: icon,
     content: gameRewardList(context, gold: gold, materials: materials),
-    actions: [gameDialogButton(l.actionClose, () => Navigator.pop(context))],
+    actions: [gameDialogButton(l.actionClose, popOnTap(context))],
   );
 }

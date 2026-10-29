@@ -116,7 +116,7 @@ class GradeRarityRows extends StatelessWidget {
           actions: [
             gameDialogButton(
               AppLocalizations.of(context).actionClose,
-              () => Navigator.pop(context),
+              popOnTap(context),
             ),
           ],
         ),

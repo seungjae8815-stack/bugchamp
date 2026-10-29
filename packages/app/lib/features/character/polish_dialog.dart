@@ -36,11 +36,7 @@ Future<void> showPolishDialog(
     icon: Icons.auto_fix_high_rounded,
     content: _PolishBody(index: index, equipped: equipped, slot: slot),
     actions: [
-      gameDialogButton(
-        l.actionClose,
-        () => Navigator.pop(context),
-        primary: false,
-      ),
+      gameDialogButton(l.actionClose, popOnTap(context), primary: false),
     ],
   );
 }

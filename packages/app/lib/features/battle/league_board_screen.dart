@@ -1123,9 +1123,7 @@ class LeagueBoardViewState extends ConsumerState<LeagueBoardView> {
           ],
         ],
       ),
-      actions: [
-        gameDialogButton(l.duelResultOk, () => Navigator.of(context).pop()),
-      ],
+      actions: [gameDialogButton(l.duelResultOk, popOnTap(context))],
     );
   }
 
@@ -1211,9 +1209,7 @@ class LeagueBoardViewState extends ConsumerState<LeagueBoardView> {
           ),
         ],
       ),
-      actions: [
-        gameDialogButton(l.duelResultOk, () => Navigator.of(context).pop()),
-      ],
+      actions: [gameDialogButton(l.duelResultOk, popOnTap(context))],
     );
   }
 
@@ -1353,9 +1349,7 @@ class LeagueBoardViewState extends ConsumerState<LeagueBoardView> {
           ),
         ],
       ),
-      actions: [
-        gameDialogButton(l.duelResultOk, () => Navigator.of(context).pop()),
-      ],
+      actions: [gameDialogButton(l.duelResultOk, popOnTap(context))],
     );
   }
 

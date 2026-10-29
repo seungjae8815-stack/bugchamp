@@ -553,9 +553,7 @@ class _DuelArenaScreenState extends State<DuelArenaScreen>
           ),
         ],
       ),
-      actions: [
-        gameDialogButton(l.duelResultOk, () => Navigator.of(context).pop()),
-      ],
+      actions: [gameDialogButton(l.duelResultOk, popOnTap(context))],
     );
   }
 

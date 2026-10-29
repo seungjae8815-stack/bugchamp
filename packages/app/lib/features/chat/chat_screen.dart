@@ -517,12 +517,12 @@ class _ChatPaneState extends ConsumerState<ChatPane> {
       actions: [
         gameDialogButton(
           l.actionClose,
-          () => Navigator.pop(context, false),
+          popOnTap(context, false),
           primary: false,
         ),
         gameDialogButton(
           l.chatReport,
-          () => Navigator.pop(context, true),
+          popOnTap(context, true),
           color: const Color(0xFF9A3434),
         ),
       ],
@@ -553,12 +553,12 @@ class _ChatPaneState extends ConsumerState<ChatPane> {
       actions: [
         gameDialogButton(
           l.actionClose,
-          () => Navigator.pop(context, false),
+          popOnTap(context, false),
           primary: false,
         ),
         gameDialogButton(
           l.chatDelete,
-          () => Navigator.pop(context, true),
+          popOnTap(context, true),
           color: const Color(0xFF9A3434),
         ),
       ],
@@ -590,12 +590,12 @@ class _ChatPaneState extends ConsumerState<ChatPane> {
       actions: [
         gameDialogButton(
           l.actionClose,
-          () => Navigator.pop(context, false),
+          popOnTap(context, false),
           primary: false,
         ),
         gameDialogButton(
           l.chatBlock,
-          () => Navigator.pop(context, true),
+          popOnTap(context, true),
           color: const Color(0xFF9A3434),
         ),
       ],

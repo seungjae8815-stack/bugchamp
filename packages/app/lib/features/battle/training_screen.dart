@@ -2212,11 +2212,7 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen> {
         ),
       ),
       actions: [
-        gameDialogButton(
-          l.actionCancel,
-          () => Navigator.pop(context),
-          primary: false,
-        ),
+        gameDialogButton(l.actionCancel, popOnTap(context), primary: false),
       ],
     );
     if (picked == null || !mounted) return;
@@ -2370,10 +2366,10 @@ class _TrainingScreenState extends ConsumerState<TrainingScreen> {
       actions: [
         gameDialogButton(
           l10n.actionCancel,
-          () => Navigator.pop(context, false),
+          popOnTap(context, false),
           primary: false,
         ),
-        gameDialogButton(ok, () => Navigator.pop(context, true)),
+        gameDialogButton(ok, popOnTap(context, true)),
       ],
     );
     return r == true;

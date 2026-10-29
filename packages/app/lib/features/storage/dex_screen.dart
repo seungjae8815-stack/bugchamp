@@ -274,9 +274,7 @@ class DexScreen extends ConsumerWidget {
             ),
           ],
         ),
-        actions: [
-          gameDialogButton(l.actionClose, () => Navigator.pop(context)),
-        ],
+        actions: [gameDialogButton(l.actionClose, popOnTap(context))],
       ),
       child: Container(
         padding: const EdgeInsets.all(4),
@@ -864,7 +862,7 @@ class DexScreen extends ConsumerWidget {
           ],
         ],
       ),
-      actions: [gameDialogButton(l.actionClose, () => Navigator.pop(context))],
+      actions: [gameDialogButton(l.actionClose, popOnTap(context))],
     );
   }
 
