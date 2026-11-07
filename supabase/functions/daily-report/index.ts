@@ -77,10 +77,22 @@ Deno.serve(async (req) => {
     for (const r of realToday) byProduct.set(r.product_id, (byProduct.get(r.product_id) ?? 0) + 1)
     const detail = [...byProduct.entries()].map(([id, n]) => `${id} ${n}`).join(' · ')
     const testToday = rows.filter((r) => r.environment !== 'production' && r.verified_at >= since).length
+    // 월별(KST 달력 기준, 최근 6개월) — 이번 달은 오늘까지. 시각을 +9h 해 'YYYY-MM' 을 뗀다.
+    const byMonth = new Map<string, typeof rows>()
+    for (const r of real) {
+      const k = new Date(Date.parse(r.verified_at) + 9 * 3600 * 1000).toISOString().slice(0, 7)
+      byMonth.set(k, [...(byMonth.get(k) ?? []), r])
+    }
+    const monthly = [...byMonth.entries()]
+      .sort((a, b) => b[0].localeCompare(a[0]))
+      .slice(0, 6)
+      .map(([k, xs]) => `   ${k.replace('-', '.')} ${won(sum(xs))} · ${fmt(xs.length)}건`)
+      .join('\n')
     revenueLines =
       `💰 매출(24h): ${won(sum(realToday))} · ${fmt(realToday.length)}건` +
       (detail ? `\n   ${detail}` : '') +
       (testToday > 0 ? `\n   (테스트 결제 ${fmt(testToday)}건 제외)` : '') +
+      (monthly ? `\n📊 월별 매출:\n${monthly}` : '') +
       `\n💵 누적 매출: ${won(sum(real))} · ${fmt(real.length)}건`
   } catch (e) {
     console.error('revenue failed', e)
