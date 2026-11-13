@@ -47,7 +47,11 @@ CharacterStats permanentStatsOf(SaveGame save, GameData data, DateTime now) {
       ),
     );
   }
-  final pb = computePetBonus(pets, cfg);
+  final pb = computePetBonus(
+    pets,
+    cfg,
+    share: researchPetShareMult(data.researchFx(save.researchLevels)),
+  );
   return CharacterStats(
     attack: base.attack * pb.attackMult,
     attackSpeed: base.attackSpeed,
@@ -131,6 +135,8 @@ CharacterStats huntStatsUncapped(
     fairy == null ? const {} : fairyCompanionBonus(save.fairy, fairy),
   );
   s = applyGuildStats(s, guildBonus);
+  // 심연 각인(2026-11-10) — 결정으로 산 영구 능력치(극한 뒤에만 생긴다).
+  s = applyAbyssImprint(s, config.abyss, save.abyssImprint);
   // 연구소 사냥 분야(공격·체력방어·찾기·골드·보스·치명 피해·재생·경험치·회피) — 적응형 기준(permanentStatsOf) 밖.
   final research = data.researchConfig;
   if (research != null && save.researchLevels.isNotEmpty) {

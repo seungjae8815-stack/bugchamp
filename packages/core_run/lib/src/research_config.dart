@@ -52,7 +52,17 @@ enum ResearchEffect {
   exchangeGain('exchangeGain'),
   giftGold('giftGold'),
   duelCrit('duelCrit'),
-  duelGrit('duelGrit');
+  duelGrit('duelGrit'),
+  // ── 2026-11-12 사장님 확정(연구소 점검) — 약한 연구 교체: 재생 → 처치 회복, 분해 기술 → 펫 교감 ──
+  killHeal('killHeal'),
+  petShare('petShare'),
+  // ── 심연 연구(2026-11-12 사장님 확정, `research.json → abyssLab`) — 심연 안에서만 듣는다(90일 표·결투 밖) ──
+  abyssShortcut('abyssShortcut'),
+  abyssFastFloor('abyssFastFloor'),
+  mutationTame('mutationTame'),
+  crystalBonus('crystalBonus'),
+  sporeBonus('sporeBonus'),
+  abyssIdleGold('abyssIdleGold');
 
   const ResearchEffect(this.key);
   final String key;
@@ -230,6 +240,7 @@ class ResearchConfig {
     this.bossRepeatChance = 0,
     this.clockSkewSeconds = 300,
     this.passTimeCut = 0,
+    this.abyssLab = const AbyssLabConfig(),
   });
 
   final List<ResearchDef> defs;
@@ -258,6 +269,9 @@ class ResearchConfig {
   /// 연구 패스가 켜져 있는 동안 연구 시간 단축(2026-10-25 사장님, research.json `pass.timeCut`) —
   /// 연구 효율 연구와 **더해** [kResearchTimeCutMax] 로 자른다([researchTimeCut]).
   final double passTimeCut;
+
+  /// 심연 연구소(2026-11-12) — 심연 포자로만 하는 연구. 일반 연구와 칸·레벨이 따로다.
+  final AbyssLabConfig abyssLab;
 
   /// 칸 수 최대(코드 상수 — 기획 확정 규칙값).
   static const int maxSlots = 3;
@@ -363,8 +377,81 @@ class ResearchConfig {
         final Map<String, dynamic> p => (p['timeCut'] as num?)?.toDouble() ?? 0,
         _ => 0,
       },
+      abyssLab: j['abyssLab'] is Map
+          ? AbyssLabConfig.fromJson(
+              (j['abyssLab'] as Map).cast<String, dynamic>(),
+            )
+          : const AbyssLabConfig(),
     );
   }
+}
+
+/// 심연 연구소(2026-11-12 사장님 확정, `research.json → abyssLab`) — **심연 포자**로만 하는 연구.
+///
+/// 포자는 그 주에 **처음 깬 층의 보스**가 [sporesPerFloor] 개(주 [sporeFloorCap] 층까지) · 10층 배수 **역대 첫 도달**에 [sporesMilestone] 개.
+/// 확정 드롭이라 서버가 정확히 검사한다(방치 정산엔 없다 — 층은 직접 올라야 오른다). 보유는 [sporeCap] 까지.
+/// 연구 칸은 심연이 열리면 생기는 **전용 1칸**(진행도로만, 팔지 않는다) · 젤리 즉시 완료 없음(병목은 포자).
+/// 효과는 모두 심연 안에서만 — 90일 표(극한까지)·결투·대회에는 안 실린다.
+@immutable
+class AbyssLabConfig {
+  const AbyssLabConfig({
+    this.defs = const [],
+    this.sporesPerFloor = 0,
+    this.sporesMilestone = 0,
+    this.sporeFloorCap = 0,
+    this.sporeCap = 0,
+  });
+
+  /// 심연 연구(비용은 [ResearchDef.samplesFirst] 자리를 **포자**로 읽는다 — 같은 곡선 꼴).
+  final List<ResearchDef> defs;
+  final int sporesPerFloor;
+  final int sporesMilestone;
+  final int sporeFloorCap;
+  final int sporeCap;
+
+  bool get enabled => defs.isNotEmpty;
+
+  ResearchDef? byId(String id) {
+    for (final d in defs) {
+      if (d.id == id) return d;
+    }
+    return null;
+  }
+
+  /// 그 주에 처음 깬 층 [floor] 의 보스가 주는 포자([sporeBonus] = 포자 감각 연구 몫). 주 상한 밖이면 0.
+  int sporesForFloor(int floor, {double sporeBonus = 0}) =>
+      floor <= 0 || floor > sporeFloorCap
+      ? 0
+      : (sporesPerFloor * (1 + sporeBonus) + 1e-9).floor();
+
+  factory AbyssLabConfig.fromJson(Map<String, dynamic> j) => AbyssLabConfig(
+    defs: [
+      for (final e in (j['research'] as List? ?? const []))
+        ResearchDef.fromJson((e as Map).cast<String, dynamic>()),
+    ],
+    sporesPerFloor: (j['sporesPerFloor'] as num?)?.toInt() ?? 0,
+    sporesMilestone: (j['sporesMilestone'] as num?)?.toInt() ?? 0,
+    sporeFloorCap: (j['sporeFloorCap'] as num?)?.toInt() ?? 0,
+    sporeCap: (j['sporeCap'] as num?)?.toInt() ?? 0,
+  );
+}
+
+/// 심연 연구 레벨 → 효과(상한은 각 연구 Lv 최대가 곧 상한 — 따로 자르지 않는다).
+ResearchEffects abyssResearchEffects(
+  AbyssLabConfig c,
+  Map<String, int> levels,
+) {
+  final sum = <ResearchEffect, double>{};
+  for (final d in c.defs) {
+    final lv = math.min(levels[d.id] ?? 0, d.maxLevel);
+    if (lv <= 0) continue;
+    var v = 0.0;
+    for (var i = 1; i <= lv; i++) {
+      v += d.perLevel * math.pow(d.effectGrowth, i - 1);
+    }
+    sum[d.effect] = (sum[d.effect] ?? 0) + v;
+  }
+  return ResearchEffects(sum);
 }
 
 /// 연구 레벨 합산 결과. 상한 있는 효과([ResearchEffect.cap])는 잘려 있다.

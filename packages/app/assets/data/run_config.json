@@ -418,6 +418,12 @@
   }
  ],
  "_upgradeMaxLevelComment": "★2026-10-08 사장님 확정: 전투 강화 상한 상향(공격·체력 200→250 · 방어 175→250 · 공속 110→125 · 치명 피해 105→110 · 보스 피해 100→105) — 극한 이후(심연) 성장용. 최상위 계정이 전투 강화를 다 찍고 골드 264억을 쓸 데가 없어 심연 8층에서 멈췄다. 비용 곡선은 그대로(지수라 자연스러운 벽). 평균 유저 극한 일수 59→58일(balance_sim). 90일 기준 '현실적 최고치'는 tool/balance_targets.json → ceiling.upgradeRef 로 옛 상한에 고정. 이하 원래 설명: 업그레이드 상한(2026-09-09). 값은 balance_sim 이 최종 보스(1000) 도달 시점에 자연스럽게 닿는 레벨을 5 단위로 올림한 것 — 진행(22일)은 그대로다. ⚠️ 이보다 낮추면 벽이 아니라 절벽이 된다(80%: 801에서 정체, 60%: 601). 낮추려면 장비·펫의 상한을 같이 올려서 그 구간을 장비가 끌게 해야 한다.",
+ "_upgradeMaterialFreeComment": "초반 강화는 골드로만(2026-11-12 사장님 확정) — 처음 키울 때 재료 수급이 느려 강화가 멈췄다. 강화 줄마다 이 레벨 미만은 재료 비용 0(난이도마다 강화가 초기화되니 새 난이도에서도 같다). core_run upgradeMaterialCost 한 곳 — 앱·시뮬·서버 공용.",
+ "upgradeMaterialFreeLevels": 50,
+ "_upgradeAwakenComment": "강화 각성(2026-11-10 사장님 확정 — 강화에 다음 목표가 보이게). levels 에 닿으면 같은 자리 bonus 레벨만큼 값이 덤으로 붙는다. 덤은 레벨당 몫에서 옮겨 온 것이라 최대 레벨 값은 그대로이고, 어느 레벨도 각성이 없을 때보다 낮지 않다(250레벨 줄은 레벨당 ×250/280, 둘 중 큰 쪽). 측정 73 → 71일. 그냥 얹으면 73 → 41일(강화 5종이 곱해진다). 치명·회피는 강화 예산(critBudgetUpgrade·evadeBudgetUpgrade)에 딱 맞춘 줄이라 넘친 몫이 헛돌아서 뺀다. 값을 바꾸면 balance_sim --tiers=4 --no-fairy 를 다시 잰다.",
+ "upgradeAwaken": { "levels": [10, 25, 50, 100, 150, 200, 250], "bonus": [2, 3, 5, 5, 5, 5, 5], "exclude": ["crit", "moveSpeed"] },
+ "_upgradeLuckyComment": "강화 대성공(2026-11-10 사장님 확정 — 누르는 순간의 손맛). 한 레벨을 살 때 이 확률로 1레벨 덤(상한까지). 계정·난이도·레벨마다 정해진 값이라 다시 굴릴 수 없다(core_run upgradeLuckyAt).",
+ "upgradeLucky": { "chance": 0.05 },
  "upgrades": [
   {
    "kind": "attack",
@@ -679,13 +685,72 @@
    { "maxRank": 2, "jelly": 50 },
    { "maxRank": 3, "jelly": 30 },
    { "maxRank": 10, "jelly": 10 }
+  ],
+  "_capBreakComment": "심연 결정 · 강화 상한 돌파(2026-11-10 사장님 확정). 6주차부터 심연 벽이 거의 안 움직이던 원인이 '강화 상한'이라, 그 상한을 심연에서 번 결정으로 연다. 결정 = 그 주에 10층 배수를 깰 때마다 (층 ÷ 10) × crystalPerMilestone — 매주 1층부터라 매주 다시 번다(50층이면 1+2+3+4+5 = 15). 한 단계 = 상한 +step 레벨, 비용 costs[단계]. 치명·회피는 강화 예산에 딱 맞춘 줄이라 제외. 값 곡선은 원래 상한 기준 그대로(넘어선 레벨은 레벨당 같은 값). ❌ 젤리 아님(무한 통로 §2.6). 측정: balance_sim --tiers=4 --no-fairy --abyss-weeks=16.",
+  "capBreak": {
+   "crystalPerMilestone": 1,
+   "step": 10,
+   "costs": [10, 15, 20, 25, 30],
+   "exclude": ["crit", "moveSpeed"]
+  },
+  "_imprintComment": "심연 각인(2026-11-10) — 심연 결정으로 사는 영구 능력치. 상한 돌파는 강화를 다 찍은 최상위만 쓴다(시뮬 유저는 16주가 지나도 상한 전에 골드에서 막힌다) — 각인이 모두의 벽을 민다. 1레벨당 perLevel 배율(공격·체력·보스 피해는 곱, 방어는 맷집에 곱, 회복은 체력을 따라간다). 비용 = costBase × costGrowth^레벨(올림). 극한 뒤에만 생기는 결정이라 90일 표 밖.",
+  "imprint": { "perLevel": { "attack": 0.03, "maxHp": 0.03, "defense": 0.03, "bossDamage": 0.03 }, "costBase": 4, "costGrowth": 1.12 },
+  "_mutationsComment": "심연 주간 변이(2026-11-10 사장님 확정) — 매주 하나가 모든 유저에게 같이 걸린다(주 id 해시, 두 주 연속 같지 않게). 몬스터 쪽 monsterHp·bossHp·threat · 내 쪽 attack·attackSpeed·critChance·critDamage·bossDamage·maxHp·defense·hpRegen·evade 배율. 하나를 올리면 하나를 내리는 맞바꿈이라 같은 층을 매주 다른 장비·펫·스킬로 오르게 한다. 순위는 같은 변이끼리 겨룬다.",
+  "mutations": [
+   { "id": "armored", "name": { "ko": "단단한 껍질", "en": "Hard Shells", "ja": "硬い殻" }, "desc": { "ko": "몬스터 체력 +60% · 몬스터 공격 −40%", "en": "Enemy HP +60% · enemy damage −40%", "ja": "敵の体力 +60% · 敵の攻撃 −40%" }, "mult": { "monsterHp": 1.6, "bossHp": 1.6, "threat": 0.6 } },
+   { "id": "swarm", "name": { "ko": "광폭한 무리", "en": "Frenzied Swarm", "ja": "狂暴な群れ" }, "desc": { "ko": "몬스터 공격 +60% · 몬스터 체력 −30%", "en": "Enemy damage +60% · enemy HP −30%", "ja": "敵の攻撃 +60% · 敵の体力 −30%" }, "mult": { "threat": 1.6, "monsterHp": 0.7, "bossHp": 0.7 } },
+   { "id": "sealed", "name": { "ko": "급소 봉인", "en": "Sealed Weak Spots", "ja": "急所封印" }, "desc": { "ko": "치명타 확률 −70% · 공격력 +35%", "en": "Crit chance −70% · attack +35%", "ja": "会心率 −70% · 攻撃力 +35%" }, "mult": { "critChance": 0.3, "attack": 1.35 } },
+   { "id": "giant", "name": { "ko": "거인 보스", "en": "Giant Bosses", "ja": "巨人ボス" }, "desc": { "ko": "보스 체력 ×2.5 · 몬스터 체력 −40% · 보스 피해 +30%", "en": "Boss HP ×2.5 · enemy HP −40% · boss damage +30%", "ja": "ボス体力 ×2.5 · 敵の体力 −40% · ボスダメージ +30%" }, "mult": { "bossHp": 2.5, "monsterHp": 0.6, "bossDamage": 1.3 } },
+   { "id": "drought", "name": { "ko": "메마른 땅", "en": "Drought", "ja": "乾いた大地" }, "desc": { "ko": "체력 회복 없음 · 최대 체력 +40% · 방어 +30%", "en": "No HP regen · max HP +40% · defense +30%", "ja": "体力回復なし · 最大体力 +40% · 防御 +30%" }, "mult": { "hpRegen": 0, "maxHp": 1.4, "defense": 1.3 } },
+   { "id": "gale", "name": { "ko": "질풍", "en": "Gale", "ja": "疾風" }, "desc": { "ko": "공격 속도 +30% · 몬스터 공격 +30%", "en": "Attack speed +30% · enemy damage +30%", "ja": "攻撃速度 +30% · 敵の攻撃 +30%" }, "mult": { "attackSpeed": 1.3, "threat": 1.3 } },
+   { "id": "shadow", "name": { "ko": "그림자 숲", "en": "Shadow Woods", "ja": "影の森" }, "desc": { "ko": "회피 ×2 · 최대 체력 −30%", "en": "Evade ×2 · max HP −30%", "ja": "回避 ×2 · 最大体力 −30%" }, "mult": { "evade": 2, "maxHp": 0.7 } }
   ]
  },
+ "_weekendEventsComment": "주말 이벤트 사냥터(2026-11-10 사장님 확정) — 토요일 0시(KST, 결투 시즌 시간대)부터 hours 시간 동안 **온라인 사냥**에만 배율(방치 정산·선물·일일보상 제외 — 서버 봉투 밖으로 안 나간다). 매주 하나씩 돌아간다. gold·xp·bugFind·materialFind. ❌ 젤리 없음. 평균 효과는 작다(예: 골드 ×1.5 가 4주에 한 번 이틀 = 온라인 골드 약 +4%).",
+ "weekendEvents": {
+  "hours": 48,
+  "events": [
+   { "id": "golden", "name": { "ko": "황금 주말", "en": "Golden Weekend", "ja": "黄金の週末" }, "desc": { "ko": "사냥 골드 ×1.5", "en": "Hunting gold ×1.5", "ja": "狩りのゴールド ×1.5" }, "mult": { "gold": 1.5 } },
+   { "id": "migration", "name": { "ko": "곤충 대이동", "en": "Bug Migration", "ja": "昆虫の大移動" }, "desc": { "ko": "곤충 발견 ×2", "en": "Bug finds ×2", "ja": "昆虫発見 ×2" }, "mult": { "bugFind": 2 } },
+   { "id": "harvest", "name": { "ko": "풍성한 숲", "en": "Bountiful Forest", "ja": "実りの森" }, "desc": { "ko": "재료 ×2", "en": "Materials ×2", "ja": "素材 ×2" }, "mult": { "materialFind": 2 } },
+   { "id": "study", "name": { "ko": "배움의 주말", "en": "Study Weekend", "ja": "学びの週末" }, "desc": { "ko": "경험치 ×2", "en": "XP ×2", "ja": "経験値 ×2" }, "mult": { "xp": 2 } }
+  ]
+ },
+ "_achievementsComment": "업적 · 칭호(2026-11-10 사장님 확정) — 보상은 칭호만(능력치·재화 없음). 달성은 세이브에서 바로 계산한다(core_save achievementDone — 앱·서버 같은 함수, 서버는 달성 안 한 칭호를 지운다). kind: dexDiscover·dexConquer·dexVariant·bosses·tier(0~3)·abyss(역대 최고 층)·league(0 브론즈~4 다이아)·level·forge(공방 레벨, 화면 등급 = 레벨+1)·kotk(왕중왕전 최고 성적, 64 ÷ 순위 — 우승 64·4강 16·16강 4)·specimens(표본 수).",
+ "achievements": [
+  {"id":"dex5","kind":"dexDiscover","goal":5,"title":{"ko":"초보 채집가","en":"Rookie Collector","ja":"見習い採集家"},"desc":{"ko":"곤충 5종 발견","en":"Discover 5 species","ja":"昆虫5種を発見"}},
+  {"id":"dex10","kind":"dexDiscover","goal":10,"title":{"ko":"숲의 탐험가","en":"Forest Explorer","ja":"森の探検家"},"desc":{"ko":"곤충 10종 발견","en":"Discover 10 species","ja":"昆虫10種を発見"}},
+  {"id":"dex20","kind":"dexDiscover","goal":20,"title":{"ko":"곤충 박사","en":"Bug Professor","ja":"昆虫博士"},"desc":{"ko":"곤충 20종 발견","en":"Discover 20 species","ja":"昆虫20種を発見"}},
+  {"id":"conq5","kind":"dexConquer","goal":5,"title":{"ko":"조련사","en":"Trainer","ja":"調教師"},"desc":{"ko":"곤충 5종 정복","en":"Conquer 5 species","ja":"昆虫5種を制覇"}},
+  {"id":"conq20","kind":"dexConquer","goal":20,"title":{"ko":"곤충왕의 스승","en":"Mentor of Kings","ja":"虫王の師"},"desc":{"ko":"곤충 20종 정복","en":"Conquer 20 species","ja":"昆虫20種を制覇"}},
+  {"id":"var1","kind":"dexVariant","goal":1,"title":{"ko":"빛을 본 자","en":"Shiny Finder","ja":"光を見た者"},"desc":{"ko":"이색 곤충 1종","en":"Find 1 variant species","ja":"色違い1種"}},
+  {"id":"var5","kind":"dexVariant","goal":5,"title":{"ko":"무지개 수집가","en":"Rainbow Collector","ja":"虹の収集家"},"desc":{"ko":"이색 곤충 5종","en":"Find 5 variant species","ja":"色違い5種"}},
+  {"id":"boss11","kind":"bosses","goal":11,"title":{"ko":"보스 사냥꾼","en":"Boss Hunter","ja":"ボスハンター"},"desc":{"ko":"보스 11마리 수집","en":"Collect 11 bosses","ja":"ボス11体を収集"}},
+  {"id":"boss22","kind":"bosses","goal":22,"title":{"ko":"보스 토벌대","en":"Boss Slayer","ja":"ボス討伐隊"},"desc":{"ko":"보스 22마리 수집","en":"Collect 22 bosses","ja":"ボス22体を収集"}},
+  {"id":"boss44","kind":"bosses","goal":44,"title":{"ko":"보스 정복자","en":"Boss Conqueror","ja":"ボス征服者"},"desc":{"ko":"보스 44마리 수집","en":"Collect all 44 bosses","ja":"ボス44体を収集"}},
+  {"id":"tier1","kind":"tier","goal":1,"title":{"ko":"보통의 도전자","en":"Normal Challenger","ja":"ノーマル挑戦者"},"desc":{"ko":"보통 난이도 진입","en":"Reach Normal","ja":"ノーマルに到達"}},
+  {"id":"tier2","kind":"tier","goal":2,"title":{"ko":"어려움 돌파자","en":"Hard Breaker","ja":"ハード突破者"},"desc":{"ko":"어려움 난이도 진입","en":"Reach Hard","ja":"ハードに到達"}},
+  {"id":"tier3","kind":"tier","goal":3,"title":{"ko":"극한의 채집가","en":"Extreme Collector","ja":"極限の採集家"},"desc":{"ko":"극한 난이도 진입","en":"Reach Extreme","ja":"エクストリームに到達"}},
+  {"id":"abyss10","kind":"abyss","goal":10,"title":{"ko":"심연 입문","en":"Abyss Novice","ja":"深淵入門"},"desc":{"ko":"심연 10층","en":"Abyss floor 10","ja":"深淵10階"}},
+  {"id":"abyss50","kind":"abyss","goal":50,"title":{"ko":"심연 탐험가","en":"Abyss Explorer","ja":"深淵の探検家"},"desc":{"ko":"심연 50층","en":"Abyss floor 50","ja":"深淵50階"}},
+  {"id":"abyss100","kind":"abyss","goal":100,"title":{"ko":"심연의 지배자","en":"Lord of the Abyss","ja":"深淵の支配者"},"desc":{"ko":"심연 100층","en":"Abyss floor 100","ja":"深淵100階"}},
+  {"id":"league2","kind":"league","goal":2,"title":{"ko":"골드 결투가","en":"Gold Duelist","ja":"ゴールド決闘者"},"desc":{"ko":"결투 골드 리그","en":"Reach Gold league","ja":"ゴールドリーグ到達"}},
+  {"id":"league4","kind":"league","goal":4,"title":{"ko":"다이아 결투가","en":"Diamond Duelist","ja":"ダイヤ決闘者"},"desc":{"ko":"결투 다이아 리그","en":"Reach Diamond league","ja":"ダイヤリーグ到達"}},
+  {"id":"lv50","kind":"level","goal":50,"title":{"ko":"숙련 채집가","en":"Seasoned Collector","ja":"熟練採集家"},"desc":{"ko":"캐릭터 레벨 50","en":"Character level 50","ja":"キャラLv.50"}},
+  {"id":"lv100","kind":"level","goal":100,"title":{"ko":"전설의 채집가","en":"Legendary Collector","ja":"伝説の採集家"},"desc":{"ko":"캐릭터 레벨 100","en":"Character level 100","ja":"キャラLv.100"}},
+  {"id":"forge10","kind":"forge","goal":10,"title":{"ko":"대장장이","en":"Blacksmith","ja":"鍛冶屋"},"desc":{"ko":"공방 11등급","en":"Workshop grade 11","ja":"工房11等級"}},
+  {"id":"forge19","kind":"forge","goal":19,"title":{"ko":"명장","en":"Master Smith","ja":"名匠"},"desc":{"ko":"공방 20등급","en":"Workshop grade 20","ja":"工房20等級"}},
+  {"id":"kotk16","kind":"kotk","goal":4,"title":{"ko":"전당의 영웅","en":"Hall Hero","ja":"殿堂の英雄"},"desc":{"ko":"왕중왕전 16강 이상","en":"King of Kings top 16","ja":"王中王戦ベスト16以上"}},
+  {"id":"kotk4","kind":"kotk","goal":16,"title":{"ko":"왕중왕전 4강","en":"Kings Semifinalist","ja":"王中王戦ベスト4"},"desc":{"ko":"왕중왕전 4강 이상","en":"King of Kings top 4","ja":"王中王戦ベスト4以上"}},
+  {"id":"kotk1","kind":"kotk","goal":64,"title":{"ko":"왕중왕","en":"King of Kings","ja":"王中王"},"desc":{"ko":"왕중왕전 우승","en":"Win the King of Kings","ja":"王中王戦で優勝"}},
+  {"id":"spec1","kind":"specimens","goal":1,"title":{"ko":"전사한 영웅의 주인","en":"Keeper of a Fallen Hero","ja":"散った英雄の主"},"desc":{"ko":"표본 1마리","en":"Own 1 specimen","ja":"標本1匹"}}
+ ],
+ "_zoneTiersEasyComment": "2026-11-09 사장님 확정: 쉬움 hp[1]·threat[1]·bossHp[0]·bossHp[1] 4칸은 시뮬 fit 이 아니라 실제 유저 전력(운영 DB 강화 분포 + zone_check)으로 맞췄다 — fit 결과로 덮지 말 것. 이유·방법은 CLAUDE.md §2.4. 2026-11-12 사장님 확정(이탈 방지 · 완만하게): bossHp[1] 4,500,000→1,600,000 · hp[2] 9492→1800 · threat[2] 614.95→400 · bossHp[2] 360885→700000 — 사냥터 2 보스를 잡을 누적 골드 75.7M→4.1M, 사냥터 3 에 시간을 나누고 사냥터 4 도착은 그대로(tool/zone_ladder.dart). 이 8칸도 fit 으로 덮지 않는다. 같은 날 에뮬 직접 플레이 뒤 다시 낮춤: bossHp[1] 1,600,000→800,000(실측 사냥터 2 수입 분당 약 880골드 — 누적 4.1M 은 수십 시간) · 사냥터 1 hp[0] 58→45 · threat[0] 4.99→3.5(강화 0 신규가 1분 안에 쓰러졌다) · 사냥터 3 threat[2] 400→300 · bossHp[2] 700,000→900,000(더 약하게 도착하는 사냥터 3 — balance_sim 도착 판정이 죽음이었다, 사냥터 4 도착은 그대로).",
  "zoneTiers": [
   {
-   "hp": [58, 2139, 9492, 13750, 17849, 23755, 28244, 36410, 46641, 53325, 67770],
-   "bossHp": [150000, 699247, 360885, 434790, 790332, 806104, 1506141, 2222118, 2191986, 3885034, 5455569],
-   "threat": [4.99, 147.93, 614.95, 931.23, 1139.64, 1516.28, 1635.84, 2128.59, 2735.21, 2942.58, 3707.35],
+   "hp": [45, 281, 1800, 13750, 17849, 23755, 28244, 36410, 46641, 53325, 67770],
+   "bossHp": [5000, 800000, 900000, 434790, 790332, 806104, 1506141, 2222118, 2191986, 3885034, 5455569],
+   "threat": [3.5, 23.2, 300, 931.23, 1139.64, 1516.28, 1635.84, 2128.59, 2735.21, 2942.58, 3707.35],
    "gold": [
     12.61,
     20.18,

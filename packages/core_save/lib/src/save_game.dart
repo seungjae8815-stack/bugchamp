@@ -35,7 +35,10 @@ const int kSaveSchemaVersion = 18;
 ///    곤충 `lru`(놓친 능력치 굴리기 사용 횟수) — 서버가 줄지 않게(큰 쪽) 지킨다.
 /// 29(2026-10-24 §12 암수): 암수 크기 차이 — 세이브 표식 `sxm`(암컷 크기를 암컷 범위로 옮겼다) · 곤충 `sizeMm` 이 성별 범위 안의 값 ·
 ///    도감 암컷 최대 크기 `sf`. 구버전이 `sxm` 을 떨궈도 서버가 저장본 값을 지킨다(3단계).
-const int kSaveFeatureLevel = 29;
+/// 30(2026-11-09, 1.0.28): 곤충 양분 게이지 — 곤충 `rw`. 버전과 상관없이 서버가 **총 가치(희귀도 가치 + rw)가 줄면** 저장본 값을
+///    지킨다(`guardGradeBugFields` — 구버전이 rw 를 떨구면 가치가 준 것으로 보인다). 오른 몫은 사라진 같은 종 곤충 가치만큼만.
+///    같은 1.0.28(출시 전)에 심연 결정 `abC` · 그 주 최고 층 `abWt` · 강화 상한 돌파 `upCap` · 심연 각인 `abI` · 칭호 `ttl` · 심연 포자 `abSp`·심연 연구 `abRL`·`abRS` · 왕중왕전 표본 `rtB`·우승 곤충 `ktC`·최고 성적 `ktB`·반영한 주 `ktW`·참가 주 `ktP`·참가 곤충 `ktE`(모두 서버 소유) · 첫 1회 무료 `ffu` · 신규 부화 횟수 `bgH`(서버가 줄지 않게 합침)(2026-11-10) — 구버전 업로드는 서버가 저장본 값을 지킨다.
+const int kSaveFeatureLevel = 30;
 
 /// 프로필 그림 id 형식(2026-10-10) — `assets/data/avatars.json` 의 id 꼴이자 Supabase `profiles.avatar` 의 SQL 검사와 같다.
 /// 서버는 이 꼴이 아닌 값을 받지 않는다(긴 문자열이 상대의 결투 후보 응답·세션에 그대로 실려 나갔다 — 2026-10-10 점검).
@@ -75,7 +78,10 @@ const String kDefaultNickname = '채집가';
 ///
 /// 실제 상한·충전속도는 `battle.json → tickets`(§6). 여기 값은 필드가 없는
 /// 세이브를 읽을 때의 **구조적 기본값**일 뿐이라 밸런스가 아니다.
-const int kDefaultPvpTickets = 10;
+/// ⚠️ 상한(`tickets.max`)과 같아야 한다(2026-11-09) — 상한이 10 → 5 로 줄 때 이 값이 10 으로 남아
+/// 새 계정이 상한을 넘겨 시작했고, 성충이 하나도 없는 신규 유저에게 결투 탭 "가득 참" 점이 떴다.
+/// 서버 `ticket_default_test` 가 실제 battle.json 과 맞춰 본다.
+const int kDefaultPvpTickets = 5;
 
 /// 하루 시청 상한이 걸린 광고 기능의 키(= [SaveGame.adUseCounts] 의 키).
 /// 지금은 결투 티켓 하나뿐 — 다른 보상형 광고는 구조적 상한이 이미 있다
@@ -730,6 +736,16 @@ class SaveGame {
     this.bugFilterMinGrade = Grade.common,
     this.nicknameSet = false,
     this.avatar,
+    this.title,
+    this.retiredBugs = const {},
+    this.kotkChampBugs = const {},
+    this.specimenRecords = const {},
+    this.kotkBest = 0,
+    this.kotkDoneWeek,
+    this.kotkEntryWeek,
+    this.kotkEntryBug,
+    this.firstFreeUsed = const {},
+    this.beginnerHatches = 0,
     this.eventRewardRound,
     this.pvpScoreSeason,
     this.pvpRankRewardSeason,
@@ -747,6 +763,13 @@ class SaveGame {
     this.abyssWeek,
     this.abyssBest = 0,
     this.abyssBossBest = 0,
+    this.abyssCrystals = 0,
+    this.abyssWeekTop = 0,
+    this.abyssSpores = 0,
+    this.abyssLabLevels = const {},
+    this.abyssLabSlot,
+    this.abyssImprint = const {},
+    this.upgradeCapUps = const {},
     this.abyssScoreWeek,
     this.abyssRankMark,
     this.abyssFloorAt,
@@ -856,6 +879,50 @@ class SaveGame {
   /// 모두 무료라 서버는 검사하지 않는다(채팅·순위의 그림은 `profiles.avatar` 에서 온다 — 앱이 고를 때 올린다).
   /// 구버전 앱(feat 23 미만) 업로드는 서버가 저장본 값을 지킨다.
   final String? avatar;
+
+  /// 고른 칭호(업적 id, JSON `ttl`, 2026-11-10) — 달성한 업적만(서버가 지운다, core_save `achievementDone`).
+  final String? title;
+
+  /// 왕중왕전에서 져 **표본**이 된 곤충 id(JSON `rtB`, 2026-11-10 사장님 확정) — **서버 소유**.
+  /// 결투·대회·짝짓기·먹이 재료로 못 쓰고, 펫 장착은 된다. 채집함 칸을 차지하지 않는다([storageUsed]).
+  final Set<String> retiredBugs;
+
+  /// 왕중왕전에서 **우승한** 곤충 id(JSON `ktC`, 2026-11-12 사장님 확정) — **서버 소유**. 채집함·상세에 황금 왕관이 붙고,
+  /// 채집함 정리에서 지킨다.
+  final Set<String> kotkChampBugs;
+
+  /// 표본이 된 왕중왕전 기록(JSON `rtI`, 2026-11-12) — 곤충 id → `회차:순위`(`3:16`). **서버 소유**.
+  /// 표본함 카드에 "제3회 16강"을 적고, 16강 이상은 금테 진열장으로 보인다.
+  final Map<String, String> specimenRecords;
+
+  /// 왕중왕전 최고 성적(JSON `ktB`) — 1 우승 · 2 준우승 · 4 4강 · 8 8강 · 16 16강 · 32 32강, 0 없음. **서버 소유**.
+  final int kotkBest;
+
+  /// 왕중왕전 결과를 마지막으로 반영한 주(JSON `ktW`). **서버 소유**.
+  final String? kotkDoneWeek;
+
+  /// 지금 왕중왕전에 참가 중인 주와 곤충(JSON `ktP`·`ktE`) — **서버 소유**. 결과가 반영되면 비운다.
+  /// 참가 곤충은 결과가 나올 때까지 먹이·방생·짝짓기 재료로 못 쓴다(앱이 막는다).
+  final String? kotkEntryWeek;
+  final String? kotkEntryBug;
+
+  /// 처음 써 본 기능의 **즉시 완료 1회 무료**를 쓴 기능 키(JSON `ffu`, 2026-11-12) — [kFirstFreeKeys].
+  /// 서버는 저장본과 합친다(지워 올려 다시 무료를 받지 못하게).
+  final Set<String> firstFreeUsed;
+
+  /// 신규 부화 단축을 받은 부화 횟수(JSON `bgH`, 2026-11-12) — `PetConfig.beginnerHatchCount` 까지. 서버는 줄지 않게 합친다.
+  final int beginnerHatches;
+
+  /// 표본이거나 왕중왕전 참가 중이라 재료로 쓰면 안 되는 곤충 id.
+  Set<String> get kotkLockedBugIds => {...retiredBugs, ?kotkEntryBug};
+
+  /// 표본 수(지금 들고 있는 것만).
+  int get specimenCount => retiredBugs.isEmpty
+      ? 0
+      : bugs.where((b) => retiredBugs.contains(b.id)).length;
+
+  /// 채집함 칸을 차지하는 곤충 수 — 표본은 표본함에 있어 빼고 센다.
+  int get storageUsed => bugs.length - specimenCount;
 
   /// 활성 버프별 만료 UTC 시각. now 이후면 활성으로 취급.
   final Map<BuffKind, DateTime> buffExpiry;
@@ -1052,6 +1119,29 @@ class SaveGame {
   /// 월요일 자정에 달려야 이긴다 — 이 값이 도착 시간 대신 **전력**으로 가르게 한다.
   final int abyssBossBest;
 
+  /// 심연 결정(2026-11-10, JSON `abC`) — 그 주에 10층 배수를 깰 때마다 받는다(`AbyssConfig.crystalsAt`).
+  /// 강화 상한 돌파([upgradeCapUps])에만 쓴다. 기기가 들고, 서버가 깬 층만큼만 늘게 자른다.
+  final int abyssCrystals;
+
+  /// 이번 주에 깬 가장 높은 층(JSON `abWt`) — 결정은 이보다 높은 층을 깰 때만 받는다(쓰러져 내려갔다
+  /// 같은 10층을 다시 깨며 결정을 또 받지 못하게). 주가 바뀌면 0.
+  final int abyssWeekTop;
+
+  /// 심연 포자(2026-11-12, JSON `abSp`) — 그 주에 처음 깬 층 보스·10층 역대 첫 도달(`AbyssLabConfig`). 심연 연구에만 쓴다.
+  final int abyssSpores;
+
+  /// 심연 연구 레벨(JSON `abRL`) — 일반 연구(`rsL`)와 따로(구버전이 모르는 연구 id 를 만나지 않게).
+  final Map<String, int> abyssLabLevels;
+
+  /// 진행 중인 심연 연구(JSON `abRS`) — 심연이 열리면 생기는 전용 1칸.
+  final ResearchSlot? abyssLabSlot;
+
+  /// 심연 각인 레벨(JSON `abI`, 2026-11-10) — 키 `attack`·`maxHp`·`defense`·`bossDamage` → 레벨. 결정으로 산다. 줄지 않는다(서버).
+  final Map<String, int> abyssImprint;
+
+  /// 강화 종류별 상한 돌파 단계(JSON `upCap`) — 한 단계 = 상한 +`capBreak.step` 레벨. 줄지 않는다(서버).
+  final Map<UpgradeKind, int> upgradeCapUps;
+
   /// 주간 순위 점수를 마지막으로 기록한 주. **서버 소유**(조회를 점수 낸 사람만 돌리려고).
   final String? abyssScoreWeek;
 
@@ -1220,11 +1310,11 @@ class SaveGame {
   final int storageCapacity;
 
   /// 보유 곤충이 칸 수를 채웠는지(= 새 곤충을 받을 수 없음).
-  bool get storageFull => bugs.length >= storageCapacity;
+  bool get storageFull => storageUsed >= storageCapacity;
 
   /// 남은 채집함 칸 수(0 이상).
   int get storageFree {
-    final free = storageCapacity - bugs.length;
+    final free = storageCapacity - storageUsed;
     return free < 0 ? 0 : free;
   }
 
@@ -1280,6 +1370,8 @@ class SaveGame {
         e.key,
     ?trainPointJob?.bugId,
     ...lockedBugIds,
+    // 왕중왕전 표본·참가 중인 곤충(2026-11-10) — 재료·방생에서 뺀다.
+    ...kotkLockedBugIds,
   };
 
   /// 곤충 목록을 [storageCapacity] 이하로 줄인 세이브(초과분 폐기).
@@ -1287,7 +1379,7 @@ class SaveGame {
   /// 상한 내면 자기 자신을 그대로 돌려준다. 구버전 앱·조작된 업로드가 상한을
   /// 넘긴 세이브를 올려도 서버가 이걸로 잘라 세이브 비대화를 원천 차단한다.
   SaveGame trimmedToStorage() {
-    if (bugs.length <= storageCapacity) {
+    if (storageUsed <= storageCapacity) {
       // 잠금 목록에 없는 곤충 id 가 남아 있으면 치운다(세이브 크기·조작 업로드 방어).
       if (lockedBugIds.isEmpty) return this;
       final ids = {for (final b in bugs) b.id};
@@ -1307,9 +1399,12 @@ class SaveGame {
             variant: b.variant != BugVariant.none,
           ),
       ],
-      capacity: storageCapacity,
+      // 표본은 칸 밖이다 — 상한에 표본 수를 더하고 늘 남긴다.
+      capacity: storageCapacity + specimenCount,
       // 훈련 기록·잠금은 약한 보호 — [keepBugIds] 의 `preferred` 참조.
       pinned: {
+        ...retiredBugs,
+        ...kotkChampBugs,
         ...equippedBugIds,
         ...incubating.keys,
         ?trainingJob?.bugId,
@@ -1715,6 +1810,18 @@ class SaveGame {
     String? nickname,
     bool? nicknameSet,
     String? avatar,
+    String? title,
+    bool clearTitle = false,
+    Set<String>? retiredBugs,
+    Set<String>? kotkChampBugs,
+    Map<String, String>? specimenRecords,
+    int? kotkBest,
+    String? kotkDoneWeek,
+    String? kotkEntryWeek,
+    String? kotkEntryBug,
+    bool clearKotkEntry = false,
+    Set<String>? firstFreeUsed,
+    int? beginnerHatches,
     Map<BuffKind, DateTime>? buffExpiry,
     Map<String, int>? missionProgress,
     Map<String, int>? missionClaims,
@@ -1754,6 +1861,14 @@ class SaveGame {
     String? abyssWeek,
     int? abyssBest,
     int? abyssBossBest,
+    int? abyssCrystals,
+    int? abyssWeekTop,
+    int? abyssSpores,
+    Map<String, int>? abyssLabLevels,
+    ResearchSlot? abyssLabSlot,
+    bool clearAbyssLabSlot = false,
+    Map<String, int>? abyssImprint,
+    Map<UpgradeKind, int>? upgradeCapUps,
     String? abyssScoreWeek,
     String? abyssRankMark,
     DateTime? abyssFloorAt,
@@ -1871,6 +1986,18 @@ class SaveGame {
     nickname: nickname ?? this.nickname,
     nicknameSet: nicknameSet ?? this.nicknameSet,
     avatar: avatar ?? this.avatar,
+    title: clearTitle ? null : (title ?? this.title),
+    retiredBugs: retiredBugs ?? this.retiredBugs,
+    kotkChampBugs: kotkChampBugs ?? this.kotkChampBugs,
+    specimenRecords: specimenRecords ?? this.specimenRecords,
+    kotkBest: kotkBest ?? this.kotkBest,
+    kotkDoneWeek: kotkDoneWeek ?? this.kotkDoneWeek,
+    kotkEntryWeek: clearKotkEntry
+        ? null
+        : (kotkEntryWeek ?? this.kotkEntryWeek),
+    kotkEntryBug: clearKotkEntry ? null : (kotkEntryBug ?? this.kotkEntryBug),
+    firstFreeUsed: firstFreeUsed ?? this.firstFreeUsed,
+    beginnerHatches: beginnerHatches ?? this.beginnerHatches,
     buffExpiry: buffExpiry ?? this.buffExpiry,
     missionProgress: missionProgress ?? this.missionProgress,
     missionClaims: missionClaims ?? this.missionClaims,
@@ -1910,6 +2037,15 @@ class SaveGame {
     abyssWeek: abyssWeek ?? this.abyssWeek,
     abyssBest: abyssBest ?? this.abyssBest,
     abyssBossBest: abyssBossBest ?? this.abyssBossBest,
+    abyssCrystals: abyssCrystals ?? this.abyssCrystals,
+    abyssWeekTop: abyssWeekTop ?? this.abyssWeekTop,
+    abyssSpores: abyssSpores ?? this.abyssSpores,
+    abyssLabLevels: abyssLabLevels ?? this.abyssLabLevels,
+    abyssLabSlot: clearAbyssLabSlot
+        ? null
+        : (abyssLabSlot ?? this.abyssLabSlot),
+    abyssImprint: abyssImprint ?? this.abyssImprint,
+    upgradeCapUps: upgradeCapUps ?? this.upgradeCapUps,
     abyssScoreWeek: abyssScoreWeek ?? this.abyssScoreWeek,
     abyssRankMark: abyssRankMark ?? this.abyssRankMark,
     abyssFloorAt: abyssFloorAt ?? this.abyssFloorAt,
@@ -2101,6 +2237,19 @@ class SaveGame {
         json['nicknameSet'] as bool? ??
         (json['nickname'] as String? ?? kDefaultNickname) != kDefaultNickname,
     avatar: json['avatar'] as String?,
+    title: json['ttl'] as String?,
+    retiredBugs: {for (final x in (json['rtB'] as List? ?? const [])) '$x'},
+    kotkChampBugs: {for (final x in (json['ktC'] as List? ?? const [])) '$x'},
+    specimenRecords: {
+      for (final e in ((json['rtI'] as Map?) ?? const {}).entries)
+        '${e.key}': '${e.value}',
+    },
+    kotkBest: (json['ktB'] as num?)?.toInt() ?? 0,
+    kotkDoneWeek: json['ktW'] as String?,
+    kotkEntryWeek: json['ktP'] as String?,
+    kotkEntryBug: json['ktE'] as String?,
+    firstFreeUsed: {for (final x in (json['ffu'] as List? ?? const [])) '$x'},
+    beginnerHatches: (json['bgH'] as num?)?.toInt() ?? 0,
     buffExpiry: _buffsFromJson(
       json['buffExpiry'] as Map<String, dynamic>? ?? const {},
     ),
@@ -2197,6 +2346,25 @@ class SaveGame {
       0,
       999,
     ),
+    abyssCrystals: math.max(0, (json['abC'] as num?)?.toInt() ?? 0),
+    abyssWeekTop: math.max(0, (json['abWt'] as num?)?.toInt() ?? 0),
+    abyssSpores: math.max(0, (json['abSp'] as num?)?.toInt() ?? 0),
+    abyssLabLevels: {
+      for (final e in ((json['abRL'] as Map?) ?? const {}).entries)
+        if (e.value is num) '${e.key}': (e.value as num).toInt(),
+    },
+    abyssLabSlot: json['abRS'] is Map
+        ? ResearchSlot.fromJson(Map<String, dynamic>.from(json['abRS'] as Map))
+        : null,
+    abyssImprint: {
+      for (final e in ((json['abI'] as Map?) ?? const {}).entries)
+        if ((e.value as num).toInt() > 0) '${e.key}': (e.value as num).toInt(),
+    },
+    upgradeCapUps: {
+      for (final e in ((json['upCap'] as Map?) ?? const {}).entries)
+        if (UpgradeKind.fromKeyOrNull('${e.key}') case final k?)
+          if ((e.value as num).toInt() > 0) k: (e.value as num).toInt(),
+    },
     abyssScoreWeek: json['abyssScoreWeek'] as String?,
     abyssRankMark: json['abyRk'] as String?,
     abyssFloorAt: json['abyssFloorAt'] == null
@@ -2422,6 +2590,16 @@ class SaveGame {
     'nicknameSet': nicknameSet,
     // 고르지 않았으면(기본 프로필) 키를 안 쓴다 — 구버전 업로드의 "몰라서 안 보냄"과 갈리게 서버가 feat 로 구분한다.
     if (avatar != null) 'avatar': avatar,
+    if (title != null) 'ttl': title,
+    if (retiredBugs.isNotEmpty) 'rtB': retiredBugs.toList(),
+    if (kotkChampBugs.isNotEmpty) 'ktC': kotkChampBugs.toList(),
+    if (specimenRecords.isNotEmpty) 'rtI': specimenRecords,
+    if (kotkBest > 0) 'ktB': kotkBest,
+    if (kotkDoneWeek != null) 'ktW': kotkDoneWeek,
+    if (kotkEntryWeek != null) 'ktP': kotkEntryWeek,
+    if (kotkEntryBug != null) 'ktE': kotkEntryBug,
+    if (firstFreeUsed.isNotEmpty) 'ffu': firstFreeUsed.toList(),
+    if (beginnerHatches > 0) 'bgH': beginnerHatches,
     'buffExpiry': {
       for (final e in buffExpiry.entries)
         e.key.key: e.value.toUtc().toIso8601String(),
@@ -2488,6 +2666,14 @@ class SaveGame {
     if (abyssWeek != null) 'abyssWeek': abyssWeek,
     if (abyssBest > 0) 'abyssBest': abyssBest,
     if (abyssBossBest > 0) 'abyssBossBest': abyssBossBest,
+    if (abyssCrystals > 0) 'abC': abyssCrystals,
+    if (abyssWeekTop > 0) 'abWt': abyssWeekTop,
+    if (abyssSpores > 0) 'abSp': abyssSpores,
+    if (abyssLabLevels.isNotEmpty) 'abRL': abyssLabLevels,
+    if (abyssLabSlot != null) 'abRS': abyssLabSlot!.toJson(),
+    if (abyssImprint.isNotEmpty) 'abI': abyssImprint,
+    if (upgradeCapUps.isNotEmpty)
+      'upCap': {for (final e in upgradeCapUps.entries) e.key.key: e.value},
     if (abyssScoreWeek != null) 'abyssScoreWeek': abyssScoreWeek,
     if (abyssRankMark != null) 'abyRk': abyssRankMark,
     if (abyssFloorAt != null) 'abyssFloorAt': abyssFloorAt!.toIso8601String(),

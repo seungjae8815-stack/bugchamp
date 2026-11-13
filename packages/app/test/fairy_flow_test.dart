@@ -300,12 +300,13 @@ void main() {
       await tester.tap(find.text('영웅 · Lv.3').last); // 동행 중인 f0(에픽) 칸
       await tester.pumpAndSettle(const Duration(milliseconds: 300));
       expect(find.text('동행 해제'), findsOneWidget);
-      // 동행 요정은 합성 창 대신 이유를 알린다.
-      await tester.tap(find.text('합성').last);
-      await tester.pump();
-      expect(find.text('동행 중인 요정은 합성할 수 없어요'), findsOneWidget);
-      await tester.pump(const Duration(seconds: 3));
+      // 먹이기(2026-11-09): 동행 요정도 목표가 될 수 있다 — 먹이기 창이 열린다.
+      await tester.tap(find.text('먹이기').last);
+      await tester.pumpAndSettle(const Duration(milliseconds: 300));
+      expect(find.text('요정 먹이기'), findsWidgets);
       expect(tester.takeException(), isNull);
+      await tester.tap(find.text('취소').last);
+      await tester.pumpAndSettle(const Duration(milliseconds: 300));
       await tester.tap(find.text('닫기').last);
       await tester.pumpAndSettle(const Duration(milliseconds: 300));
 

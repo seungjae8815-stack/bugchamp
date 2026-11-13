@@ -76,28 +76,21 @@ void main() {
       ),
     );
 
-    testWidgets('1.0.27 2줄(경기장·연구 완료) + 건너뛴 기기는 1.0.26 5줄까지', (tester) async {
+    testWidgets('1.0.28 7줄 + 건너뛴 기기는 1.0.27 2줄까지', (tester) async {
       await tester.pumpWidget(host(const Locale('ko'), 300));
-      expect(kWhatsNewVersion, '1.0.27');
-      expect(kPrevWhatsNewVersion, '1.0.26');
-      expect(find.textContaining('결투 경기장이 판마다'), findsOneWidget);
-      expect(find.textContaining('연구 완료'), findsOneWidget);
+      expect(kWhatsNewVersion, '1.0.28');
+      expect(kPrevWhatsNewVersion, '1.0.27');
+      expect(find.textContaining('왕중왕전'), findsWidgets);
       expect(
         whatsNewItems(lookupAppLocalizations(const Locale('ko'))),
-        hasLength(2),
+        hasLength(7),
       );
-      expect(find.textContaining('연구소가 생겼어요'), findsOneWidget);
-      expect(find.textContaining('⇄'), findsOneWidget);
-      expect(find.textContaining('올인원 패스'), findsOneWidget);
-      expect(find.textContaining('암컷 곤충이'), findsOneWidget);
-      expect(find.textContaining('곤충학자 패스의 방치 골드'), findsOneWidget);
-      expect(find.textContaining('아이폰에서도 구글'), findsOneWidget);
       expect(
         whatsNewItems(
           lookupAppLocalizations(const Locale('ko')),
           withPrev: true,
         ),
-        hasLength(7),
+        hasLength(9),
       );
       expect(tester.takeException(), isNull);
     });

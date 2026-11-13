@@ -42,6 +42,7 @@ import '../../ui/colors.dart';
 import '../../ui/avatar.dart';
 import '../../domain/red_dots.dart';
 import '../../ui/red_dot.dart';
+import '../../ui/tour.dart';
 
 const _honey = kHoney;
 
@@ -415,6 +416,8 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
   List<IndividualBug> _adults(SaveGame save, GameData data, DateTime now) {
     final cfg = data.petConfig;
     return save.bugs.where((b) {
+      // 왕중왕전 표본(2026-11-10)은 결투에 다시 나가지 못한다.
+      if (save.retiredBugs.contains(b.id)) return false;
       final st = cfg == null
           ? b.stage
           : effectiveStage(b.stage, b.stageSince, now, cfg);
@@ -680,6 +683,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
             onTap: () => _showLeagueRewards(l, data, save, battleCfg),
           ),
         ),
+        // 왕중왕전 버튼은 홈 대회 배너 줄로 옮겼다(2026-11-12 사장님).
       ),
       // 결투장 로비 그림 — 장면은 위쪽 1/3(출정 칸 뒤), 아래는 어두워 순위표 글씨가 읽힌다.
       body: Stack(
@@ -695,22 +699,25 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
           ),
           Column(
             children: [
-              const TicketBar(),
+              tourMark('battle.ticket', const TicketBar()),
               // ── 출정 곤충 3칸(순서 = 1·2·3판) ──
-              Padding(
-                padding: const EdgeInsets.fromLTRB(14, 2, 6, 0),
-                child: Row(
-                  children: [
-                    Text(
-                      l.duelSquadTitle,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w900,
-                        fontSize: 14,
-                        shadows: [Shadow(color: Colors.black, blurRadius: 4)],
+              tourMark(
+                'battle.squad',
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(14, 2, 6, 0),
+                  child: Row(
+                    children: [
+                      Text(
+                        l.duelSquadTitle,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w900,
+                          fontSize: 14,
+                          shadows: [Shadow(color: Colors.black, blurRadius: 4)],
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
               Padding(
@@ -742,7 +749,10 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
               // ── 전투 시작(출정 칸 아래 · 길게) ──
               Padding(
                 padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
-                child: _startButton(l, data, save, locale, closed, adults),
+                child: tourMark(
+                  'battle.start',
+                  _startButton(l, data, save, locale, closed, adults),
+                ),
               ),
               // ── 회복실 · 훈련소 ──
               Padding(
@@ -750,13 +760,16 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
                 child: Row(
                   children: [
                     Expanded(
-                      child: _facilityButton(
-                        art: 'hub_recovery',
-                        icon: Icons.healing_rounded,
-                        color: const Color(0xFF5FD38D),
-                        label: l.recoveryRoom,
-                        badge: injured,
-                        onTap: () => _openRecovery(data),
+                      child: tourMark(
+                        'battle.recovery',
+                        _facilityButton(
+                          art: 'hub_recovery',
+                          icon: Icons.healing_rounded,
+                          color: const Color(0xFF5FD38D),
+                          label: l.recoveryRoom,
+                          badge: injured,
+                          onTap: () => _openRecovery(data),
+                        ),
                       ),
                     ),
                     const SizedBox(width: 10),
@@ -764,14 +777,17 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
                       // 훈련 칸이 비었고 출정 곤충에게 찍을 포인트가 남았으면 빨간 점(2026-10-19).
                       child: RedDotBadge(
                         show: ref.watch(redDotsProvider).training,
-                        child: _facilityButton(
-                          art: 'hub_training',
-                          icon: Icons.fitness_center_rounded,
-                          color: const Color(0xFFFFA24A),
-                          label: l.trainingCenter,
-                          onTap: () => Navigator.of(context).push(
-                            MaterialPageRoute<void>(
-                              builder: (_) => const TrainingScreen(),
+                        child: tourMark(
+                          'battle.training',
+                          _facilityButton(
+                            art: 'hub_training',
+                            icon: Icons.fitness_center_rounded,
+                            color: const Color(0xFFFFA24A),
+                            label: l.trainingCenter,
+                            onTap: () => Navigator.of(context).push(
+                              MaterialPageRoute<void>(
+                                builder: (_) => const TrainingScreen(),
+                              ),
                             ),
                           ),
                         ),
@@ -782,24 +798,30 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
               ),
               // ── 리그 순위표(내 줄·전투 시작 버튼은 하단 고정) ──
               Expanded(
-                child: LeagueBoardView(
-                  key: _boardKey,
-                  headerHeight: 42,
-                  rewardExtra: claimable
-                      ? SizedBox(
-                          width: double.infinity,
-                          child: FilledButton.icon(
-                            onPressed: () {
-                              Navigator.of(context).pop();
-                              _claimLeague(l);
-                            },
-                            icon: const Icon(Icons.card_giftcard_rounded),
-                            label: Text(l.leagueClaimPromo),
-                          ),
-                        )
-                      : null,
-                  showHeader: false,
-                  myTeam: _myDuelTeam(data, save, locale),
+                child: tourMark(
+                  'battle.board',
+                  LeagueBoardView(
+                    key: _boardKey,
+                    headerHeight: 42,
+                    // 상대 프로필의 "연습 결투"(2026-11-10).
+                    onPractice: (id, avatar) =>
+                        unawaited(_practiceDuel(id, avatar)),
+                    rewardExtra: claimable
+                        ? SizedBox(
+                            width: double.infinity,
+                            child: FilledButton.icon(
+                              onPressed: () {
+                                Navigator.of(context).pop();
+                                _claimLeague(l);
+                              },
+                              icon: const Icon(Icons.card_giftcard_rounded),
+                              label: Text(l.leagueClaimPromo),
+                            ),
+                          )
+                        : null,
+                    showHeader: false,
+                    myTeam: _myDuelTeam(data, save, locale),
+                  ),
                 ),
               ),
             ],
@@ -2309,6 +2331,67 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
     );
   }
 
+  /// **연습 결투**(2026-11-10, 친구 결투) — 순위표에서 고른 사람의 방어팀과. 티켓·점수·부상·보상이 없다.
+  Future<void> _practiceDuel(String opponentId, String? foeAvatar) async {
+    final l = AppLocalizations.of(context);
+    final data = ref.read(gameDataProvider).value;
+    final save = ref.read(saveControllerProvider).value;
+    final server = ref.read(gameServerProvider);
+    if (data == null || save == null) return;
+    if (!server.available) {
+      showCenterToast(context, l.practiceOffline);
+      return;
+    }
+    final ids = _duelTeamIds(l);
+    if (ids == null) return;
+    final locale = Localizations.localeOf(context).languageCode;
+    final mine = duelTeamFor(
+      [for (final id in ids) save.bugs.firstWhere((b) => b.id == id)],
+      data,
+      save,
+      locale,
+    );
+    final close = _showStartOverlay(l);
+    try {
+      final res = await server.duelPractice(
+        teamBugIds: ids,
+        opponentId: opponentId,
+      );
+      if (!mounted) return;
+      if (!res.isOk || res.data?['sessionId'] == null) {
+        close();
+        showCenterToast(
+          context,
+          res.error == 'practice_cooldown'
+              ? l.practiceCooldown
+              : l.practiceFailed,
+        );
+        return;
+      }
+      final f = _foeFromServer(res.data!['foe']);
+      close();
+      await _pushDuel(
+        data: data,
+        mine: mine,
+        foe: f.foe,
+        driver: ServerDuelDriver(
+          server: server,
+          sessionId: res.data!['sessionId'].toString(),
+        ),
+        mySkins: _mySkins(save, ids),
+        foeSkins: f.skins,
+        foeBadges: res.data!['skins'] is List
+            ? skinsFromJson(res.data!['skins'])
+            : const [],
+        foeAvatar: foeAvatar ?? '',
+        // 연습 — 결과를 세이브에 들이지 않는다.
+        onFinished: (_) async {},
+      );
+    } finally {
+      close();
+    }
+  }
+
   /// 로컬 결투에서 이기면 받을 점수(고른 후보).
   int _localWinPoints = 0;
 
@@ -3748,6 +3831,10 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
       showCenterToast(context, l.squadTraining);
       return null;
     }
+    if (ids.any(save.retiredBugs.contains)) {
+      showCenterToast(context, l.kotkRetiredBug);
+      return null;
+    }
     return ids;
   }
 
@@ -3822,6 +3909,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
       _ when noTicket => l.pvpTicketNone,
       'bug_injured' => l.injuryDesc,
       'bug_training' => l.squadTraining,
+      'bug_retired' => l.kotkRetiredBug,
       'season_closed' => l.battleSeasonClosed,
       'no_offer' || 'offer_expired' || 'empty_foe' => l.duelOfferExpired,
       'not_adult' ||

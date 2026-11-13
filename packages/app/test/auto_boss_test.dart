@@ -1,6 +1,7 @@
 import 'package:app/domain/play_prefs.dart';
 import 'package:app/features/play/boss_challenge_button.dart';
 import 'package:app/l10n/app_localizations.dart';
+import 'package:core_run/core_run.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -35,6 +36,106 @@ void main() {
       PlayPrefs.instance.resetForTest();
       await PlayPrefs.instance.load();
       expect(PlayPrefs.instance.bossIntroSeen, isTrue);
+    });
+
+    test('일일보상 자동 열기 기록은 재시작 후에도 남는다', () async {
+      SharedPreferences.setMockInitialValues({});
+      await PlayPrefs.instance.load();
+      await PlayPrefs.instance.markDailyAutoShown('2026-11-09:lunch');
+      PlayPrefs.instance.resetForTest();
+      await PlayPrefs.instance.load();
+      expect(PlayPrefs.instance.dailyAutoShown, '2026-11-09:lunch');
+    });
+  });
+
+  // 곤충 상세 "성장·능력치 자세히"(2026-11-09) — 쉬움 사냥터 3 전엔 접힘, 그 뒤·기존 유저는 펼침.
+  test('bugDetailMoreDefault: 쉬움 사냥터 1·2 접힘 · 3 이상·보통 이상 펼침', () {
+    expect(bugDetailMoreDefault(topTier: 0, bestStage: 1), isFalse);
+    expect(bugDetailMoreDefault(topTier: 0, bestStage: 200), isFalse);
+    expect(bugDetailMoreDefault(topTier: 0, bestStage: 201), isTrue);
+    expect(bugDetailMoreDefault(topTier: 1, bestStage: 1), isTrue);
+  });
+
+  test('상세 펼침 선택은 재시작 후에도 남는다(고른 적 없으면 null)', () async {
+    SharedPreferences.setMockInitialValues({});
+    PlayPrefs.instance.resetForTest();
+    await PlayPrefs.instance.load();
+    expect(PlayPrefs.instance.bugDetailMore.value, isNull);
+    await PlayPrefs.instance.setBugDetailMore(true);
+    PlayPrefs.instance.resetForTest();
+    await PlayPrefs.instance.load();
+    expect(PlayPrefs.instance.bugDetailMore.value, isTrue);
+  });
+
+  // 일일보상 창 자동 열기(2026-11-09) — 쉬움 사냥터 1 유저 73% 가 일일보상을 한 번도 안 받았다.
+  group('dailyAutoOpenKey', () {
+    const daily = DailyConfig(
+      rewards: [
+        DailyReward(id: 'lunch', hour: 12),
+        DailyReward(id: 'dinner', hour: 18),
+      ],
+    );
+
+    test('열린 시간대가 없으면 띄우지 않는다', () {
+      expect(
+        dailyAutoOpenKey(daily, {}, DateTime(2026, 11, 9, 9), null),
+        isNull,
+      );
+    });
+
+    test('안 받은 점심이 열려 있으면 띄우고, 한 번 띄운 뒤엔 다시 안 띄운다', () {
+      final now = DateTime(2026, 11, 9, 13);
+      final key = dailyAutoOpenKey(daily, {}, now, null);
+      expect(key, '2026-11-09:lunch');
+      expect(dailyAutoOpenKey(daily, {}, now, key), isNull);
+    });
+
+    test('받은 시간대는 띄우지 않는다 · 어제 받은 기록은 오늘을 막지 않는다', () {
+      final now = DateTime(2026, 11, 9, 13);
+      expect(
+        dailyAutoOpenKey(daily, {'lunch': '2026-11-09'}, now, null),
+        isNull,
+      );
+      expect(
+        dailyAutoOpenKey(daily, {'lunch': '2026-11-08'}, now, null),
+        '2026-11-09:lunch',
+      );
+    });
+
+    test('점심 창을 닫고 안 받아도 저녁이 열리면 한 번 더 띄운다', () {
+      final now = DateTime(2026, 11, 9, 19);
+      expect(
+        dailyAutoOpenKey(daily, {}, now, '2026-11-09:lunch'),
+        '2026-11-09:dinner',
+      );
+      expect(dailyAutoOpenKey(daily, {}, now, '2026-11-09:dinner'), isNull);
+    });
+
+    test('저녁 창에서 저녁만 받고 닫으면 점심이 남아도 다시 안 띄운다(같은 시간대 한 번)', () {
+      final now = DateTime(2026, 11, 9, 19);
+      expect(
+        dailyAutoOpenKey(
+          daily,
+          {'dinner': '2026-11-09'},
+          now,
+          '2026-11-09:dinner',
+        ),
+        isNull,
+      );
+      // 그날 처음이면(띄운 적 없음) 점심만 남아도 띄운다 — 열쇠는 지금 시간대(저녁).
+      expect(
+        dailyAutoOpenKey(daily, {'dinner': '2026-11-09'}, now, null),
+        '2026-11-09:dinner',
+      );
+      expect(
+        dailyAutoOpenKey(
+          daily,
+          {'lunch': '2026-11-09', 'dinner': '2026-11-09'},
+          now,
+          null,
+        ),
+        isNull,
+      );
     });
   });
 

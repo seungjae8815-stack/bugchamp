@@ -434,7 +434,11 @@ ResearchConfig _cfg(Map<String, dynamic> raw) => ResearchConfig.fromJson(raw);
 /// 하루 방치 시간) · `fitSampleShare`(표본 합계 = **패스 유저** 180일 수입의 이 비율 — 1 에 가까울수록 아슬아슬).
 /// 방치 효율은 run_config `offlineEfficiency`. 패스 블록이 없으면 예전처럼 무과금 기준(_sampleShare).
 class _PassFit {
-  const _PassFit({this.timeCut = 0, this.idleFactor = 0, this.share = _sampleShare});
+  const _PassFit({
+    this.timeCut = 0,
+    this.idleFactor = 0,
+    this.share = _sampleShare,
+  });
   final double timeCut;
   final double idleFactor;
   final double share;
@@ -444,7 +448,9 @@ class _PassFit {
     final p = raw['pass'];
     if (p is! Map) return const _PassFit();
     final run =
-        jsonDecode(File('../app/assets/data/run_config.json').readAsStringSync())
+        jsonDecode(
+              File('../app/assets/data/run_config.json').readAsStringSync(),
+            )
             as Map<String, dynamic>;
     final eff = (run['offlineEfficiency'] as num?)?.toDouble() ?? 0.3;
     final idleH = (p['fitIdleHours'] as num?)?.toDouble() ?? 0;
@@ -851,10 +857,7 @@ void _passCompare(ResearchConfig c, FitBasis basis, _PassFit pf) {
     idleFactor: pf.idleFactor,
     passCut: pf.timeCut,
   );
-  line(
-    '패스(방치 표본 · 시간 −${(pf.timeCut * 100).toStringAsFixed(0)}%)',
-    withPass,
-  );
+  line('패스(방치 표본 · 시간 −${(pf.timeCut * 100).toStringAsFixed(0)}%)', withPass);
   blocks(withPass);
   final noPass = scheduleResearch(c, basis);
   line('패스 없음', noPass);

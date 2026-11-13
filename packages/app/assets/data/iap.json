@@ -50,10 +50,11 @@
    "kind": "consumable",
    "type": "jelly",
    "priceKrw": 1200,
-   "sort": 100,
+   "sort": 11,
    "grant": {
     "jelly": 60
    },
+   "firstBonusJelly": 60,
    "name": {
     "ko": "곤충젤리 소",
     "en": "Jelly Pouch",
@@ -72,11 +73,12 @@
    "kind": "consumable",
    "type": "jelly",
    "priceKrw": 5500,
-   "sort": 110,
+   "sort": 12,
    "bonusPct": 9,
    "grant": {
     "jelly": 300
    },
+   "firstBonusJelly": 300,
    "name": {
     "ko": "곤충젤리 중",
     "en": "Jelly Bag",
@@ -94,11 +96,12 @@
    "kind": "consumable",
    "type": "jelly",
    "priceKrw": 11000,
-   "sort": 120,
+   "sort": 13,
    "bonusPct": 20,
    "grant": {
     "jelly": 660
    },
+   "firstBonusJelly": 660,
    "name": {
     "ko": "곤충젤리 대",
     "en": "Jelly Box",
@@ -116,11 +119,12 @@
    "kind": "consumable",
    "type": "jelly",
    "priceKrw": 29000,
-   "sort": 130,
+   "sort": 14,
    "bonusPct": 31,
    "grant": {
     "jelly": 1900
    },
+   "firstBonusJelly": 1900,
    "name": {
     "ko": "곤충젤리 특대",
     "en": "Jelly Crate",
@@ -138,11 +142,12 @@
    "kind": "consumable",
    "type": "jelly",
    "priceKrw": 59000,
-   "sort": 140,
+   "sort": 15,
    "bonusPct": 42,
    "grant": {
     "jelly": 4200
    },
+   "firstBonusJelly": 4200,
    "name": {
     "ko": "곤충젤리 최대",
     "en": "Jelly Vault",
@@ -160,7 +165,7 @@
    "kind": "nonConsumable",
    "type": "skin",
    "priceKrw": 3300,
-   "sort": 200,
+   "sort": 16,
    "skinId": "gold_rhino",
    "grant": {"jelly": 100, "bugEggs": [{"species": "rhino_japanese", "potential": 4}]},
    "name": {
@@ -180,7 +185,7 @@
    "kind": "nonConsumable",
    "type": "skin",
    "priceKrw": 3300,
-   "sort": 210,
+   "sort": 17,
    "skinId": "albino_stag",
    "grant": {"jelly": 100, "bugEggs": [{"species": "stag_miyama", "potential": 4}]},
    "name": {
@@ -320,7 +325,7 @@
     "ja": "研究パス（30日）"
    },
    "desc": {
-    "ko": "앱을 꺼 둔 사이에도 연구 표본이 모여요\n곤충학자 패스가 있으면 16시간까지 모여요\n연구 시간도 15% 줄어요",
+    "ko": "앱을 꺼 둔 사이에도 연구 샘플이 모여요\n곤충학자 패스가 있으면 16시간까지 모여요\n연구 시간도 15% 줄어요",
     "en": "Research samples keep coming while the app is closed\nUp to 16h with the Entomologist Pass\nResearch time is also 15% shorter",
     "ja": "アプリを閉じている間も研究サンプルが集まります\n昆虫学者パスがあれば16時間まで集まります\n研究時間も15%短くなります"
    },

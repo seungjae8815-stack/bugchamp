@@ -52,7 +52,11 @@ typedef _Snap = ({
   int owned,
 });
 
+/// `--merge` — 먹이기가 켜져 있어도 옛 3마리 합성으로 돌린다(전후 비교용, 2026-11-09).
+var _useMerge = false;
+
 void main(List<String> args) {
+  _useMerge = args.contains('--merge');
   var runs = 300;
   var elitesPerDay = 180.0;
   var checkins = 3;
@@ -254,8 +258,13 @@ FairyState _checkin(
       }
     }
   }
-  // 4) 자동 합성.
-  f = autoMergeFairies(f, cfg, rng).state!;
+  // 4) 자동 합성 — 먹이기가 켜졌으면(2026-11-09) 자동 먹이기(앱 화면과 같은 함수). `--merge` 면 옛 합성으로 비교.
+  if (cfg.gaugeOn && !_useMerge) {
+    final fed = autoFeedFairies(f, cfg);
+    if (fed.isOk) f = fed.state!;
+  } else {
+    f = autoMergeFairies(f, cfg, rng).state!;
+  }
   // 5) 동행 = 가장 좋은 요정.
   if (f.fairies.isNotEmpty) {
     final best = ([...f.fairies]..sort(_better)).first;

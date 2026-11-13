@@ -20,6 +20,7 @@ import 'skill_grade_up_dialog.dart';
 import '../../ui/colors.dart';
 import '../../domain/red_dots.dart';
 import '../../ui/red_dot.dart';
+import '../../ui/tour.dart';
 
 const _honey = kHoney;
 
@@ -80,19 +81,23 @@ class _SkillPanelState extends ConsumerState<SkillPanel> {
         ],
         const SizedBox(height: 6),
         Expanded(
-          child: ListView(
-            padding: EdgeInsets.zero,
-            children: [
-              for (final def in sorted) _row(l, cfg, save, def, locale, slots),
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8),
-                child: Text(
-                  l.skillHowToGet,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(color: Colors.white54, fontSize: 11),
+          child: tourMark(
+            'skill.list',
+            ListView(
+              padding: EdgeInsets.zero,
+              children: [
+                for (final def in sorted)
+                  _row(l, cfg, save, def, locale, slots),
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  child: Text(
+                    l.skillHowToGet,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(color: Colors.white54, fontSize: 11),
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ],
@@ -133,21 +138,27 @@ class _SkillPanelState extends ConsumerState<SkillPanel> {
               // 오늘 무료 뽑기·무료 소탕이 남았으면 빨간 점(2026-10-19 — 하루 무료를 모르고 지나갔다).
               RedDotBadge(
                 show: ref.watch(redDotsProvider).skillDraw,
-                child: _button(
-                  l.skillGacha,
-                  () => _open(SkillGachaDialog(cfg: cfg, locale: locale)),
-                  accent: _honey,
-                  art: 'gacha',
+                child: tourMark(
+                  'skill.gacha',
+                  _button(
+                    l.skillGacha,
+                    () => _open(SkillGachaDialog(cfg: cfg, locale: locale)),
+                    accent: _honey,
+                    art: 'gacha',
+                  ),
                 ),
               ),
               const SizedBox(width: 5),
               RedDotBadge(
                 show: ref.watch(redDotsProvider).skillSweep,
-                child: _button(
-                  l.skillSweep,
-                  () => _open(SkillSweepDialog(cfg: cfg, locale: locale)),
-                  accent: const Color(0xFF4FC3F7),
-                  art: 'sweep',
+                child: tourMark(
+                  'skill.sweep',
+                  _button(
+                    l.skillSweep,
+                    () => _open(SkillSweepDialog(cfg: cfg, locale: locale)),
+                    accent: const Color(0xFF4FC3F7),
+                    art: 'sweep',
+                  ),
                 ),
               ),
               const SizedBox(width: 5),
@@ -155,11 +166,14 @@ class _SkillPanelState extends ConsumerState<SkillPanel> {
               Stack(
                 clipBehavior: Clip.none,
                 children: [
-                  _button(
-                    l.skillGradeUp,
-                    () => _open(SkillGradeUpDialog(cfg: cfg, locale: locale)),
-                    accent: const Color(0xFFCE93D8),
-                    art: 'gradeup',
+                  tourMark(
+                    'skill.grade',
+                    _button(
+                      l.skillGradeUp,
+                      () => _open(SkillGradeUpDialog(cfg: cfg, locale: locale)),
+                      accent: const Color(0xFFCE93D8),
+                      art: 'gradeup',
+                    ),
                   ),
                   if (skillIdleGradeUps(cfg, save).isNotEmpty)
                     const Positioned(top: -3, right: -3, child: RedDot()),
@@ -188,28 +202,35 @@ class _SkillPanelState extends ConsumerState<SkillPanel> {
                 // 순서: **조각 4등급 먼저, 그 뒤에 만능 조각**(사장님 지시
                 // 2026-09-20). 등급마다 조각·만능을 붙여 놓으니 같은 줄에
                 // 두 종류가 번갈아 나와 무엇이 무엇인지 읽기 어려웠다.
-                child: Wrap(
-                  spacing: 8,
-                  runSpacing: 3,
-                  children: [
-                    for (final g in kSkillGrades) _shardTally(l, cfg, save, g),
-                    // 만능은 일반 등급이 없다 — 아래 등급이 없어 만들 수 없다.
-                    for (final g in kSkillGrades.skip(1))
-                      if (save.gradeShards(g) > 0)
-                        _shardTally(l, cfg, save, g, wild: true),
-                  ],
+                child: tourMark(
+                  'skill.shards',
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 3,
+                    children: [
+                      for (final g in kSkillGrades)
+                        _shardTally(l, cfg, save, g),
+                      // 만능은 일반 등급이 없다 — 아래 등급이 없어 만들 수 없다.
+                      for (final g in kSkillGrades.skip(1))
+                        if (save.gradeShards(g) > 0)
+                          _shardTally(l, cfg, save, g, wild: true),
+                    ],
+                  ),
                 ),
               ),
             ],
           ),
           const SizedBox(height: 6),
-          Wrap(
-            spacing: 5,
-            runSpacing: 5,
-            children: [
-              for (var i = 0; i < cfg.maxSlots; i++)
-                _slotChip(cfg, save, i, slots, locale),
-            ],
+          tourMark(
+            'skill.slots',
+            Wrap(
+              spacing: 5,
+              runSpacing: 5,
+              children: [
+                for (var i = 0; i < cfg.maxSlots; i++)
+                  _slotChip(cfg, save, i, slots, locale),
+              ],
+            ),
           ),
           if (more)
             Padding(

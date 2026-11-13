@@ -14,16 +14,22 @@ enum VerifyVerdict {
   unknown,
 }
 
+/// 판정 + 중복 지급을 막을 **거래 고유 키**(2026-11-09). 검증 함수가 iOS 면 `ios:<transaction_id>` 를 준다 —
+/// iOS 영수증 문자열은 갱신될 때마다 바뀌어, 문자열로 막으면 같은 거래를 새 영수증으로 다시 내 또 받을 수 있었다.
+/// null 이면(안드로이드·옛 함수) 호출부가 영수증 문자열을 그대로 쓴다.
+typedef VerifyOutcome = ({VerifyVerdict verdict, String? purchaseKey});
+
 /// 구글 플레이 영수증 검증기.
 ///
 /// 이미 배포된 Supabase Edge Function(`verify-purchase`)을 호출한다.
 /// 검증 로직을 서버에 다시 구현하지 않는 이유: 두 벌이 되면 한쪽만 고쳐져
 /// "Edge 는 거부하는데 서버는 통과"가 생긴다.
 abstract interface class ReceiptVerifier {
-  Future<VerifyVerdict> verify({
+  Future<VerifyOutcome> verify({
     required String productId,
     required String purchaseToken,
     required String userJwt,
+    String? transactionId,
   });
 }
 
@@ -39,10 +45,11 @@ class EdgeFunctionVerifier implements ReceiptVerifier {
   final http.Client _http;
 
   @override
-  Future<VerifyVerdict> verify({
+  Future<VerifyOutcome> verify({
     required String productId,
     required String purchaseToken,
     required String userJwt,
+    String? transactionId,
   }) async {
     try {
       final res = await _http.post(
@@ -56,32 +63,44 @@ class EdgeFunctionVerifier implements ReceiptVerifier {
         body: jsonEncode({
           'productId': productId,
           'purchaseToken': purchaseToken,
+          // iOS 거래 id(1.0.28 앱부터) — 함수가 그 거래를 정확히 골라 거래 키를 돌려준다.
+          if (transactionId != null && transactionId.isNotEmpty)
+            'transactionId': transactionId,
         }),
       );
       final body = jsonDecode(res.body);
-      if (body is Map && body['ok'] == true) return VerifyVerdict.valid;
+      if (body is Map && body['ok'] == true) {
+        final key = body['purchaseKey'];
+        return (
+          verdict: VerifyVerdict.valid,
+          purchaseKey: key is String && key.isNotEmpty ? key : null,
+        );
+      }
 
       final reason = (body is Map ? body['reason'] : null)?.toString();
       // 확정적으로 가짜인 경우만 invalid. 나머지는 재시도 여지를 남긴다.
       const fatal = {'invalid', 'owned_by_other'};
-      if (reason != null && fatal.contains(reason))
-        return VerifyVerdict.invalid;
-      return VerifyVerdict.unknown;
+      if (reason != null && fatal.contains(reason)) {
+        return (verdict: VerifyVerdict.invalid, purchaseKey: null);
+      }
+      return (verdict: VerifyVerdict.unknown, purchaseKey: null);
     } catch (_) {
-      return VerifyVerdict.unknown;
+      return (verdict: VerifyVerdict.unknown, purchaseKey: null);
     }
   }
 }
 
 /// 테스트·개발용 — 항상 같은 판정을 돌려준다.
 class FixedVerifier implements ReceiptVerifier {
-  const FixedVerifier(this.verdict);
+  const FixedVerifier(this.verdict, {this.purchaseKey});
   final VerifyVerdict verdict;
+  final String? purchaseKey;
 
   @override
-  Future<VerifyVerdict> verify({
+  Future<VerifyOutcome> verify({
     required String productId,
     required String purchaseToken,
     required String userJwt,
-  }) async => verdict;
+    String? transactionId,
+  }) async => (verdict: verdict, purchaseKey: purchaseKey);
 }

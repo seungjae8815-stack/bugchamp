@@ -172,18 +172,25 @@ Widget gradeActionsCard(
   final pinned = save.pinnedBugIds.contains(bug.id);
   final maxed = bug.potential >= kPotentialMax;
   final need = cfg.upgradeCost(bug.potential);
-  final have = save.essence[bug.speciesId] ?? 0;
+  // 정수 흡수(2026-11-09) — 쓸 수 있는 양 = 옛 정수(그 종 통) + 이 곤충의 등급 양분(core_save `gradeFundsOf`).
+  final absorbed = essenceAbsorbed(data);
+  final have = absorbed
+      ? gradeFundsOf(save, bug)
+      : save.essence[bug.speciesId] ?? 0;
   final name = sp.name.resolve(locale);
 
   // 정수가 모자라면 버튼을 끈다 — 켜 둔 채 누르게 하면 창까지 열고 나서야 "부족"을 알게 된다.
   final short = !isEgg && !maxed && have < need;
+  final desc = absorbed
+      ? l.igGradeUpFunds('$have', '$need')
+      : l.igGradeUpDesc(name, '$have', '$need');
   final upDesc = isEgg
       ? l.igGradeUpEgg
       : maxed
       ? l.igGradeUpMax
       : short
-      ? '${l.igGradeUpDesc(name, '$have', '$need')} · ${l.igNeedMoreEssence('${need - have}')}'
-      : l.igGradeUpDesc(name, '$have', '$need');
+      ? '$desc · ${absorbed ? l.igNeedMoreFunds('${need - have}') : l.igNeedMoreEssence('${need - have}')}'
+      : desc;
   final essenceReason = isEgg
       ? l.igToEssenceEgg
       : pinned
@@ -283,29 +290,43 @@ Widget gradeActionsCard(
             ],
           ),
         ],
-        const SizedBox(height: 6),
-        Row(
-          children: [
-            Expanded(
-              child: Text(
-                essenceReason ?? l.igVaultHint,
-                style: const TextStyle(color: Color(0x99FFFFFF), fontSize: 11),
+        // 정수 흡수 뒤엔 "정수로 바꾸기"가 없다 — 같은 종 곤충은 먹인다(희귀도 양분 버튼).
+        if (!absorbed) ...[
+          const SizedBox(height: 6),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  essenceReason ?? l.igVaultHint,
+                  style: const TextStyle(
+                    color: Color(0x99FFFFFF),
+                    fontSize: 11,
+                  ),
+                ),
               ),
-            ),
-            const SizedBox(width: 8),
-            OutlinedButton(
-              onPressed: essenceReason != null
-                  ? null
-                  : () => confirmBugToEssence(ctx, r, data, bug),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: const Color(0xFFB39DDB),
-                side: const BorderSide(color: Color(0x66B39DDB)),
-                minimumSize: const Size(0, 34),
+              const SizedBox(width: 8),
+              OutlinedButton(
+                onPressed: essenceReason != null
+                    ? null
+                    : () => confirmBugToEssence(ctx, r, data, bug),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: const Color(0xFFB39DDB),
+                  side: const BorderSide(color: Color(0x66B39DDB)),
+                  minimumSize: const Size(0, 34),
+                ),
+                child: Text(l.igToEssence),
               ),
-              child: Text(l.igToEssence),
-            ),
-          ],
-        ),
+            ],
+          ),
+        ],
+        // 남은 옛 정수 안내 — 등급 올리기·재굴림이 등급 양분보다 먼저 쓴다.
+        if (absorbed && (save.essence[bug.speciesId] ?? 0) > 0) ...[
+          const SizedBox(height: 4),
+          Text(
+            l.igLegacyEssenceFirst('${save.essence[bug.speciesId]}'),
+            style: const TextStyle(color: Color(0x99FFFFFF), fontSize: 11),
+          ),
+        ],
       ],
     ),
   );
@@ -467,7 +488,10 @@ Future<void> _openGradeUp(
   final sp = data.species(bug.speciesId);
   final name = sp.name.resolve(Localizations.localeOf(ctx).languageCode);
   final need = cfg.upgradeCost(bug.potential);
-  final have = save.essence[bug.speciesId] ?? 0;
+  final absorbed = essenceAbsorbed(data);
+  final have = absorbed
+      ? gradeFundsOf(save, bug)
+      : save.essence[bug.speciesId] ?? 0;
   final maxPotions = save.growthPotions < cfg.potionMaxPerUse
       ? save.growthPotions
       : cfg.potionMaxPerUse;
@@ -509,7 +533,9 @@ Future<void> _openGradeUp(
           ),
           const SizedBox(height: 8),
           Text(
-            l.igGradeUpDesc(name, '$have', '$need'),
+            absorbed
+                ? l.igGradeUpFunds('$have', '$need')
+                : l.igGradeUpDesc(name, '$have', '$need'),
             style: TextStyle(
               color: have >= need ? Colors.white : const Color(0xFFFF8A65),
               fontSize: 13,
@@ -518,7 +544,9 @@ Future<void> _openGradeUp(
           ),
           if (have < need)
             Text(
-              l.igNeedMoreEssence('${need - have}'),
+              absorbed
+                  ? l.igNeedMoreFunds('${need - have}')
+                  : l.igNeedMoreEssence('${need - have}'),
               style: const TextStyle(color: Color(0xFFFF8A65), fontSize: 12),
             ),
           const SizedBox(height: 10),
@@ -581,7 +609,11 @@ Future<void> _openGradeUp(
   if (!res.isOk) {
     showCenterToast(ctx, switch (res.error) {
       'no_essence' =>
-        need > have ? l.igNeedMoreEssence('${need - have}') : l.igNoEssence,
+        need > have
+            ? (absorbed
+                  ? l.igNeedMoreFunds('${need - have}')
+                  : l.igNeedMoreEssence('${need - have}'))
+            : l.igNoEssence,
       'egg' => l.igGradeUpEgg,
       'max' => l.igGradeUpMax,
       'no_potion' || 'potion_count' => l.igNoPotion,

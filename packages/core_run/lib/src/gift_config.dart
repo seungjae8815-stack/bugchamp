@@ -64,7 +64,12 @@ class GiftConfig {
     this.freeDoubleDaily = 1,
     this.doubleJellyMin = 0,
     this.doubleJellyMax = 0,
+    this.huntMaterialShare = 1.0,
   });
+
+  /// 사냥 분치 보상의 **재료 몫 비율**(2026-11-12 사장님 확정 1/3) — 골드는 그대로, 재료만 이 비율로 준다.
+  /// 쉬움 5일 시뮬에서 재료를 1,826억 벌고 85만만 썼다(강화 50레벨까지 재료 0 — 쓸 데가 없었다). 1 이면 예전.
+  final double huntMaterialShare;
 
   /// 첫 선물까지 지연(초).
   final int firstDelaySec;
@@ -187,6 +192,7 @@ class GiftConfig {
     freeDoubleDaily: (json['freeDoubleDaily'] as num?)?.toInt() ?? 1,
     doubleJellyMin: (json['doubleJellyMin'] as num?)?.toInt() ?? 0,
     doubleJellyMax: (json['doubleJellyMax'] as num?)?.toInt() ?? 0,
+    huntMaterialShare: (json['huntMaterialShare'] as num?)?.toDouble() ?? 1.0,
     tiers: (json['tiers'] as List? ?? const [])
         .cast<Map<String, dynamic>>()
         .map(GiftTier.fromJson)

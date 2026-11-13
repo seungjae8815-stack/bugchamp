@@ -319,6 +319,34 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
             );
           }
           final board = snap.data!;
+          // 서버에서 못 받았으면 가짜(NPC) 순위를 진짜처럼 보이지 않고 안내만(2026-11-12 사장님 확정 —
+          // 연결이 나쁠 때 한국어 가짜 이름이 영어·일본어 유저에게도 순위로 떴다).
+          if (!board.live) {
+            return Column(
+              children: [
+                _kindTabs(l),
+                Expanded(
+                  child: Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          l.leaderboardLoadFail,
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(color: Colors.white70),
+                        ),
+                        const SizedBox(height: 8),
+                        TextButton(
+                          onPressed: () => setState(() {}),
+                          child: Text(l.retryButton),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            );
+          }
           return Column(
             children: [
               _kindTabs(l),

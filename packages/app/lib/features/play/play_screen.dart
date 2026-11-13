@@ -14,6 +14,8 @@ import 'package:uuid/uuid.dart';
 
 import 'pet_attackers.dart';
 import 'offline_reward_table.dart';
+import 'abyss_imprint_dialog.dart';
+import 'achievements_dialog.dart';
 import 'buff_wait_dialog.dart';
 import '../shop/craft_screen.dart' show StoreProductCard;
 import '../../domain/pass_expiry.dart';
@@ -21,6 +23,7 @@ import '../../domain/store_iap_service.dart' show storePricesProvider;
 import '../character/fairy_panel.dart' show openFairyWindow;
 import '../../ui/sheet_close.dart';
 import '../../ui/toast.dart';
+import '../../ui/tour.dart';
 import '../../app_version.dart';
 import '../../data/game_data.dart';
 import '../../domain/guild_service.dart';
@@ -30,6 +33,7 @@ import '../../domain/audio_service.dart';
 import '../../domain/combat_power.dart';
 import '../../domain/chat_service.dart';
 import '../../domain/notify_prefs.dart';
+import '../../domain/discovery.dart';
 import '../../domain/play_prefs.dart';
 import 'boss_challenge_button.dart';
 import '../../domain/auth_service.dart';
@@ -52,6 +56,7 @@ import '../../ui/fairy_art.dart';
 import '../../ui/concept_card.dart';
 import '../../ui/event_badge.dart';
 import '../../ui/format.dart';
+import '../../ui/achievement_title.dart';
 import '../../ui/game_dialog.dart';
 import '../../ui/jelly_confirm.dart';
 import '../../ui/guest_warning.dart';
@@ -65,7 +70,10 @@ import 'monster_gallery.dart';
 import '../battle/duel_capture_screen.dart';
 import '../storage/skin_gallery.dart';
 import '../storage/hatch_reveal.dart';
+import '../battle/kotk_screen.dart';
 import '../event/event_screen.dart';
+import '../storage/specimen_box.dart';
+import '../../ui/weekly_summary.dart' show WeeklyStats;
 import '../roadmap/roadmap_screen.dart';
 import '../notice/notice_screen.dart';
 import '../../domain/review_service.dart';
@@ -158,8 +166,9 @@ void _showUpgradeInfo(
   BuildContext context,
   AppLocalizations l,
   UpgradeKind kind,
-  double cur,
-) {
+  double cur, {
+  String? extra,
+}) {
   showConceptCard(
     context,
     // 업그레이드 목록과 동일한 아이콘(이미지 없으면 동일 색상칩 폴백).
@@ -182,7 +191,9 @@ void _showUpgradeInfo(
       ),
     ),
     title: _statLabel(l, kind),
-    body: _statDesc(l, kind),
+    body: extra == null
+        ? _statDesc(l, kind)
+        : '${_statDesc(l, kind)}\n\n$extra',
     closeLabel: l.actionClose,
   );
 }
@@ -473,6 +484,12 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
   /// 처음 게이지가 찼을 때의 안내 팝업이 떠 있다(중복으로 띄우지 않게).
   bool _bossIntroShowing = false;
 
+  /// 일일보상 창 자동 열기 대기 — 홈이 이만큼 이어서 보여야 연다(시작 팝업이 먼저 뜨게, 2026-11-09).
+  final _dailyAuto = AutoBossCountdown(seconds: 2);
+
+  /// 새 곤충 발견 창 대기 — 처치 연출이 끝나고 화면이 잠깐 가라앉은 뒤에(2026-11-09, [DiscoveryFeed]).
+  final _discoveryWait = AutoBossCountdown(seconds: 1);
+
   /// 같은 사냥터에서 자동 도전이 연달아 지면 그 사냥터는 자동을 멈춘다(2026-10-09 사장님 확정).
   final _autoFails = AutoBossFailGuard();
 
@@ -580,7 +597,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
   double _playerHitFlash = 0;
   double _screenShake = 0;
 
-  int _buyAmount = 1;
+  final _buyAmount = 1;
   final List<_Pop> _pops = [];
   final List<_Impact> _impacts = [];
   final List<_Particle> _particles = [];
@@ -879,6 +896,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
 
   @override
   void dispose() {
+    _luckyTimer?.cancel();
     WidgetsBinding.instance.removeObserver(this);
     serverDisconnected.removeListener(_onConnectionChanged);
     DeviceSession.taken.removeListener(_onConnectionChanged);
@@ -1020,6 +1038,9 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                     abyssFloor: abyss,
                   ))
             .toDouble();
+    // 심연 주간 변이(2026-11-10) — 몬스터 쪽 체력 배율.
+    final mut = _abyssMutation(ref.read(saveControllerProvider).requireValue);
+    if (mut != null) _hpMax *= mut.of(_isBoss ? 'bossHp' : 'monsterHp');
     // 엘리트는 **적응형 체력 위에** 곱한다(월드 관문과 같은 층 — §7 기준 밖).
     // 기준에 넣으면 일반 몬스터까지 같이 세져 엘리트가 사건이 아니라 인플레가 된다.
     _isElite = isEliteAt(
@@ -1159,13 +1180,18 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     // 흡즙(스킬 패시브) — 처치 회복 자체를 키운다. 곤충도 같은 배율.
     final save = ref.read(saveControllerProvider).value;
     final skills = _data.skillConfig;
-    final mult = (save == null || skills == null)
+    // 연구 "처치 회복"(2026-11-12)도 같은 자리에 곱한다.
+    final researchMult = save == null
+        ? 1.0
+        : researchKillHealMult(_data.researchFx(save.researchLevels));
+    final skillMult = (save == null || skills == null)
         ? 1.0
         : skillKillHealMult(
             skills,
             levels: save.skillLevels,
             equipped: save.equippedSkills,
           );
+    final mult = researchMult * skillMult;
     _playerHp = math.min(
       _playerHpMax,
       _playerHp +
@@ -1355,6 +1381,56 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
   ///  - 종 패시브를 기준에 넣으면 어떤 종을 껴도 결과가 같아져서, 종을 고르는
   ///    의미가 통째로 사라진다(= 종 패시브를 만든 이유가 무너진다).
   ///  - 도감을 기준에 넣으면 채울수록 몬스터도 세져서 모을 이유가 없어진다.
+  /// 이번 주 심연 변이 — 심연 안에서만(밖이면 null). 모든 유저에게 같다(core_save `abyssMutationAt`).
+  /// 변이 길들이기(심연 연구, 2026-11-12) — 불리한 배율만 1 쪽으로 당긴다(이름·설명은 그대로).
+  AbyssMutation? _abyssMutation(SaveGame save) => save.inAbyss
+      ? abyssMutationAt(
+          _config,
+          _data.battleConfig ?? const BattleConfig(),
+          _clock.now().toUtc(),
+        )?.tamed(
+          abyssLabFx(
+            save,
+            _data.researchConfig,
+          ).of(ResearchEffect.mutationTame),
+        )
+      : null;
+
+  /// 지금 열린 주말 이벤트(없으면 null) — 결투 시즌과 같은 고정 시간대(KST).
+  ({WeekendEvent event, DateTime endsAt})? _weekendEvent() =>
+      _config.weekendEvents.at(
+        _clock.now().toUtc(),
+        (_data.battleConfig ?? const BattleConfig()).seasonTzOffsetMinutes,
+      );
+
+  /// 주말 이벤트 띠(2026-11-10) — 상단 줄 아래. 누르면 설명.
+  Widget _weekendBar(AppLocalizations l) {
+    final w = _weekendEvent();
+    if (w == null) return const SizedBox.shrink();
+    final lang = Localizations.localeOf(context).languageCode;
+    String pick(Map<String, String> m) => m[lang] ?? m['en'] ?? m['ko'] ?? '';
+    final left = w.endsAt.difference(_clock.now().toUtc());
+    final leftText = left.inHours >= 1
+        ? l.weekendHours('${left.inHours}')
+        : l.upgradeFxMin('${math.max(1, left.inMinutes)}');
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+      color: const Color(0x33FFC107),
+      child: Text(
+        l.weekendEventBar(pick(w.event.name), pick(w.event.desc), leftText),
+        textAlign: TextAlign.center,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: const TextStyle(
+          color: Color(0xFFFFE082),
+          fontWeight: FontWeight.w800,
+          fontSize: 11.5,
+        ),
+      ),
+    );
+  }
+
   CharacterStats _stats(SaveGame save) {
     // 버프 아래 층(펫·장비·종 패시브·스킬 패시브·요정·길드·도감)은 교환소와 같은 함수다.
     var s = huntStatsUncapped(
@@ -1387,6 +1463,10 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
         boostBonus: s.boostBonus,
       );
     }
+    // 심연 주간 변이(2026-11-10) — 내 쪽 배율. 심연 밖이면 null.
+    s = applyAbyssMutation(s, _abyssMutation(save));
+    // 주말 이벤트(2026-11-10) — 온라인 사냥 보상 배율(방치·선물 제외).
+    s = applyWeekendEvent(s, _weekendEvent()?.event);
     // 맨 마지막에 치명확률 상한을 씌운다 — 업그레이드·펫·장비·버프가 **다
     // 더해진 뒤**의 값이라야 실제로 100%에 닿았는지 알 수 있다.
     // 넘친 만큼은 치명피해로 돌아가므로 전력은 그대로다.
@@ -1425,22 +1505,28 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     // (체력 x3.35)인 계정은 일반 몬스터 한 대가 캐릭터 체력의 51% 였다
     // (2026-09-15 zone_check 실측 — 곤충 체력을 빼면 15%).
     final charShare = _split?.playerHpMult ?? 1.0;
-    final threat = habitatThreat(
-      _config,
-      _stage - 1,
-      boss: boss,
-      playerToughness: toughnessOf(perm) * charShare,
-      gearToughness: toughnessOf(geared) * charShare,
-      // 회차가 오르면 **맞는 게 아프다** — 여기가 난이도의 본체다.
-      tier: save.difficultyTier,
-      abyssFloor: activeAbyssFloor(save),
-    );
+    final threat =
+        habitatThreat(
+          _config,
+          _stage - 1,
+          boss: boss,
+          playerToughness: toughnessOf(perm) * charShare,
+          gearToughness: toughnessOf(geared) * charShare,
+          // 회차가 오르면 **맞는 게 아프다** — 여기가 난이도의 본체다.
+          tier: save.difficultyTier,
+          abyssFloor: activeAbyssFloor(save),
+        ) *
+        (_abyssMutation(save)?.of('threat') ?? 1.0);
     final walkMul = walking ? _config.walkThreatMult : 1.0;
     if (walkMul <= 0) return;
     // 테라리엘(피해 감소) — 켜져 있는 동안만.
     final fairyGuard = 1 - _fairyOnValue(save, 'damageReduce').clamp(0.0, 0.8);
     final incoming =
         threat * 100 / (100 + stats.defense) * walkMul * fairyGuard;
+    // 안내 창(사냥터 클리어·게스트 경고·튜토리얼 등)이 화면을 가리는 동안은 맞지 않는다 — 사냥터 2 에 막 도착해
+    // 창을 읽는 사이 창 뒤에서 쓰러져 아래 칸으로 내려갔고, 쓰러졌다는 안내도 못 봤다(2026-11-12 에뮬 점검).
+    // 내 공격·처치는 그대로 돈다(방치 게임 — 창이 떠도 사냥은 계속된다). 다른 탭을 볼 때는 그대로 맞는다(무적이 되지 않게).
+    if (tourShowing || !(ModalRoute.of(context)?.isCurrent ?? true)) return;
     _enemyAtkAcc += dt;
     // 간격·배율은 데이터다(§6). 간격이 길수록 같은 DPS 가 **한 대로 뭉친다** —
     // 가랑비(1.5초마다 1~2%)를 한 대 15~20% 로 바꾼 자리(2026-09-14).
@@ -1563,6 +1649,12 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     _particles.removeWhere((pt) => pt.age > 0.5);
     _tickSkills(dt);
     _tickAutoBoss(dt);
+    // 발견 창이 먼저 — 띄우는 순간 관문을 잡으므로 같은 프레임의 일일보상 자동 열기는 기다린다.
+    _tickDiscovery(dt);
+    _tickDailyAuto(dt);
+    _tickTour();
+    _tickGiftNotice(dt);
+    _tickTips(dt);
 
     if (_defeated) {
       _defeatT -= dt;
@@ -2231,9 +2323,15 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
         _bossChallenge = false;
         final paused = _endBossChallengeLost();
         if (mounted) {
+          final l = AppLocalizations.of(context);
+          final lost = _bossLostText(l, _bossLeftPct, paused);
+          // 무엇을 올릴지 짚어 준다(강화 패널의 "추천"과 같은 줄, 2026-11-10).
+          final rec = _fx?.best;
           showCenterToast(
             context,
-            _bossLostText(AppLocalizations.of(context), _bossLeftPct, paused),
+            rec == null
+                ? lost
+                : '$lost\n${l.bossLostRecommend(_statLabel(l, rec))}',
           );
         }
         _bossLeftPct = null;
@@ -2257,19 +2355,30 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
           if (mounted && moved) {
             final l = AppLocalizations.of(context);
             final zone = _config.zoneOf(after.stageNumber);
+            final msg = before.inAbyss && after.inAbyss
+                ? l.abyssFellBack(after.abyssFloor)
+                : before.inAbyss
+                ? l.abyssFellOut
+                : l.zoneFellBack(
+                    tierName(l, after.difficultyTier),
+                    _config.isFinalZone(zone)
+                        ? l.zoneFinalLabel
+                        : l.zoneLabel(zone),
+                  );
+            // 무엇을 올릴지 짚어 준다(보스에게 졌을 때와 같은 추천).
+            final rec = _fx?.best;
             showCenterToast(
               context,
-              before.inAbyss && after.inAbyss
-                  ? l.abyssFellBack(after.abyssFloor)
-                  : before.inAbyss
-                  ? l.abyssFellOut
-                  : l.zoneFellBack(
-                      tierName(l, after.difficultyTier),
-                      _config.isFinalZone(zone)
-                          ? l.zoneFinalLabel
-                          : l.zoneLabel(zone),
-                    ),
+              rec == null
+                  ? msg
+                  : '$msg\n${l.bossLostRecommend(_statLabel(l, rec))}',
             );
+          }
+          if (moved) {
+            // 내려온 칸은 보스 도전이 열린 채라 자동 도전이 곧바로 다시 걸려 "잡고 → 올라가 쓰러짐"을 끝없이 되풀이했다
+            // (2026-11-12 에뮬 점검 — 체력을 안 산 신규). 강화를 하나라도 더 살 때까지 이 칸의 자동 도전을 멈춘다.
+            _fallPausedZone = _zoneKey(after);
+            _fallPausedUpgrades = _upgradeSum(after);
           }
         }
       }
@@ -2361,7 +2470,10 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     final go = await showGameDialog<bool>(
       context,
       title: l.tierClearTitle(tierName(l, tier)),
-      icon: Icons.military_tech_rounded,
+      iconWidget: dialogIcon(
+        'tier_clear',
+        fallback: Icons.military_tech_rounded,
+      ),
       content: Text(
         last ? l.tierAllClear : l.tierNextBody,
         textAlign: TextAlign.center,
@@ -2426,7 +2538,13 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
         SafeArea(bottom: false, child: _topSection(l, save)),
         // 스테이지 배너는 이제 사냥 화면 위 오버레이로 → 사냥 화면이 더 넓어짐.
         Expanded(flex: 54, child: _combatViewport(l)),
-        Expanded(flex: 46, child: _upgradePanel(l, save)),
+        Expanded(
+          flex: 46,
+          child: KeyedSubtree(
+            key: TourKeys.upgrades,
+            child: _upgradePanel(l, save),
+          ),
+        ),
       ],
     );
   }
@@ -2633,9 +2751,12 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
               Positioned(
                 right: 4,
                 top: 44,
-                child: _buffColumn(
-                  l,
-                  ref.watch(saveControllerProvider).requireValue,
+                child: KeyedSubtree(
+                  key: TourKeys.buffs,
+                  child: _buffColumn(
+                    l,
+                    ref.watch(saveControllerProvider).requireValue,
+                  ),
                 ),
               ),
               // 적/서식지 (하단=발 기준 정렬)
@@ -3021,8 +3142,263 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     );
   }
 
+  // 강화 효과 미리보기 캐시 — 패널은 매 프레임 다시 그려지므로 세이브·사냥터·구매 수량이 바뀔 때만 다시 잰다.
+  SaveGame? _fxSave;
+  int _fxStage = -1;
+  int _fxAmount = -1;
+  ({Map<UpgradeKind, String> text, UpgradeKind? best})? _fx;
+
+  static const _fightUpgrades = {
+    UpgradeKind.attack,
+    UpgradeKind.attackSpeed,
+    UpgradeKind.crit,
+    UpgradeKind.critDamage,
+    UpgradeKind.bossDamage,
+    UpgradeKind.maxHp,
+    UpgradeKind.defense,
+  };
+
+  /// 강화 효과 미리보기(2026-11-10 사장님 확정) — 이번 구매가 **지금 사냥터에서** 바꾸는 것.
+  /// 능력치는 교환소와 같은 [huntStatsOf](버프 제외 — 켜고 끌 때 숫자가 흔들리지 않게)로 잰다.
+  /// 추천(`best`) = 버티는 힘(맷집) × 보스에게 때리는 힘(초당)을 **다음 1레벨 골드당** 가장 많이 올리는 전투 줄.
+  /// 사냥터 1 에서 떠난 유저가 강화를 15종에 고르게 찍고 있었다(무엇을 올릴지 몰랐다).
+  ({Map<UpgradeKind, String> text, UpgradeKind? best}) _upgradeFx(
+    AppLocalizations l,
+    SaveGame save,
+  ) {
+    final cached = _fx;
+    if (cached != null &&
+        identical(save, _fxSave) &&
+        _fxStage == _stage &&
+        _fxAmount == _buyAmount) {
+      return cached;
+    }
+    final now = _clock.now().toUtc();
+    final guild = ref.read(guildBonusProvider);
+    // 심연이면 이번 주 변이까지(몬스터 체력·위협·내 능력치).
+    final mut = _abyssMutation(save);
+    final base = applyAbyssMutation(
+      huntStatsOf(save, _data, now, guildBonus: guild),
+      mut,
+    );
+    CharacterStats statsAt(UpgradeKind k, int lv) => applyAbyssMutation(
+      huntStatsOf(
+        save.copyWith(upgradeLevels: {...save.upgradeLevels, k: lv}),
+        _data,
+        now,
+        guildBonus: guild,
+      ),
+      mut,
+    );
+    final depth = _stage - 1;
+    final tier = save.difficultyTier;
+    final abyss = activeAbyssFloor(save);
+    final hp =
+        habitatMaxHp(_config, depth, tier: tier, abyssFloor: abyss) *
+        (mut?.of('monsterHp') ?? 1.0);
+    final bossHp =
+        bossMaxHp(_config, depth, tier: tier, abyssFloor: abyss) *
+        (mut?.of('bossHp') ?? 1.0);
+    final threat =
+        habitatThreat(_config, depth, tier: tier, abyssFloor: abyss) *
+        (mut?.of('threat') ?? 1.0);
+    int hits(CharacterStats s) =>
+        (hp / math.max(1e-9, baselineHitPower(s))).ceil();
+    double bossSec(CharacterStats s) =>
+        bossHp /
+        math.max(1e-9, baselineHitPower(s, boss: true) * s.attackSpeed);
+    // 한 대 = 캐릭터 체력의 몇 % — 화면의 캐릭터 체력(_playerHpMax)을 최대 체력이 오른 비율만큼 옮긴다.
+    double bite(CharacterStats s) {
+      final hpNow = _playerHpMax * s.maxHp / math.max(1e-9, base.maxHp);
+      if (hpNow <= 0) return 0;
+      return threat *
+          100 /
+          (100 + s.defense) *
+          _config.enemyAtkInterval /
+          hpNow *
+          100;
+    }
+
+    // 일반 몬스터 한 대를 몇 번 맞아도 버티나. 정수로 같으면(맷집 한 레벨) 소수 한 자리로 — 변화가 보이게.
+    double surviveN(CharacterStats s) {
+      final b = bite(s);
+      return b <= 0 ? double.infinity : 100 / b;
+    }
+
+    (String, String) survive2(CharacterStats a, CharacterStats b) {
+      final x = surviveN(a), y = surviveN(b);
+      if (x.isInfinite || y.isInfinite) return ('∞', '∞');
+      final fine = x.floor() == y.floor() || y < 10;
+      String f(double v) => fine ? v.toStringAsFixed(1) : v.floor().toString();
+      return (f(x), f(y));
+    }
+
+    double power(CharacterStats s) =>
+        toughnessOf(s) * baselineHitPower(s, boss: true) * s.attackSpeed;
+    String time(double sec) => sec >= 600
+        ? l.upgradeFxMin('${(sec / 60).round()}')
+        : l.upgradeFxSec('${sec.round()}');
+    String pct(double m) {
+      final v = (m - 1) * 100;
+      return v.abs() >= 100 ? v.toStringAsFixed(0) : v.toStringAsFixed(1);
+    }
+
+    String? total(double a, double b, String Function(String, String) f) =>
+        b <= a ? null : f(pct(a), pct(b));
+
+    final text = <UpgradeKind, String>{};
+    UpgradeKind? best;
+    var bestScore = 0.0;
+    final basePower = power(base);
+    for (final kind in _config.upgrades.keys) {
+      final spec = upgradeSpecOf(_config, save, kind);
+      final level = save.upgradeLevel(kind);
+      if (!spec.canBuyAt(level)) continue;
+      final mk = spec.materialKind;
+      final count = _upgradeRowCount(
+        spec,
+        level,
+        save.gold,
+        mk == null ? 0 : (save.materials[mk] ?? 0),
+        _buyAmount,
+      );
+      final after = statsAt(kind, level + count);
+      // 양쪽 단위를 앞쪽 값에 맞춘다("10분 → 595초" 방지) · 반올림이 같으면 소수 한 자리.
+      String boss() {
+        final a = bossSec(base), b = bossSec(after);
+        if (a < 600) return l.upgradeFxBoss(time(a), time(b));
+        final fine = (a / 60).round() == (b / 60).round();
+        String m(double s) =>
+            l.upgradeFxMin((s / 60).toStringAsFixed(fine ? 1 : 0));
+        return l.upgradeFxBoss(m(a), m(b));
+      }
+
+      final t = switch (kind) {
+        UpgradeKind.attack || UpgradeKind.crit || UpgradeKind.critDamage =>
+          hits(base) != hits(after)
+              ? l.upgradeFxHits('${hits(base)}', '${hits(after)}')
+              : boss(),
+        UpgradeKind.attackSpeed || UpgradeKind.bossDamage => boss(),
+        // 버티는 대수(늘어나는 숫자) — "한 대 6.5% → 5.2%"는 강화할수록 줄어 약해지는 것처럼 읽혔다(2026-11-12 사장님).
+        UpgradeKind.maxHp || UpgradeKind.defense => switch (survive2(
+          base,
+          after,
+        )) {
+          (final x, final y) => l.upgradeFxSurvive(x, y),
+        },
+        // 누적 값(+A% → +B%) — 이번 구매만의 비율(+N%)을 보이면 이미 받는 몫이 클수록 숫자가 작아져
+        // "올릴수록 줄어든다"로 읽혔다(2026-11-12 사장님 지적). 보스 시간·한 대처럼 오르는 쪽으로 읽히게.
+        UpgradeKind.reward || UpgradeKind.bugBuff => total(
+          base.rewardMultiplier,
+          after.rewardMultiplier,
+          l.upgradeFxGold,
+        ),
+        UpgradeKind.xp => total(
+          base.xpMultiplier,
+          after.xpMultiplier,
+          l.upgradeFxXp,
+        ),
+        UpgradeKind.bugFind => total(
+          base.bugFind,
+          after.bugFind,
+          l.upgradeFxBugs,
+        ),
+        UpgradeKind.materialFind => total(
+          base.materialFind,
+          after.materialFind,
+          l.upgradeFxMats,
+        ),
+        _ => null,
+      };
+      if (t != null) text[kind] = t;
+      if (_fightUpgrades.contains(kind) && basePower > 0) {
+        final one = statsAt(kind, level + 1);
+        final score =
+            (power(one) / basePower - 1) /
+            math.max(1, upgradeCost(spec, level));
+        if (score > bestScore) {
+          bestScore = score;
+          best = kind;
+        }
+      }
+    }
+    _fxSave = save;
+    _fxStage = _stage;
+    _fxAmount = _buyAmount;
+    return _fx = (text: text, best: best);
+  }
+
+  /// 강화 구매 — 각성에 닿거나 대성공이 나면 알린다(2026-11-10).
+  Future<void> _buyUpgrade(AppLocalizations l, UpgradeKind kind) async {
+    final spec = _config.upgrade(kind);
+    final before = ref
+        .read(saveControllerProvider)
+        .requireValue
+        .upgradeLevel(kind);
+    final r = await ref
+        .read(saveControllerProvider.notifier)
+        .buyUpgrade(
+          kind,
+          count: _buyAmount == _kBuyMax ? _kBuyMaxLimit : _buyAmount,
+        );
+    if (!mounted || r.levels == 0) return;
+    // 주간 요약(2026-11-12) — 기기 기록.
+    unawaited(
+      WeeklyStats.addUpgrade(
+        levels: r.levels,
+        lucky: r.lucky,
+        awaken: r.awakened,
+      ),
+    );
+    if (r.awakened > 0) {
+      final bonus =
+          spec.awakenLevelsAt(before + r.levels) - spec.awakenLevelsAt(before);
+      AudioService.instance.hapticLight();
+      showCenterToast(
+        context,
+        l.upgradeAwakenToast(_statLabel(l, kind), '$bonus'),
+      );
+    } else if (r.lucky > 0) {
+      // 꾹 누르기 중 대성공이 연달아 나면 토스트가 겹쳤다(2026-11-12 점검) — 모아서 손을 뗀 뒤 한 번에.
+      _luckyRun += r.lucky;
+      _luckyTimer?.cancel();
+      _luckyTimer = Timer(const Duration(milliseconds: 700), () {
+        if (!mounted) return;
+        final n = _luckyRun;
+        _luckyRun = 0;
+        showCenterToast(context, l.upgradeLuckyToast('$n'));
+      });
+    }
+  }
+
+  int _luckyRun = 0;
+  Timer? _luckyTimer;
+
+  /// 심연 결정으로 강화 상한을 한 단계 연다(2026-11-10). 결정이 모자라면 몇 개 더 필요한지 알린다.
+  Future<void> _openUpgradeCap(
+    AppLocalizations l,
+    UpgradeKind kind,
+    int cost,
+  ) async {
+    final have = ref.read(saveControllerProvider).requireValue.abyssCrystals;
+    if (have < cost) {
+      showCenterToast(context, l.upgradeCapNeed('$have', '$cost'));
+      return;
+    }
+    final ok = await ref
+        .read(saveControllerProvider.notifier)
+        .openUpgradeCap(kind);
+    if (!mounted || !ok) return;
+    AudioService.instance.sfxLevelUp();
+    showCenterToast(
+      context,
+      l.upgradeCapOpened(_statLabel(l, kind), '${_config.abyss.capStep}'),
+    );
+  }
+
   Widget _upgradePanel(AppLocalizations l, SaveGame save) {
     final kinds = _config.upgrades.keys.toList();
+    final fx = _upgradeFx(l, save);
     return Container(
       decoration: const BoxDecoration(
         gradient: LinearGradient(
@@ -3036,48 +3412,66 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
         children: [
           // 채집함 만석 알림 — 구매 버튼 바로 위(씬을 가리지 않는 자리).
           _storageFullBar(l, save),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(10, 10, 10, 6),
-            child: Row(
-              children: [
-                // "최대"(= 지금 골드·재료로 살 수 있는 만큼, 상한까지) — 2026-10-09 점검.
-                for (final amount in const [1, 10, 100, _kBuyMax])
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 4),
-                      child: _AmountButton(
-                        amount: amount,
-                        selected: _buyAmount == amount,
-                        onTap: () => setState(() => _buyAmount = amount),
+          // 심연 결정 · 각인(2026-11-10) — 심연을 연 뒤에만.
+          if (save.abyssUnlocked && _config.abyss.imprintOn)
+            InkWell(
+              onTap: () => unawaited(showAbyssImprintDialog(context)),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(14, 8, 14, 0),
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.auto_awesome,
+                      size: 15,
+                      color: Color(0xFFB39DDB),
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      '${l.abyssImprintTitle} · ${l.abyssCrystalsHave('${save.abyssCrystals}')}',
+                      style: const TextStyle(
+                        color: Color(0xFFD1C4E9),
+                        fontWeight: FontWeight.w800,
+                        fontSize: 12,
                       ),
                     ),
-                  ),
-              ],
+                    const Spacer(),
+                    const Icon(
+                      Icons.chevron_right,
+                      size: 16,
+                      color: Color(0xFFB39DDB),
+                    ),
+                  ],
+                ),
+              ),
             ),
-          ),
+          // 수량 버튼(+1·+10·+100·최대)은 없앴다(2026-11-12 사장님) — 한 번에 1레벨씩.
+          const SizedBox(height: 8),
           Expanded(
             child: ListView.builder(
               padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
               itemCount: kinds.length,
               itemBuilder: (context, i) {
                 final kind = kinds[i];
+                final capCost = save.abyssUnlocked
+                    ? upgradeCapStepCost(_config, save, kind)
+                    : null;
                 return _UpgradeRow(
                   kind: kind,
-                  config: _config,
+                  spec: upgradeSpecOf(_config, save, kind),
+                  capCost: capCost,
+                  crystals: save.abyssCrystals,
+                  onCapBreak: capCost == null
+                      ? null
+                      : () => unawaited(_openUpgradeCap(l, kind, capCost)),
                   level: save.upgradeLevel(kind),
                   gold: save.gold,
                   materials: save.materials,
                   buyAmount: _buyAmount,
                   // "최대"는 넉넉한 수를 넘긴다 — `buyUpgrade` 가 골드·재료·상한에서 스스로 멈춘다
                   // (꾹 누르기로 연속 구매해도 누르는 순간의 잔액으로 다시 센다).
-                  onBuy: () => ref
-                      .read(saveControllerProvider.notifier)
-                      .buyUpgrade(
-                        kind,
-                        count: _buyAmount == _kBuyMax
-                            ? _kBuyMaxLimit
-                            : _buyAmount,
-                      ),
+                  onBuy: () => unawaited(_buyUpgrade(l, kind)),
+                  effect: fx.text[kind],
+                  recommended: fx.best == kind,
                 );
               },
             ),
@@ -3094,7 +3488,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     color: const Color(0xF20B1206),
     child: Column(
       mainAxisSize: MainAxisSize.min,
-      children: [_topBar(l, save), _loginNudge(l), _chatBar(l)],
+      children: [_topBar(l, save), _loginNudge(l), _weekendBar(l), _chatBar(l)],
     ),
   );
 
@@ -3181,81 +3575,26 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     );
   }
 
-  Widget _eventMini(AppLocalizations l, {bool inHud = false}) {
-    final st = ref.watch(eventStateProvider).asData?.value;
-    final cfg = ref.watch(gameDataProvider).asData?.value.eventConfig;
-    final now = ref.read(clockProvider).now().toUtc();
-    // 회차가 끝나 다음 일정이 없을 때도 배너를 남긴다 — 명예의 전당·대회 소개로 가는 문이 이것뿐이다(2026-10-19).
-    final tbd = st == null ? cfg?.nextRoundTbd(now) : null;
-    // 진행 중도 아니고 개막 예고도, 끝난 회차도 없으면 자리를 비운다.
-    if (st == null && cfg?.untilOpen(now) == null && tbd == null) {
-      return const SizedBox.shrink();
-    }
-    // 제목은 "왕충 선발대회"만 — "N회차 추후 공지"를 붙였더니 배너가 길어져 아이콘 줄이 밀렸다(2026-10-22 사장님).
-    // 다음 회차 일정은 배너를 눌러 들어간 대회 화면(대기 중 안내)이 보여 준다.
-    final title = l.eventTitle;
-    if (inHud) {
-      // 아이콘 줄 아래 가로 배너 — 폭은 아이콘 줄에 맞춰 늘어난다(2026-10-01 사장님).
-      return Padding(
-        padding: const EdgeInsets.only(top: 3),
-        child: GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onTap: () async {
-            await Navigator.of(context).push(
-              MaterialPageRoute<void>(builder: (_) => const EventScreen()),
-            );
-            ref.invalidate(eventStateProvider);
-          },
-          child: Container(
-            padding: const EdgeInsets.fromLTRB(7, 3, 4, 3),
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0x667E57C2), Color(0x333F2C63)],
-              ),
-              borderRadius: BorderRadius.circular(9),
-              border: Border.all(color: const Color(0xCC9575CD)),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                rankImageDlg('trophy', size: 14),
-                const SizedBox(width: 5),
-                Flexible(
-                  child: Text(
-                    title,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: Color(0xFFEDE0FF),
-                      fontSize: 11.5,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                ),
-                const Icon(
-                  Icons.chevron_right_rounded,
-                  color: Color(0xFFD7BCFF),
-                  size: 15,
-                ),
-              ],
-            ),
-          ),
-        ),
-      );
-    }
-    return Padding(
-      padding: const EdgeInsets.only(top: 4),
-      child: GestureDetector(
+  /// 아이콘 줄 아래 가로 배너 = 왕중왕전(2026-11-12 사장님: 왕충 선발대회 배너는 숨기고 그 자리를 왕중왕전이 대신한다 —
+  /// 선발대회 화면은 개발자 모드 "왕충 선발대회 체험"으로만 들어간다).
+  Widget _kotkBanner(AppLocalizations l) => Padding(
+    padding: const EdgeInsets.only(top: 3),
+    child: _hudBanner(
+      kotkTrophyIcon(size: 15),
+      l.kotkTitle,
+      () => Navigator.of(
+        context,
+      ).push(MaterialPageRoute<void>(builder: (_) => const KotkScreen())),
+    ),
+  );
+
+  Widget _hudBanner(Widget icon, String title, VoidCallback onTap) =>
+      GestureDetector(
         behavior: HitTestBehavior.opaque,
-        onTap: () async {
-          await Navigator.of(
-            context,
-          ).push(MaterialPageRoute<void>(builder: (_) => const EventScreen()));
-          // 돌아오면 참가권·기록이 바뀌었을 수 있다.
-          ref.invalidate(eventStateProvider);
-        },
+        onTap: onTap,
         child: Container(
-          padding: const EdgeInsets.fromLTRB(7, 3, 4, 3),
+          // 왕중왕전 입구는 이 배너뿐 — 누르기 쉽게 위아래를 키웠다(2026-11-12 점검, 예전 약 22dp).
+          padding: const EdgeInsets.fromLTRB(8, 7, 5, 7),
           decoration: BoxDecoration(
             gradient: const LinearGradient(
               colors: [Color(0x667E57C2), Color(0x333F2C63)],
@@ -3264,18 +3603,20 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
             border: Border.all(color: const Color(0xCC9575CD)),
           ),
           child: Row(
-            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              rankImageDlg('trophy', size: 13),
+              icon,
               const SizedBox(width: 5),
-              Text(
-                title,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  color: Color(0xFFEDE0FF),
-                  fontSize: 11.5,
-                  fontWeight: FontWeight.w900,
+              Flexible(
+                child: Text(
+                  title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: Color(0xFFEDE0FF),
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w900,
+                  ),
                 ),
               ),
               const Icon(
@@ -3286,9 +3627,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
             ],
           ),
         ),
-      ),
-    );
-  }
+      );
 
   /// 게스트(익명) 상태에서만 뜨는 로그인 유도 배너 — 눌러서 계정 시트를 연다.
   /// 로그인하지 않은 유저는 기기 변경·앱 삭제 시 진행도를 복구할 수 없으므로,
@@ -3419,19 +3758,15 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         // 공지 — 안 읽은 글이 있으면 빨간 점.
-                        _iconBtn(
-                          Icons.campaign_rounded,
-                          () {
-                            // 열 때마다 최신 공지를 다시 받는다(플레이 중 올라온 글 반영).
-                            ref.invalidate(noticesProvider);
-                            Navigator.of(context).push(
-                              MaterialPageRoute<void>(
-                                builder: (_) => const NoticeScreen(),
-                              ),
-                            );
-                          },
-                          badge: ref.watch(hasUnreadNoticeProvider),
-                        ),
+                        _iconBtn(Icons.campaign_rounded, () {
+                          // 열 때마다 최신 공지를 다시 받는다(플레이 중 올라온 글 반영).
+                          ref.invalidate(noticesProvider);
+                          Navigator.of(context).push(
+                            MaterialPageRoute<void>(
+                              builder: (_) => const NoticeScreen(),
+                            ),
+                          );
+                        }, badge: ref.watch(hasUnreadNoticeProvider)),
                         _iconBtn(
                           Icons.leaderboard_rounded,
                           () => Navigator.of(context).push(
@@ -3460,7 +3795,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                         ),
                       ],
                     ),
-                    _eventMini(l, inHud: true),
+                    _kotkBanner(l),
                   ],
                 ),
               ),
@@ -3522,6 +3857,10 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
   /// 나빠지므로, 넓히기 전에 실기에서 전투력 칸을 확인할 것.
   static const _buffMiniWidth = 30.0;
 
+  /// 아직 쉬움만 가 본 계정(첫 난이도) — 버프 점·안내를 조금 더 챙겨 준다.
+  bool get _easyOnly =>
+      (ref.read(saveControllerProvider).value?.maxTierReached ?? 1) == 0;
+
   Widget _buffMini(BuffKind k, Duration? remaining, {bool hasPass = false}) {
     final active = remaining != null;
     // 비활성 버프는 부드럽게 맥동하는 글로우 + "!" 로 활성화를 유도한다.
@@ -3562,8 +3901,14 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                     child: _buffIconCircle(k, 20),
                   ),
                 ),
-                if (!active)
-                  // 꺼진 버프 — 다른 점과 같은 빨간 점(2026-10-19, 예전 꿀색 "!").
+                // 꺼진 버프 — 다른 점과 같은 빨간 점(2026-10-19, 예전 꿀색 "!").
+                // 버프 창을 한 번 열어 본 뒤엔 맥동만 남긴다(2026-11-09) — 꺼진 버프 5개가 늘 점을 달아
+                // 첫 화면 점이 8개를 넘었고, 정작 채집함·우편 점이 묻혔다.
+                // 쉬움(처음 난이도) 동안은 골드에 가장 큰 황금 러시만 꺼져 있으면 점을 계속 단다(2026-11-12 사장님 확정 —
+                // 시뮬: 버프를 안 켜면 쉬움이 7 → 11일). 점이 많아지지 않게 한 칸만.
+                if (!active &&
+                    (!PlayPrefs.instance.buffSheetSeen ||
+                        (k == BuffKind.goldRush && _easyOnly)))
                   const Positioned(right: -2, top: -2, child: RedDot(size: 9)),
               ],
             ),
@@ -3737,36 +4082,42 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
   );
 
   Widget _iconBtn(IconData icon, VoidCallback onTap, {bool badge = false}) =>
-      InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(8),
-        child: Padding(
-          padding: const EdgeInsets.all(4),
-          child: Stack(
-            clipBehavior: Clip.none,
-            children: [
-              Icon(icon, color: const Color(0xE6FFFFFF), size: 20),
-              if (badge)
-                Positioned(
-                  right: -1,
-                  top: -1,
-                  child: Container(
-                    width: 8,
-                    height: 8,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFFF5252),
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: const Color(0xFF0B1206),
-                        width: 1,
-                      ),
-                    ),
-                  ),
-                ),
-            ],
-          ),
-        ),
+      KeyedSubtree(
+        key: icon == Icons.mail_rounded ? TourKeys.mail : null,
+        child: _iconBtnInner(icon, onTap, badge: badge),
       );
+
+  Widget _iconBtnInner(
+    IconData icon,
+    VoidCallback onTap, {
+    bool badge = false,
+  }) => InkWell(
+    onTap: onTap,
+    borderRadius: BorderRadius.circular(8),
+    child: Padding(
+      padding: const EdgeInsets.all(4),
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Icon(icon, color: const Color(0xE6FFFFFF), size: 20),
+          if (badge)
+            Positioned(
+              right: -1,
+              top: -1,
+              child: Container(
+                width: 8,
+                height: 8,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFF5252),
+                  shape: BoxShape.circle,
+                  border: Border.all(color: const Color(0xFF0B1206), width: 1),
+                ),
+              ),
+            ),
+        ],
+      ),
+    ),
+  );
 
   /// 지금 수령 가능한 일일보상/깜짝선물이 하나라도 있는지(편지 아이콘 알림 점).
   bool _hasClaimableDaily(SaveGame save) {
@@ -3896,7 +4247,9 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     return Center(
       // 보스 도전 버튼은 **로드맵 알약 아래 따로 줄**을 쓴다(2026-09-14 지시).
       // 한 줄에 같이 두니 글자가 넘쳐 왼쪽 미션 패널과 겹쳤다.
+      // 둘러보기 키는 Center 안쪽 — 바깥에 달면 화면 폭 전체가 밝혀진다.
       child: Column(
+        key: TourKeys.stage,
         mainAxisSize: MainAxisSize.min,
         children: [
           GestureDetector(
@@ -4017,9 +4370,34 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
         : _config.isFinalZone(zone)
         ? l.zoneFinalLabel
         : l.zoneLabel(zone);
-    return Text(
+    final text = Text(
       _isBoss ? '$zoneText · ${l.bossLabel}' : zoneText,
       style: const TextStyle(color: Color(0xCCFFFFFF), fontSize: 10.5),
+    );
+    // 심연 주간 변이(2026-11-10) — 이름을 붙이고 누르면 설명.
+    final mut = _abyssMutation(save);
+    if (mut == null) return text;
+    final lang = Localizations.localeOf(context).languageCode;
+    String pick(Map<String, String> m) => m[lang] ?? m['en'] ?? m['ko'] ?? '';
+    return GestureDetector(
+      onTap: () => showCenterToast(
+        context,
+        '${l.abyssMutationTitle(pick(mut.name))}\n${pick(mut.desc)}',
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          text,
+          Text(
+            ' · ${pick(mut.name)}',
+            style: const TextStyle(
+              color: Color(0xFFB39DDB),
+              fontWeight: FontWeight.w800,
+              fontSize: 10.5,
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -4033,7 +4411,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     final save = ref.watch(saveControllerProvider).requireValue;
     return BossChallengeButton(
       kills: save.zoneKills,
-      need: _config.bossUnlockKills,
+      need: bossUnlockKillsFor(save, _config, _data.researchConfig),
       autoSecondsLeft: _autoBoss.secondsLeft,
       autoPaused: _autoBossPausedHere(save),
       onTap: _startBossChallenge,
@@ -5084,7 +5462,8 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
 
   /// 심연 층 보스 처치 → 다음 층 · 10층마다 첫 도달 보상 · 조각 안내.
   Future<void> _clearAbyssFloor() async {
-    final before = ref.read(saveControllerProvider).requireValue.abyssFloor;
+    final s0 = ref.read(saveControllerProvider).requireValue;
+    final before = s0.abyssFloor;
     final ctrl = ref.read(saveControllerProvider.notifier);
     final r = await ctrl.clearAbyssFloorNow();
     if (!mounted) return;
@@ -5093,8 +5472,10 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     // 성장물약(개체 등급 — 10층마다 첫 도달).
     _potionPop();
     final l = AppLocalizations.of(context);
-    if (r.floor < before) {
-      showCenterToast(context, l.abyssWeekReset);
+    // 새 주 — 심연 지름길 연구가 있으면 1층이 아닌 층에서 시작하므로 층 비교가 아니라 주로 가른다.
+    if (ref.read(saveControllerProvider).requireValue.abyssWeek !=
+        s0.abyssWeek) {
+      showCenterToast(context, l.abyssWeekReset(r.floor));
       return;
     }
     AudioService.instance.sfxLevelUp();
@@ -5104,6 +5485,12 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
           ? l.abyssMilestone(before, r.fossil)
           : l.abyssFloorClear(before),
     );
+    if (r.crystals > 0) {
+      showCenterToast(context, l.abyssCrystalsGot('${r.crystals}'));
+    }
+    if (r.spores > 0) {
+      showCenterToast(context, l.abyssSporesGot('${r.spores}'));
+    }
     final skills = _data.skillConfig;
     if (r.shards.isEmpty || skills == null) return;
     final locale = Localizations.localeOf(context).languageCode;
@@ -5146,6 +5533,17 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
   }
 
   Future<void> _afterBossAdvance(int stage, {int? tier}) async {
+    // 안내 사슬(사냥터 보상 → 리뷰 → 스타터 → 게스트 경고) 사이의 빈틈에 다른 창(일일보상 자동 열기 등)이
+    // 끼어들지 않게 관문을 잡는다(2026-11-09). 관문을 기다리는 것은 팝업뿐이라 게임 진행은 멈추지 않는다.
+    StartupPopupGate.hold();
+    try {
+      await _afterBossAdvanceChain(stage, tier: tier);
+    } finally {
+      StartupPopupGate.release();
+    }
+  }
+
+  Future<void> _afterBossAdvanceChain(int stage, {int? tier}) async {
     final ctrl = ref.read(saveControllerProvider.notifier);
     final t =
         tier ?? ref.read(saveControllerProvider).requireValue.difficultyTier;
@@ -5159,12 +5557,18 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     }
     // 챕터를 깬 직후 = 기분 좋은 순간. 리뷰는 **여기서 계정당 한 번만** 묻는다
     // (보상 없음 — 평점에 보상을 걸 수 없다. review_service.dart 주석 참조).
+    // 사냥터 클리어 창 뒤에는 안내를 **하나까지만**(2026-11-12 에뮬 점검 — 첫 보스 뒤 클리어·리뷰·게스트 경고가 연달아 셋).
+    // 리뷰는 사냥터 4 이상(시작 5분 첫 보스 직후는 이르다) · 스타터는 사냥터 2 이상 · 둘 다 아니면 게스트 경고.
+    var shown = false;
     if (cleared.isNotEmpty) {
-      // 리뷰 창이 뜬 때는 스타터 소개를 다음 기회로(한 번에 창 두 개를 띄우지 않는다).
-      final asked = await _askReviewOnce();
-      if (!asked && mounted) await _offerStarterOnce();
+      final chapters =
+          _data.roadmapConfig?.chapters ?? const <RoadmapChapter>[];
+      final zone =
+          chapters.indexWhere((c) => c.id == cleared.last.chapter.id) + 1;
+      if (zone >= 4) shown = await _askReviewOnce();
+      if (!shown && zone >= 2 && mounted) shown = await _offerStarterOnce();
     }
-    if (!mounted) return;
+    if (!mounted || shown) return;
     // 게스트면 진척 지점에서 데이터 유실을 상기시킨다(하루 1회 상한은 내부에서).
     await maybeWarnGuest(context, ref, stage);
   }
@@ -5320,12 +5724,12 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     }
   }
 
-  Future<void> _offerStarterOnce({bool preview = false}) async {
+  Future<bool> _offerStarterOnce({bool preview = false}) async {
     final save = ref.read(saveControllerProvider).value;
-    if (save == null || (save.starterBought && !preview)) return;
+    if (save == null || (save.starterBought && !preview)) return false;
     final prefs = await SharedPreferences.getInstance();
-    if (!preview && (prefs.getBool('starter_offer_v1') ?? false)) return;
-    if (!mounted) return;
+    if (!preview && (prefs.getBool('starter_offer_v1') ?? false)) return false;
+    if (!mounted) return false;
     final l = AppLocalizations.of(context);
     // 구성은 **상품 데이터에서** 읽는다 — 문구에 박아 두면 구성을 바꿀 때 팝업만 옛 내용으로 남는다
     // (2026-10-08 실기: 스타터를 젤리 400 으로 바꿨는데 팝업은 300).
@@ -5359,6 +5763,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     if (go == true && mounted) {
       ref.read(tabIndexProvider.notifier).set(kShopTabIndex);
     }
+    return true;
   }
 
   Future<void> _showChapterClearDialog(RoadmapChapter ch, int gold) {
@@ -5366,6 +5771,8 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     final locale = Localizations.localeOf(context).languageCode;
     final save = ref.read(saveControllerProvider).requireValue;
     final color = Color(ch.color);
+    final chapters = _data.roadmapConfig?.chapters ?? const <RoadmapChapter>[];
+    final zone = chapters.indexWhere((c) => c.id == ch.id) + 1;
     return showGameDialog<void>(
       context,
       title: l.chapterClearTitle,
@@ -5391,10 +5798,13 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
               border: Border.all(color: color),
             ),
             child: Text(
-              l.chapterClearMsg(
-                tierName(l, save.difficultyTier),
-                ch.boss.resolve(locale),
-              ),
+              // 난이도의 마지막 사냥터만 "정복" — 사냥터 1 보스에도 "쉬움 정복! 최종보스"가 떴다(2026-11-12 에뮬 점검).
+              zone >= chapters.length
+                  ? l.chapterClearMsg(
+                      tierName(l, save.difficultyTier),
+                      ch.boss.resolve(locale),
+                    )
+                  : l.chapterClearZoneMsg(zone, ch.boss.resolve(locale)),
               style: const TextStyle(
                 color: Colors.white,
                 fontWeight: FontWeight.w800,
@@ -5489,7 +5899,128 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
   /// 보스 도전 — 게이지가 찼을 때만. 사냥터의 몬스터를 치우고 보스를 부른다.
   void _startBossChallenge() {
     if (!_canStartBoss()) return;
+    final save = ref.read(saveControllerProvider).value;
+    if (save != null && _bossLooksHopeless(save)) {
+      unawaited(_showGrowHow(save));
+      return;
+    }
     setState(_beginBossChallenge);
+  }
+
+  /// 질 게 뻔한 보스를 직접 눌렀을 때 — 무엇을 하면 빨라지는지 바로 가기와 함께(2026-11-12 사장님 확정).
+  /// 시뮬 측정: 선물·일일보상·버프를 챙기면 쉬움이 11일 → 4일(펫·장비는 이 무렵 영향이 거의 없다).
+  /// "그래도 도전"으로 그대로 도전할 수 있다(막지 않는다).
+  Future<void> _showGrowHow(SaveGame save) async {
+    final l = AppLocalizations.of(context);
+    final now = _clock.now().toUtc();
+    final st = huntStatsOf(
+      save,
+      _data,
+      now,
+      guildBonus: ref.read(guildBonusProvider),
+    );
+    final bossHp = bossMaxHp(
+      _config,
+      _stage - 1,
+      tier: save.difficultyTier,
+      abyssFloor: activeAbyssFloor(save),
+    );
+    final sec =
+        bossHp /
+        math.max(1e-9, baselineHitPower(st, boss: true) * st.attackSpeed);
+    final time = sec >= 600
+        ? l.upgradeFxMin('${(sec / 60).round()}')
+        : l.upgradeFxSec('${sec.round()}');
+    final buffOff =
+        !save.buffPassActive(now) &&
+        BuffKind.values.any((k) => save.buffRemaining(k, now) == null);
+    final mailWaiting = _hasClaimableDaily(save);
+    final rec = _fx?.best;
+    Widget row(IconData icon, String text, VoidCallback? onTap) => Padding(
+      padding: const EdgeInsets.only(top: 8),
+      child: Material(
+        color: const Color(0x33FFFFFF),
+        borderRadius: BorderRadius.circular(10),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(10),
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
+            child: Row(
+              children: [
+                Icon(icon, color: _honey, size: 20),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    text,
+                    style: const TextStyle(color: Colors.white, fontSize: 13),
+                  ),
+                ),
+                if (onTap != null)
+                  const Icon(
+                    Icons.chevron_right_rounded,
+                    color: Colors.white54,
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+    final go = await showGameDialog<String>(
+      context,
+      title: l.growHowTitle,
+      icon: Icons.trending_up_rounded,
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            l.growHowBody(time),
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              color: Color(0xDDFFFFFF),
+              fontSize: 13,
+              height: 1.4,
+            ),
+          ),
+          if (buffOff)
+            row(
+              Icons.local_fire_department_rounded,
+              l.growHowBuff,
+              () => Navigator.pop(context, 'buff'),
+            ),
+          if (mailWaiting)
+            row(
+              Icons.mail_rounded,
+              l.growHowMail,
+              () => Navigator.pop(context, 'mail'),
+            ),
+          if (rec != null)
+            row(
+              Icons.upgrade_rounded,
+              l.growHowUpgrade(_statLabel(l, rec)),
+              null,
+            ),
+        ],
+      ),
+      actions: [
+        gameDialogButton(
+          l.growHowFight,
+          popOnTap(context, 'fight'),
+          primary: false,
+        ),
+        gameDialogButton(l.actionClose, popOnTap(context, null)),
+      ],
+    );
+    if (!mounted) return;
+    switch (go) {
+      case 'buff':
+        await _showBuffSheet(l);
+      case 'mail':
+        await _showMail(l);
+      case 'fight':
+        if (_canStartBoss()) setState(_beginBossChallenge);
+    }
   }
 
   bool _canStartBoss() =>
@@ -5540,7 +6071,8 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     final ready =
         _config.zoneMode &&
         save != null &&
-        save.zoneKills >= _config.bossUnlockKills &&
+        save.zoneKills >=
+            bossUnlockKillsFor(save, _config, _data.researchConfig) &&
         !_isBoss &&
         !_bossChallenge &&
         !_defeated &&
@@ -5568,21 +6100,349 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     }
   }
 
+  /// 첫 실행 둘러보기(2026-11-12 사장님 확정) — 새 계정(쉬움 사냥터 1)만, 시작 팝업(알림 권한·편지함)이 없을 때 한 번.
+  /// 진행한 계정(업데이트로 들어온 기존 유저)은 보지 않는다. 떠 있는 동안 관문을 잡아 다른 창이 끼지 않는다.
+  bool _tourRunning = false;
+  void _tickTour() {
+    final prefs = PlayPrefs.instance;
+    if (_tourRunning || !prefs.loaded || prefs.tourDone) return;
+    final save = ref.read(saveControllerProvider).value;
+    if (save == null) return;
+    // 진행한 계정은 건너뛰기만 한다 — 기록은 기기에 남아서, 여기서 적으면 같은 기기에서 새로 만든 계정도 못 봤다(2026-11-12 실기).
+    if (save.maxTierReached > 0 || save.bestStage > 1) return;
+    if (StartupPopupGate.busy ||
+        !_playVisible() ||
+        _isBoss ||
+        _bossChallenge ||
+        _defeated) {
+      return;
+    }
+    _tourRunning = true;
+    StartupPopupGate.hold();
+    unawaited(prefs.markTourDone());
+    unawaited(prefs.markTourEligible());
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      try {
+        if (mounted) {
+          await showTour(context, firstRunTour(AppLocalizations.of(context)));
+        }
+      } finally {
+        StartupPopupGate.release();
+      }
+    });
+  }
+
+  /// 깜짝 선물 안내(2026-11-12 사장님 확정) — 도착하면 한 번, 사라지기 30분 전에 한 번. 신규 유저는 선물이 3시간 뒤
+  /// 사라지는 줄 몰라 놓쳤다(시뮬: 선물을 안 받으면 쉬움이 4 → 5일). 기기 메모리에만 센다(다시 켜면 남은 선물은 한 번 더 알린다).
+  final _giftSeen = <String>{};
+  final _giftWarned = <String>{};
+  double _giftNoticeT = 0;
+  void _tickGiftNotice(double dt) {
+    _giftNoticeT -= dt;
+    if (_giftNoticeT > 0) return;
+    _giftNoticeT = 1.0;
+    if (!_playVisible() || StartupPopupGate.busy) return;
+    final save = ref.read(saveControllerProvider).value;
+    if (save == null) return;
+    final now = _clock.now().toUtc();
+    final l = AppLocalizations.of(context);
+    for (final g in save.gifts) {
+      if (g.isExpired(now)) continue;
+      final left = g.expiry.difference(now);
+      if (_giftSeen.add(g.id)) {
+        // 이미 받을 시간이 30분 안이면 도착 안내 대신 곧 사라짐 안내로.
+        if (left > const Duration(minutes: 30)) {
+          showCenterToast(context, l.giftArrivedToast);
+          return;
+        }
+      }
+      if (left <= const Duration(minutes: 30) && _giftWarned.add(g.id)) {
+        showCenterToast(
+          context,
+          l.giftExpiringToast(math.max(1, left.inMinutes)),
+        );
+        return;
+      }
+    }
+  }
+
+  /// 펫·장비 첫 안내(2026-11-12 사장님 확정 — 사냥터 2 부터) — 한 번씩만, 화면이 비었을 때.
+  /// 펫: 장착한 곤충이 없고 성충이 있을 때 · 장비: 낀 장비가 없을 때. 띄우면 기록해 다시 안 띄운다.
+  double _tipT = 0;
+  void _tickTips(double dt) {
+    _tipT -= dt;
+    if (_tipT > 0) return;
+    _tipT = 2.0;
+    final prefs = PlayPrefs.instance;
+    if (!prefs.loaded || !_config.zoneMode) return;
+    if (_isBoss ||
+        _bossChallenge ||
+        _defeated ||
+        _tierClearPending ||
+        _bossIntroShowing) {
+      return;
+    }
+    if (StartupPopupGate.busy || !_playVisible()) return;
+    final save = ref.read(saveControllerProvider).value;
+    if (save == null) return;
+    // 사냥터 2 이상(쉬움 스테이지 101~) 또는 더 높은 난이도를 가 본 계정.
+    if (save.maxTierReached == 0 && save.bestStage < 101) return;
+    final l = AppLocalizations.of(context);
+    if (!prefs.tipPetShown &&
+        save.equippedBugIds.isEmpty &&
+        save.bugs.any((b) => b.stage == LifeStage.adult)) {
+      unawaited(prefs.markTipPetShown());
+      unawaited(
+        _showTip(
+          l.tipPetTitle,
+          l.tipPetBody,
+          kStorageTabIndex,
+          Icons.pets_rounded,
+        ),
+      );
+      return;
+    }
+    if (!prefs.tipGearShown && save.equippedItems.isEmpty) {
+      unawaited(prefs.markTipGearShown());
+      unawaited(
+        _showTip(
+          l.tipGearTitle,
+          l.tipGearBody,
+          kEquipTabIndex,
+          Icons.shield_rounded,
+        ),
+      );
+    }
+  }
+
+  Future<void> _showTip(
+    String title,
+    String body,
+    int tab,
+    IconData icon,
+  ) async {
+    StartupPopupGate.hold();
+    try {
+      final l = AppLocalizations.of(context);
+      final go = await showGameDialog<bool>(
+        context,
+        title: title,
+        icon: icon,
+        content: Text(
+          body,
+          textAlign: TextAlign.center,
+          style: const TextStyle(
+            color: Color(0xDDFFFFFF),
+            fontSize: 13,
+            height: 1.4,
+          ),
+        ),
+        actions: [
+          gameDialogButton(
+            l.actionClose,
+            popOnTap(context, false),
+            primary: false,
+          ),
+          gameDialogButton(l.tipGo, popOnTap(context, true)),
+        ],
+      );
+      if (go == true && mounted) ref.read(tabIndexProvider.notifier).set(tab);
+    } finally {
+      StartupPopupGate.release();
+    }
+  }
+
+  /// 새 곤충 발견(새 종·첫 이색)을 하나씩 보여 준다 — 일일보상 자동 열기와 같은 조건에서만.
+  void _tickDiscovery(double dt) {
+    final armed =
+        DiscoveryFeed.instance.pending.value.isNotEmpty &&
+        !_isBoss &&
+        !_bossChallenge &&
+        !_defeated &&
+        !_tierClearPending &&
+        !_bossIntroShowing &&
+        !StartupPopupGate.busy &&
+        _playVisible();
+    if (!_discoveryWait.tick(dt, armed: armed)) return;
+    final d = DiscoveryFeed.instance.take();
+    if (d == null) return;
+    StartupPopupGate.hold();
+    unawaited(_showDiscovery(d).whenComplete(StartupPopupGate.release));
+  }
+
+  Future<void> _showDiscovery(Discovery d) async {
+    final l = AppLocalizations.of(context);
+    final species = _data.speciesById[d.speciesId];
+    if (species == null) return;
+    final save = ref.read(saveControllerProvider).value;
+    final locale = Localizations.localeOf(context).languageCode;
+    AudioService.instance.sfxRare();
+    // 처음 3종까지만 창으로 — 그 뒤 새 종은 화면을 막지 않는 안내로(2026-11-12 에뮬 점검: 15분에 8번 창이 떠
+    // 플레이·자동 보스 도전이 자주 멈췄다). 첫 이색은 귀해서 계속 창으로 알린다.
+    if (!d.variant && save != null && save.dex.length > 3) {
+      showCenterToast(
+        context,
+        '${l.discoveryNewTitle} ${species.name.resolve(locale)} · '
+        '${l.discoveryDexProgress(save.dex.length, _data.speciesById.length)}',
+      );
+      return;
+    }
+    await showGameDialog<void>(
+      context,
+      title: d.newSpecies ? l.discoveryNewTitle : l.discoveryVariantTitle,
+      iconWidget: bugStageImage(
+        species.id,
+        LifeStage.adult,
+        size: 72,
+        fallback: bugAvatar(species, size: 64),
+      ),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            species.name.resolve(locale),
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 17,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          if (d.variant) ...[
+            const SizedBox(height: 4),
+            Text(
+              l.discoveryVariantNote,
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: kHoney, fontSize: 12.5),
+            ),
+          ],
+          if (save != null) ...[
+            const SizedBox(height: 8),
+            Text(
+              l.discoveryDexProgress(save.dex.length, _data.speciesById.length),
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: Color(0xCCFFFFFF), fontSize: 13),
+            ),
+          ],
+        ],
+      ),
+      actions: [gameDialogButton(l.discoveryOk, popOnTap(context, null))],
+    );
+  }
+
+  /// 받을 수 있는 일일보상이 있으면 우편 창을 저절로 연다 — 시간대마다 한 번([dailyAutoOpenKey]).
+  /// 보스전·쓰러짐·다른 안내 중이거나 홈이 안 보이면 기다린다(첫 보스 안내와 같은 조건).
+  void _tickDailyAuto(double dt) {
+    final prefs = PlayPrefs.instance;
+    final save = ref.read(saveControllerProvider).value;
+    final daily = _data.dailyConfig;
+    final key = save == null || daily == null || !prefs.loaded
+        ? null
+        : dailyAutoOpenKey(
+            daily,
+            save.dailyClaims,
+            _clock.now(),
+            prefs.dailyAutoShown,
+          );
+    final armed =
+        key != null &&
+        !_isBoss &&
+        !_bossChallenge &&
+        !_defeated &&
+        !_tierClearPending &&
+        !_bossIntroShowing &&
+        // 시작 팝업(복귀 보상·새 소식·순위)·보스 처치 뒤 안내 사슬이 도는 중이면 기다린다.
+        !StartupPopupGate.busy &&
+        _playVisible();
+    if (!_dailyAuto.tick(dt, armed: armed)) return;
+    // 닫는 방식과 무관하게 이 시간대에는 다시 안 열리게 먼저 기록한다.
+    unawaited(prefs.markDailyAutoShown(key!));
+    // 떠 있는 동안 관문을 잡는다 — 순위 팝업처럼 조회를 마치고 관문을 기다리는 창이 그 위에 겹치지 않게.
+    StartupPopupGate.hold();
+    unawaited(
+      _showMail(
+        AppLocalizations.of(context),
+      ).whenComplete(StartupPopupGate.release),
+    );
+  }
+
   /// 연패 기록을 가르는 사냥터 열쇠 — 난이도·사냥터(심연은 층).
   String _zoneKey(SaveGame s) => s.inAbyss
       ? 'abyss:${s.abyssFloor}'
       : '${s.difficultyTier}:${_config.zoneOf(s.stageNumber)}';
 
-  /// 이 칸에서 자동 도전을 걸어도 되는가 — 앞 칸이고, 연패로 멈추지 않았다.
+  /// 이 칸에서 자동 도전을 걸어도 되는가 — 앞 칸이고, 연패로 멈추지 않았고, 질 게 뻔하지 않고, 쓰러져 내려온 뒤 그대로가 아니다.
   bool _autoBossAllowedHere(SaveGame save) =>
-      atClimbFront(save, _config) && !_autoFails.pausedAt(_zoneKey(save));
+      atClimbFront(save, _config) &&
+      !_autoFails.pausedAt(_zoneKey(save)) &&
+      !_bossLooksHopeless(save) &&
+      !_fellPausedHere(save);
 
-  /// 버튼에 "자동 멈춤"을 적을까 — 자동 도전은 켜져 있는데 이 칸에서는 연패로 멈췄다.
+  /// 쓰러져 이 칸으로 내려왔고 그 뒤 강화를 하나도 안 샀다.
+  String? _fallPausedZone;
+  int _fallPausedUpgrades = 0;
+  bool _fellPausedHere(SaveGame save) =>
+      _fallPausedZone != null &&
+      _fallPausedZone == _zoneKey(save) &&
+      _upgradeSum(save) <= _fallPausedUpgrades;
+  static int _upgradeSum(SaveGame s) =>
+      s.upgradeLevels.values.fold(0, (a, b) => a + b);
+
+  /// 버튼에 "자동 멈춤"을 적을까 — 자동 도전은 켜져 있는데 이 칸에서는 연패로 멈췄거나 질 게 뻔하다.
   bool _autoBossPausedHere(SaveGame save) =>
       PlayPrefs.instance.autoBoss.value &&
       _config.zoneMode &&
       atClimbFront(save, _config) &&
-      _autoFails.pausedAt(_zoneKey(save));
+      (_autoFails.pausedAt(_zoneKey(save)) ||
+          _bossLooksHopeless(save) ||
+          _fellPausedHere(save));
+
+  SaveGame? _hopelessSave;
+  int _hopelessStage = -1;
+  bool _hopeless = false;
+
+  /// 지금 힘으로 이 보스를 잡는 데 걸리는 시간이 **버티는 시간의 2배를 넘는가** — 그러면 자동 도전을 걸지 않는다
+  /// (2026-11-12 에뮬 점검: "보스 약 103분" 보스에게 자동으로 들어가 1분 만에 지고 100마리 게이지를 잃었다).
+  /// 스킬·펫·요정·버프·탭은 넣지 않은 보수적인 셈이라 2배 여유를 둔다(잡을 수 있는 보스를 막지 않게). 손으로 누르면 그대로 도전한다.
+  bool _bossLooksHopeless(SaveGame save) {
+    if (identical(save, _hopelessSave) && _hopelessStage == _stage) {
+      return _hopeless;
+    }
+    _hopelessSave = save;
+    _hopelessStage = _stage;
+    final st = huntStatsOf(
+      save,
+      _data,
+      _clock.now().toUtc(),
+      guildBonus: ref.read(guildBonusProvider),
+    );
+    final depth = _stage - 1;
+    final tier = save.difficultyTier;
+    final abyss = activeAbyssFloor(save);
+    final mut = _abyssMutation(save);
+    final bossHp =
+        bossMaxHp(_config, depth, tier: tier, abyssFloor: abyss) *
+        (mut?.of('bossHp') ?? 1.0);
+    final kill =
+        bossHp /
+        math.max(1e-9, baselineHitPower(st, boss: true) * st.attackSpeed);
+    final inc =
+        habitatThreat(
+          _config,
+          depth,
+          boss: true,
+          tier: tier,
+          abyssFloor: abyss,
+        ) *
+        (mut?.of('threat') ?? 1.0) *
+        100 /
+        (100 + st.defense) *
+        (1 - evadeChance(_config, st));
+    final net = inc - st.hpRegen;
+    final live = net <= 0 ? double.infinity : st.maxHp / net;
+    _hopeless = kill > live * 2;
+    return _hopeless;
+  }
 
   /// 보스에게 남은 체력(%, 1~100 — 0 으로 보이면 "다 깎았는데 졌다"로 읽힌다).
   int _bossHpLeftPct() =>
@@ -5770,11 +6630,14 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
           const SizedBox(height: 5),
           // 한 번에 하나의 미션만 노출. 수집하면 다음 미션으로 순환.
           if (missions.isNotEmpty)
-            _missionRow(
-              l,
-              save,
-              mcfg!,
-              missions[mcfg.activeIndex(save.missionClaims)],
+            KeyedSubtree(
+              key: TourKeys.mission,
+              child: _missionRow(
+                l,
+                save,
+                mcfg!,
+                missions[mcfg.activeIndex(save.missionClaims)],
+              ),
             ),
         ],
       ),
@@ -5806,10 +6669,13 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
       padding: const EdgeInsets.only(bottom: 6),
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
-        // 못 받는 미션을 누르면 교체 창(2026-10-10 사장님 요청 — 깨기 어려운 미션을 젤리로 바꾼다).
+        // 못 받는 미션을 누르면 **그 일을 하는 곳**으로 안내(2026-11-12 사장님 — "장비 제련"을 누르면 제련하는 곳으로).
+        // 교체는 오른쪽 ⇄ 아이콘으로(2026-10-10 사장님 요청 — 깨기 어려운 미션을 젤리로 바꾼다). 깰 수 없는 미션은 줄을 눌러도 교체.
         onTap: claimable
             ? () => _claimMission(l, def)
-            : (canSwap ? () => _swapMission(l, save, cfg, def) : null),
+            : (impossible && canSwap
+                  ? () => _swapMission(l, save, cfg, def)
+                  : () => _missionGuide(l, def)),
         // 받을 수 있으면 빨간 점도(2026-10-19 — 깜빡임만으로는 놓쳤다).
         child: RedDotBadge(
           show: claimable && !jellyDone,
@@ -5854,10 +6720,19 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                     if (claimable)
                       const Icon(Icons.card_giftcard, size: 12, color: _honey)
                     else if (canSwap)
-                      Icon(
-                        Icons.swap_horiz_rounded,
-                        size: 12,
-                        color: impossible ? _honey : const Color(0x99FFFFFF),
+                      GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTap: () => _swapMission(l, save, cfg, def),
+                        child: Padding(
+                          padding: const EdgeInsets.all(4),
+                          child: Icon(
+                            Icons.swap_horiz_rounded,
+                            size: 14,
+                            color: impossible
+                                ? _honey
+                                : const Color(0x99FFFFFF),
+                          ),
+                        ),
                       ),
                   ],
                 ),
@@ -5917,6 +6792,35 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
   }
 
   /// 미션 교체 — 보상 없이 다음 미션으로(젤리 `swapJelly`, 깰 수 없는 미션은 무료).
+  /// 미션이 하라는 일을 하는 곳을 짚어 준다(2026-11-12 사장님 확정) — 강화 패널·보스 칸은 그 자리를 밝히고,
+  /// 제련은 장비 탭으로 가서 모루를 밝힌다. 사냥은 화면을 두드리라는 안내만.
+  Future<void> _missionGuide(AppLocalizations l, MissionDef def) async {
+    switch (def.type) {
+      case MissionType.buyUpgrades:
+        await showTour(context, [
+          (key: TourKeys.upgrades, text: l.missionGuideUpgrade),
+        ]);
+      case MissionType.killBosses || MissionType.reachStage:
+        await showTour(context, [
+          (key: TourKeys.stage, text: l.missionGuideBoss),
+        ]);
+      case MissionType.forgeItems:
+        ref.read(tabIndexProvider.notifier).set(kEquipTabIndex);
+        // 탭이 바뀌어 모루가 그려진 다음 프레임에 짚는다(아직 없으면 안내만).
+        await Future<void>.delayed(const Duration(milliseconds: 350));
+        if (!mounted) return;
+        if (TourKeys.forge.currentContext != null) {
+          await showTour(context, [
+            (key: TourKeys.forge, text: l.missionGuideForge),
+          ]);
+        } else {
+          showCenterToast(context, l.missionGuideForge);
+        }
+      case MissionType.killMonsters:
+        showCenterToast(context, l.missionGuideHunt);
+    }
+  }
+
   Future<void> _swapMission(
     AppLocalizations l,
     SaveGame save,
@@ -6226,11 +7130,11 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
   // ── 다이얼로그/시트 ──────────────────────────────────────────
 
   /// 편지함 = 일일보상(점심/저녁) + 깜짝선물. 현재 로컬 시각·수령 이력으로 상태 표시.
-  void _showMail(AppLocalizations l) {
+  Future<void> _showMail(AppLocalizations l) {
     // 편지함을 열 때 운영 우편을 다시 받는다 — 플레이 중 발송된 보상이
     // 앱을 껐다 켜야 보이면 "안 왔다"는 문의가 된다.
     ref.invalidate(serverMailProvider);
-    showModalBottomSheet<void>(
+    return showModalBottomSheet<void>(
       context: context,
       // 일일보상 + 선물이 쌓이면 기본 시트 높이를 넘는다 — 스크롤 없이는
       // 맨 아래(깜짝선물 섹션)가 하단 바 뒤로 잘려 안 보였다.
@@ -6454,8 +7358,7 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     final parts = <String>[
       if (m.gold > 0) '💰${formatCompact(m.gold)}',
       if (m.jelly > 0) '${l.curJelly} ${m.jelly}',
-      if (m.chitin + m.mineral + m.sap > 0)
-        '🧪${formatCompact(m.chitin + m.mineral + m.sap)}',
+      if (m.chitin + m.mineral + m.sap > 0) 'mat',
     ];
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
@@ -6537,8 +7440,14 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                   if (parts.isNotEmpty)
                     Padding(
                       padding: const EdgeInsets.only(top: 2),
-                      child: Text(
-                        parts.join('  '),
+                      child: _rewardLine(
+                        gold: m.gold,
+                        jelly: m.jelly,
+                        mats: {
+                          MaterialKind.chitin: m.chitin,
+                          MaterialKind.mineral: m.mineral,
+                          MaterialKind.sap: m.sap,
+                        },
                         style: const TextStyle(
                           color: Color(0xFFFFE9A8),
                           fontSize: 11.5,
@@ -6630,12 +7539,6 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
     final h = rem.inHours;
     final m = rem.inMinutes % 60;
     final timeStr = h > 0 ? l.durationHm(h, m) : l.durationM(m);
-    final parts = <String>[
-      if (g.gold > 0) '💰${formatCompact(g.gold)}',
-      if (g.jelly > 0) '${l.curJelly} ${g.jelly}',
-      if (g.chitin + g.mineral + g.sap > 0)
-        '🧪${formatCompact(g.chitin + g.mineral + g.sap)}',
-    ];
     // 2배는 **받기 전에** 묻는다.
     //
     // 예전엔 1배로 먼저 주고 나서 "한 번 더"를 로컬로 얹었는데, 수령이 서버
@@ -6854,8 +7757,14 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    parts.join('  ·  '),
+                  _rewardLine(
+                    gold: g.gold,
+                    jelly: g.jelly,
+                    mats: {
+                      MaterialKind.chitin: g.chitin,
+                      MaterialKind.mineral: g.mineral,
+                      MaterialKind.sap: g.sap,
+                    },
                     style: const TextStyle(
                       color: _onScene,
                       fontWeight: FontWeight.w800,
@@ -6921,14 +7830,6 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
         (!claimedToday || save.dailyClaims[dailyBonusKey(rw.id)] != today);
     // 보상 요약 — 정액과 사냥 분치 중 큰 쪽(2026-10-08). 수령도 같은 값을 쓴다.
     final amt = r.read(saveControllerProvider.notifier).dailyRewardAmount(rw);
-    final matSum = amt.materials.entries
-        .where((e) => e.key != MaterialKind.jelly)
-        .fold<int>(0, (a, e) => a + e.value);
-    final parts = <String>[
-      if (amt.gold > 0) '💰${formatCompact(amt.gold)}',
-      if (rw.jelly > 0) '${l.curJelly} ${rw.jelly}',
-      if (matSum > 0) '🧪${formatCompact(matSum)}',
-    ];
     // "한 번 더 받기"(+1배) — 받은 직후 제안 창에서, 또는 "나중에"를 눌렀으면 이 줄의 버튼에서(2026-10-19 —
     // 예전엔 제안 창을 닫으면 그날 다시 받을 곳이 없었다).
     final bonusLeft =
@@ -7024,8 +7925,13 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                       fontSize: 13.5,
                     ),
                   ),
-                  Text(
-                    parts.join('  ·  '),
+                  _rewardLine(
+                    gold: amt.gold,
+                    jelly: rw.jelly,
+                    mats: {
+                      for (final e in amt.materials.entries)
+                        if (e.key != MaterialKind.jelly) e.key: e.value,
+                    },
                     style: const TextStyle(
                       color: Color(0xCCFFFFFF),
                       fontSize: 11.5,
@@ -8456,6 +9362,31 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                           ),
                         );
                       }),
+                      // 표본함 진열장(2026-11-12) — 왕중왕전에서 지지 않아도 종마다 하나씩 가짜 표본을 띄워 본다
+                      // (내 곤충 하나를 종·크기만 바꿔 복사 — 세이브는 그대로).
+                      _devBtn('표본함 미리보기', () {
+                        final bugs = ref
+                            .read(saveControllerProvider)
+                            .requireValue
+                            .bugs;
+                        final species = ref
+                            .read(gameDataProvider)
+                            .requireValue
+                            .allSpecies;
+                        final preview = bugs.isEmpty
+                            ? <IndividualBug>[]
+                            : [
+                                for (final (i, sp) in species.indexed)
+                                  bugs.first.copyWith(
+                                    id: 'dev_specimen_$i',
+                                    speciesId: sp.id,
+                                    stage: LifeStage.adult,
+                                    sizeMm: sp.sizeMaxMm,
+                                  ),
+                              ];
+                        Navigator.pop(context);
+                        showSpecimenBox(context, preview: preview);
+                      }),
                       _devBtn('심연 열기(극한으로)', () async {
                         await ref
                             .read(saveControllerProvider.notifier)
@@ -9024,6 +9955,24 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                                     fontSize: 17,
                                   ),
                                 ),
+                                // 칭호(2026-11-10) — 업적 창에서 고른다.
+                                if (achievementTitleName(
+                                      _config,
+                                      ref
+                                          .read(saveControllerProvider)
+                                          .value
+                                          ?.title,
+                                      Localizations.localeOf(ctx).languageCode,
+                                    )
+                                    case final t?)
+                                  Text(
+                                    '「$t」',
+                                    style: const TextStyle(
+                                      color: Color(0xFFFFD977),
+                                      fontWeight: FontWeight.w800,
+                                      fontSize: 12,
+                                    ),
+                                  ),
                               ],
                             ),
                     ),
@@ -9075,6 +10024,23 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
                   padding: EdgeInsets.symmetric(vertical: 10),
                   child: Divider(height: 1, color: Color(0x33EBA52F)),
                 ),
+                // 업적 · 칭호(2026-11-10).
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: () async {
+                      await showAchievementsDialog(ctx);
+                      if (ctx.mounted) setD(() {});
+                    },
+                    icon: const Icon(Icons.emoji_events_rounded, size: 16),
+                    label: Text(l.achievementsTitle),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: kHoney,
+                      side: const BorderSide(color: Color(0x66EBA52F)),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 6),
                 for (final r in rows)
                   Padding(
                     padding: const EdgeInsets.symmetric(vertical: 3),
@@ -9224,6 +10190,9 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
   Future<void> _showBuffSheet(AppLocalizations l) async {
     final buffs = _data.buffConfig;
     if (buffs == null) return;
+    if (!PlayPrefs.instance.buffSheetSeen) {
+      unawaited(PlayPrefs.instance.markBuffSheetSeen());
+    }
     final minutes = (buffs.durationSeconds / 60).round();
     // 시트를 열기 **전에** 읽는다 — 행마다 async 로 읽으면 첫 프레임에
     // 쿨다운 칩이 늦게 떠서 깜빡인다. 맵은 발동 시 제자리 갱신된다.
@@ -9615,55 +10584,77 @@ class _PlayScreenState extends ConsumerState<PlayScreen>
   }
 }
 
+/// 우편·선물·일일보상 줄의 보상 요약 — 재화마다 **아이콘 + 수**(2026-11-12 에뮬 점검: 재료 셋을 "🧪723" 한 덩이로 적어
+/// 받고 나서야 키틴·미네랄·수액이 241개씩인 줄 알았다).
+Widget _rewardLine({
+  int gold = 0,
+  int jelly = 0,
+  Map<MaterialKind, int> mats = const {},
+  required TextStyle style,
+}) {
+  final size = (style.fontSize ?? 12) + 3;
+  Widget item(Widget icon, int n) => Row(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      icon,
+      const SizedBox(width: 2),
+      Text(formatCompact(n), style: style),
+    ],
+  );
+  return Wrap(
+    spacing: 8,
+    runSpacing: 2,
+    crossAxisAlignment: WrapCrossAlignment.center,
+    children: [
+      if (gold > 0) item(goldIcon(size: size), gold),
+      if (jelly > 0)
+        item(
+          materialImage(
+            MaterialKind.jelly,
+            size: size,
+            fallback: Icon(materialIcon(MaterialKind.jelly), size: size * 0.9),
+          ),
+          jelly,
+        ),
+      for (final k in kRegularMaterials)
+        if ((mats[k] ?? 0) > 0)
+          item(
+            materialImage(
+              k,
+              size: size,
+              fallback: Icon(materialIcon(k), size: size * 0.9),
+            ),
+            mats[k]!,
+          ),
+    ],
+  );
+}
+
 /// 구매 수량 "최대" 표시값(지금 골드·재료로 살 수 있는 만큼, 상한까지).
 const _kBuyMax = 0;
 
 /// "최대" 구매 한 번에 넘기는 수 — [maxAffordableUpgrades] 기본 한도와 같게 둔다.
 const _kBuyMaxLimit = 1000;
 
-class _AmountButton extends StatelessWidget {
-  const _AmountButton({
-    required this.amount,
-    required this.selected,
-    required this.onTap,
-  });
-  final int amount;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final label = amount == _kBuyMax
-        ? AppLocalizations.of(context).upgradeBuyMax
-        : '+$amount';
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(10),
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 9),
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(10),
-          gradient: selected
-              ? const LinearGradient(colors: [Color(0xFFFFD977), kHoney])
-              : null,
-          color: selected ? null : const Color(0x33FFFFFF),
-          border: Border.all(
-            color: selected ? Colors.transparent : const Color(0x33FFFFFF),
-          ),
-        ),
-        child: Text(
-          label,
-          maxLines: 1,
-          style: TextStyle(
-            color: selected ? kHoneyInk : _onScene,
-            fontWeight: FontWeight.w900,
-            fontSize: 14,
-          ),
-        ),
-      ),
-    );
-  }
+/// 이번에 누르면 오를 레벨 수(대성공 덤 제외). ×10·×100 은 **상한까지만** 센다(2026-10-09 점검 — 상한 너머 레벨
+/// 값까지 더해, 남은 3레벨을 살 골드가 있어도 버튼이 꺼졌다). "최대"는 지금 골드·재료가 되는 만큼,
+/// 하나도 못 사면 다음 1레벨 값을 꺼진 채로 보여 준다. 행 버튼과 효과 미리보기가 같은 수를 본다.
+int _upgradeRowCount(
+  UpgradeSpec spec,
+  int level,
+  int gold,
+  int haveMat,
+  int buyAmount,
+) {
+  if (buyAmount != _kBuyMax) return upgradeBuyableCount(spec, level, buyAmount);
+  final n = maxAffordableUpgrades(
+    spec,
+    level,
+    gold: gold,
+    material: haveMat,
+    limit: _kBuyMaxLimit,
+  );
+  return n > 0 ? n : upgradeBuyableCount(spec, level, 1);
 }
 
 /// 구매 버튼 — 한 번 탭하면 1회, **꾹 누르고 있으면 연속**으로 레벨업한다.
@@ -9673,11 +10664,20 @@ class _HoldBuyButton extends StatefulWidget {
     required this.enabled,
     required this.onFire,
     required this.child,
+    this.onBlocked,
+    this.recommended = false,
   });
 
   final bool enabled;
   final VoidCallback onFire;
+
+  /// 이 줄이 지금 "추천"인가 — 추천 줄을 꾹 누르고 있으면 **추천이 다른 줄로 옮겨 갈 때 멈춘다**
+  /// (2026-11-12 에뮬 점검: 추천 줄을 4초 누르자 골드 3.4만이 전부 체력에 들어갔다 — 처음 한 레벨만 추천이었다).
+  final bool recommended;
   final Widget child;
+
+  /// 못 살 때 눌렀을 때(2026-11-12 점검 — 골드가 모자라면 눌러도 아무 반응이 없어 고장처럼 보였다).
+  final VoidCallback? onBlocked;
 
   @override
   State<_HoldBuyButton> createState() => _HoldBuyButtonState();
@@ -9688,8 +10688,11 @@ class _HoldBuyButtonState extends State<_HoldBuyButton> {
   // 홀드가 이어지면 점점 빨라진다(초반 천천히 → 빠르게).
   int _ticks = 0;
 
+  bool _holdFromRecommended = false;
+
   void _startHold() {
     if (!widget.enabled) return;
+    _holdFromRecommended = widget.recommended;
     widget.onFire(); // 홀드 인식 즉시 1회
     _ticks = 0;
     _schedule(const Duration(milliseconds: 180));
@@ -9698,7 +10701,9 @@ class _HoldBuyButtonState extends State<_HoldBuyButton> {
   void _schedule(Duration d) {
     _timer?.cancel();
     _timer = Timer(d, () {
-      if (!mounted || !widget.enabled) {
+      if (!mounted ||
+          !widget.enabled ||
+          (_holdFromRecommended && !widget.recommended)) {
         _stopHold();
         return;
       }
@@ -9733,7 +10738,7 @@ class _HoldBuyButtonState extends State<_HoldBuyButton> {
               AudioService.instance.hapticLight();
               widget.onFire();
             }
-          : null,
+          : widget.onBlocked,
       onLongPressStart: (_) {
         AudioService.instance.hapticLight();
         _startHold();
@@ -9748,49 +10753,58 @@ class _HoldBuyButtonState extends State<_HoldBuyButton> {
 class _UpgradeRow extends StatelessWidget {
   const _UpgradeRow({
     required this.kind,
-    required this.config,
+    required this.spec,
     required this.level,
     required this.gold,
     required this.materials,
     required this.buyAmount,
     required this.onBuy,
+    this.effect,
+    this.recommended = false,
+    this.capCost,
+    this.crystals = 0,
+    this.onCapBreak,
   });
 
+  /// 상한에 닿았을 때 심연 결정으로 여는 다음 돌파 단계 비용(못 열면 null).
+  final int? capCost;
+  final int crystals;
+  final VoidCallback? onCapBreak;
+
   final UpgradeKind kind;
-  final RunConfig config;
+
+  /// 이 세이브의 곡선(심연 결정으로 연 상한 돌파 포함 — core_save `upgradeSpecOf`).
+  final UpgradeSpec spec;
   final int level;
   final int gold;
   final Map<MaterialKind, int> materials;
   final int buyAmount;
   final VoidCallback onBuy;
 
+  /// 이번 구매가 사냥에서 바꾸는 것(몬스터 타수·보스 시간·한 대 피해·수입) — [_PlayScreenState._upgradeFx].
+  final String? effect;
+
+  /// 보스를 이기는 힘(버티는 힘 × 때리는 힘)을 골드당 가장 많이 올리는 줄.
+  final bool recommended;
+
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
-    final spec = config.upgrade(kind);
     final cur = spec.valueAt(level);
     final next = spec.valueAt(level + 1);
+    final awakenInfo = spec.awakenAt.isEmpty
+        ? null
+        : l.upgradeAwakenInfo(
+            spec.awakenAt
+                .where((a) => spec.maxLevel == null || a <= spec.maxLevel!)
+                .join('·'),
+          );
 
     // 재료 추가비용(있으면).
     final matKind = spec.materialKind;
     final haveMat = matKind == null ? 0 : (materials[matKind] ?? 0);
     final maxed = !spec.canBuyAt(level);
-    // 이번에 누르면 오를 레벨 수. ×10·×100 은 **상한까지만** 센다(2026-10-09 점검 — 상한 너머 레벨
-    // 값까지 더해, 남은 3레벨을 살 골드가 있어도 버튼이 꺼졌다). "최대"는 지금 골드·재료가 되는 만큼,
-    // 하나도 못 사면 다음 1레벨 값을 꺼진 채로 보여 준다.
-    final int count;
-    if (buyAmount == _kBuyMax) {
-      final n = maxAffordableUpgrades(
-        spec,
-        level,
-        gold: gold,
-        material: haveMat,
-        limit: _kBuyMaxLimit,
-      );
-      count = n > 0 ? n : upgradeBuyableCount(spec, level, 1);
-    } else {
-      count = upgradeBuyableCount(spec, level, buyAmount);
-    }
+    final count = _upgradeRowCount(spec, level, gold, haveMat, buyAmount);
     final batchCost = bulkUpgradeCost(spec, level, count);
     final batchMatCost = bulkUpgradeMaterialCost(spec, level, count);
     // ⚠️ 구매 가능 판정은 **화면에 적힌 금액(묶음 전체)** 기준이다
@@ -9811,7 +10825,8 @@ class _UpgradeRow extends StatelessWidget {
       child: Row(
         children: [
           InkWell(
-            onTap: () => _showUpgradeInfo(context, l, kind, cur),
+            onTap: () =>
+                _showUpgradeInfo(context, l, kind, cur, extra: awakenInfo),
             borderRadius: BorderRadius.circular(10),
             child: Stack(
               children: [
@@ -9843,13 +10858,43 @@ class _UpgradeRow extends StatelessWidget {
                   top: -1,
                   child: Icon(Icons.info, size: 13, color: Color(0xCCFFD977)),
                 ),
+                // 추천 — 아이콘 아래 배지(제목 줄을 비워 두려고, 2026-11-12).
+                if (recommended)
+                  Positioned(
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    child: Center(
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 4,
+                          vertical: 0.5,
+                        ),
+                        decoration: BoxDecoration(
+                          color: kHoney,
+                          borderRadius: BorderRadius.circular(5),
+                        ),
+                        child: Text(
+                          l.upgradeRecommend,
+                          maxLines: 1,
+                          style: const TextStyle(
+                            color: kHoneyInk,
+                            fontWeight: FontWeight.w900,
+                            fontSize: 9,
+                            height: 1.2,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
               ],
             ),
           ),
           const SizedBox(width: 10),
           Expanded(
             child: GestureDetector(
-              onTap: () => _showUpgradeInfo(context, l, kind, cur),
+              onTap: () =>
+                  _showUpgradeInfo(context, l, kind, cur, extra: awakenInfo),
               behavior: HitTestBehavior.opaque,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -9858,7 +10903,9 @@ class _UpgradeRow extends StatelessWidget {
                     // 상한이 있으면 `Lv.85/100` — 끝이 보여야 다음 길(펫·장비)을 찾는다.
                     spec.maxLevel == null
                         ? '${_statLabel(l, kind)}  Lv.$level'
-                        : '${_statLabel(l, kind)}  Lv.$level/${spec.maxLevel}',
+                        : '${_statLabel(l, kind)}  Lv.$level/${spec.capLevel}',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
                       color: _onScene,
                       fontWeight: FontWeight.w800,
@@ -9866,119 +10913,196 @@ class _UpgradeRow extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 2),
-                  Text(
-                    maxed
-                        ? _valueSingle(kind, cur)
-                        : _valuePair(kind, cur, next),
+                  // 값 줄 끝에 다음 각성 — 줄마다 다음 목표가 보이게(2026-11-10). 한 줄로 자른다(2026-11-12 —
+                  // 제목 줄에 추천·각성을 함께 두던 시절 좁은 화면에서 제목이 잘리거나 넘쳤다).
+                  Text.rich(
+                    TextSpan(
+                      text: maxed
+                          ? _valueSingle(kind, cur)
+                          : _valuePair(kind, cur, next),
+                      children: [
+                        if (spec.nextAwakenAt(level) case final a?)
+                          TextSpan(
+                            text: '  ·  ${l.upgradeAwakenNext('$a')}',
+                            style: const TextStyle(
+                              color: Color(0xFFFFD977),
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                      ],
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
                       color: Color(0xB3FFFFFF),
                       fontSize: 11.5,
                     ),
                   ),
+                  if (effect != null && !maxed)
+                    Text(
+                      effect!,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: Color(0xFFC5E1A5),
+                        fontWeight: FontWeight.w700,
+                        fontSize: 11,
+                      ),
+                    ),
                 ],
               ),
             ),
           ),
           const SizedBox(width: 8),
-          _HoldBuyButton(
-            enabled: affordable,
-            onFire: onBuy,
-            child: Container(
-              width: 96,
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(10),
-                color: affordable
-                    ? const Color(0xFF2E7D32)
-                    : const Color(0x33000000),
-                border: Border.all(
-                  color: affordable
-                      ? const Color(0xFF66BB6A)
-                      : const Color(0x22FFFFFF),
+          // 상한에 닿았고 심연 결정으로 더 열 수 있으면 "최대" 자리에 한계 돌파(2026-11-10).
+          if (maxed && capCost != null)
+            InkWell(
+              onTap: onCapBreak,
+              borderRadius: BorderRadius.circular(10),
+              child: Container(
+                width: 96,
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(10),
+                  color: crystals >= capCost!
+                      ? const Color(0xFF4527A0)
+                      : const Color(0x33000000),
+                  border: Border.all(color: const Color(0xFFB39DDB)),
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      l.upgradeCapBreak,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w800,
+                        fontSize: 11,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      '💠$capCost',
+                      style: TextStyle(
+                        color: crystals >= capCost!
+                            ? const Color(0xFFD1C4E9)
+                            : const Color(0x66FFFFFF),
+                        fontWeight: FontWeight.w800,
+                        fontSize: 12.5,
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              // 상한이면 "최대" **한 줄만** 크게 — 위아래 여백 없이 칸을 채운다.
-              // 예전엔 작은 글씨 + 빈 15px 이라 버튼 아래쪽이 뚫려 보였다
-              // (2026-09-14 지시). 높이는 일반 줄과 같게 고정해 목록이 안 흔들린다.
-              child: maxed
-                  ? SizedBox(
-                      height: 30,
-                      child: Center(
-                        child: Text(
-                          l.upgradeMaxed,
-                          style: const TextStyle(
-                            color: Color(0xFFFFE082),
-                            fontWeight: FontWeight.w900,
-                            fontSize: 16,
-                            letterSpacing: 2,
-                          ),
-                        ),
-                      ),
-                    )
-                  : Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          // 상한이 가까우면 남은 만큼만(`+3 Lv`) — 적힌 값이 실제로 오를 레벨이다.
-                          '+$count Lv',
-                          style: TextStyle(
-                            color: affordable
-                                ? Colors.white
-                                : const Color(0x66FFFFFF),
-                            fontWeight: FontWeight.w800,
-                            fontSize: 11,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        // 골드 + 재료 비용을 한 줄로 → 재료 유무와 무관하게 행 높이 통일.
-                        FittedBox(
-                          fit: BoxFit.scaleDown,
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                '💰${formatCompact(batchCost)}',
-                                style: TextStyle(
-                                  color: affordable
-                                      ? const Color(0xFFFFE082)
-                                      : const Color(0x66FFFFFF),
-                                  fontWeight: FontWeight.w800,
-                                  fontSize: 12.5,
-                                ),
-                              ),
-                              if (matKind != null && batchMatCost > 0) ...[
-                                const SizedBox(width: 6),
-                                materialImage(
-                                  matKind,
-                                  size: 12,
-                                  fallback: Icon(
-                                    materialIcon(matKind),
-                                    size: 11,
-                                    color: matOk
-                                        ? const Color(0xFF9CCC65)
-                                        : const Color(0xFFEF9A9A),
-                                  ),
-                                ),
-                                const SizedBox(width: 2),
-                                Text(
-                                  formatCompact(batchMatCost),
-                                  style: TextStyle(
-                                    color: matOk
-                                        ? const Color(0xFFC5E1A5)
-                                        : const Color(0xFFEF9A9A),
-                                    fontWeight: FontWeight.w800,
-                                    fontSize: 12,
-                                  ),
-                                ),
-                              ],
-                            ],
-                          ),
-                        ),
-                      ],
+            )
+          else
+            _HoldBuyButton(
+              enabled: affordable,
+              recommended: recommended,
+              onFire: onBuy,
+              onBlocked: maxed
+                  ? null
+                  : () => showCenterToast(
+                      context,
+                      gold < batchCost ? l.notEnoughGold : l.notEnoughMaterials,
                     ),
+              child: Container(
+                width: 96,
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(10),
+                  color: affordable
+                      ? const Color(0xFF2E7D32)
+                      : const Color(0x33000000),
+                  border: Border.all(
+                    color: affordable
+                        ? const Color(0xFF66BB6A)
+                        : const Color(0x22FFFFFF),
+                  ),
+                ),
+                // 상한이면 "최대" **한 줄만** 크게 — 위아래 여백 없이 칸을 채운다.
+                // 예전엔 작은 글씨 + 빈 15px 이라 버튼 아래쪽이 뚫려 보였다
+                // (2026-09-14 지시). 높이는 일반 줄과 같게 고정해 목록이 안 흔들린다.
+                child: maxed
+                    ? SizedBox(
+                        height: 30,
+                        child: Center(
+                          child: Text(
+                            l.upgradeMaxed,
+                            style: const TextStyle(
+                              color: Color(0xFFFFE082),
+                              fontWeight: FontWeight.w900,
+                              fontSize: 16,
+                              letterSpacing: 2,
+                            ),
+                          ),
+                        ),
+                      )
+                    : Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            // 상한이 가까우면 남은 만큼만(`+3 Lv`) — 적힌 값이 실제로 오를 레벨이다.
+                            '+$count Lv',
+                            style: TextStyle(
+                              color: affordable
+                                  ? Colors.white
+                                  : const Color(0x66FFFFFF),
+                              fontWeight: FontWeight.w800,
+                              fontSize: 11,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          // 골드 + 재료 비용을 한 줄로 → 재료 유무와 무관하게 행 높이 통일.
+                          FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  '💰${formatCompact(batchCost)}',
+                                  style: TextStyle(
+                                    color: affordable
+                                        ? const Color(0xFFFFE082)
+                                        : const Color(0x66FFFFFF),
+                                    fontWeight: FontWeight.w800,
+                                    fontSize: 12.5,
+                                  ),
+                                ),
+                                if (matKind != null && batchMatCost > 0) ...[
+                                  const SizedBox(width: 6),
+                                  materialImage(
+                                    matKind,
+                                    size: 12,
+                                    fallback: Icon(
+                                      materialIcon(matKind),
+                                      size: 11,
+                                      color: matOk
+                                          ? const Color(0xFF9CCC65)
+                                          : const Color(0xFFEF9A9A),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 2),
+                                  Text(
+                                    formatCompact(batchMatCost),
+                                    style: TextStyle(
+                                      color: matOk
+                                          ? const Color(0xFFC5E1A5)
+                                          : const Color(0xFFEF9A9A),
+                                      fontWeight: FontWeight.w800,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+              ),
             ),
-          ),
         ],
       ),
     );

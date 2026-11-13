@@ -30,6 +30,7 @@ class DuelSession {
     this.arena,
     this.arenaPerBout = false,
     this.researchLevels,
+    this.practice = false,
   });
 
   final String id;
@@ -94,6 +95,9 @@ class DuelSession {
   /// null = 옛 세션(그때 세이브의 연구 레벨).
   final Map<String, int>? researchLevels;
 
+  /// 연습 결투(2026-11-10, 친구 결투) — 티켓·점수·부상·보상이 없다. 경기가 끝나도 세이브를 바꾸지 않는다.
+  final bool practice;
+
   /// 위기에서 멈춰 탭 점수를 기다리는 중인가.
   bool get clutchPending => pendingLaunch != null && pendingIndex != null;
 
@@ -134,6 +138,7 @@ class DuelSession {
     arena: arena,
     arenaPerBout: arenaPerBout,
     researchLevels: researchLevels,
+    practice: practice,
   );
 
   Map<String, dynamic> toJson() => {
@@ -160,6 +165,7 @@ class DuelSession {
     'arena': ?arena?.key,
     if (arenaPerBout) 'apb': true,
     'rsL': ?researchLevels,
+    if (practice) 'pr': true,
   };
 
   static bool isDuel(Map<String, dynamic> j) => j['kind'] == 'duel';
@@ -201,6 +207,7 @@ class DuelSession {
         : null,
     arenaPerBout: j['apb'] == true,
     researchLevels: researchLevelsSnapshot(j['rsL']),
+    practice: j['pr'] == true,
   );
 }
 

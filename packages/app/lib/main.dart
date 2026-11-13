@@ -30,6 +30,7 @@ import 'domain/supabase_pvp_backend.dart';
 import 'features/title/title_screen.dart';
 import 'l10n/app_localizations.dart';
 import 'ui/art.dart' show loadAssetManifest;
+import 'ui/keep_words_delegate.dart';
 
 /// Supabase 자격증명은 코드에 넣지 않고 빌드 인자로 주입(GitHub 유출 방지):
 ///   flutter run --dart-define=SUPABASE_URL=... --dart-define=SUPABASE_ANON_KEY=...
@@ -236,7 +237,8 @@ class BugChampApp extends ConsumerWidget {
           ),
         ),
       ),
-      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      // 한국어 문구는 낱말 가운데서 안 끊기게 감싼다(2026-11-12, ui/keep_words_delegate.dart).
+      localizationsDelegates: KeepWordsDelegate.delegates,
       supportedLocales: AppLocalizations.supportedLocales,
       // null 이면 기기 설정을 따른다(기본). 설정에서 고르면 그 언어로 고정.
       //

@@ -39,6 +39,7 @@
 | 주간/월간 | 같은 기준의 7일·30일 |
 | 정착 사용자 | 가입 24h 넘긴 계정 중 최근 7일 접속 — 설치만 하고 떠난 사람 제외 |
 | D1 리텐션 | 어제 신규(`d1_new`) 중 오늘 접속한 수(`d1_returned`) |
+| 환불·취소(24h, 구글) | 2026-11-09 — 구글 Voided Purchases API 로 최근 24h 환불을 상품·계정·사유와 함께 적는다(지급한 젤리는 회수하지 않으니 운영자가 판단). 시크릿 `PLAY_SERVICE_ACCOUNT_JSON`(verify-purchase 와 같음)이 없으면 줄을 뺀다. ⚠️ 서비스 계정에 Play Console **재무 데이터 보기** 권한이 있어야 한다(없으면 "조회 실패(403)"). iOS 환불은 아직 없다(App Store Server Notifications 등록 필요). |
 | 계정 연동 | `auth.users.is_anonymous = false` (구글·애플 로그인) |
 | 누적 설치 | `auth.users` 전체 |
 | 결제 | `verified_purchases` 중 `environment = 'production'` |

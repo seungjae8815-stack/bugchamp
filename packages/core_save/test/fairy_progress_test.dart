@@ -1256,4 +1256,90 @@ void main() {
       expect(withStone, greaterThan(without * 2));
     });
   });
+
+  // 요정 먹이기(2026-11-09 사장님 확정 — 곤충 양분 게이지와 같은 규칙).
+  group('요정 먹이기', () {
+    test('실데이터 — 켜져 있고 채우는 양은 문턱을 넘지 않는다 · 일반만이면 합성과 같은 총량', () {
+      expect(cfg.gaugeOn, isTrue);
+      for (final g in FairyGrade.values) {
+        expect(cfg.feedOf(g), lessThanOrEqualTo(cfg.gaugeAtOf(g)));
+      }
+      // 합성 마릿수 3·3·4·3 과 같은 총량(일반 108마리 = 신화).
+      var commons = 1;
+      for (var g = 0; g < FairyGrade.values.length - 1; g++) {
+        commons *= cfg.mergeCountOf(FairyGrade.values[g]);
+      }
+      expect(
+        cfg.gaugeAtOf(FairyGrade.mythic) ~/ cfg.feedOf(FairyGrade.common),
+        commons,
+      );
+    });
+
+    test('같은 종류 일반 2마리를 먹이면 희귀 · 품질은 그대로 · 남은 양분은 게이지에', () {
+      final t = Fairy(
+        id: 't',
+        kind: kind,
+        grade: FairyGrade.common,
+        sub: sub,
+        baseRoll: 777,
+        subRoll: 333,
+      );
+      final s = withFairies([t, f(1), f(2), f(3)]);
+      final r = feedFairy(s, cfg, 't', ['f1', 'f2', 'f3']);
+      expect(r.isOk, isTrue);
+      final up = r.state!.fairyById('t')!;
+      // 4 + 4×3 = 16 → 희귀(12) · 남은 4.
+      expect(up.grade, FairyGrade.rare);
+      expect(up.gauge, 16 - cfg.gaugeAtOf(FairyGrade.rare));
+      expect(up.baseRoll, 777);
+      expect(up.subRoll, 333);
+      expect(r.state!.fairies.length, 1);
+    });
+
+    test('다른 종류 · 높은 등급 · 동행 · 레벨 올린 요정은 재료가 아니다', () {
+      final other = cfg.kinds.length > 1 ? cfg.kinds[1].id : kind;
+      final s = withFairies([
+        f(0),
+        f(1, k: other),
+        f(2, g: FairyGrade.rare),
+        f(3, lv: 2),
+        f(4),
+      ]).copyWith(companionId: 'f4');
+      final fodder = fairyFeedFodder(s, s.fairyById('f0')!).map((x) => x.id);
+      expect(fodder, isEmpty);
+      expect(feedFairy(s, cfg, 'f0', ['f2']).error, 'mismatch');
+    });
+
+    test('동행 요정도 먹이는 대상이 된다 · 신화는 더 못 먹인다', () {
+      final s = withFairies([
+        f(0),
+        f(1),
+        f(2),
+        f(3),
+      ]).copyWith(companionId: 'f0');
+      expect(feedFairy(s, cfg, 'f0', ['f1', 'f2', 'f3']).isOk, isTrue);
+      final m = withFairies([f(0, g: FairyGrade.mythic), f(1)]);
+      expect(feedFairy(m, cfg, 'f0', ['f1']).error, 'max_grade');
+    });
+
+    test('양분은 세이브를 오가도 같다 · 0 이면 싣지 않는다', () {
+      final x = Fairy(
+        id: 'x',
+        kind: kind,
+        grade: FairyGrade.rare,
+        sub: sub,
+        gauge: 9,
+      );
+      expect(Fairy.fromJson(x.toJson())!.gauge, 9);
+      expect(f(1).toJson().containsKey('gg'), isFalse);
+    });
+
+    test('자동 먹이기 — 아끼는 요정에 다음 등급씩 · 아무것도 못 하면 none', () {
+      final s = withFairies([f(0, lv: 3), for (var i = 1; i <= 3; i++) f(i)]);
+      final r = autoFeedFairies(s, cfg);
+      expect(r.isOk, isTrue);
+      expect(r.state!.fairyById('f0')!.grade, FairyGrade.rare);
+      expect(autoFeedFairies(withFairies([f(0)]), cfg).error, 'none');
+    });
+  });
 }

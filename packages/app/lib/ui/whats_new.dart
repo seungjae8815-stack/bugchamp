@@ -14,10 +14,10 @@ import 'game_dialog.dart';
 import 'popup_gate.dart';
 
 /// 이 빌드의 "업데이트 내용" 판. 내용([whatsNewItems])을 바꾸면 이 값도 바꾼다 — 기기마다 판마다 한 번 뜬다.
-const kWhatsNewVersion = '1.0.27';
+const kWhatsNewVersion = '1.0.28';
 
-/// 바로 앞 판 — 이 판을 못 보고 건너뛴 기기(1.0.25 이하에서 바로 올라옴)는 그 내용도 이어서 보여 준다.
-const kPrevWhatsNewVersion = '1.0.26';
+/// 바로 앞 판 — 이 판을 못 보고 건너뛴 기기(1.0.26 이하에서 바로 올라옴)는 그 내용도 이어서 보여 준다.
+const kPrevWhatsNewVersion = '1.0.27';
 
 /// 기기 플래그 — 마지막으로 보여 준 판(세이브가 아니라 기기 설정: 진행·보상과 무관한 안내라서).
 const kWhatsNewSeenKey = 'whatsNew.seen';
@@ -30,22 +30,24 @@ const _kFreshSave = Duration(minutes: 30);
 /// 그림이 없으면 [icon] 으로 그린다.
 typedef WhatsNewItem = ({IconData icon, String? image, String text});
 
-/// 1.0.27 업데이트 내용(2026-10-28 — 결투 경기장 판마다 · 연구 완료 버튼). [withPrev] 면 1.0.26 판을 뒤에 붙인다
-/// (1.0.26 을 건너뛰고 올라온 기기 — 연구소를 모른 채 넘어가지 않게).
+/// 1.0.28 업데이트 내용(2026-11-12 — 왕중왕전 · 먹이기 · 강화 · 심연 · 재미 요소 · 신규 혜택 · 도감 젤리).
+/// [withPrev] 면 1.0.27 판을 뒤에 붙인다(1.0.27 을 건너뛰고 올라온 기기).
 List<WhatsNewItem> whatsNewItems(AppLocalizations l, {bool withPrev = false}) =>
     [
-      (icon: Icons.stadium_rounded, image: null, text: l.whatsNew27Arena),
-      (icon: Icons.task_alt_rounded, image: null, text: l.whatsNew27Research),
-      if (withPrev) ..._whatsNew26(l),
+      (icon: Icons.emoji_events_rounded, image: null, text: l.whatsNew28Kotk),
+      (icon: Icons.restaurant_rounded, image: null, text: l.whatsNew28Feed),
+      (icon: Icons.trending_up_rounded, image: null, text: l.whatsNew28Upgrade),
+      (icon: Icons.layers_rounded, image: null, text: l.whatsNew28Abyss),
+      (icon: Icons.celebration_rounded, image: null, text: l.whatsNew28Fun),
+      (icon: Icons.card_giftcard_rounded, image: null, text: l.whatsNew28Shop),
+      (icon: Icons.menu_book_rounded, image: null, text: l.whatsNew28Dex),
+      if (withPrev) ..._whatsNew27(l),
     ];
 
-/// 1.0.26 업데이트 내용(2026-10-22 — 연구소 · 하단 탭 두 쪽 · 연구 패스/올인원 패스 · 2026-10-25 곤충학자 패스 2배 · 계정).
-List<WhatsNewItem> _whatsNew26(AppLocalizations l) => [
-  (icon: Icons.science_rounded, image: null, text: l.whatsNew26Lab),
-  (icon: Icons.swap_horiz_rounded, image: null, text: l.whatsNew26Tabs),
-  (icon: Icons.workspace_premium_rounded, image: null, text: l.whatsNew26Pass),
-  (icon: Icons.female_rounded, image: null, text: l.whatsNew26SexSize),
-  (icon: Icons.account_circle_rounded, image: null, text: l.whatsNew26Account),
+/// 1.0.27 업데이트 내용(2026-10-28 — 결투 경기장 판마다 · 연구 완료 버튼).
+List<WhatsNewItem> _whatsNew27(AppLocalizations l) => [
+  (icon: Icons.stadium_rounded, image: null, text: l.whatsNew27Arena),
+  (icon: Icons.task_alt_rounded, image: null, text: l.whatsNew27Research),
 ];
 
 /// 지금 세이브가 막 시작한 유저의 것인가.

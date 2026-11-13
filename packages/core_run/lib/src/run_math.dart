@@ -280,7 +280,7 @@ int upgradeCost(UpgradeSpec spec, int level) {
 /// 있어도 버튼이 꺼져 있었다(2026-10-09 점검). 비용·구매 판정·버튼 글자가 모두 이 수를 쓴다.
 int upgradeBuyableCount(UpgradeSpec spec, int level, int count) {
   if (count <= 0) return 0;
-  final max = spec.maxLevel;
+  final max = spec.capLevel;
   if (max == null) return count;
   final left = max - level;
   if (left <= 0) return 0;
@@ -304,6 +304,8 @@ int bulkUpgradeCost(UpgradeSpec spec, int level, int count) {
 /// 업그레이드 [level] → 다음 레벨 구매에 드는 재료 비용(재료 미요구면 0).
 int upgradeMaterialCost(UpgradeSpec spec, int level) {
   if (spec.materialKind == null) return 0;
+  // 초반은 골드로만(2026-11-12 — 재료 수급이 느려 처음 강화가 멈췄다).
+  if (level < spec.materialFreeLevels) return 0;
   final v = spec.materialBaseCost * math.pow(spec.materialCostGrowth, level);
   return v >= kMaxCurrency ? kMaxCurrency : v.round();
 }
@@ -316,6 +318,35 @@ int bulkUpgradeMaterialCost(UpgradeSpec spec, int level, int count) {
     total = _addCapped(total, upgradeMaterialCost(spec, level + i));
   }
   return total;
+}
+
+/// 강화 대성공(2026-11-10 사장님 확정) — [level] 에서 한 레벨을 살 때 1레벨이 덤으로 붙나.
+///
+/// [seed](계정 — 앱은 세이브 생성 시각과 난이도)·[kind]·[level] 마다 **정해진 값**이다.
+/// 매번 굴리면 앱을 껐다 켜며 다시 굴릴 수 있다. 확률은 `run_config.json → upgradeLucky.chance`.
+bool upgradeLuckyAt(
+  RunConfig c, {
+  required int seed,
+  required UpgradeKind kind,
+  required int level,
+}) {
+  if (c.upgradeLuckyChance <= 0) return false;
+  final mixed =
+      ((seed & 0x7fffffff) * 1000003 + kind.index * 7919 + level) & 0x7fffffff;
+  return math.Random(mixed).nextDouble() < c.upgradeLuckyChance;
+}
+
+/// [level] 에서 한 레벨을 샀을 때의 새 레벨 — 대성공이면 덤 1레벨(상한까지). 앱 구매·시뮬 공용.
+int upgradeLevelAfterBuy(
+  RunConfig c,
+  UpgradeSpec spec, {
+  required int seed,
+  required int level,
+}) {
+  final lucky =
+      upgradeLuckyAt(c, seed: seed, kind: spec.kind, level: level) &&
+      spec.canBuyAt(level + 1);
+  return level + (lucky ? 2 : 1);
 }
 
 /// 가진 [gold]·[material](업그레이드가 요구하는 재료 수)로 [level] 부터 **연속으로 살 수 있는** 레벨 수

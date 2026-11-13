@@ -70,6 +70,9 @@ int _pvpRank = 10;
 /// 극한을 깬 유저만 해당한다 — 90일 표의 끝(극한 최종 보스) 이후의 수입이다.
 int _abyssRank = 10;
 
+/// 왕중왕전 주간 성적(1 우승 · 2 준우승 · 4 4강 · 8 · 16, 0 = 상위 4 밖). `--kotk-place=`. 젤리는 상위 4명뿐(2026-11-12).
+int _kotkPlace = 0;
+
 /// 길드 보스 주간 순위(같은 티어 길드끼리, 0 = 순위 밖·길드 없음). `--guild-boss-rank=`.
 /// 기본값은 다른 순위와 같은 이유로 **젤리를 받는 마지막 순위**(10위).
 int _guildBossRank = 10;
@@ -100,6 +103,8 @@ void main(List<String> args) {
         _pvpRank = int.parse(m.group(2)!);
       case 'abyss-rank':
         _abyssRank = int.parse(m.group(2)!);
+      case 'kotk-place':
+        _kotkPlace = int.parse(m.group(2)!);
       case 'guild-boss-rank':
         _guildBossRank = int.parse(m.group(2)!);
       case 'guild-war':
@@ -242,6 +247,18 @@ void main(List<String> args) {
         : '$_abyssRank위 $abyssJelly젤리 (주간 → ÷7, 극한 이후)',
   ));
 
+  // ── 4c2. 왕중왕전 주간 성적(2026-11-12) — 젤리는 상위 4명(우승 50 · 준우승 30 · 4강 10). 지면 곤충이 표본으로 소모된다.
+  final kotkJelly = _kotkPlace <= 0
+      ? 0
+      : (battle.kotk.rewardFor(_kotkPlace)?.jelly ?? 0);
+  rows.add((
+    name: '왕중왕전',
+    perDay: kotkJelly / 7,
+    note: _kotkPlace <= 0
+        ? '상위 4 밖 — 0 (재료만)'
+        : '$_kotkPlace등 $kotkJelly젤리 (주간 → ÷7)',
+  ));
+
   // ── 4d. 길드 보스 주간 순위(1.0.15) — 같은 티어 10위까지, 그 주에 공격한 길드원 한 명당.
   // 보스 공격·처치·미션·출석·상점에는 젤리가 없다(무한 통로).
   final gBossJelly = guild.boss.rankJelly(_guildBossRank);
@@ -318,12 +335,13 @@ void main(List<String> args) {
     ...dex.discoverMilestones,
     ...dex.conquerMilestones,
     ...dex.bossMilestones,
+    ...dex.variantMilestones,
   ].fold<int>(0, (a, m) => a + m.jelly);
   const dexDays = 90; // 극한 최종 보스까지의 설계 기간(CLAUDE.md §2.4)
   rows.add((
     name: '도감(일회성)',
     perDay: dexJelly / dexDays,
-    note: '발견·정복·보스 마일스톤 합 $dexJelly젤리 — 계정당 1회, 90일 환산(÷$dexDays)',
+    note: '발견·정복·보스·이색 마일스톤 합 $dexJelly젤리 — 계정당 1회, 90일 환산(÷$dexDays)',
   ));
 
   // ── 9. 사냥터 첫 클리어(roadmap.json → rewardJelly) — **유한**하지만 **난이도마다 따로** 받는다.
@@ -349,7 +367,7 @@ void main(List<String> args) {
   stdout.writeln('── 가정 ──');
   stdout.writeln(
     '  활동 ${_activeHours}h/일 · 광고 시청률 $_adRate · 리그 $_leagueId · 대회 $_eventRank위'
-    ' · 결투 $_pvpRank위 · 심연 $_abyssRank위'
+    ' · 결투 $_pvpRank위 · 심연 $_abyssRank위 · 왕중왕전 $_kotkPlace등'
     ' · 길드 보스 $_guildBossRank위 · 길드전 $_guildTier $_guildWar',
   );
   stdout.writeln('');

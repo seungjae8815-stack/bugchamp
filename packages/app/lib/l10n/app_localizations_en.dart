@@ -653,10 +653,10 @@ class AppLocalizationsEn extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count eggs were',
-      one: '1 egg was',
+      other: '$count eggs',
+      one: '1 egg',
     );
-    return 'Your storage was full —\n$_temp0 not collected';
+    return 'No room left —\nyou missed $_temp0';
   }
 
   @override
@@ -985,6 +985,34 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get whatsNewOk => 'OK';
+
+  @override
+  String get whatsNew28Kotk =>
+      'King of Kings — a weekly hard-mode tournament with one bug (home banner). Win for jelly, materials and a golden crown; any other bug becomes a specimen';
+
+  @override
+  String get whatsNew28Feed =>
+      'Feeding — feed bugs of the same species or fairies of the same kind to fill nutrients and raise rarity or grade (essence conversion is now part of feeding)';
+
+  @override
+  String get whatsNew28Upgrade =>
+      'Upgrades — awakening (bonus levels at set levels), lucky upgrades, effect preview and picks · gold only up to Lv.50';
+
+  @override
+  String get whatsNew28Abyss =>
+      'Abyss — weekly mutations · abyss crystals for imprints and upgrade cap breaks · abyss spores for the Lab\'s new Abyss research';
+
+  @override
+  String get whatsNew28Fun =>
+      'Weekend events · achievements and titles · size ranking per species · practice duels from the leaderboard · Specimen Case (next to the Dex)';
+
+  @override
+  String get whatsNew28Shop =>
+      'Each jelly pack gives double on first purchase · instant hatch, lay and breakthrough are free the first time · your first 5 hatches take at most 5 min';
+
+  @override
+  String get whatsNew28Dex =>
+      'Dex jelly is now 10 for completing each of discovery, conquest, variants and boss collection (gold and fossils from earlier milestones stay)';
 
   @override
   String get whatsNewAvatar =>
@@ -1547,6 +1575,11 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String autoReleaseDoneCount(int count) {
+    return 'Dismantled $count';
+  }
+
+  @override
   String autoReleasePreview(Object count, Object mats) {
     return '$count bugs will be released for $mats materials';
   }
@@ -1736,7 +1769,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get roadmapReplay => 'Replay';
 
   @override
-  String get chapterClearTitle => 'Chapter cleared! 🎉';
+  String get chapterClearTitle => 'Zone cleared! 🎉';
+
+  @override
+  String chapterClearZoneMsg(int zone, String boss) {
+    return 'Zone $zone boss $boss defeated! The next zone is open.';
+  }
 
   @override
   String chapterClearMsg(String difficulty, String boss) {
@@ -2761,6 +2799,189 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get nicknameRequiredBody =>
       'This is the name other collectors will see. You only set it once.';
+
+  @override
+  String get nicknameSuggestPrefix => 'Bug';
+
+  @override
+  String get nicknameSuggestedNote =>
+      'We picked a name for you. Keep it or type your own.';
+
+  @override
+  String get bugDetailMore => 'Growth & stats details';
+
+  @override
+  String get bugDetailLess => 'Show less';
+
+  @override
+  String storeFirstBonus(int n) {
+    return 'First purchase 2x! +$n bonus jelly';
+  }
+
+  @override
+  String jellyShortHave(int n) {
+    return 'You have $n jelly';
+  }
+
+  @override
+  String get jellyShortFirstBonus =>
+      'Jelly packs are 2x on your first purchase!';
+
+  @override
+  String get discoveryNewTitle => 'New bug discovered!';
+
+  @override
+  String get discoveryVariantTitle => 'Rare color found!';
+
+  @override
+  String get discoveryVariantNote => 'A very rare, differently colored bug!';
+
+  @override
+  String discoveryDexProgress(int n, int total) {
+    return 'Bugdex $n / $total';
+  }
+
+  @override
+  String get discoveryOk => 'Nice!';
+
+  @override
+  String rarityAutoFeedBody(String ups, String fodder) {
+    return 'Feeds bugs of the same species to raise rarity (lower-rarity bugs fill less).\nRarity ups: $ups · bugs used as material: $fodder';
+  }
+
+  @override
+  String guideRarityFeed(String common, String epic, String legend) {
+    return 'Rarity up: feeding bugs of the same species fills nutrients. Lower-rarity bugs fill a little (Common $common), higher-rarity bugs fill a lot (Epic $epic), and Legendary needs $legend. Bugs rarer than this one, and protected or invested bugs, are never fed. Trained stats stay.';
+  }
+
+  @override
+  String rarityWorthBtn(int cur, int next) {
+    return 'Nutrients $cur / $next';
+  }
+
+  @override
+  String get rarityFeedTitle => 'Feed bugs';
+
+  @override
+  String get rarityFeedBody =>
+      'Feeding bugs of the same species fills nutrients. Lower-rarity bugs fill a little, higher-rarity bugs fill a lot. When nutrients are full, the rarity goes up. Grade nutrients for grade-ups build up at the same time.';
+
+  @override
+  String rarityFeedGauge(int cur, int next, String name) {
+    return 'Nutrients $cur / $next → $name';
+  }
+
+  @override
+  String rarityFeedToNext(int n, String to) {
+    return 'To next: $n → $to';
+  }
+
+  @override
+  String rarityFeedAll(int n, String to) {
+    return 'Feed all: $n → $to';
+  }
+
+  @override
+  String get rarityFeedNone => 'No same-species bugs to feed';
+
+  @override
+  String get rarityNeedOnline => 'Connect to the internet to raise rarity';
+
+  @override
+  String guideFairyFeed(
+    String common,
+    String epic,
+    String mythic,
+    String perLevel,
+    String caps,
+  ) {
+    return 'Feeding fairies of the same kind fills nutrients; when full, the grade goes up. Lower-grade fairies fill a little (Common $common), higher-grade ones fill a lot (Epic $epic), and Mythic needs $mythic. Quality carries over when the grade rises. Companion fairies, leveled-up fairies and higher-grade fairies are never used as material. +$perLevel stats per level · max level by grade $caps.';
+  }
+
+  @override
+  String get fairyFeedBtn => 'Feed';
+
+  @override
+  String get fairyFeedTitle => 'Feed fairies';
+
+  @override
+  String get fairyFeedBody =>
+      'Feeding fairies of the same kind fills nutrients. Lower-grade fairies fill a little, higher-grade ones fill a lot. When nutrients are full the grade goes up, and quality carries over.';
+
+  @override
+  String get fairyFeedNone => 'No fairies of the same kind to feed';
+
+  @override
+  String get fairyFeedNote =>
+      'Companion and leveled-up fairies, and fairies of a higher grade than this one, are never fed.';
+
+  @override
+  String fairyFeedUp(String grade) {
+    return 'Raised to $grade!';
+  }
+
+  @override
+  String get fairyFeedStored => 'Nutrients stored';
+
+  @override
+  String get fairyFeedHubHint =>
+      'Tap a fairy and use [Feed] to feed fairies of the same kind. Auto feed feeds the most valued fairy of each kind.';
+
+  @override
+  String get fairyAutoFeed => 'Auto feed';
+
+  @override
+  String fairyAutoFeedConfirm(String ups, String used) {
+    return 'Grade ups: $ups · fairies used as material: $used';
+  }
+
+  @override
+  String fairyAutoFeedDone(String ups) {
+    return 'Grade up ×$ups';
+  }
+
+  @override
+  String get guideStorageFeed =>
+      'Disassemble unwanted bugs for materials, or feed them to a bug of the same species (the nutrients button in bug details). Feeding builds rarity nutrients and grade nutrients together; grade nutrients pay for that bug\'s grade-ups and passive rerolls. Essence you collected before is spent first for that species. Locked bugs are never used for disassembly or feeding. Equipped, hatching and training bugs are not used either.';
+
+  @override
+  String guidePassiveRerollFeed(String essence, String jelly) {
+    return 'Reroll: spend $essence grade nutrients or $jelly jelly to reroll the size, then keep the new or current value (leftover essence is used first). The type never changes.';
+  }
+
+  @override
+  String rarityFeedGrade(int n) {
+    return 'Grade nutrients +$n';
+  }
+
+  @override
+  String igGradeUpFunds(String have, String need) {
+    return 'Grade nutrients $have / $need';
+  }
+
+  @override
+  String igNeedMoreFunds(String n) {
+    return 'Need $n more grade nutrients — feed bugs of the same species';
+  }
+
+  @override
+  String igLegacyEssenceFirst(String n) {
+    return 'Your $n leftover essence is used first';
+  }
+
+  @override
+  String passiveRerollFundsHave(String have) {
+    return 'Grade nutrients $have';
+  }
+
+  @override
+  String get rarityFeedNote =>
+      'Protected or invested bugs, and bugs rarer than this one, are never fed.';
+
+  @override
+  String rarityFeedStored(int cur, int next) {
+    return 'Nutrients stored ($cur / $next)';
+  }
 
   @override
   String get renameForcedTitle => 'Please change your nickname';
@@ -4403,7 +4624,9 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get abyssWeekReset => 'A new week — back to Abyss F1!';
+  String abyssWeekReset(int n) {
+    return 'A new week — Abyss starts at F$n!';
+  }
 
   @override
   String get abyssRankRewardTitle => 'Abyss Weekly Rank Reward';
@@ -8352,7 +8575,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String guideRarityEffect(String hunt, String duel) {
-    return 'Higher rarity means a bigger hunting contribution as a pet ($hunt) and higher HP/ATK/DEF in duels and contests (Legendary $duel). It is also worth more essence, and takes longer to hatch and breed.';
+    return 'Higher rarity means a bigger hunting contribution as a pet ($hunt) and higher HP/ATK/DEF in duels and contests (Legendary $duel). As feeding material it also adds more grade nutrients, and it takes longer to hatch and breed.';
   }
 
   @override
@@ -8363,6 +8586,11 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String guidePotionCost(String costs, String max, String bonus) {
     return 'Same-species essence needed to grade up: $costs (from Common→Uncommon onward). Add up to $max growth potions per grade up — each adds +$bonus points to the new stat quality roll (max 100).';
+  }
+
+  @override
+  String guidePotionCostFeed(String costs, String max, String bonus) {
+    return 'Grade nutrients needed to grade up: $costs (from Common→Uncommon onward; leftover essence is used first). Add up to $max growth potions per grade up — each adds +$bonus points to the new stat quality roll (max 100).';
   }
 
   @override
@@ -8782,7 +9010,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get researchFxHuntEvade => 'Hunt evasion';
 
   @override
-  String get researchFxHuntExp => 'EXP gain';
+  String get researchFxHuntExp => 'EXP gain (idle too)';
 
   @override
   String get researchFxSkillCooldown => 'Skill cooldown';
@@ -8800,7 +9028,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get researchFxTraitChance => 'New bloodline trait chance';
 
   @override
-  String get researchFxPotionChance => 'Growth potion drop chance';
+  String get researchFxPotionChance =>
+      'Growth potion drop rate · daily cap +1 per 10 levels';
 
   @override
   String get researchFxSalvageMat => 'Salvage & release materials';
@@ -8815,5 +9044,769 @@ class AppLocalizationsEn extends AppLocalizations {
   String get researchFxDuelCrit => 'Duel crit chance';
 
   @override
-  String get researchFxDuelGrit => 'Clutch tap threshold';
+  String get researchFxDuelGrit => 'Easier tap counter (threshold)';
+
+  @override
+  String get researchFxKillHeal => 'Kill heal';
+
+  @override
+  String get researchFxPetShare => 'Equipped pet bonus (atk·HP)';
+
+  @override
+  String abyssSporesGot(String n) {
+    return 'Abyss spores +$n';
+  }
+
+  @override
+  String get researchTabAbyss => 'Abyss';
+
+  @override
+  String get abyssSpores => 'Abyss spores';
+
+  @override
+  String get abyssLabInfo =>
+      'Abyss spores drop from floor bosses you clear for the first time each week, plus a bonus each time you first reach a 10th floor. Abyss research only works inside the Abyss.';
+
+  @override
+  String get abyssLabLocked =>
+      'Defeat the Extreme final boss to open the Abyss and research here.';
+
+  @override
+  String get abyssLabSlotTitle => 'Abyss research slot';
+
+  @override
+  String get abyssLabSlotEmpty => 'Empty — pick a research below';
+
+  @override
+  String get abyssLabNoSpores => 'Not enough abyss spores';
+
+  @override
+  String get researchFxAbyssShortcut =>
+      'Weekly start floor (share of last week\'s best, in 10s)';
+
+  @override
+  String get researchFxAbyssFastFloor => 'Kills needed for an Abyss boss';
+
+  @override
+  String get researchFxMutationTame => 'Weekly mutation drawbacks';
+
+  @override
+  String get researchFxCrystalBonus => 'Abyss crystal gain';
+
+  @override
+  String get researchFxSporeBonus => 'Abyss spore gain';
+
+  @override
+  String get researchFxAbyssIdleGold => 'Abyss idle gold';
+
+  @override
+  String get upgradeRecommend => 'Top pick';
+
+  @override
+  String upgradeFxHits(String from, String to) {
+    return 'Kill in $from → $to hits';
+  }
+
+  @override
+  String upgradeFxBoss(String from, String to) {
+    return 'Boss ~$from → $to';
+  }
+
+  @override
+  String upgradeFxBite(String from, String to) {
+    return 'Hit taken $from% → $to% HP';
+  }
+
+  @override
+  String upgradeFxGold(String from, String to) {
+    return 'Gold income +$from% → +$to%';
+  }
+
+  @override
+  String upgradeFxXp(String from, String to) {
+    return 'XP +$from% → +$to%';
+  }
+
+  @override
+  String upgradeFxBugs(String from, String to) {
+    return 'Bug finds +$from% → +$to%';
+  }
+
+  @override
+  String upgradeFxMats(String from, String to) {
+    return 'Materials +$from% → +$to%';
+  }
+
+  @override
+  String upgradeFxSec(String n) {
+    return '${n}s';
+  }
+
+  @override
+  String upgradeFxMin(String n) {
+    return '${n}m';
+  }
+
+  @override
+  String upgradeAwakenNext(String level) {
+    return 'Awaken Lv.$level';
+  }
+
+  @override
+  String upgradeAwakenToast(String name, String n) {
+    return 'Awakened! $name +$n bonus levels';
+  }
+
+  @override
+  String upgradeLuckyToast(String n) {
+    return 'Great success! +$n bonus level';
+  }
+
+  @override
+  String upgradeAwakenInfo(String levels) {
+    return 'Awaken: reaching Lv.$levels grants bonus levels.';
+  }
+
+  @override
+  String bossLostRecommend(String name) {
+    return 'Try upgrading: $name';
+  }
+
+  @override
+  String get upgradeCapBreak => 'Break Limit';
+
+  @override
+  String upgradeCapNeed(String have, String need) {
+    return 'Not enough Abyss Crystals ($have/$need) — earned every 10 Abyss floors';
+  }
+
+  @override
+  String upgradeCapOpened(String name, String n) {
+    return '$name cap +$n levels!';
+  }
+
+  @override
+  String abyssCrystalsGot(String n) {
+    return 'Abyss Crystals +$n';
+  }
+
+  @override
+  String abyssMutationTitle(String name) {
+    return 'This week in the Abyss: $name';
+  }
+
+  @override
+  String get abyssImprintTitle => 'Abyss Imprint';
+
+  @override
+  String get abyssImprintBody =>
+      'Spend crystals from every 10 Abyss floors on permanent stats. Maxed upgrades can also break their limit with crystals.';
+
+  @override
+  String abyssCrystalsHave(String n) {
+    return '💠$n owned';
+  }
+
+  @override
+  String abyssImprintLevel(String level, String pct) {
+    return 'Lv.$level (+$pct%)';
+  }
+
+  @override
+  String weekendEventBar(String name, String desc, String left) {
+    return '🎉 $name · $desc · $left left';
+  }
+
+  @override
+  String weekendHours(String n) {
+    return '${n}h';
+  }
+
+  @override
+  String get achievementsTitle => 'Achievements · Titles';
+
+  @override
+  String get achievementsBody =>
+      'Tap a completed achievement to wear its title. Others see it on your profile.';
+
+  @override
+  String get achievementsWearing => 'Wearing';
+
+  @override
+  String get sizeRankButton => 'Size ranking';
+
+  @override
+  String sizeRankTitle(String name) {
+    return '$name size ranking';
+  }
+
+  @override
+  String get sizeRankEmpty =>
+      'No records yet. Catch the biggest one and take first place!';
+
+  @override
+  String get sizeRankOffline =>
+      'Could not load the ranking. Check your connection.';
+
+  @override
+  String sizeRankMine(String rank, String size) {
+    return 'You: #$rank · ${size}mm';
+  }
+
+  @override
+  String get practiceDuel => 'Practice duel';
+
+  @override
+  String get practiceOffline => 'Practice duels need a server connection.';
+
+  @override
+  String get practiceCooldown =>
+      'Please wait a moment before the next practice duel.';
+
+  @override
+  String get practiceFailed => 'Couldn\'t load this player\'s defense team.';
+
+  @override
+  String get kotkTitle => 'King of Kings';
+
+  @override
+  String get kotkRulesTitle => 'Hard mode rules';
+
+  @override
+  String get kotkEntryTitle => 'My entry';
+
+  @override
+  String get leaderboardLoadFail =>
+      'Could not load the rankings. Please try again in a moment.';
+
+  @override
+  String kotkMinNote(String n) {
+    return 'Jelly, badge and crown are given only in weeks with $n+ entrants (fewer: materials only).';
+  }
+
+  @override
+  String get kotkPendingNote =>
+      'Results are confirmed Monday 09:00 (KST) — specimens and rewards apply then.';
+
+  @override
+  String kotkMinResult(String n) {
+    return 'Fewer than $n entered this week, so only materials were given.';
+  }
+
+  @override
+  String get notifKotkTitle => 'King of Kings closes soon';
+
+  @override
+  String get notifKotkBody =>
+      'You haven\'t entered this week\'s King of Kings. Entries close tomorrow 09:00 (KST).';
+
+  @override
+  String get weeklyTitle => 'Last week';
+
+  @override
+  String get weeklySubtitle => 'A new week has begun!';
+
+  @override
+  String weeklyLevels(String n) {
+    return 'Upgraded $n levels';
+  }
+
+  @override
+  String weeklyLucky(String n) {
+    return '$n lucky upgrades';
+  }
+
+  @override
+  String weeklyAwaken(String n) {
+    return '$n awakenings';
+  }
+
+  @override
+  String weeklyAbyss(String n) {
+    return 'Abyss best: floor $n';
+  }
+
+  @override
+  String get kotkRewardNone => 'No reward';
+
+  @override
+  String get kotkWithdrawn => 'Entry withdrawn';
+
+  @override
+  String get kotkSpecimenOpen => 'Open specimen box';
+
+  @override
+  String get kotkHallIn => 'You made the Hall of Fame!';
+
+  @override
+  String get kotkPetWarn =>
+      'This bug is equipped as a pet — if it loses, it is removed from your pets too.';
+
+  @override
+  String beginnerHatchTag(String left, String min) {
+    return 'Newcomer bonus: $left left · max $min min';
+  }
+
+  @override
+  String badgeKotk(String round) {
+    return 'King of Kings R$round';
+  }
+
+  @override
+  String kotkRound(String n) {
+    return 'Round $n';
+  }
+
+  @override
+  String get kotkPreparing => 'Coming soon';
+
+  @override
+  String kotkPreparingBody(String m1, String d1, String m2, String d2) {
+    return 'The first King of Kings opens for entries on $m1/$d1 (Mon) 09:00 (KST), and results come out on $m2/$d2 (Sun) 09:00 (KST).';
+  }
+
+  @override
+  String get kotkRewardsTitle => 'Rewards';
+
+  @override
+  String kotkRewardJelly(String n) {
+    return 'Jelly $n';
+  }
+
+  @override
+  String kotkRewardPotion(String n) {
+    return 'Growth potion $n';
+  }
+
+  @override
+  String kotkRewardFossil(String n) {
+    return 'Fossil $n';
+  }
+
+  @override
+  String kotkRewardElement(String n) {
+    return 'Element stone $n';
+  }
+
+  @override
+  String kotkRewardTemper(String n) {
+    return 'Temperament stone $n';
+  }
+
+  @override
+  String get kotkRewardChamp =>
+      'Golden crown on the winning bug · profile badge';
+
+  @override
+  String get kotkResultTitle => 'King of Kings result';
+
+  @override
+  String get kotkResultNone =>
+      'Your bug did not make the top-32 bracket. It is unchanged.';
+
+  @override
+  String get kotkResultRetired =>
+      'The defeated bug became a specimen and went to the Specimen Case.';
+
+  @override
+  String get kotkResultChamp => 'Your winning bug now wears a golden crown!';
+
+  @override
+  String get kotkPreparingErr =>
+      'Not open yet. You can enter from the first round.';
+
+  @override
+  String get kotkChampMark => 'King of Kings';
+
+  @override
+  String get kotkRules =>
+      'Enter one bug per week. When entries close Sunday 09:00 (KST), the top 32 by power fight a tournament (each match: first to 2 wins).\nEvery bug except the champion (runner-up included) becomes a specimen: it can never duel, enter events, be a pet, breed or be fed again — losers are spent (it takes no storage slot). Bugs that miss the bracket are unchanged.\nResults appear Sunday 09:00 (KST) and are confirmed after review on Monday 09:00 (specimens and rewards).\nThe top 16 enter the Hall of Fame.';
+
+  @override
+  String get kotkOpen => 'Entries open · close Sunday 09:00 (KST)';
+
+  @override
+  String get kotkClosedNow => 'This week\'s entries are closed';
+
+  @override
+  String kotkCount(String n, String max) {
+    return '$n entered · top $max by power make the bracket';
+  }
+
+  @override
+  String kotkMine(String name) {
+    return 'Your entry: $name';
+  }
+
+  @override
+  String get kotkEnter => 'Enter';
+
+  @override
+  String get kotkChange => 'Change bug';
+
+  @override
+  String get kotkWithdraw => 'Withdraw';
+
+  @override
+  String get kotkPickTitle => 'Choose your bug';
+
+  @override
+  String get kotkConfirmTitle => 'Enter for real?';
+
+  @override
+  String kotkConfirmBody(String name) {
+    return 'Entering with: $name\nUnless it wins the whole tournament (runner-up included), it becomes a specimen and can never duel, enter events, be a pet, breed or be fed again. This cannot be undone.\nIf it does not make the top-32 bracket, nothing happens.';
+  }
+
+  @override
+  String get kotkConfirmGo => 'Enter';
+
+  @override
+  String get kotkEntered => 'Entered the King of Kings!';
+
+  @override
+  String get kotkFailed => 'Couldn\'t enter. Please try again later.';
+
+  @override
+  String get kotkNoAdult => 'You have no adult bug that can enter.';
+
+  @override
+  String get kotkRetiredBug => 'Specimens can no longer be used.';
+
+  @override
+  String get kotkThisWeek => 'This week\'s results';
+
+  @override
+  String get kotkLastWeek => 'Last week\'s results';
+
+  @override
+  String get kotkBracket => 'View bracket';
+
+  @override
+  String get kotkBye => 'Bye';
+
+  @override
+  String kotkMyPlace(String place) {
+    return 'Your result: $place';
+  }
+
+  @override
+  String get kotkPlace1 => 'Champion';
+
+  @override
+  String get kotkPlace2 => 'Runner-up';
+
+  @override
+  String kotkPlaceN(String n) {
+    return 'Top $n';
+  }
+
+  @override
+  String get kotkFinal => 'Final';
+
+  @override
+  String get kotkHall => 'Hall of Fame (top 16)';
+
+  @override
+  String get kotkHallEmpty => 'No specimens on display yet.';
+
+  @override
+  String get kotkOffline =>
+      'Couldn\'t load the King of Kings. Check your connection.';
+
+  @override
+  String kotkResultToast(String place) {
+    return 'King of Kings result: $place';
+  }
+
+  @override
+  String get specimenBoxTitle => 'Specimen Case';
+
+  @override
+  String get specimenBoxBody =>
+      'Bugs that lost in the King of Kings rest here as specimens. They take no storage slot and can no longer be used.';
+
+  @override
+  String get specimenBoxEmpty => 'No specimens yet.';
+
+  @override
+  String get firstFreeInstant => 'First one free';
+
+  @override
+  String get growHowTitle => 'How to get stronger';
+
+  @override
+  String growHowBody(String time) {
+    return 'This boss is hard to beat right now (about $time). These help a lot:';
+  }
+
+  @override
+  String get growHowBuff => 'Turn on buffs — big gold & attack boost';
+
+  @override
+  String get growHowMail => 'Mailbox — claim gifts & daily rewards';
+
+  @override
+  String growHowUpgrade(String stat) {
+    return 'Recommended upgrade: $stat';
+  }
+
+  @override
+  String get growHowFight => 'Fight anyway';
+
+  @override
+  String get giftArrivedToast =>
+      '🎁 A surprise gift arrived! Claim it in the mailbox within 3 hours';
+
+  @override
+  String giftExpiringToast(int min) {
+    return '🎁 Your surprise gift expires in $min min — claim it in the mailbox';
+  }
+
+  @override
+  String get tipPetTitle => 'Equip a pet';
+
+  @override
+  String get tipPetBody =>
+      'Equip bugs from your storage as pets — they fight with you and raise your attack and HP. Hatch eggs in the incubator.';
+
+  @override
+  String get tipGearTitle => 'Craft equipment';
+
+  @override
+  String get tipGearBody =>
+      'Use fossils from hunting to forge gear in the Equipment tab — it permanently boosts attack and HP.';
+
+  @override
+  String get tipGo => 'Go now';
+
+  @override
+  String get tourUpgrades =>
+      'Upgrade your stats with gold here. Buy the \"Top pick\" row first to grow fastest. Hold to buy repeatedly.';
+
+  @override
+  String get tourStage =>
+      'Your current zone. Defeat 100 monsters to challenge the boss — beat it to open the next zone.';
+
+  @override
+  String get tourBuffs =>
+      'Buffs. Turn them on for a big gold and attack boost — they are free, so keep them on.';
+
+  @override
+  String get tourMail =>
+      'Mailbox. Lunch and dinner daily rewards and surprise gifts arrive here. Gifts expire after 3 hours.';
+
+  @override
+  String get tourMission => 'Missions. Tap to claim the reward when complete.';
+
+  @override
+  String get tourStorage =>
+      'Storage — your caught bugs gather here. Hatch eggs and equip bugs as pets to fight alongside you.';
+
+  @override
+  String get tourBattle =>
+      'Duel — battle other players with three bugs you raised.';
+
+  @override
+  String get tourShop => 'Shop — jelly, packs and bug egg draws.';
+
+  @override
+  String get tourSwitch =>
+      'Tap to switch to the Equipment, Skills, Fairy and Research tabs.';
+
+  @override
+  String get tourNext => 'Next';
+
+  @override
+  String get tourDone => 'Start';
+
+  @override
+  String get tourSkip => 'Skip';
+
+  @override
+  String get missionGuideHunt =>
+      'Your character hunts on its own. Tap the screen to hunt faster.';
+
+  @override
+  String get missionGuideUpgrade =>
+      'Buy upgrades here to fill it. Start with the \"Recommended\" row.';
+
+  @override
+  String get missionGuideForge =>
+      'Tap the anvil to forge gear with 1 fossil. Each forge counts.';
+
+  @override
+  String get missionGuideBoss =>
+      'Defeat 100 monsters to challenge the boss here.';
+
+  @override
+  String upgradeFxSurvive(String from, String to) {
+    return 'Survive $from monster hits → $to';
+  }
+
+  @override
+  String get tabTourEquipScene =>
+      'A little catching game — your character chases wild bugs. Tap when the chance comes to catch one.';
+
+  @override
+  String get tabTourEquipStats =>
+      'Your current stats including gear. They change right away when you swap gear.';
+
+  @override
+  String get tabTourEquipGrid =>
+      'Gear slots. Tap a slot to see and swap the equipped item.';
+
+  @override
+  String get tabTourEquipAnvil =>
+      'Tap the anvil to forge an item with 1 fossil. New items stack above — tap to equip or sell.';
+
+  @override
+  String get tabTourEquipGrade =>
+      'Raise the workshop grade to forge higher-grade gear. Costs gold and time.';
+
+  @override
+  String get tabTourEquipFilter =>
+      'Filter — during auto forge, keep only the stats/grades you want and auto-sell the rest.';
+
+  @override
+  String get tabTourEquipRush =>
+      'Rush — spend jelly to forge faster for a while.';
+
+  @override
+  String get tabTourEquipAuto =>
+      'Auto — forges by itself while you have fossils.';
+
+  @override
+  String get tabTourStorageDex =>
+      'Collection — every bug type you have caught. Collect types for rewards.';
+
+  @override
+  String get tabTourStorageMats =>
+      'Your materials — used for upgrades, training and breakthroughs.';
+
+  @override
+  String get tabTourStorageCap =>
+      'Storage slots. When full, new bugs stop coming in — clean up or expand with jelly.';
+
+  @override
+  String get tabTourStoragePets =>
+      'Equipped pets. Bugs equipped as pets hunt with you and raise attack and HP.';
+
+  @override
+  String get tabTourStorageTools =>
+      'Cleanup tools — \"Rarity filter\" turns low bugs into materials on arrival, \"Auto dismantle\" cleans up at once.';
+
+  @override
+  String get tabTourStorageGrid =>
+      'Your bugs. Tap one to equip as a pet, feed same-species bugs (raise rarity) or dismantle.';
+
+  @override
+  String get tabTourStorageBreed =>
+      'Breeding — pair an adult male and female of the same species for an egg. It inherits traits.';
+
+  @override
+  String get tabTourStorageHatch =>
+      'Incubator — put eggs in to hatch. Tap to collect when done.';
+
+  @override
+  String get tabTourBattleTicket =>
+      'Duel tickets — 1 per match. They refill over time, with a few free refills a day.';
+
+  @override
+  String get tabTourBattleSquad =>
+      'Your 3-bug squad. Put adults here — they fight in order, matches 1·2·3.';
+
+  @override
+  String get tabTourBattleStart =>
+      'Start — pick an opponent in your league and duel. Wins give points.';
+
+  @override
+  String get tabTourBattleRecovery =>
+      'Recovery room — injured bugs rest here (jelly heals instantly).';
+
+  @override
+  String get tabTourBattleTraining =>
+      'Training — spend training points (earned as bugs grow) on attack, defense, HP and more.';
+
+  @override
+  String get tabTourBattleBoard =>
+      'League board — resets every Monday. Top 20% move up, bottom 20% move down.';
+
+  @override
+  String get tabTourShopTop =>
+      'Featured products. Your first purchase of each jelly pack gives double.';
+
+  @override
+  String get tabTourShopGacha =>
+      'Egg draw — spend jelly on bug eggs. Better grades than the wild, with a pity counter.';
+
+  @override
+  String get tabTourShopExchange =>
+      'Exchange — trade jelly for gold or materials.';
+
+  @override
+  String get tabTourSkillGacha =>
+      'Skill draw — get skill shards. One free draw a day.';
+
+  @override
+  String get tabTourSkillSweep =>
+      'Sweep — instantly get shards from bosses you have beaten. 3 free a day.';
+
+  @override
+  String get tabTourSkillGrade =>
+      'Grade up — turn 10 spare shards into 1 wild shard of the next grade.';
+
+  @override
+  String get tabTourSkillShards =>
+      'Your skill shards — used to unlock and level skills.';
+
+  @override
+  String get tabTourSkillSlots =>
+      'Equip slots — 2 at first, more as you reach new difficulties.';
+
+  @override
+  String get tabTourSkillList =>
+      'Skill list — tap to unlock, level up and equip. Equipped skills fire automatically while hunting.';
+
+  @override
+  String get tabTourFairyCompanion =>
+      'Your companion fairy. Its effect applies while hunting.';
+
+  @override
+  String get tabTourFairyNest => 'Nest — put fairy eggs in to hatch.';
+
+  @override
+  String get tabTourFairyGacha => 'Fairy egg draw — spend jelly on fairy eggs.';
+
+  @override
+  String get tabTourFairyDex =>
+      'Fairy collection — types you have collected and rewards.';
+
+  @override
+  String get tabTourFairyFeed =>
+      'Feed — feed same-type fairies to raise the grade.';
+
+  @override
+  String get tabTourFairyRelease =>
+      'Dismantle — turn unneeded fairies into fairy dust, used to level fairies.';
+
+  @override
+  String get tabTourResearchCurrency =>
+      'Research costs. Research samples come from bosses and elites.';
+
+  @override
+  String get tabTourResearchSlots =>
+      'Research slots. Started research finishes over time — tap to collect.';
+
+  @override
+  String get tabTourResearchTabs =>
+      'Research branches — hunting, growth, duel, gear, economy. Tap to switch.';
+
+  @override
+  String get tabTourResearchTree =>
+      'Research list — tap a card to start or level a research. Research is permanent.';
+
+  @override
+  String get tabTourResearchAbyss =>
+      'Abyss — research that opens after clearing Extreme, paid with abyss spores.';
 }

@@ -237,4 +237,43 @@ void main() {
       expect(s.researchPassExpiresAt, fresh.add(const Duration(days: 30)));
     });
   });
+
+  // 첫 구매 보너스(2026-11-09) — 젤리 팩마다 계정에서 처음 살 때만 2배. 기록은 서버 소유 boughtOnce.
+  group('첫 구매 보너스', () {
+    int jelly(SaveGame s) => s.materials[MaterialKind.jelly] ?? 0;
+
+    test('처음엔 2배 · 두 번째부터는 원래 양 · 다른 팩은 따로', () {
+      final p = iap.byId('jelly_m')!;
+      expect(p.firstBonusJelly, p.grant.jelly);
+      expect(iapFirstBonusAvailable(base, p), isTrue);
+      final once = grant(base, 'jelly_m', pid: 'A');
+      expect(jelly(once) - jelly(base), p.grant.jelly * 2);
+      expect(once.boughtOnce, contains('jelly_m'));
+      expect(iapFirstBonusAvailable(once, p), isFalse);
+      final twice = grant(once, 'jelly_m', pid: 'B');
+      expect(jelly(twice) - jelly(once), p.grant.jelly);
+      final other = grant(twice, 'jelly_s', pid: 'C');
+      expect(jelly(other) - jelly(twice), iap.byId('jelly_s')!.grant.jelly * 2);
+    });
+
+    test('보너스를 받은 젤리 팩도 다시 살 수 있다(1회 상품 차단에 걸리지 않는다)', () {
+      final once = grant(base, 'jelly_m', pid: 'A');
+      expect(
+        iapPurchaseBlock(once, iap.byId('jelly_m')!, battle: battle, now: t0),
+        IapBlock.none,
+      );
+    });
+
+    test('운영 지급(admin:)은 보너스도 기록도 없다 — 진짜 첫 결제 몫을 남긴다', () {
+      final p = iap.byId('jelly_m')!;
+      final s = grant(base, 'jelly_m', pid: 'admin:jelly_m:보상');
+      expect(jelly(s) - jelly(base), p.grant.jelly);
+      expect(iapFirstBonusAvailable(s, p), isTrue);
+    });
+
+    test('보너스가 없는 상품은 기록을 남기지 않는다', () {
+      final s = grant(base, 'growth_pass', pid: 'A');
+      expect(s.boughtOnce, isEmpty);
+    });
+  });
 }

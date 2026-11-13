@@ -17,6 +17,7 @@ import '../../ui/skins.dart';
 import '../../ui/tier_label.dart';
 import '../../ui/toast.dart';
 import '../../ui/colors.dart';
+import 'size_rank_dialog.dart';
 
 const _honey = kHoney;
 
@@ -53,6 +54,7 @@ class DexScreen extends ConsumerWidget {
             save.dexConqueredWith(cfg.conquerLevel),
             save.claimedDex,
             bosses: bosses.length,
+            variants: save.dexVariants,
           );
 
     final bugGrid = GridView.builder(
@@ -728,6 +730,24 @@ class DexScreen extends ConsumerWidget {
                 ],
               ),
             ),
+            // 종별 최대 크기 순위(2026-11-10) — 발견한 종만.
+            if (found)
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton.icon(
+                  onPressed: () => showSizeRankDialog(
+                    context,
+                    sp.id,
+                    sp.name.resolve(locale),
+                  ),
+                  icon: const Icon(Icons.leaderboard_rounded, size: 15),
+                  label: Text(l.sizeRankButton),
+                  style: TextButton.styleFrom(
+                    foregroundColor: const Color(0xFFFFD977),
+                    visualDensity: VisualDensity.compact,
+                  ),
+                ),
+              ),
             gradeOn
                 ? _row(
                     l.igDexMaxGrade,

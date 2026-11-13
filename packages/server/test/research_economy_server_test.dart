@@ -222,39 +222,6 @@ void main() {
     expect(r0.save!.gold, lessThan(none.gold + want));
   });
 
-  test('분해 기술 — 서버 분해 재료 × (1 + v) · 젤리는 그대로', () {
-    final sp = cfg.speciesList.first;
-    final bug = IndividualBug(
-      id: 'b1',
-      speciesId: sp.id,
-      sizeMm: sp.sizeMinMm,
-      potential: 5,
-      temperament: Temperament.cunning,
-      sex: Sex.male,
-      element: Element.fire,
-      stage: LifeStage.adult,
-    );
-    int regular(SaveGame x) =>
-        kRegularMaterials.fold<int>(0, (a, k) => a + x.materialCount(k));
-    ({int mats, int jelly}) run(Map<String, int> r) {
-      final s = storedAt(0, 1, r).copyWith(bugs: [bug]);
-      final out = actions.disassembleBug(s, 'b1', petConfig: cfg.pet).save!;
-      return (
-        mats: regular(out) - regular(s),
-        jelly:
-            out.materialCount(MaterialKind.jelly) -
-            s.materialCount(MaterialKind.jelly),
-      );
-    }
-
-    final a = run(const {});
-    final b = run(maxed);
-    final base = cfg.pet.releaseMaterial(cfg.pet.rarityOf(bug, sp));
-    expect(a.mats, base);
-    expect(b.mats, (base * (1 + vOf(ResearchEffect.salvageMat))).round());
-    expect(b.jelly, a.jelly);
-  });
-
   test('혈통 연구 — 서버 짝짓기 수령(collectBreeding)이 연구 레벨로 굴린다', () {
     final sp = cfg.speciesList.first;
     IndividualBug parent(Sex sex) => IndividualBug(

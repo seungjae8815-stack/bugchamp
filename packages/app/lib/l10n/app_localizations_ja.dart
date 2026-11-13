@@ -637,7 +637,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String offlineBugsBlocked(int count) {
-    return '採集箱がいっぱいで\n卵$count個を受け取れませんでした';
+    return '空きがなくて\n卵$count個を逃しました';
   }
 
   @override
@@ -956,6 +956,33 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get whatsNewOk => 'OK';
+
+  @override
+  String get whatsNew28Kotk =>
+      '王中王戦 — 毎週昆虫1匹で戦うハードモードのトーナメント（ホームのバナー）。優勝するとゼリー・素材・黄金の王冠、優勝できなければその昆虫は標本になります';
+
+  @override
+  String get whatsNew28Feed =>
+      '食べさせる — 同じ種の昆虫・同じ種類の妖精を食べさせると養分がたまり、希少度・等級が上がります（精髄への変換は食べさせるに統合されました）';
+
+  @override
+  String get whatsNew28Upgrade =>
+      '強化 — 覚醒（決まったレベルでおまけレベル）・大成功・効果プレビューとおすすめ・Lv.50まではゴールドだけで上がります';
+
+  @override
+  String get whatsNew28Abyss => '深淵 — 毎週変わる変異・深淵の結晶で刻印と強化上限突破・深淵胞子で研究所の「深淵」研究';
+
+  @override
+  String get whatsNew28Fun =>
+      '週末イベント・実績と称号・種ごとのサイズランキング・ランキングから練習決闘・標本ケース（図鑑の隣）';
+
+  @override
+  String get whatsNew28Shop =>
+      'ゼリーパックはパックごとに初回購入2倍・即時孵化/産卵/突破は初回無料・最初の5回の孵化は最大5分';
+
+  @override
+  String get whatsNew28Dex =>
+      '図鑑のゼリーは発見・征服・色違い・ボス収集をそれぞれすべて埋めると10個ずつに変わりました（途中のゴールド・化石はそのまま）';
 
   @override
   String get whatsNewAvatar =>
@@ -1494,6 +1521,11 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
+  String autoReleaseDoneCount(int count) {
+    return '$count匹を分解しました';
+  }
+
+  @override
   String autoReleasePreview(Object count, Object mats) {
     return '$count匹を分解して素材$mats個を獲得します';
   }
@@ -1681,7 +1713,12 @@ class AppLocalizationsJa extends AppLocalizations {
   String get roadmapReplay => '再挑戦';
 
   @override
-  String get chapterClearTitle => 'チャプタークリア！🎉';
+  String get chapterClearTitle => '狩り場クリア！🎉';
+
+  @override
+  String chapterClearZoneMsg(int zone, String boss) {
+    return '狩り場$zoneのボス $boss を撃破！次の狩り場が開きました';
+  }
 
   @override
   String chapterClearMsg(String difficulty, String boss) {
@@ -2678,6 +2715,185 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get nicknameRequiredBody => '他の採集者に表示される名前です。最初の一度だけ設定します。';
+
+  @override
+  String get nicknameSuggestPrefix => '採集家';
+
+  @override
+  String get nicknameSuggestedNote => 'おすすめの名前を入れておきました。そのままでも変えてもOKです。';
+
+  @override
+  String get bugDetailMore => '成長・能力の詳細';
+
+  @override
+  String get bugDetailLess => '簡単に表示';
+
+  @override
+  String storeFirstBonus(int n) {
+    return '初回購入2倍！ゼリー+$nおまけ';
+  }
+
+  @override
+  String jellyShortHave(int n) {
+    return '所持ゼリー $n';
+  }
+
+  @override
+  String get jellyShortFirstBonus => 'ゼリーパックは初回購入で2倍もらえます！';
+
+  @override
+  String get discoveryNewTitle => '新しい昆虫を発見！';
+
+  @override
+  String get discoveryVariantTitle => '色違いを発見！';
+
+  @override
+  String get discoveryVariantNote => 'とても珍しい、色の違う個体です！';
+
+  @override
+  String discoveryDexProgress(int n, int total) {
+    return '図鑑 $n / $total種';
+  }
+
+  @override
+  String get discoveryOk => 'やった！';
+
+  @override
+  String rarityAutoFeedBody(String ups, String fodder) {
+    return '同じ種の昆虫を食べさせて希少度を上げます（希少度が低い昆虫ほど少しだけたまります）。\nアップ$ups回・素材として消える昆虫$fodder匹';
+  }
+
+  @override
+  String guideRarityFeed(String common, String epic, String legend) {
+    return '希少度アップ：同じ種の昆虫を食べさせると養分がたまります。希少度が低いほど少し（一般$common）、高いほど多く（英雄$epic）たまり、伝説には$legend必要です。この昆虫より希少度が高い昆虫と、保護・育成した昆虫は食べさせません。育てた能力はそのままです。';
+  }
+
+  @override
+  String rarityWorthBtn(int cur, int next) {
+    return '養分 $cur / $next';
+  }
+
+  @override
+  String get rarityFeedTitle => '昆虫を食べさせる';
+
+  @override
+  String get rarityFeedBody =>
+      '同じ種の昆虫を食べさせると養分がたまります。希少度が低いほど少し、高いほど多くたまります。養分が満タンになると希少度が上がり、等級アップに使う等級の養分も同時にたまります。';
+
+  @override
+  String rarityFeedGauge(int cur, int next, String name) {
+    return '養分 $cur / $next → $name';
+  }
+
+  @override
+  String rarityFeedToNext(int n, String to) {
+    return '次の段階まで $n匹 → $to';
+  }
+
+  @override
+  String rarityFeedAll(int n, String to) {
+    return '全部食べさせる $n匹 → $to';
+  }
+
+  @override
+  String get rarityFeedNone => '食べさせられる同じ種の昆虫がいません';
+
+  @override
+  String get rarityNeedOnline => 'インターネットに接続した状態で上げられます';
+
+  @override
+  String guideFairyFeed(
+    String common,
+    String epic,
+    String mythic,
+    String perLevel,
+    String caps,
+  ) {
+    return '同じ種類の妖精を食べさせると養分がたまり、満タンで等級が上がります。等級が低いほど少し（一般$common）、高いほど多く（英雄$epic）たまり、神話には養分$mythicが必要です。等級が上がっても品質は引き継ぎます。同行中・レベルを上げた妖精と、より高い等級の妖精は素材になりません。レベル1ごとに能力+$perLevel・等級別の最大レベル$caps。';
+  }
+
+  @override
+  String get fairyFeedBtn => '食べさせる';
+
+  @override
+  String get fairyFeedTitle => '妖精に食べさせる';
+
+  @override
+  String get fairyFeedBody =>
+      '同じ種類の妖精を食べさせると養分がたまります。等級が低い妖精ほど少し、高いほど多くたまります。養分が満タンになると等級が上がり、品質はそのまま引き継ぎます。';
+
+  @override
+  String get fairyFeedNone => '食べさせられる同じ種類の妖精がいません';
+
+  @override
+  String get fairyFeedNote => '同行中・レベルを上げた妖精と、この妖精より等級が高い妖精は食べさせません。';
+
+  @override
+  String fairyFeedUp(String grade) {
+    return '$gradeに上がりました！';
+  }
+
+  @override
+  String get fairyFeedStored => '養分がたまりました';
+
+  @override
+  String get fairyFeedHubHint =>
+      '妖精をタップして［食べさせる］で同じ種類の妖精を食べさせられます。自動では種類ごとに一番大事な妖精に食べさせます。';
+
+  @override
+  String get fairyAutoFeed => '自動で食べさせる';
+
+  @override
+  String fairyAutoFeedConfirm(String ups, String used) {
+    return '等級アップ$ups回・素材として消える妖精$used匹';
+  }
+
+  @override
+  String fairyAutoFeedDone(String ups) {
+    return '等級が$ups回上がりました';
+  }
+
+  @override
+  String get guideStorageFeed =>
+      'いらない昆虫は分解（素材）するか、同じ種の昆虫に食べさせます（昆虫詳細の養分ボタン）。食べさせると希少度の養分と等級の養分が同時にたまり、等級の養分はその昆虫の等級アップ・パッシブ再抽選に使います。以前ためたエッセンスはその種で先に使います。大事な昆虫はロックすれば分解・食べさせる素材になりません。装備中・孵化中・訓練中の昆虫も素材になりません。';
+
+  @override
+  String guidePassiveRerollFeed(String essence, String jelly) {
+    return '再抽選：等級の養分$essenceまたはゼリー$jelly個で大きさを決め直し、新しい値と今の値から選びます（残っている旧エッセンスを先に使います）。種類は変わりません。';
+  }
+
+  @override
+  String rarityFeedGrade(int n) {
+    return '等級の養分 +$n';
+  }
+
+  @override
+  String igGradeUpFunds(String have, String need) {
+    return '等級の養分 $have / $need';
+  }
+
+  @override
+  String igNeedMoreFunds(String n) {
+    return '等級の養分があと$n必要です — 同じ種の昆虫を食べさせてためます';
+  }
+
+  @override
+  String igLegacyEssenceFirst(String n) {
+    return '残っている旧エッセンス$n個を先に使います';
+  }
+
+  @override
+  String passiveRerollFundsHave(String have) {
+    return '等級の養分 $have';
+  }
+
+  @override
+  String get rarityFeedNote => '保護・育成した昆虫と、この昆虫より希少度が高い昆虫は食べさせません。';
+
+  @override
+  String rarityFeedStored(int cur, int next) {
+    return '養分がたまりました（$cur / $next）';
+  }
 
   @override
   String get renameForcedTitle => 'ニックネームを変更してください';
@@ -4293,7 +4509,9 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get abyssWeekReset => '新しい週です — 深淵1階から！';
+  String abyssWeekReset(int n) {
+    return '新しい週です — 深淵$n階から！';
+  }
 
   @override
   String get abyssRankRewardTitle => '深淵 週間順位報酬';
@@ -8157,7 +8375,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String guideRarityEffect(String hunt, String duel) {
-    return '希少度が高いほど、ペットとして装備したときの狩り貢献が大きくなり（$hunt）、決闘・大会の体力・攻撃・防御が上がります（伝説 $duel）。エッセンスに変えたときの価値も上がり、孵化・ペアリングの時間は長くなります。';
+    return '希少度が高いほど、ペットとして装備したときの狩り貢献が大きくなり（$hunt）、決闘・大会の体力・攻撃・防御が上がります（伝説 $duel）。餌にしたときに満たす等級の養分も多くなり、孵化・ペアリングの時間は長くなります。';
   }
 
   @override
@@ -8168,6 +8386,11 @@ class AppLocalizationsJa extends AppLocalizations {
   @override
   String guidePotionCost(String costs, String max, String bonus) {
     return '等級アップに必要な同種のエッセンス：$costs（一般→上級から順に）。成長ポーションは1回に$max個まで一緒に使え、1個につき新しく振った能力値品質に+$bonus点加わります（100点まで）。';
+  }
+
+  @override
+  String guidePotionCostFeed(String costs, String max, String bonus) {
+    return '等級アップに必要な等級の養分：$costs（一般→上級から順に・残っている旧エッセンスを先に使います）。成長ポーションは1回に$max個まで一緒に使え、1個につき新しく振った能力値品質に+$bonus点加わります（100点まで）。';
   }
 
   @override
@@ -8368,7 +8591,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get whatsNew27Research => '研究が終わると枠に「研究完了」ボタンが出ます — 押して受け取るとレベルが上がります';
 
   @override
-  String get researchSamples => '研究標本';
+  String get researchSamples => '研究サンプル';
 
   @override
   String get researchSlotEmpty => '空き';
@@ -8447,7 +8670,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get researchHowToGet =>
-      '研究標本は精鋭・ボスがドロップします。ゴールド・素材のコストは到達した最も高い狩場が基準です。';
+      '研究サンプルは精鋭・ボスがドロップします。ゴールド・素材のコストは到達した最も高い狩場が基準です。';
 
   @override
   String get researchUnitPp => '%p';
@@ -8483,7 +8706,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get notifResearchBody => '研究が終わりました。研究所で次の研究を始めましょう。';
 
   @override
-  String get researchPassHint => '研究パス：閉じていても標本が集まる';
+  String get researchPassHint => '研究パス：閉じていてもサンプルが集まる';
 
   @override
   String get researchPassHintGo => 'ショップ';
@@ -8580,7 +8803,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get researchFxHuntEvade => '狩り回避';
 
   @override
-  String get researchFxHuntExp => '経験値獲得';
+  String get researchFxHuntExp => '経験値獲得（放置も）';
 
   @override
   String get researchFxSkillCooldown => 'スキルクールタイム';
@@ -8598,7 +8821,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get researchFxTraitChance => '血統特性の発現確率';
 
   @override
-  String get researchFxPotionChance => '成長ポーションのドロップ確率';
+  String get researchFxPotionChance => '成長ポーションのドロップ率・10レベルごとに1日上限+1';
 
   @override
   String get researchFxSalvageMat => '分解・放生の素材';
@@ -8613,5 +8836,710 @@ class AppLocalizationsJa extends AppLocalizations {
   String get researchFxDuelCrit => '決闘会心率';
 
   @override
-  String get researchFxDuelGrit => 'タップ反撃のしきい値';
+  String get researchFxDuelGrit => 'タップ反撃が楽に（しきい値）';
+
+  @override
+  String get researchFxKillHeal => '撃破回復量';
+
+  @override
+  String get researchFxPetShare => '装着ペットの寄与（攻撃・体力）';
+
+  @override
+  String abyssSporesGot(String n) {
+    return '深淵胞子 +$n';
+  }
+
+  @override
+  String get researchTabAbyss => '深淵';
+
+  @override
+  String get abyssSpores => '深淵胞子';
+
+  @override
+  String get abyssLabInfo =>
+      '深淵胞子は今週初めて倒した階のボスと、10階ごとの初到達で手に入ります。深淵研究の効果は深淵の中だけです。';
+
+  @override
+  String get abyssLabLocked => '極限の最終ボスを倒して深淵を開くと研究できます。';
+
+  @override
+  String get abyssLabSlotTitle => '深淵研究枠';
+
+  @override
+  String get abyssLabSlotEmpty => '空いています — 下から研究を選んでください';
+
+  @override
+  String get abyssLabNoSpores => '深淵胞子が足りません';
+
+  @override
+  String get researchFxAbyssShortcut => '新しい週の開始階（先週の最高階比・10階単位）';
+
+  @override
+  String get researchFxAbyssFastFloor => '深淵ボス挑戦までの撃破数';
+
+  @override
+  String get researchFxMutationTame => '週間変異の不利な効果';
+
+  @override
+  String get researchFxCrystalBonus => '深淵結晶の獲得';
+
+  @override
+  String get researchFxSporeBonus => '深淵胞子の獲得';
+
+  @override
+  String get researchFxAbyssIdleGold => '深淵の放置ゴールド';
+
+  @override
+  String get upgradeRecommend => 'おすすめ';
+
+  @override
+  String upgradeFxHits(String from, String to) {
+    return '撃破 $from発 → $to発';
+  }
+
+  @override
+  String upgradeFxBoss(String from, String to) {
+    return 'ボス 約$from → $to';
+  }
+
+  @override
+  String upgradeFxBite(String from, String to) {
+    return '被弾1発 $from% → $to%';
+  }
+
+  @override
+  String upgradeFxGold(String from, String to) {
+    return 'ゴールド収入 +$from% → +$to%';
+  }
+
+  @override
+  String upgradeFxXp(String from, String to) {
+    return '経験値 +$from% → +$to%';
+  }
+
+  @override
+  String upgradeFxBugs(String from, String to) {
+    return '昆虫発見 +$from% → +$to%';
+  }
+
+  @override
+  String upgradeFxMats(String from, String to) {
+    return '素材 +$from% → +$to%';
+  }
+
+  @override
+  String upgradeFxSec(String n) {
+    return '$n秒';
+  }
+
+  @override
+  String upgradeFxMin(String n) {
+    return '$n分';
+  }
+
+  @override
+  String upgradeAwakenNext(String level) {
+    return '覚醒 Lv.$level';
+  }
+
+  @override
+  String upgradeAwakenToast(String name, String n) {
+    return '覚醒！$name +$nレベル';
+  }
+
+  @override
+  String upgradeLuckyToast(String n) {
+    return '大成功！+$nレベル';
+  }
+
+  @override
+  String upgradeAwakenInfo(String levels) {
+    return '覚醒：Lv.$levels に届くとレベルがおまけで付きます。';
+  }
+
+  @override
+  String bossLostRecommend(String name) {
+    return 'おすすめ強化：$name';
+  }
+
+  @override
+  String get upgradeCapBreak => '限界突破';
+
+  @override
+  String upgradeCapNeed(String have, String need) {
+    return '深淵の結晶が足りません（$have/$need）— 深淵10階ごとにもらえます';
+  }
+
+  @override
+  String upgradeCapOpened(String name, String n) {
+    return '$name 上限 +$nレベル！';
+  }
+
+  @override
+  String abyssCrystalsGot(String n) {
+    return '深淵の結晶 +$n';
+  }
+
+  @override
+  String abyssMutationTitle(String name) {
+    return '今週の深淵：$name';
+  }
+
+  @override
+  String get abyssImprintTitle => '深淵の刻印';
+
+  @override
+  String get abyssImprintBody =>
+      '深淵10階ごとにもらえる結晶で永久ステータスを上げます。最大まで強化した項目は結晶で限界突破もできます。';
+
+  @override
+  String abyssCrystalsHave(String n) {
+    return '所持 💠$n';
+  }
+
+  @override
+  String abyssImprintLevel(String level, String pct) {
+    return 'Lv.$level（+$pct%）';
+  }
+
+  @override
+  String weekendEventBar(String name, String desc, String left) {
+    return '🎉 $name · $desc · 残り$left';
+  }
+
+  @override
+  String weekendHours(String n) {
+    return '$n時間';
+  }
+
+  @override
+  String get achievementsTitle => '実績・称号';
+
+  @override
+  String get achievementsBody =>
+      '達成した実績をタップすると称号として付けられます。称号は相手のプロフィールに表示されます。';
+
+  @override
+  String get achievementsWearing => '装着中';
+
+  @override
+  String get sizeRankButton => 'サイズ順位';
+
+  @override
+  String sizeRankTitle(String name) {
+    return '$name サイズ順位';
+  }
+
+  @override
+  String get sizeRankEmpty => 'まだ記録がありません。一番大きな個体を捕まえて1位になろう！';
+
+  @override
+  String get sizeRankOffline => '順位を読み込めませんでした。接続を確認してください。';
+
+  @override
+  String sizeRankMine(String rank, String size) {
+    return '自分 $rank位 · ${size}mm';
+  }
+
+  @override
+  String get practiceDuel => '練習決闘';
+
+  @override
+  String get practiceOffline => '練習決闘はサーバー接続中のみできます。';
+
+  @override
+  String get practiceCooldown => '練習決闘は少し待ってから再挑戦できます。';
+
+  @override
+  String get practiceFailed => '相手の防衛チームを読み込めませんでした。';
+
+  @override
+  String get kotkTitle => '王中王戦';
+
+  @override
+  String get kotkRulesTitle => 'ハードモードのルール';
+
+  @override
+  String get kotkEntryTitle => 'エントリー';
+
+  @override
+  String get leaderboardLoadFail => 'ランキングを読み込めませんでした。しばらくしてからもう一度お試しください。';
+
+  @override
+  String kotkMinNote(String n) {
+    return '参加$n人以上の週だけゼリー・バッジ・王冠を贈ります（それ未満は素材のみ）。';
+  }
+
+  @override
+  String get kotkPendingNote => '結果は月曜9時に確定します（標本・報酬を反映）。';
+
+  @override
+  String kotkMinResult(String n) {
+    return '今週は参加が$n人未満だったため、素材のみ受け取りました。';
+  }
+
+  @override
+  String get notifKotkTitle => '王中王戦の締切が近づいています';
+
+  @override
+  String get notifKotkBody => '今週の王中王戦にまだ参加していません。明日9時に締め切ります。';
+
+  @override
+  String get weeklyTitle => '先週の記録';
+
+  @override
+  String get weeklySubtitle => '新しい週が始まりました！';
+
+  @override
+  String weeklyLevels(String n) {
+    return '強化を$nレベル上げました';
+  }
+
+  @override
+  String weeklyLucky(String n) {
+    return '強化大成功 $n回';
+  }
+
+  @override
+  String weeklyAwaken(String n) {
+    return '覚醒 $n回';
+  }
+
+  @override
+  String weeklyAbyss(String n) {
+    return '深淵 最高$n層';
+  }
+
+  @override
+  String get kotkRewardNone => '報酬なし';
+
+  @override
+  String get kotkWithdrawn => '参加を取り消しました';
+
+  @override
+  String get kotkSpecimenOpen => '標本ケースを見る';
+
+  @override
+  String get kotkHallIn => '殿堂入りしました！';
+
+  @override
+  String get kotkPetWarn => '現在ペットとして装着中です — 負けるとペットからも外れます。';
+
+  @override
+  String beginnerHatchTag(String left, String min) {
+    return '新規特典 残り$left回・最大$min分';
+  }
+
+  @override
+  String badgeKotk(String round) {
+    return '第$round回 王中王';
+  }
+
+  @override
+  String kotkRound(String n) {
+    return '第$n回';
+  }
+
+  @override
+  String get kotkPreparing => '準備中';
+
+  @override
+  String kotkPreparingBody(String m1, String d1, String m2, String d2) {
+    return '第1回王中王戦は$m1月$d1日(月)9時からエントリーを受け付け、$m2月$d2日(日)9時に結果が出ます。';
+  }
+
+  @override
+  String get kotkRewardsTitle => '成績報酬';
+
+  @override
+  String kotkRewardJelly(String n) {
+    return 'ゼリー$n';
+  }
+
+  @override
+  String kotkRewardPotion(String n) {
+    return '成長ポーション$n';
+  }
+
+  @override
+  String kotkRewardFossil(String n) {
+    return '化石$n';
+  }
+
+  @override
+  String kotkRewardElement(String n) {
+    return '五行石$n';
+  }
+
+  @override
+  String kotkRewardTemper(String n) {
+    return '気質石$n';
+  }
+
+  @override
+  String get kotkRewardChamp => '優勝した昆虫に黄金の王冠・代表バッジ';
+
+  @override
+  String get kotkResultTitle => '王中王戦の結果';
+
+  @override
+  String get kotkResultNone => 'トーナメント(上位32匹)に入れませんでした。昆虫はそのままです。';
+
+  @override
+  String get kotkResultRetired => '負けた昆虫は標本になり、標本ケースに移りました。';
+
+  @override
+  String get kotkResultChamp => '優勝した昆虫に黄金の王冠が付きました！';
+
+  @override
+  String get kotkPreparingErr => 'まだ準備中です。第1回から参加できます。';
+
+  @override
+  String get kotkChampMark => '王中王';
+
+  @override
+  String get kotkRules =>
+      '毎週昆虫1匹で参加します。日曜9時に受付が締まると戦闘力上位32匹がトーナメントを戦います（1試合 = 先に2勝）。\n優勝できなかった昆虫（準優勝も含む）は標本になり、決闘・大会・ペット・交配・食べさせる素材に二度と使えません — 負けた昆虫は消耗します（採集箱の枠は使いません）。トーナメントに入れなければそのままです。\n結果は日曜9時に出て、運営の確認を経て月曜9時に確定します（標本・報酬）。\nベスト16以上は殿堂に残ります。';
+
+  @override
+  String get kotkOpen => '受付中 · 日曜9時締切';
+
+  @override
+  String get kotkClosedNow => '今週の受付は終了しました';
+
+  @override
+  String kotkCount(String n, String max) {
+    return '参加$n人 · 戦闘力上位$max匹が出場';
+  }
+
+  @override
+  String kotkMine(String name) {
+    return '参加中：$name';
+  }
+
+  @override
+  String get kotkEnter => '参加する';
+
+  @override
+  String get kotkChange => '昆虫を変更';
+
+  @override
+  String get kotkWithdraw => '参加取消';
+
+  @override
+  String get kotkPickTitle => '参加する昆虫';
+
+  @override
+  String get kotkConfirmTitle => '本当に参加しますか？';
+
+  @override
+  String kotkConfirmBody(String name) {
+    return '参加する昆虫: $name\n優勝できなければ（準優勝も含む）この昆虫は標本になり、決闘・大会・ペット・交配・食べさせる素材に二度と使えません。元に戻せません。\n上位32匹に入れなければそのままです。';
+  }
+
+  @override
+  String get kotkConfirmGo => '参加';
+
+  @override
+  String get kotkEntered => '王中王戦に参加しました！';
+
+  @override
+  String get kotkFailed => '参加できませんでした。後でもう一度お試しください。';
+
+  @override
+  String get kotkNoAdult => '参加できる成虫がいません。';
+
+  @override
+  String get kotkRetiredBug => '標本になった昆虫はもう使えません。';
+
+  @override
+  String get kotkThisWeek => '今週の結果';
+
+  @override
+  String get kotkLastWeek => '先週の結果';
+
+  @override
+  String get kotkBracket => 'トーナメント表';
+
+  @override
+  String get kotkBye => '不戦勝';
+
+  @override
+  String kotkMyPlace(String place) {
+    return '自分の成績：$place';
+  }
+
+  @override
+  String get kotkPlace1 => '優勝';
+
+  @override
+  String get kotkPlace2 => '準優勝';
+
+  @override
+  String kotkPlaceN(String n) {
+    return 'ベスト$n';
+  }
+
+  @override
+  String get kotkFinal => '決勝';
+
+  @override
+  String get kotkHall => '殿堂（ベスト16以上）';
+
+  @override
+  String get kotkHallEmpty => 'まだ展示された標本はありません。';
+
+  @override
+  String get kotkOffline => '王中王戦を読み込めませんでした。接続を確認してください。';
+
+  @override
+  String kotkResultToast(String place) {
+    return '王中王戦の結果：$place';
+  }
+
+  @override
+  String get specimenBoxTitle => '標本ケース';
+
+  @override
+  String get specimenBoxBody => '王中王戦で負けた昆虫が標本として眠っています。採集箱の枠を使わず、どこにも使えません。';
+
+  @override
+  String get specimenBoxEmpty => 'まだ標本はありません。';
+
+  @override
+  String get firstFreeInstant => '初回無料';
+
+  @override
+  String get growHowTitle => '強くなる方法';
+
+  @override
+  String growHowBody(String time) {
+    return '今の力ではこのボスは倒しにくいです(約$time)。下のことをすると、ずっと早くなります。';
+  }
+
+  @override
+  String get growHowBuff => 'バフをオン — ゴールド・攻撃が大きく上がる';
+
+  @override
+  String get growHowMail => 'メールボックス — ギフト・デイリー報酬を受け取る';
+
+  @override
+  String growHowUpgrade(String stat) {
+    return 'おすすめ強化: $stat';
+  }
+
+  @override
+  String get growHowFight => 'それでも挑戦';
+
+  @override
+  String get giftArrivedToast => '🎁 サプライズギフトが届きました！3時間以内にメールボックスで受け取ってください';
+
+  @override
+  String giftExpiringToast(int min) {
+    return '🎁 サプライズギフトがあと$min分で消えます — メールボックスで受け取ってください';
+  }
+
+  @override
+  String get tipPetTitle => 'ペットを装備しよう';
+
+  @override
+  String get tipPetBody =>
+      '採集箱の昆虫をペットとして装備すると、狩りで一緒に戦って攻撃・体力が上がります。卵はふ化器で育てます。';
+
+  @override
+  String get tipGearTitle => '装備を作ろう';
+
+  @override
+  String get tipGearBody => '狩りで集めた化石で装備タブから装備を製錬して身につけると、攻撃・体力がずっと上がります。';
+
+  @override
+  String get tipGo => '今すぐ行く';
+
+  @override
+  String get tourUpgrades =>
+      'ここでゴールドを使って能力を強化します。「おすすめ」の行から買うと一番早く強くなります。長押しで連続購入。';
+
+  @override
+  String get tourStage => '今いる狩り場です。モンスターを100体倒すとボスに挑戦でき、ボスを倒すと次の狩り場が開きます。';
+
+  @override
+  String get tourBuffs => 'バフです。オンにするとゴールド・攻撃が大きく上がります。無料なので必ずオンにしましょう。';
+
+  @override
+  String get tourMail =>
+      'メールボックスです。昼・夜のデイリー報酬とサプライズギフトが届きます。ギフトは3時間以内に受け取りましょう。';
+
+  @override
+  String get tourMission => 'ミッションです。達成したらタップして報酬を受け取りましょう。';
+
+  @override
+  String get tourStorage => '採集箱 — 捕まえた昆虫が集まります。卵をふ化させ、昆虫をペットに装備すると一緒に戦います。';
+
+  @override
+  String get tourBattle => '決闘 — 育てた昆虫3匹でほかのプレイヤーと戦います。';
+
+  @override
+  String get tourShop => 'ショップ — ゼリー・パッケージ・昆虫の卵ガチャがあります。';
+
+  @override
+  String get tourSwitch => 'タップすると装備・スキル・妖精・研究所タブに切り替わります。';
+
+  @override
+  String get tourNext => '次へ';
+
+  @override
+  String get tourDone => 'はじめる';
+
+  @override
+  String get tourSkip => 'スキップ';
+
+  @override
+  String get missionGuideHunt => 'キャラクターが自動でモンスターを倒します。画面をタップするともっと速くなります。';
+
+  @override
+  String get missionGuideUpgrade => 'ここの強化ボタンを押すと進みます。「おすすめ」の行から買ってみましょう。';
+
+  @override
+  String get missionGuideForge => '金床をタップすると化石1個で装備を1回製錬します。製錬するたびに進みます。';
+
+  @override
+  String get missionGuideBoss => 'モンスターを100体倒すと、ここでボスに挑戦できます。';
+
+  @override
+  String upgradeFxSurvive(String from, String to) {
+    return 'モンスターの攻撃に$from回耐える → $to回';
+  }
+
+  @override
+  String get tabTourEquipScene =>
+      'キャラクターが野生の昆虫を追いかける採集あそび画面です。チャンスが来たらタップして捕まえましょう。';
+
+  @override
+  String get tabTourEquipStats => '装備を含めた今の能力値です。装備を変えるとすぐに変わります。';
+
+  @override
+  String get tabTourEquipGrid => '装備スロットです。タップすると装備中のアイテムを確認・交換できます。';
+
+  @override
+  String get tabTourEquipAnvil =>
+      '金床をタップすると化石1個で装備を1つ作ります。作った装備は上に積まれ、タップで装備・売却します。';
+
+  @override
+  String get tabTourEquipGrade => '工房ランクを上げると、より良いランクの装備が出ます。ゴールドと時間がかかります。';
+
+  @override
+  String get tabTourEquipFilter => 'フィルター — 自動製錬で欲しい能力値・ランクだけ残し、残りは自動で売ります。';
+
+  @override
+  String get tabTourEquipRush => '加速 — ゼリーでしばらく製錬が速くなります。';
+
+  @override
+  String get tabTourEquipAuto => '自動 — オンにすると化石がある間、自動で製錬します。';
+
+  @override
+  String get tabTourStorageDex => '図鑑 — これまでに捕まえた昆虫の種類です。集めると報酬がもらえます。';
+
+  @override
+  String get tabTourStorageMats => '持っている素材です。強化・訓練・突破などに使います。';
+
+  @override
+  String get tabTourStorageCap =>
+      '採集箱の枠です。いっぱいになると新しい昆虫が入りません — 整理するかゼリーで増やしましょう。';
+
+  @override
+  String get tabTourStoragePets => '装備中のペットです。昆虫をペットにすると一緒に狩りをして攻撃・体力が上がります。';
+
+  @override
+  String get tabTourStorageTools =>
+      '整理ツール —「受け取る希少度」で低い昆虫をすぐ素材にし、「自動分解」でまとめて整理します。';
+
+  @override
+  String get tabTourStorageGrid =>
+      '捕まえた昆虫です。タップするとペット装備、同じ種を食べさせる（希少度アップ）、分解ができます。';
+
+  @override
+  String get tabTourStorageBreed =>
+      'ペアリング — 同じ種のオス・メスの成虫で卵を得ます。親の属性・気質を受け継ぎます。';
+
+  @override
+  String get tabTourStorageHatch => 'ふ化器 — 卵を入れてふ化させます。終わったらタップして受け取ります。';
+
+  @override
+  String get tabTourBattleTicket => '決闘チケットです。1試合に1枚 — 時間で回復し、1日に数回は無料で補充できます。';
+
+  @override
+  String get tabTourBattleSquad => '出陣の3枠です。成虫を入れてチームを組みます — 順番に1・2・3戦目に出ます。';
+
+  @override
+  String get tabTourBattleStart => '戦闘開始 — 同じリーグの相手を選んで決闘します。勝つとポイントがもらえます。';
+
+  @override
+  String get tabTourBattleRecovery => '回復室 — 決闘でけがをした昆虫を休ませます（ゼリーですぐ回復）。';
+
+  @override
+  String get tabTourBattleTraining =>
+      '訓練所 — 育てた分だけ増える訓練ポイントを攻撃・防御・体力などに振り分けます。';
+
+  @override
+  String get tabTourBattleBoard => 'リーグ順位表 — 毎週月曜にリセット。上位20%は昇格、下位20%は降格します。';
+
+  @override
+  String get tabTourShopTop => 'おすすめ商品です。ゼリーパックは初回購入で2倍もらえます。';
+
+  @override
+  String get tabTourShopGacha => '卵ガチャ — ゼリーで昆虫の卵を引きます。野生より高ランクが出やすく、天井もあります。';
+
+  @override
+  String get tabTourShopExchange => '交換所 — ゼリーをゴールド・素材に交換します。';
+
+  @override
+  String get tabTourSkillGacha => 'スキルガチャ — スキルのかけらを得ます。1日1回無料です。';
+
+  @override
+  String get tabTourSkillSweep => '掃討 — 倒したことのあるボスのかけらをすぐ受け取ります。1日3回無料。';
+
+  @override
+  String get tabTourSkillGrade => '昇級 — 余ったかけら10個を1つ上の万能かけら1個に変えます。';
+
+  @override
+  String get tabTourSkillShards => '持っているスキルのかけらです。スキルの解放・強化に使います。';
+
+  @override
+  String get tabTourSkillSlots => '装備枠です。最初は2枠で、新しい難易度に行くたびに増えます。';
+
+  @override
+  String get tabTourSkillList => 'スキル一覧 — タップで解放・強化・装備。装備すると狩り中に自動で使います。';
+
+  @override
+  String get tabTourFairyCompanion => '同行中の妖精です。連れている妖精の効果が狩りに付きます。';
+
+  @override
+  String get tabTourFairyNest => '巣 — 妖精の卵を入れてふ化させます。';
+
+  @override
+  String get tabTourFairyGacha => '妖精の卵ガチャ — ゼリーで妖精の卵を引きます。';
+
+  @override
+  String get tabTourFairyDex => '妖精図鑑 — 集めた妖精の種類と報酬です。';
+
+  @override
+  String get tabTourFairyFeed => '食べさせる — 同じ種類の妖精を食べさせてランクを上げます。';
+
+  @override
+  String get tabTourFairyRelease => '分解 — いらない妖精を妖精の粉に変えます。粉で妖精のレベルを上げます。';
+
+  @override
+  String get tabTourResearchCurrency => '研究に使う素材です。研究サンプルはボス・精鋭を倒すと集まります。';
+
+  @override
+  String get tabTourResearchSlots => '研究枠です。研究を入れると時間で完了し、終わったらタップして受け取ります。';
+
+  @override
+  String get tabTourResearchTabs => '研究分野です — 狩り・育成・決闘・装備・経済。タップで切り替えます。';
+
+  @override
+  String get tabTourResearchTree => '研究一覧 — カードをタップして研究を開始・強化します。研究はずっと残ります。';
+
+  @override
+  String get tabTourResearchAbyss => '深淵 — 極限クリア後に開く深淵専用の研究です。深淵の胞子で行います。';
 }

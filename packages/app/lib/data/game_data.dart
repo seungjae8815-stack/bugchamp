@@ -4,6 +4,8 @@ import 'package:core_models/core_models.dart';
 import 'package:core_run/core_run.dart';
 import 'package:flutter/services.dart' show rootBundle;
 
+import '../ui/format.dart' show keepWords;
+
 /// assets/data/*.json 을 로드해 만든 **불변 게임 정적 데이터** 테이블.
 /// 런타임 밸런스 데이터의 단일 진입점.
 class GameData {
@@ -209,8 +211,11 @@ class GameData {
 
   /// Flutter 에셋 번들에서 로드 (런타임).
   static Future<GameData> loadFromBundle() async {
+    // 한국어 글(`ko`)은 낱말 가운데서 안 끊기게(2026-11-12 — 설명·이름이 '전/투력'처럼 끊겼다). 서버는 자기 파일을 읽어 영향이 없다.
     Future<Map<String, dynamic>> read(String name) async =>
-        jsonDecode(await rootBundle.loadString('assets/data/$name'))
+        _keepKoWords(
+              jsonDecode(await rootBundle.loadString('assets/data/$name')),
+            )
             as Map<String, dynamic>;
     final results = await Future.wait([
       read('species.json'),
@@ -265,4 +270,18 @@ class GameData {
       researchConfig: results[23],
     );
   }
+}
+
+/// JSON 안의 모든 `"ko": "글"` 에 [keepWords] 를 입힌다(배열·맵을 따라 내려간다).
+Object? _keepKoWords(Object? v) {
+  if (v is Map) {
+    return <String, dynamic>{
+      for (final e in v.entries)
+        '${e.key}': e.key == 'ko' && e.value is String
+            ? keepWords(e.value as String)
+            : _keepKoWords(e.value),
+    };
+  }
+  if (v is List) return <dynamic>[for (final x in v) _keepKoWords(x)];
+  return v;
 }

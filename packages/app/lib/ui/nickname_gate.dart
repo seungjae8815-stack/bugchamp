@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:core_models/core_models.dart' show ChatRules;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -36,6 +38,20 @@ Future<String?> validateNickname(
   return null;
 }
 
+/// 추천 닉네임(`채집가48213` 꼴 — 5자리, 세 언어 모두 8자 상한 안) — 검증([validateNickname])을 통과한 것만, 세 번까지. 없으면 빈칸.
+Future<String> _suggestNickname(WidgetRef ref, AppLocalizations l) async {
+  final rng = math.Random();
+  for (var i = 0; i < 3; i++) {
+    final name = '${l.nicknameSuggestPrefix}${10000 + rng.nextInt(90000)}';
+    try {
+      if (await validateNickname(ref, l, name) == null) return name;
+    } catch (_) {
+      return '';
+    }
+  }
+  return '';
+}
+
 /// 닉네임 미확정이면 **정할 때까지 닫히지 않는** 다이얼로그를 띄운다.
 ///
 /// 앱 시작 게이트(버전·점검) 통과 직후 호출 — 랭킹·채팅·PvP 에 기본 닉네임
@@ -44,7 +60,11 @@ Future<void> ensureNicknameSet(BuildContext context, WidgetRef ref) async {
   final save = ref.read(saveControllerProvider).value;
   if (save == null || save.nicknameSet) return;
   final l = AppLocalizations.of(context);
-  final controller = TextEditingController();
+  // 추천 이름을 미리 채운다(2026-11-09) — 설치한 사람의 약 15% 가 닉네임 단계 전후에서 빠졌다.
+  // 창은 그대로 둔다(기본 이름 도배 방지) — 한 번 누르면 시작되고, 바꾸고 싶으면 지우고 쓴다.
+  final suggested = await _suggestNickname(ref, l);
+  if (!context.mounted) return;
+  final controller = TextEditingController(text: suggested);
   var checking = false;
   String? error;
 
@@ -74,6 +94,17 @@ Future<void> ensureNicknameSet(BuildContext context, WidgetRef ref) async {
                   height: 1.4,
                 ),
               ),
+              if (suggested.isNotEmpty) ...[
+                const SizedBox(height: 6),
+                Text(
+                  l.nicknameSuggestedNote,
+                  style: const TextStyle(
+                    color: kHoney,
+                    fontSize: 12,
+                    height: 1.4,
+                  ),
+                ),
+              ],
               const SizedBox(height: 12),
               TextField(
                 controller: controller,

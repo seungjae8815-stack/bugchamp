@@ -302,6 +302,7 @@ class _EventScreenState extends ConsumerState<EventScreen> {
     'event_closed' => l.eventClosed,
     'bug_injured' => l.squadInjured,
     'bug_training' => l.squadTraining,
+    'bug_retired' => l.kotkRetiredBug,
     // 구버전 경로 차단(426) — "잠시 후 다시"로 보이면 계속 눌러 본다(2026-09-30 점검).
     'event_update' => l.updateRequiredBody,
     'not_adult' ||
@@ -1078,6 +1079,8 @@ class _EventScreenState extends ConsumerState<EventScreen> {
   ) {
     final cfg = data.petConfig;
     final adults = save.bugs.where((b) {
+      // 왕중왕전 표본(2026-11-10)은 대회에 다시 나가지 못한다.
+      if (save.retiredBugs.contains(b.id)) return false;
       final st = cfg == null
           ? b.stage
           : effectiveStage(b.stage, b.stageSince, now, cfg);

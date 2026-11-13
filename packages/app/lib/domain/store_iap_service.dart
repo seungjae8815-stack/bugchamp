@@ -345,6 +345,7 @@ class StoreIapService implements IapService {
   /// 값은 서버 세이브를 채택해서만 채워진다 — 서버 지급 키는 영수증 토큰이고, 서버 없이 쓰는
   /// 로컬 지급([SaveController.applyPurchase])은 주문 번호를 적어 토큰과 겹치지 않는다.
   /// 그래서 토큰이 있으면 서버에도 있다. 없으면(채택 전·다른 기기 구매) 예전처럼 서버에 묻는다.
+  /// iOS 는 서버 지급 키가 `ios:<transaction_id>`(2026-11-09)라 여기서 늘 거짓 — 서버에 묻고 서버가 멱등으로 닫는다.
   /// 서버가 없으면(로컬 경로) 쓰지 않는다 — 그쪽 중복은 `applyPurchase` 가 주문 번호로 막는다.
   bool _alreadyGranted(PurchaseDetails p) {
     if (!_ref.read(gameServerProvider).available) return false;
@@ -412,6 +413,10 @@ class StoreIapService implements IapService {
       final res = await server.purchase(
         productId: p.productID,
         purchaseToken: token,
+        // iOS 는 거래 id 를 함께 보낸다 — 영수증 문자열은 갱신마다 바뀌어 같은 거래를 못 알아본다(2026-11-09).
+        transactionId: defaultTargetPlatform == TargetPlatform.iOS
+            ? p.purchaseID
+            : null,
       );
       if (res.isOk && res.save != null) await ctrl.adoptServerSave(res.save!);
       return res;

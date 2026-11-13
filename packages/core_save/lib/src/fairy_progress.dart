@@ -403,6 +403,126 @@ FairyOp autoMergeFairies(
   return FairyOp.ok(dryRun ? s : cur, extra: {'made': result, 'used': used});
 }
 
+/// 요정 먹이기(2026-11-09 사장님 확정 — 곤충 양분 게이지와 같은 규칙). [FairyConfig.gaugeOn] 일 때만.
+///
+/// - 같은 **종류** 요정을 먹이면 그 요정의 등급별 채우는 양([FairyConfig.feedOf], 낮을수록 적다) + 그 요정이 모은 양분만큼
+///   대상의 양분(`Fairy.gauge`)이 차고, 다음 등급 문턱에 닿으면 등급이 오른다. 남는 몫은 게이지에 남는다(신화면 0).
+/// - 재료: 같은 종류 · **대상보다 높지 않은 등급** · [fairyIsFodder](동행·레벨 2 이상·재굴림 대기 아님).
+/// - 등급이 올라도 **개체값은 그대로**(범위 안의 자리를 이어 간다 — 등급 범위가 높아 수치는 오른다). 기기에서 개체값을 바꾸면
+///   서버 정체 고정이 막아야 하는 위조 길이 열린다 — 좋은 개체값은 재굴림(서버 `/fairy/reroll`)이 맡는다.
+/// 결과 `extra['from']`·`['to']`(등급 키) · `['used']`(사라진 id).
+FairyOp feedFairy(
+  FairyState s,
+  FairyConfig cfg,
+  String targetId,
+  List<String> fodderIds,
+) {
+  if (!cfg.gaugeOn) return const FairyOp.fail('off');
+  final t = s.fairyById(targetId);
+  if (t == null) return const FairyOp.fail('no_fairy');
+  if (t.grade.next == null) return const FairyOp.fail('max_grade');
+  if (fodderIds.isEmpty || fodderIds.toSet().length != fodderIds.length) {
+    return const FairyOp.fail('bad_count');
+  }
+  final ok = {for (final f in fairyFeedFodder(s, t)) f.id: f};
+  if (!fodderIds.every(ok.containsKey)) return const FairyOp.fail('mismatch');
+  var total = cfg.gaugeAtOf(t.grade) + t.gauge;
+  for (final id in fodderIds) {
+    total += fairyFeedValue(ok[id]!, cfg);
+  }
+  final to = cfg.gradeForGauge(total);
+  final rest = to.next == null ? 0 : total - cfg.gaugeAtOf(to);
+  final up = t.copyWith(grade: to, gauge: rest);
+  final gone = fodderIds.toSet();
+  return FairyOp.ok(
+    s.copyWith(
+      fairies: [
+        for (final f in s.fairies)
+          if (f.id == t.id) up else if (!gone.contains(f.id)) f,
+      ],
+      dex: _dexWith(s.dex, up),
+    ),
+    extra: {'from': t.grade.key, 'to': to.key, 'used': gone.toList()},
+  );
+}
+
+/// [f] 를 먹이면 채우는 양(등급별 채우는 양 + 그 요정이 모은 양분).
+int fairyFeedValue(Fairy f, FairyConfig cfg) => cfg.feedOf(f.grade) + f.gauge;
+
+/// [t] 에 먹일 수 있는 요정 — 같은 종류 · 대상 이하 등급 · [fairyIsFodder]. 채우는 양 작은 것부터(품질 낮은 것부터).
+List<Fairy> fairyFeedFodder(FairyState s, Fairy t) =>
+    [
+      for (final f in s.fairies)
+        if (f.id != t.id &&
+            f.kind == t.kind &&
+            f.grade.index <= t.grade.index &&
+            fairyIsFodder(s, f))
+          f,
+    ]..sort((a, b) {
+      final g = a.grade.index.compareTo(b.grade.index);
+      return g != 0 ? g : a.quality.compareTo(b.quality);
+    });
+
+/// [t] 에 먹일 재료 — [toNext] 면 다음 등급에 닿을 만큼만(모자라면 빈 목록), 아니면 신화에 닿을 만큼까지.
+List<Fairy> fairyFeedPlan(
+  FairyState s,
+  FairyConfig cfg,
+  Fairy t, {
+  required bool toNext,
+}) {
+  final next = t.grade.next;
+  if (!cfg.gaugeOn || next == null) return const [];
+  final goal = cfg.gaugeAtOf(toNext ? next : FairyGrade.values.last);
+  var total = cfg.gaugeAtOf(t.grade) + t.gauge;
+  final out = <Fairy>[];
+  for (final f in fairyFeedFodder(s, t)) {
+    if (total >= goal) break;
+    out.add(f);
+    total += fairyFeedValue(f, cfg);
+  }
+  if (toNext && total < goal) return const [];
+  return out;
+}
+
+/// 자동 먹이기 — 종류마다 **가장 아끼는 요정**(동행 → 등급 → 레벨 → 품질 높은 것)에 다음 등급에 닿는 만큼씩 되풀이해 먹인다.
+/// 재료 규칙은 [fairyFeedFodder] 그대로(동행·레벨 2 이상은 사라지지 않는다). [dryRun] 이면 예상만.
+/// 결과 `extra['ups']`(오른 횟수) · `['used']`(사라진 재료 수).
+FairyOp autoFeedFairies(FairyState s, FairyConfig cfg, {bool dryRun = false}) {
+  if (!cfg.gaugeOn) return const FairyOp.fail('off');
+  var cur = s;
+  var ups = 0;
+  for (var guard = 0; guard <= s.fairies.length; guard++) {
+    final cands = [...cur.fairies]
+      ..sort((a, b) {
+        final ca = a.id == cur.companionId ? 1 : 0;
+        final cb = b.id == cur.companionId ? 1 : 0;
+        if (ca != cb) return cb - ca;
+        final g = b.grade.index.compareTo(a.grade.index);
+        if (g != 0) return g;
+        final lv = b.level.compareTo(a.level);
+        return lv != 0 ? lv : b.quality.compareTo(a.quality);
+      });
+    FairyOp? hit;
+    for (final c in cands) {
+      final plan = fairyFeedPlan(cur, cfg, c, toNext: true);
+      if (plan.isEmpty) continue;
+      final op = feedFairy(cur, cfg, c.id, [for (final f in plan) f.id]);
+      if (op.isOk) {
+        hit = op;
+        break;
+      }
+    }
+    if (hit == null) break;
+    cur = hit.state!;
+    ups++;
+  }
+  if (ups == 0) return const FairyOp.fail('none');
+  final used = s.fairies
+      .where((f) => !cur.fairies.any((x) => x.id == f.id))
+      .length;
+  return FairyOp.ok(dryRun ? s : cur, extra: {'ups': ups, 'used': used});
+}
+
 /// 재굴림(2026-10-04, 조정안 C) — 가진 요정의 **부가 능력치·개체값을 새로 굴려 대기 결과로 적는다.**
 /// 요정은 아직 그대로다 — [chooseFairyReroll] 로 새 값/원래 값을 고른다(나빠지지 않는다).
 ///

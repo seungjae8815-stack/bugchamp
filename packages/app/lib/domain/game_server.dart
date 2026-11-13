@@ -49,6 +49,7 @@ abstract interface class GameServer {
   Future<ServerResult> purchase({
     required String productId,
     required String purchaseToken,
+    String? transactionId,
   });
 
   /// PvP 전투 — 서버가 시뮬레이션하고 승패·보상을 확정한다.
@@ -94,6 +95,13 @@ abstract interface class GameServer {
     required List<String> teamBugIds,
     required String offerId,
     required int pick,
+  });
+
+  /// 연습 결투 시작(2026-11-10, 친구 결투) — [opponentId] 의 방어팀과. 티켓·점수·부상·보상 없음.
+  /// 판 진행은 [duelThrow]·탭 반격 그대로이고, 끝나도 세이브가 오지 않는다(응답의 practice 표식).
+  Future<ServerResult> duelPractice({
+    required List<String> teamBugIds,
+    required String opponentId,
   });
 
   /// 결투 한 판 던지기 — [launch] 는 게이지 값(0~1). 그 판의 궤적·결판이 온다.
@@ -304,6 +312,18 @@ abstract interface class GameServer {
   /// 대회가 닫혀 있어도 답한다(그때 보라고 만든 화면이다).
   Future<ServerResult> eventHall();
 
+  /// 종별 최대 크기 순위(2026-11-10) — 상위 30 + 내 순위(`top`·`me`).
+  Future<ServerResult> speciesSizeRank(String speciesId);
+
+  /// 왕중왕전(2026-11-10) — 이번 주 접수·내 참가·대진(접수가 닫혔으면)·지난주 대진·명예의 전당.
+  Future<ServerResult> kotkStatus();
+
+  /// 왕중왕전 참가(같은 주에 다시 내면 곤충을 바꾼다). 지면 이 곤충은 표본이 된다.
+  Future<ServerResult> kotkEnter(String bugId);
+
+  /// 왕중왕전 참가 취소(접수 중에만).
+  Future<ServerResult> kotkWithdraw();
+
   /// 결투 리그 순위표 — 내 리그의 이번 시즌 상위 100명 + 내 순위 · 승강 구간 · 결산 시각.
   Future<ServerResult> pvpLeagueBoard();
 
@@ -369,6 +389,10 @@ abstract interface class GameServer {
 bool isSessionTaken(ServerResult r) =>
     r.status == 409 && r.error == 'session_taken';
 
+/// 업로드가 **낡은 기기 세이브**라 거절됐다(2026-11-12) — 다른 기기가 그 뒤에 더 저장했다.
+/// 응답의 `save` 에 서버 저장본이 실려 온다.
+bool isStaleSave(ServerResult r) => r.status == 409 && r.error == 'stale_save';
+
 /// 서버 미설정 — 항상 사용 불가.
 class NoGameServer implements GameServer {
   const NoGameServer();
@@ -382,6 +406,7 @@ class NoGameServer implements GameServer {
   Future<ServerResult> purchase({
     required String productId,
     required String purchaseToken,
+    String? transactionId,
   }) async => const ServerResult.fail('unavailable', 0);
   @override
   Future<ServerResult> battle({
@@ -483,6 +508,18 @@ class NoGameServer implements GameServer {
   Future<ServerResult> eventHall() async =>
       const ServerResult.fail('unavailable', 0);
   @override
+  Future<ServerResult> speciesSizeRank(String speciesId) async =>
+      const ServerResult.fail('unavailable', 0);
+  @override
+  Future<ServerResult> kotkStatus() async =>
+      const ServerResult.fail('unavailable', 0);
+  @override
+  Future<ServerResult> kotkEnter(String bugId) async =>
+      const ServerResult.fail('unavailable', 0);
+  @override
+  Future<ServerResult> kotkWithdraw() async =>
+      const ServerResult.fail('unavailable', 0);
+  @override
   Future<ServerResult> adminEventTicket({
     required String adminKey,
     required String userId,
@@ -539,6 +576,11 @@ class NoGameServer implements GameServer {
     required List<String> teamBugIds,
     required String offerId,
     required int pick,
+  }) async => const ServerResult.fail('unavailable', 0);
+  @override
+  Future<ServerResult> duelPractice({
+    required List<String> teamBugIds,
+    required String opponentId,
   }) async => const ServerResult.fail('unavailable', 0);
   @override
   Future<ServerResult> duelThrow({
@@ -773,9 +815,13 @@ class HttpGameServer implements GameServer {
   Future<ServerResult> purchase({
     required String productId,
     required String purchaseToken,
+    String? transactionId,
   }) => _send('POST', '/purchase', {
     'productId': productId,
     'purchaseToken': purchaseToken,
+    // iOS 거래 id(2026-11-09) — 서버·검증 함수가 그 거래를 정확히 찾아 거래 키로 중복 지급을 막는다.
+    if (transactionId != null && transactionId.isNotEmpty)
+      'transactionId': transactionId,
   });
 
   @override
@@ -973,6 +1019,21 @@ class HttpGameServer implements GameServer {
   Future<ServerResult> eventHall() => _send('GET', '/event/hall');
 
   @override
+  Future<ServerResult> speciesSizeRank(String speciesId) =>
+      _send('POST', '/dex/size-rank', {'species': speciesId});
+
+  @override
+  Future<ServerResult> kotkStatus() => _send('GET', '/kotk');
+
+  @override
+  Future<ServerResult> kotkEnter(String bugId) =>
+      _send('POST', '/kotk/enter', {'bugId': bugId});
+
+  @override
+  Future<ServerResult> kotkWithdraw() =>
+      _send('POST', '/kotk/withdraw', const {});
+
+  @override
   Future<ServerResult> adminEventTicket({
     required String adminKey,
     required String userId,
@@ -1065,6 +1126,16 @@ class HttpGameServer implements GameServer {
     'offerId': offerId,
     'pick': pick,
     // 판마다 경기장을 그릴 줄 안다(2026-10-26) — 서버가 `nextArena` 를 싣고 판정도 판마다 바꾼다.
+    'arenaPerBout': true,
+  });
+
+  @override
+  Future<ServerResult> duelPractice({
+    required List<String> teamBugIds,
+    required String opponentId,
+  }) => _send('POST', '/duel/practice', {
+    'teamBugIds': teamBugIds,
+    'opponentId': opponentId,
     'arenaPerBout': true,
   });
 

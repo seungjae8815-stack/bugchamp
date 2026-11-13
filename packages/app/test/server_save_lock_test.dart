@@ -88,6 +88,7 @@ class _RaceServer extends NoGameServer {
   Future<ServerResult> purchase({
     required String productId,
     required String purchaseToken,
+    String? transactionId,
   }) async {
     log.add('purchase');
     await _rtt();

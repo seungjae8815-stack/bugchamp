@@ -149,29 +149,6 @@ void main() {
     );
   });
 
-  test('분해 기술 — 손 분해 재료 × (1 + v), 젤리는 그대로', () async {
-    final bug = IndividualBug(
-      id: 'b1',
-      speciesId: data.allSpecies.first.id,
-      sizeMm: data.allSpecies.first.sizeMinMm,
-      potential: 5,
-      temperament: Temperament.cunning,
-      sex: Sex.male,
-      element: Element.fire,
-      stage: LifeStage.adult,
-      stageSince: t0,
-    );
-    final a = await (await ctrl(
-      seed(const {}).copyWith(bugs: [bug]),
-    )).disassembleBug('b1');
-    final b = await (await ctrl(
-      seed(maxed).copyWith(bugs: [bug]),
-    )).disassembleBug('b1');
-    expect(a.ok, isTrue);
-    expect(b.amount, (a.amount * (1 + v(ResearchEffect.salvageMat))).round());
-    expect(b.jelly, a.jelly);
-  });
-
   test('제련 비법 — 공방 초월 시간', () async {
     final forge = data.forgeConfig!;
     Future<DateTime?> start(Map<String, int> r) async {

@@ -17,8 +17,69 @@
 
 import { createClient } from 'jsr:@supabase/supabase-js@2'
 import { BOT_TOKEN, kstDate, priceOf, sendTelegram, won } from '../_shared/ops.ts'
+import { getPlayAccessToken, PACKAGE_NAME } from '../_shared/google.ts'
 
 const SECRET = Deno.env.get('REPORT_SECRET') ?? ''
+// 환불 조회(구글 Voided Purchases API)용 — verify-purchase 와 같은 시크릿. 없으면 환불 줄을 건너뛴다.
+const PLAY_SA = Deno.env.get('PLAY_SERVICE_ACCOUNT_JSON') ?? ''
+
+/** 구글 환불 사유 코드(voidedReason) → 짧은 이름. */
+const VOID_REASON: Record<number, string> = {
+  0: '기타',
+  1: '단순 변심',
+  2: '미수령',
+  3: '결함',
+  4: '실수 구매',
+  5: '사기',
+  6: '가족·지인 결제',
+  7: '지불 거절',
+}
+
+/** 최근 24시간 구글 환불·취소 → 리포트 줄(2026-11-09 사장님 확정 — 알림만, 젤리는 회수하지 않는다).
+ *  환불해도 지급한 젤리는 남아서(첫 구매 2배면 그 이득도 2배) 운영자가 보고 판단할 수 있게 계정을 함께 적는다.
+ *  ⚠️ iOS 환불은 여기 없다 — App Store Server Notifications(App Store Connect 에 URL 등록)가 있어야 한다.
+ *  ⚠️ 서비스 계정에 Play Console "재무 데이터 보기" 권한이 없으면 403 — "조회 실패"로 보인다. */
+async function refundLines(admin: ReturnType<typeof createClient>): Promise<string> {
+  if (!PLAY_SA) return ''
+  try {
+    const token = await getPlayAccessToken(PLAY_SA)
+    const start = Date.now() - 24 * 3600 * 1000
+    // shortcut: 한 페이지(최대 1000건)만 본다 — 하루 환불이 그보다 많아지면 tokenPagination 을 따라간다.
+    const url =
+      `https://androidpublisher.googleapis.com/androidpublisher/v3/applications/` +
+      `${PACKAGE_NAME}/purchases/voidedpurchases?startTime=${start}&type=0`
+    const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } })
+    if (!res.ok) {
+      console.error('voided api', res.status, await res.text())
+      return `↩️ 환불·취소(24h, 구글): 조회 실패(${res.status})`
+    }
+    const body = (await res.json()) as {
+      voidedPurchases?: Array<{ purchaseToken: string; orderId?: string; voidedReason?: number }>
+    }
+    const voided = body.voidedPurchases ?? []
+    if (voided.length === 0) return `↩️ 환불·취소(24h, 구글): 0건`
+    // 영수증 토큰 → 계정·상품(검증 때 기록한 verified_purchases).
+    const { data: rows } = await admin
+      .from('verified_purchases')
+      .select('purchase_token, user_id, product_id, environment')
+      .in('purchase_token', voided.map((v) => v.purchaseToken))
+    const byToken = new Map(
+      ((rows ?? []) as Array<{ purchase_token: string; user_id: string; product_id: string; environment: string }>)
+        .map((r) => [r.purchase_token, r]),
+    )
+    let sum = 0
+    const lines = voided.map((v) => {
+      const r = byToken.get(v.purchaseToken)
+      if (r && r.environment === 'production') sum += priceOf(r.product_id)
+      const who = r ? `${r.product_id} · 계정 ${r.user_id}` : '기록 없음(검증 전 환불?)'
+      return `   ${who} · ${VOID_REASON[v.voidedReason ?? 0] ?? '기타'} · ${v.orderId ?? '-'}`
+    })
+    return `↩️ 환불·취소(24h, 구글): ${voided.length}건 · ${won(sum)}\n${lines.join('\n')}`
+  } catch (e) {
+    console.error('refund lookup failed', e)
+    return `↩️ 환불·취소(24h, 구글): 조회 실패`
+  }
+}
 
 /** 천단위 콤마 */
 function fmt(n: unknown): string {
@@ -140,6 +201,9 @@ Deno.serve(async (req) => {
       `👥 누적 계정(익명포함): ${fmt(s.installs)}명\n` +
       `🆕 오늘 신규: ${fmt(s.new_today)}명\n`
 
+  // 환불·취소(구글, 24h) — 실패해도 리포트는 보낸다(함수 안에서 삼킨다).
+  const refunds = await refundLines(admin)
+
   const msg =
     `🐛 곤충키우기 (Bug Champ)\n` +
     `📅 ${kstDate()} 리포트\n` +
@@ -151,7 +215,8 @@ Deno.serve(async (req) => {
     `\n` +
     accounts +
     `\n` +
-    revenueLines
+    revenueLines +
+    (refunds ? `\n${refunds}` : '')
 
   const ok = await sendTelegram(msg)
   if (ok) {

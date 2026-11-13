@@ -31,3 +31,9 @@ __pycache__/
 
 .superpowers/
 docs/_iap_review/
+
+# Claude Code 개인 설정(토큰 포함)
+.claude/settings.local.json
+
+# Supabase CLI 연결 정보(프로젝트 ref·조직 id) — 커밋하지 않는다(2026-11-12 보안 점검).
+**/supabase/.temp/

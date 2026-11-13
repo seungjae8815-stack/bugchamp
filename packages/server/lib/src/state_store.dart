@@ -337,6 +337,151 @@ class StateStore {
     }
   }
 
+  /// 왕중왕전 참가 기록(2026-11-10) — 주 [week] 의 전체(대진은 서버가 이걸로 다시 계산한다).
+  Future<List<Map<String, dynamic>>> kotkEntries(String week) async {
+    final res = await _http.get(
+      Uri.parse(
+        '$supabaseUrl/rest/v1/kotk_entries?week_id=eq.${Uri.encodeComponent(week)}'
+        '&select=user_id,nickname,avatar,bug_id,species_id,bug,power,skin',
+      ),
+      headers: _headers,
+    );
+    if (res.statusCode != 200) {
+      throw StateStoreException('왕중왕전 참가 조회 실패: ${res.statusCode}');
+    }
+    return (jsonDecode(res.body) as List).cast<Map<String, dynamic>>();
+  }
+
+  /// 왕중왕전 참가(같은 주에 다시 내면 덮어쓴다 — 참가 곤충 바꾸기).
+  Future<void> upsertKotkEntry(Map<String, dynamic> row) async {
+    final res = await _http.post(
+      Uri.parse(
+        '$supabaseUrl/rest/v1/kotk_entries?on_conflict=week_id,user_id',
+      ),
+      headers: {..._headers, 'Prefer': 'resolution=merge-duplicates'},
+      body: jsonEncode([row]),
+    );
+    if (res.statusCode >= 300) {
+      throw StateStoreException('왕중왕전 참가 실패: ${res.statusCode} ${res.body}');
+    }
+  }
+
+  /// 왕중왕전 확정 결과(2026-11-12) — 없으면 null. 처음 계산한 결과를 적어 두고 그 뒤로는 이것을 읽는다
+  /// (결투 수치·엔진을 고쳐 배포해도 지난 대진이 바뀌지 않게). 표가 없으면(SQL 전) 예외 — 호출자가 다시 계산한다.
+  Future<Map<String, dynamic>?> kotkResult(String week) async {
+    final res = await _http.get(
+      Uri.parse(
+        '$supabaseUrl/rest/v1/kotk_results?week_id=eq.${Uri.encodeComponent(week)}&select=result',
+      ),
+      headers: _headers,
+    );
+    if (res.statusCode != 200) {
+      throw StateStoreException('왕중왕전 결과 조회 실패: ${res.statusCode}');
+    }
+    final rows = jsonDecode(res.body) as List;
+    if (rows.isEmpty) return null;
+    return Map<String, dynamic>.from((rows.first as Map)['result'] as Map);
+  }
+
+  /// 왕중왕전 결과 적기 — **먼저 적은 쪽이 이긴다**(같은 주를 여러 인스턴스가 동시에 계산해도 결과는 하나).
+  Future<void> saveKotkResult(String week, Map<String, dynamic> result) async {
+    final res = await _http.post(
+      Uri.parse('$supabaseUrl/rest/v1/kotk_results?on_conflict=week_id'),
+      headers: {..._headers, 'Prefer': 'resolution=ignore-duplicates'},
+      body: jsonEncode([
+        {'week_id': week, 'result': result},
+      ]),
+    );
+    if (res.statusCode >= 300) {
+      throw StateStoreException('왕중왕전 결과 저장 실패: ${res.statusCode}');
+    }
+  }
+
+  /// 왕중왕전 확정 결과 지우기(운영 실격 처리 뒤 다시 계산하게).
+  Future<void> deleteKotkResult(String week) async {
+    final res = await _http.delete(
+      Uri.parse(
+        '$supabaseUrl/rest/v1/kotk_results?week_id=eq.${Uri.encodeComponent(week)}',
+      ),
+      headers: _headers,
+    );
+    if (res.statusCode >= 300) {
+      throw StateStoreException('왕중왕전 결과 지우기 실패: ${res.statusCode}');
+    }
+  }
+
+  /// 왕중왕전 참가 취소.
+  Future<void> deleteKotkEntry(String week, String userId) async {
+    final res = await _http.delete(
+      Uri.parse(
+        '$supabaseUrl/rest/v1/kotk_entries?week_id=eq.${Uri.encodeComponent(week)}&user_id=eq.$userId',
+      ),
+      headers: _headers,
+    );
+    if (res.statusCode >= 300) {
+      throw StateStoreException('왕중왕전 취소 실패: ${res.statusCode}');
+    }
+  }
+
+  /// 종별 최대 크기 기록(2026-11-10) — [sizes] = {종 id: mm}. 오를 때만 갱신(SQL 이 판단).
+  Future<void> submitSpeciesSizes({
+    required String userId,
+    required String nickname,
+    required Map<String, double> sizes,
+  }) async {
+    final res = await _http.post(
+      Uri.parse('$supabaseUrl/rest/v1/rpc/size_submit'),
+      headers: _headers,
+      body: jsonEncode({
+        'p_user': userId,
+        'p_nick': nickname,
+        'p_sizes': sizes,
+      }),
+    );
+    if (res.statusCode >= 300) {
+      throw StateStoreException('크기 기록 실패: ${res.statusCode} ${res.body}');
+    }
+  }
+
+  /// 종 [speciesId] 의 크기 순위 상위 [limit] 명.
+  Future<List<Map<String, dynamic>>> speciesSizeTop(
+    String speciesId,
+    int limit,
+  ) async {
+    final res = await _http.post(
+      Uri.parse('$supabaseUrl/rest/v1/rpc/size_top'),
+      headers: _headers,
+      body: jsonEncode({'p_species': speciesId, 'lim': limit}),
+    );
+    if (res.statusCode >= 300) {
+      throw StateStoreException('크기 순위 조회 실패: ${res.statusCode}');
+    }
+    return (jsonDecode(res.body) as List).cast<Map<String, dynamic>>();
+  }
+
+  /// 종 [speciesId] 에서 [userId] 의 순위. 기록이 없으면 null.
+  Future<({int rank, double size, int total})?> speciesSizeRankOf(
+    String speciesId,
+    String userId,
+  ) async {
+    final res = await _http.post(
+      Uri.parse('$supabaseUrl/rest/v1/rpc/size_rank_of'),
+      headers: _headers,
+      body: jsonEncode({'p_species': speciesId, 'p_user': userId}),
+    );
+    if (res.statusCode >= 300) {
+      throw StateStoreException('크기 순위 조회 실패: ${res.statusCode}');
+    }
+    final rows = jsonDecode(res.body) as List;
+    if (rows.isEmpty) return null;
+    final r = rows.first as Map<String, dynamic>;
+    return (
+      rank: (r['rank'] as num).toInt(),
+      size: (r['size_mm'] as num?)?.toDouble() ?? 0,
+      total: (r['total'] as num?)?.toInt() ?? 0,
+    );
+  }
+
   /// 심연 주 [week] 에서 [userId] 의 순위. 기록이 없으면 null.
   Future<({int rank, int floor, int total})?> abyssRankOf(
     String week,

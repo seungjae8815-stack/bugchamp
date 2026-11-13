@@ -107,8 +107,26 @@ workflows:
           # APP_STORE_ID 는 넘기지 않는다 — 앱 코드 기본값(review_service.dart kAppStoreId, 공개 값)이 실제 id 다.
           # 넘기면 그룹 변수가 비어 있을 때 빈 문자열이 기본값을 덮어 "게임 평가하기"가 시스템 리뷰창으로 떨어졌다
           # (2026-10-09 출시 전 점검).
+      - name: Crashlytics dSYM 업로드 (실패해도 빌드는 계속)
+        # 2026-11-12: 1.0.27 iOS 에 "dSYM 누락" 메일이 왔다 — 업로드 단계가 없어 iOS 네이티브 크래시가 주소로만 보였다.
+        # GoogleService-Info.plist 가 없는 FlutterFire(Dart 초기화) 구성이라 앱 id 로 올린다(firebase_options.dart 의 iOS appId, 공개 값).
+        script: |
+          cd packages/app
+          US="ios/Pods/FirebaseCrashlytics/upload-symbols"
+          DSYMS="build/ios/archive/Runner.xcarchive/dSYMs"
+          if [ -x "$US" ] && [ -d "$DSYMS" ]; then
+            if "$US" --app-id "1:867649520275:ios:116bac973b21fc11108366" -p ios "$DSYMS"; then
+              echo "✅ dSYM 업로드"
+            else
+              echo "⚠️ dSYM 업로드 실패 — 아티팩트의 dSYM 을 Firebase 콘솔에서 올린다"
+            fi
+          else
+            echo "⚠️ upload-symbols($US) 또는 dSYM 폴더($DSYMS)가 없음"
+          fi
     artifacts:
       - packages/app/build/ios/ipa/*.ipa
+      # dSYM 도 받아 둔다 — 자동 업로드가 실패하면 Firebase 콘솔 "dSYM 업로드"에 이 파일을 올린다.
+      - packages/app/build/ios/archive/Runner.xcarchive/dSYMs/*.dSYM
     publishing:
       app_store_connect:
         auth: integration

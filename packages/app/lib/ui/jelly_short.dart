@@ -1,7 +1,10 @@
+import 'package:core_models/core_models.dart' show MaterialKind;
+import 'package:core_save/core_save.dart' show iapFirstBonusAvailable;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../domain/providers.dart';
+import '../domain/save_controller.dart';
 import '../l10n/app_localizations.dart';
 import 'art.dart';
 import 'game_dialog.dart';
@@ -17,13 +20,25 @@ Future<void> showJellyShort(BuildContext context) async {
   final nav = Navigator.of(context, rootNavigator: true);
   final container = ProviderScope.containerOf(context, listen: false);
   _open = true;
+  // 보유 젤리 · 첫 구매 보너스가 남은 팩(2026-11-09) — 이 창은 토스트 문구로 열려 필요한 양을 모른다.
+  final save = container.read(saveControllerProvider).value;
+  final iap = container.read(gameDataProvider).value?.iapConfig;
+  final held = save?.materials[MaterialKind.jelly] ?? 0;
+  final bonus =
+      save != null &&
+      iap != null &&
+      iap.products.any((p) => !p.hidden && iapFirstBonusAvailable(save, p));
   try {
     final go = await showGameDialog<bool>(
       context,
       title: l.jellyShortTitle,
       iconWidget: jellyIcon(size: 34),
       content: Text(
-        l.jellyShortBody,
+        [
+          l.jellyShortBody,
+          if (save != null) l.jellyShortHave(held),
+          if (bonus) l.jellyShortFirstBonus,
+        ].join('\n'),
         textAlign: TextAlign.center,
         style: const TextStyle(color: Colors.white, fontSize: 13, height: 1.4),
       ),

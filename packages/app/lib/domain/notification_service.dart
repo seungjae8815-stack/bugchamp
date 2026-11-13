@@ -93,6 +93,41 @@ class NotificationService {
     }
   }
 
+  /// 왕중왕전 마감 안내(2026-11-12) — 이번 주에 아직 참가하지 않았으면 마감 13시간 전(토 20시 KST) 1회.
+  /// 일요일 새벽은 조용한 시간(22~8시)이라 미뤄지면 마감 1시간 전에야 울려서 전날 저녁으로 잡았다.
+  static const int kotkId = 940;
+
+  Future<void> scheduleKotk({
+    required DateTime at,
+    required String title,
+    required String body,
+  }) async {
+    if (!_ready) return;
+    await cancelKotk();
+    final when = tz.TZDateTime.from(at.toLocal(), tz.local);
+    if (!when.isAfter(tz.TZDateTime.now(tz.local))) return;
+    try {
+      await _plugin.zonedSchedule(
+        kotkId,
+        title,
+        body,
+        when,
+        _details,
+        androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+        uiLocalNotificationDateInterpretation:
+            UILocalNotificationDateInterpretation.absoluteTime,
+      );
+    } catch (e) {
+      debugPrint('scheduleKotk failed: $e');
+    }
+  }
+
+  Future<void> cancelKotk() async {
+    try {
+      await _plugin.cancel(kotkId);
+    } catch (_) {}
+  }
+
   Future<void> cancelGift() async {
     try {
       await _plugin.cancel(giftId);

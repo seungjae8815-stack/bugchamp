@@ -1249,7 +1249,7 @@ abstract class AppLocalizations {
   /// No description provided for @offlineBugsBlocked.
   ///
   /// In en, this message translates to:
-  /// **'Your storage was full —\n{count, plural, =1{1 egg was} other{{count} eggs were}} not collected'**
+  /// **'No room left —\nyou missed {count, plural, =1{1 egg} other{{count} eggs}}'**
   String offlineBugsBlocked(int count);
 
   /// No description provided for @fairyRerollPending.
@@ -1767,6 +1767,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'OK'**
   String get whatsNewOk;
+
+  /// No description provided for @whatsNew28Kotk.
+  ///
+  /// In en, this message translates to:
+  /// **'King of Kings — a weekly hard-mode tournament with one bug (home banner). Win for jelly, materials and a golden crown; any other bug becomes a specimen'**
+  String get whatsNew28Kotk;
+
+  /// No description provided for @whatsNew28Feed.
+  ///
+  /// In en, this message translates to:
+  /// **'Feeding — feed bugs of the same species or fairies of the same kind to fill nutrients and raise rarity or grade (essence conversion is now part of feeding)'**
+  String get whatsNew28Feed;
+
+  /// No description provided for @whatsNew28Upgrade.
+  ///
+  /// In en, this message translates to:
+  /// **'Upgrades — awakening (bonus levels at set levels), lucky upgrades, effect preview and picks · gold only up to Lv.50'**
+  String get whatsNew28Upgrade;
+
+  /// No description provided for @whatsNew28Abyss.
+  ///
+  /// In en, this message translates to:
+  /// **'Abyss — weekly mutations · abyss crystals for imprints and upgrade cap breaks · abyss spores for the Lab\'s new Abyss research'**
+  String get whatsNew28Abyss;
+
+  /// No description provided for @whatsNew28Fun.
+  ///
+  /// In en, this message translates to:
+  /// **'Weekend events · achievements and titles · size ranking per species · practice duels from the leaderboard · Specimen Case (next to the Dex)'**
+  String get whatsNew28Fun;
+
+  /// No description provided for @whatsNew28Shop.
+  ///
+  /// In en, this message translates to:
+  /// **'Each jelly pack gives double on first purchase · instant hatch, lay and breakthrough are free the first time · your first 5 hatches take at most 5 min'**
+  String get whatsNew28Shop;
+
+  /// No description provided for @whatsNew28Dex.
+  ///
+  /// In en, this message translates to:
+  /// **'Dex jelly is now 10 for completing each of discovery, conquest, variants and boss collection (gold and fossils from earlier milestones stay)'**
+  String get whatsNew28Dex;
 
   /// No description provided for @whatsNewAvatar.
   ///
@@ -2686,6 +2728,12 @@ abstract class AppLocalizations {
   /// **'Released {count} bugs for {mats} materials'**
   String autoReleaseDone(Object count, Object mats);
 
+  /// 자동 분해 결과 창 부제목 — 아래에 받은 재료가 아이콘과 함께 나온다
+  ///
+  /// In en, this message translates to:
+  /// **'Dismantled {count}'**
+  String autoReleaseDoneCount(int count);
+
   /// No description provided for @autoReleasePreview.
   ///
   /// In en, this message translates to:
@@ -3031,8 +3079,14 @@ abstract class AppLocalizations {
   /// No description provided for @chapterClearTitle.
   ///
   /// In en, this message translates to:
-  /// **'Chapter cleared! 🎉'**
+  /// **'Zone cleared! 🎉'**
   String get chapterClearTitle;
+
+  /// 사냥터 1~10 클리어 창(마지막 사냥터는 chapterClearMsg — 난이도 정복)
+  ///
+  /// In en, this message translates to:
+  /// **'Zone {zone} boss {boss} defeated! The next zone is open.'**
+  String chapterClearZoneMsg(int zone, String boss);
 
   /// No description provided for @chapterClearMsg.
   ///
@@ -4791,6 +4845,270 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'This is the name other collectors will see. You only set it once.'**
   String get nicknameRequiredBody;
+
+  /// No description provided for @nicknameSuggestPrefix.
+  ///
+  /// In en, this message translates to:
+  /// **'Bug'**
+  String get nicknameSuggestPrefix;
+
+  /// No description provided for @nicknameSuggestedNote.
+  ///
+  /// In en, this message translates to:
+  /// **'We picked a name for you. Keep it or type your own.'**
+  String get nicknameSuggestedNote;
+
+  /// No description provided for @bugDetailMore.
+  ///
+  /// In en, this message translates to:
+  /// **'Growth & stats details'**
+  String get bugDetailMore;
+
+  /// No description provided for @bugDetailLess.
+  ///
+  /// In en, this message translates to:
+  /// **'Show less'**
+  String get bugDetailLess;
+
+  /// No description provided for @storeFirstBonus.
+  ///
+  /// In en, this message translates to:
+  /// **'First purchase 2x! +{n} bonus jelly'**
+  String storeFirstBonus(int n);
+
+  /// No description provided for @jellyShortHave.
+  ///
+  /// In en, this message translates to:
+  /// **'You have {n} jelly'**
+  String jellyShortHave(int n);
+
+  /// No description provided for @jellyShortFirstBonus.
+  ///
+  /// In en, this message translates to:
+  /// **'Jelly packs are 2x on your first purchase!'**
+  String get jellyShortFirstBonus;
+
+  /// No description provided for @discoveryNewTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'New bug discovered!'**
+  String get discoveryNewTitle;
+
+  /// No description provided for @discoveryVariantTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Rare color found!'**
+  String get discoveryVariantTitle;
+
+  /// No description provided for @discoveryVariantNote.
+  ///
+  /// In en, this message translates to:
+  /// **'A very rare, differently colored bug!'**
+  String get discoveryVariantNote;
+
+  /// No description provided for @discoveryDexProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Bugdex {n} / {total}'**
+  String discoveryDexProgress(int n, int total);
+
+  /// No description provided for @discoveryOk.
+  ///
+  /// In en, this message translates to:
+  /// **'Nice!'**
+  String get discoveryOk;
+
+  /// No description provided for @rarityAutoFeedBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Feeds bugs of the same species to raise rarity (lower-rarity bugs fill less).\nRarity ups: {ups} · bugs used as material: {fodder}'**
+  String rarityAutoFeedBody(String ups, String fodder);
+
+  /// No description provided for @guideRarityFeed.
+  ///
+  /// In en, this message translates to:
+  /// **'Rarity up: feeding bugs of the same species fills nutrients. Lower-rarity bugs fill a little (Common {common}), higher-rarity bugs fill a lot (Epic {epic}), and Legendary needs {legend}. Bugs rarer than this one, and protected or invested bugs, are never fed. Trained stats stay.'**
+  String guideRarityFeed(String common, String epic, String legend);
+
+  /// No description provided for @rarityWorthBtn.
+  ///
+  /// In en, this message translates to:
+  /// **'Nutrients {cur} / {next}'**
+  String rarityWorthBtn(int cur, int next);
+
+  /// No description provided for @rarityFeedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Feed bugs'**
+  String get rarityFeedTitle;
+
+  /// No description provided for @rarityFeedBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Feeding bugs of the same species fills nutrients. Lower-rarity bugs fill a little, higher-rarity bugs fill a lot. When nutrients are full, the rarity goes up. Grade nutrients for grade-ups build up at the same time.'**
+  String get rarityFeedBody;
+
+  /// No description provided for @rarityFeedGauge.
+  ///
+  /// In en, this message translates to:
+  /// **'Nutrients {cur} / {next} → {name}'**
+  String rarityFeedGauge(int cur, int next, String name);
+
+  /// No description provided for @rarityFeedToNext.
+  ///
+  /// In en, this message translates to:
+  /// **'To next: {n} → {to}'**
+  String rarityFeedToNext(int n, String to);
+
+  /// No description provided for @rarityFeedAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Feed all: {n} → {to}'**
+  String rarityFeedAll(int n, String to);
+
+  /// No description provided for @rarityFeedNone.
+  ///
+  /// In en, this message translates to:
+  /// **'No same-species bugs to feed'**
+  String get rarityFeedNone;
+
+  /// No description provided for @rarityNeedOnline.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect to the internet to raise rarity'**
+  String get rarityNeedOnline;
+
+  /// No description provided for @guideFairyFeed.
+  ///
+  /// In en, this message translates to:
+  /// **'Feeding fairies of the same kind fills nutrients; when full, the grade goes up. Lower-grade fairies fill a little (Common {common}), higher-grade ones fill a lot (Epic {epic}), and Mythic needs {mythic}. Quality carries over when the grade rises. Companion fairies, leveled-up fairies and higher-grade fairies are never used as material. +{perLevel} stats per level · max level by grade {caps}.'**
+  String guideFairyFeed(
+    String common,
+    String epic,
+    String mythic,
+    String perLevel,
+    String caps,
+  );
+
+  /// No description provided for @fairyFeedBtn.
+  ///
+  /// In en, this message translates to:
+  /// **'Feed'**
+  String get fairyFeedBtn;
+
+  /// No description provided for @fairyFeedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Feed fairies'**
+  String get fairyFeedTitle;
+
+  /// No description provided for @fairyFeedBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Feeding fairies of the same kind fills nutrients. Lower-grade fairies fill a little, higher-grade ones fill a lot. When nutrients are full the grade goes up, and quality carries over.'**
+  String get fairyFeedBody;
+
+  /// No description provided for @fairyFeedNone.
+  ///
+  /// In en, this message translates to:
+  /// **'No fairies of the same kind to feed'**
+  String get fairyFeedNone;
+
+  /// No description provided for @fairyFeedNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Companion and leveled-up fairies, and fairies of a higher grade than this one, are never fed.'**
+  String get fairyFeedNote;
+
+  /// No description provided for @fairyFeedUp.
+  ///
+  /// In en, this message translates to:
+  /// **'Raised to {grade}!'**
+  String fairyFeedUp(String grade);
+
+  /// No description provided for @fairyFeedStored.
+  ///
+  /// In en, this message translates to:
+  /// **'Nutrients stored'**
+  String get fairyFeedStored;
+
+  /// No description provided for @fairyFeedHubHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap a fairy and use [Feed] to feed fairies of the same kind. Auto feed feeds the most valued fairy of each kind.'**
+  String get fairyFeedHubHint;
+
+  /// No description provided for @fairyAutoFeed.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto feed'**
+  String get fairyAutoFeed;
+
+  /// No description provided for @fairyAutoFeedConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Grade ups: {ups} · fairies used as material: {used}'**
+  String fairyAutoFeedConfirm(String ups, String used);
+
+  /// No description provided for @fairyAutoFeedDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Grade up ×{ups}'**
+  String fairyAutoFeedDone(String ups);
+
+  /// No description provided for @guideStorageFeed.
+  ///
+  /// In en, this message translates to:
+  /// **'Disassemble unwanted bugs for materials, or feed them to a bug of the same species (the nutrients button in bug details). Feeding builds rarity nutrients and grade nutrients together; grade nutrients pay for that bug\'s grade-ups and passive rerolls. Essence you collected before is spent first for that species. Locked bugs are never used for disassembly or feeding. Equipped, hatching and training bugs are not used either.'**
+  String get guideStorageFeed;
+
+  /// No description provided for @guidePassiveRerollFeed.
+  ///
+  /// In en, this message translates to:
+  /// **'Reroll: spend {essence} grade nutrients or {jelly} jelly to reroll the size, then keep the new or current value (leftover essence is used first). The type never changes.'**
+  String guidePassiveRerollFeed(String essence, String jelly);
+
+  /// No description provided for @rarityFeedGrade.
+  ///
+  /// In en, this message translates to:
+  /// **'Grade nutrients +{n}'**
+  String rarityFeedGrade(int n);
+
+  /// No description provided for @igGradeUpFunds.
+  ///
+  /// In en, this message translates to:
+  /// **'Grade nutrients {have} / {need}'**
+  String igGradeUpFunds(String have, String need);
+
+  /// No description provided for @igNeedMoreFunds.
+  ///
+  /// In en, this message translates to:
+  /// **'Need {n} more grade nutrients — feed bugs of the same species'**
+  String igNeedMoreFunds(String n);
+
+  /// No description provided for @igLegacyEssenceFirst.
+  ///
+  /// In en, this message translates to:
+  /// **'Your {n} leftover essence is used first'**
+  String igLegacyEssenceFirst(String n);
+
+  /// No description provided for @passiveRerollFundsHave.
+  ///
+  /// In en, this message translates to:
+  /// **'Grade nutrients {have}'**
+  String passiveRerollFundsHave(String have);
+
+  /// No description provided for @rarityFeedNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Protected or invested bugs, and bugs rarer than this one, are never fed.'**
+  String get rarityFeedNote;
+
+  /// No description provided for @rarityFeedStored.
+  ///
+  /// In en, this message translates to:
+  /// **'Nutrients stored ({cur} / {next})'**
+  String rarityFeedStored(int cur, int next);
 
   /// No description provided for @renameForcedTitle.
   ///
@@ -7471,8 +7789,8 @@ abstract class AppLocalizations {
   /// No description provided for @abyssWeekReset.
   ///
   /// In en, this message translates to:
-  /// **'A new week — back to Abyss F1!'**
-  String get abyssWeekReset;
+  /// **'A new week — Abyss starts at F{n}!'**
+  String abyssWeekReset(int n);
 
   /// No description provided for @abyssRankRewardTitle.
   ///
@@ -13704,7 +14022,7 @@ abstract class AppLocalizations {
   /// No description provided for @guideRarityEffect.
   ///
   /// In en, this message translates to:
-  /// **'Higher rarity means a bigger hunting contribution as a pet ({hunt}) and higher HP/ATK/DEF in duels and contests (Legendary {duel}). It is also worth more essence, and takes longer to hatch and breed.'**
+  /// **'Higher rarity means a bigger hunting contribution as a pet ({hunt}) and higher HP/ATK/DEF in duels and contests (Legendary {duel}). As feeding material it also adds more grade nutrients, and it takes longer to hatch and breed.'**
   String guideRarityEffect(String hunt, String duel);
 
   /// No description provided for @guideRarityUp.
@@ -13718,6 +14036,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Same-species essence needed to grade up: {costs} (from Common→Uncommon onward). Add up to {max} growth potions per grade up — each adds +{bonus} points to the new stat quality roll (max 100).'**
   String guidePotionCost(String costs, String max, String bonus);
+
+  /// No description provided for @guidePotionCostFeed.
+  ///
+  /// In en, this message translates to:
+  /// **'Grade nutrients needed to grade up: {costs} (from Common→Uncommon onward; leftover essence is used first). Add up to {max} growth potions per grade up — each adds +{bonus} points to the new stat quality roll (max 100).'**
+  String guidePotionCostFeed(String costs, String max, String bonus);
 
   /// No description provided for @guidePotionGet.
   ///
@@ -14377,7 +14701,7 @@ abstract class AppLocalizations {
   /// No description provided for @researchFxHuntExp.
   ///
   /// In en, this message translates to:
-  /// **'EXP gain'**
+  /// **'EXP gain (idle too)'**
   String get researchFxHuntExp;
 
   /// No description provided for @researchFxSkillCooldown.
@@ -14413,7 +14737,7 @@ abstract class AppLocalizations {
   /// No description provided for @researchFxPotionChance.
   ///
   /// In en, this message translates to:
-  /// **'Growth potion drop chance'**
+  /// **'Growth potion drop rate · daily cap +1 per 10 levels'**
   String get researchFxPotionChance;
 
   /// No description provided for @researchFxSalvageMat.
@@ -14443,8 +14767,1190 @@ abstract class AppLocalizations {
   /// No description provided for @researchFxDuelGrit.
   ///
   /// In en, this message translates to:
-  /// **'Clutch tap threshold'**
+  /// **'Easier tap counter (threshold)'**
   String get researchFxDuelGrit;
+
+  /// No description provided for @researchFxKillHeal.
+  ///
+  /// In en, this message translates to:
+  /// **'Kill heal'**
+  String get researchFxKillHeal;
+
+  /// No description provided for @researchFxPetShare.
+  ///
+  /// In en, this message translates to:
+  /// **'Equipped pet bonus (atk·HP)'**
+  String get researchFxPetShare;
+
+  /// No description provided for @abyssSporesGot.
+  ///
+  /// In en, this message translates to:
+  /// **'Abyss spores +{n}'**
+  String abyssSporesGot(String n);
+
+  /// No description provided for @researchTabAbyss.
+  ///
+  /// In en, this message translates to:
+  /// **'Abyss'**
+  String get researchTabAbyss;
+
+  /// No description provided for @abyssSpores.
+  ///
+  /// In en, this message translates to:
+  /// **'Abyss spores'**
+  String get abyssSpores;
+
+  /// No description provided for @abyssLabInfo.
+  ///
+  /// In en, this message translates to:
+  /// **'Abyss spores drop from floor bosses you clear for the first time each week, plus a bonus each time you first reach a 10th floor. Abyss research only works inside the Abyss.'**
+  String get abyssLabInfo;
+
+  /// No description provided for @abyssLabLocked.
+  ///
+  /// In en, this message translates to:
+  /// **'Defeat the Extreme final boss to open the Abyss and research here.'**
+  String get abyssLabLocked;
+
+  /// No description provided for @abyssLabSlotTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Abyss research slot'**
+  String get abyssLabSlotTitle;
+
+  /// No description provided for @abyssLabSlotEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Empty — pick a research below'**
+  String get abyssLabSlotEmpty;
+
+  /// No description provided for @abyssLabNoSpores.
+  ///
+  /// In en, this message translates to:
+  /// **'Not enough abyss spores'**
+  String get abyssLabNoSpores;
+
+  /// No description provided for @researchFxAbyssShortcut.
+  ///
+  /// In en, this message translates to:
+  /// **'Weekly start floor (share of last week\'s best, in 10s)'**
+  String get researchFxAbyssShortcut;
+
+  /// No description provided for @researchFxAbyssFastFloor.
+  ///
+  /// In en, this message translates to:
+  /// **'Kills needed for an Abyss boss'**
+  String get researchFxAbyssFastFloor;
+
+  /// No description provided for @researchFxMutationTame.
+  ///
+  /// In en, this message translates to:
+  /// **'Weekly mutation drawbacks'**
+  String get researchFxMutationTame;
+
+  /// No description provided for @researchFxCrystalBonus.
+  ///
+  /// In en, this message translates to:
+  /// **'Abyss crystal gain'**
+  String get researchFxCrystalBonus;
+
+  /// No description provided for @researchFxSporeBonus.
+  ///
+  /// In en, this message translates to:
+  /// **'Abyss spore gain'**
+  String get researchFxSporeBonus;
+
+  /// No description provided for @researchFxAbyssIdleGold.
+  ///
+  /// In en, this message translates to:
+  /// **'Abyss idle gold'**
+  String get researchFxAbyssIdleGold;
+
+  /// No description provided for @upgradeRecommend.
+  ///
+  /// In en, this message translates to:
+  /// **'Top pick'**
+  String get upgradeRecommend;
+
+  /// No description provided for @upgradeFxHits.
+  ///
+  /// In en, this message translates to:
+  /// **'Kill in {from} → {to} hits'**
+  String upgradeFxHits(String from, String to);
+
+  /// No description provided for @upgradeFxBoss.
+  ///
+  /// In en, this message translates to:
+  /// **'Boss ~{from} → {to}'**
+  String upgradeFxBoss(String from, String to);
+
+  /// No description provided for @upgradeFxBite.
+  ///
+  /// In en, this message translates to:
+  /// **'Hit taken {from}% → {to}% HP'**
+  String upgradeFxBite(String from, String to);
+
+  /// No description provided for @upgradeFxGold.
+  ///
+  /// In en, this message translates to:
+  /// **'Gold income +{from}% → +{to}%'**
+  String upgradeFxGold(String from, String to);
+
+  /// No description provided for @upgradeFxXp.
+  ///
+  /// In en, this message translates to:
+  /// **'XP +{from}% → +{to}%'**
+  String upgradeFxXp(String from, String to);
+
+  /// No description provided for @upgradeFxBugs.
+  ///
+  /// In en, this message translates to:
+  /// **'Bug finds +{from}% → +{to}%'**
+  String upgradeFxBugs(String from, String to);
+
+  /// No description provided for @upgradeFxMats.
+  ///
+  /// In en, this message translates to:
+  /// **'Materials +{from}% → +{to}%'**
+  String upgradeFxMats(String from, String to);
+
+  /// No description provided for @upgradeFxSec.
+  ///
+  /// In en, this message translates to:
+  /// **'{n}s'**
+  String upgradeFxSec(String n);
+
+  /// No description provided for @upgradeFxMin.
+  ///
+  /// In en, this message translates to:
+  /// **'{n}m'**
+  String upgradeFxMin(String n);
+
+  /// No description provided for @upgradeAwakenNext.
+  ///
+  /// In en, this message translates to:
+  /// **'Awaken Lv.{level}'**
+  String upgradeAwakenNext(String level);
+
+  /// No description provided for @upgradeAwakenToast.
+  ///
+  /// In en, this message translates to:
+  /// **'Awakened! {name} +{n} bonus levels'**
+  String upgradeAwakenToast(String name, String n);
+
+  /// No description provided for @upgradeLuckyToast.
+  ///
+  /// In en, this message translates to:
+  /// **'Great success! +{n} bonus level'**
+  String upgradeLuckyToast(String n);
+
+  /// No description provided for @upgradeAwakenInfo.
+  ///
+  /// In en, this message translates to:
+  /// **'Awaken: reaching Lv.{levels} grants bonus levels.'**
+  String upgradeAwakenInfo(String levels);
+
+  /// No description provided for @bossLostRecommend.
+  ///
+  /// In en, this message translates to:
+  /// **'Try upgrading: {name}'**
+  String bossLostRecommend(String name);
+
+  /// No description provided for @upgradeCapBreak.
+  ///
+  /// In en, this message translates to:
+  /// **'Break Limit'**
+  String get upgradeCapBreak;
+
+  /// No description provided for @upgradeCapNeed.
+  ///
+  /// In en, this message translates to:
+  /// **'Not enough Abyss Crystals ({have}/{need}) — earned every 10 Abyss floors'**
+  String upgradeCapNeed(String have, String need);
+
+  /// No description provided for @upgradeCapOpened.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} cap +{n} levels!'**
+  String upgradeCapOpened(String name, String n);
+
+  /// No description provided for @abyssCrystalsGot.
+  ///
+  /// In en, this message translates to:
+  /// **'Abyss Crystals +{n}'**
+  String abyssCrystalsGot(String n);
+
+  /// No description provided for @abyssMutationTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'This week in the Abyss: {name}'**
+  String abyssMutationTitle(String name);
+
+  /// No description provided for @abyssImprintTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Abyss Imprint'**
+  String get abyssImprintTitle;
+
+  /// No description provided for @abyssImprintBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Spend crystals from every 10 Abyss floors on permanent stats. Maxed upgrades can also break their limit with crystals.'**
+  String get abyssImprintBody;
+
+  /// No description provided for @abyssCrystalsHave.
+  ///
+  /// In en, this message translates to:
+  /// **'💠{n} owned'**
+  String abyssCrystalsHave(String n);
+
+  /// No description provided for @abyssImprintLevel.
+  ///
+  /// In en, this message translates to:
+  /// **'Lv.{level} (+{pct}%)'**
+  String abyssImprintLevel(String level, String pct);
+
+  /// No description provided for @weekendEventBar.
+  ///
+  /// In en, this message translates to:
+  /// **'🎉 {name} · {desc} · {left} left'**
+  String weekendEventBar(String name, String desc, String left);
+
+  /// No description provided for @weekendHours.
+  ///
+  /// In en, this message translates to:
+  /// **'{n}h'**
+  String weekendHours(String n);
+
+  /// No description provided for @achievementsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Achievements · Titles'**
+  String get achievementsTitle;
+
+  /// No description provided for @achievementsBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap a completed achievement to wear its title. Others see it on your profile.'**
+  String get achievementsBody;
+
+  /// No description provided for @achievementsWearing.
+  ///
+  /// In en, this message translates to:
+  /// **'Wearing'**
+  String get achievementsWearing;
+
+  /// No description provided for @sizeRankButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Size ranking'**
+  String get sizeRankButton;
+
+  /// No description provided for @sizeRankTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} size ranking'**
+  String sizeRankTitle(String name);
+
+  /// No description provided for @sizeRankEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No records yet. Catch the biggest one and take first place!'**
+  String get sizeRankEmpty;
+
+  /// No description provided for @sizeRankOffline.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load the ranking. Check your connection.'**
+  String get sizeRankOffline;
+
+  /// No description provided for @sizeRankMine.
+  ///
+  /// In en, this message translates to:
+  /// **'You: #{rank} · {size}mm'**
+  String sizeRankMine(String rank, String size);
+
+  /// No description provided for @practiceDuel.
+  ///
+  /// In en, this message translates to:
+  /// **'Practice duel'**
+  String get practiceDuel;
+
+  /// No description provided for @practiceOffline.
+  ///
+  /// In en, this message translates to:
+  /// **'Practice duels need a server connection.'**
+  String get practiceOffline;
+
+  /// No description provided for @practiceCooldown.
+  ///
+  /// In en, this message translates to:
+  /// **'Please wait a moment before the next practice duel.'**
+  String get practiceCooldown;
+
+  /// No description provided for @practiceFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load this player\'s defense team.'**
+  String get practiceFailed;
+
+  /// No description provided for @kotkTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'King of Kings'**
+  String get kotkTitle;
+
+  /// No description provided for @kotkRulesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Hard mode rules'**
+  String get kotkRulesTitle;
+
+  /// No description provided for @kotkEntryTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'My entry'**
+  String get kotkEntryTitle;
+
+  /// No description provided for @leaderboardLoadFail.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load the rankings. Please try again in a moment.'**
+  String get leaderboardLoadFail;
+
+  /// No description provided for @kotkMinNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Jelly, badge and crown are given only in weeks with {n}+ entrants (fewer: materials only).'**
+  String kotkMinNote(String n);
+
+  /// No description provided for @kotkPendingNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Results are confirmed Monday 09:00 (KST) — specimens and rewards apply then.'**
+  String get kotkPendingNote;
+
+  /// No description provided for @kotkMinResult.
+  ///
+  /// In en, this message translates to:
+  /// **'Fewer than {n} entered this week, so only materials were given.'**
+  String kotkMinResult(String n);
+
+  /// No description provided for @notifKotkTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'King of Kings closes soon'**
+  String get notifKotkTitle;
+
+  /// No description provided for @notifKotkBody.
+  ///
+  /// In en, this message translates to:
+  /// **'You haven\'t entered this week\'s King of Kings. Entries close tomorrow 09:00 (KST).'**
+  String get notifKotkBody;
+
+  /// No description provided for @weeklyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Last week'**
+  String get weeklyTitle;
+
+  /// No description provided for @weeklySubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'A new week has begun!'**
+  String get weeklySubtitle;
+
+  /// No description provided for @weeklyLevels.
+  ///
+  /// In en, this message translates to:
+  /// **'Upgraded {n} levels'**
+  String weeklyLevels(String n);
+
+  /// No description provided for @weeklyLucky.
+  ///
+  /// In en, this message translates to:
+  /// **'{n} lucky upgrades'**
+  String weeklyLucky(String n);
+
+  /// No description provided for @weeklyAwaken.
+  ///
+  /// In en, this message translates to:
+  /// **'{n} awakenings'**
+  String weeklyAwaken(String n);
+
+  /// No description provided for @weeklyAbyss.
+  ///
+  /// In en, this message translates to:
+  /// **'Abyss best: floor {n}'**
+  String weeklyAbyss(String n);
+
+  /// No description provided for @kotkRewardNone.
+  ///
+  /// In en, this message translates to:
+  /// **'No reward'**
+  String get kotkRewardNone;
+
+  /// No description provided for @kotkWithdrawn.
+  ///
+  /// In en, this message translates to:
+  /// **'Entry withdrawn'**
+  String get kotkWithdrawn;
+
+  /// No description provided for @kotkSpecimenOpen.
+  ///
+  /// In en, this message translates to:
+  /// **'Open specimen box'**
+  String get kotkSpecimenOpen;
+
+  /// No description provided for @kotkHallIn.
+  ///
+  /// In en, this message translates to:
+  /// **'You made the Hall of Fame!'**
+  String get kotkHallIn;
+
+  /// No description provided for @kotkPetWarn.
+  ///
+  /// In en, this message translates to:
+  /// **'This bug is equipped as a pet — if it loses, it is removed from your pets too.'**
+  String get kotkPetWarn;
+
+  /// No description provided for @beginnerHatchTag.
+  ///
+  /// In en, this message translates to:
+  /// **'Newcomer bonus: {left} left · max {min} min'**
+  String beginnerHatchTag(String left, String min);
+
+  /// No description provided for @badgeKotk.
+  ///
+  /// In en, this message translates to:
+  /// **'King of Kings R{round}'**
+  String badgeKotk(String round);
+
+  /// No description provided for @kotkRound.
+  ///
+  /// In en, this message translates to:
+  /// **'Round {n}'**
+  String kotkRound(String n);
+
+  /// No description provided for @kotkPreparing.
+  ///
+  /// In en, this message translates to:
+  /// **'Coming soon'**
+  String get kotkPreparing;
+
+  /// No description provided for @kotkPreparingBody.
+  ///
+  /// In en, this message translates to:
+  /// **'The first King of Kings opens for entries on {m1}/{d1} (Mon) 09:00 (KST), and results come out on {m2}/{d2} (Sun) 09:00 (KST).'**
+  String kotkPreparingBody(String m1, String d1, String m2, String d2);
+
+  /// No description provided for @kotkRewardsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Rewards'**
+  String get kotkRewardsTitle;
+
+  /// No description provided for @kotkRewardJelly.
+  ///
+  /// In en, this message translates to:
+  /// **'Jelly {n}'**
+  String kotkRewardJelly(String n);
+
+  /// No description provided for @kotkRewardPotion.
+  ///
+  /// In en, this message translates to:
+  /// **'Growth potion {n}'**
+  String kotkRewardPotion(String n);
+
+  /// No description provided for @kotkRewardFossil.
+  ///
+  /// In en, this message translates to:
+  /// **'Fossil {n}'**
+  String kotkRewardFossil(String n);
+
+  /// No description provided for @kotkRewardElement.
+  ///
+  /// In en, this message translates to:
+  /// **'Element stone {n}'**
+  String kotkRewardElement(String n);
+
+  /// No description provided for @kotkRewardTemper.
+  ///
+  /// In en, this message translates to:
+  /// **'Temperament stone {n}'**
+  String kotkRewardTemper(String n);
+
+  /// No description provided for @kotkRewardChamp.
+  ///
+  /// In en, this message translates to:
+  /// **'Golden crown on the winning bug · profile badge'**
+  String get kotkRewardChamp;
+
+  /// No description provided for @kotkResultTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'King of Kings result'**
+  String get kotkResultTitle;
+
+  /// No description provided for @kotkResultNone.
+  ///
+  /// In en, this message translates to:
+  /// **'Your bug did not make the top-32 bracket. It is unchanged.'**
+  String get kotkResultNone;
+
+  /// No description provided for @kotkResultRetired.
+  ///
+  /// In en, this message translates to:
+  /// **'The defeated bug became a specimen and went to the Specimen Case.'**
+  String get kotkResultRetired;
+
+  /// No description provided for @kotkResultChamp.
+  ///
+  /// In en, this message translates to:
+  /// **'Your winning bug now wears a golden crown!'**
+  String get kotkResultChamp;
+
+  /// No description provided for @kotkPreparingErr.
+  ///
+  /// In en, this message translates to:
+  /// **'Not open yet. You can enter from the first round.'**
+  String get kotkPreparingErr;
+
+  /// No description provided for @kotkChampMark.
+  ///
+  /// In en, this message translates to:
+  /// **'King of Kings'**
+  String get kotkChampMark;
+
+  /// No description provided for @kotkRules.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter one bug per week. When entries close Sunday 09:00 (KST), the top 32 by power fight a tournament (each match: first to 2 wins).\nEvery bug except the champion (runner-up included) becomes a specimen: it can never duel, enter events, be a pet, breed or be fed again — losers are spent (it takes no storage slot). Bugs that miss the bracket are unchanged.\nResults appear Sunday 09:00 (KST) and are confirmed after review on Monday 09:00 (specimens and rewards).\nThe top 16 enter the Hall of Fame.'**
+  String get kotkRules;
+
+  /// No description provided for @kotkOpen.
+  ///
+  /// In en, this message translates to:
+  /// **'Entries open · close Sunday 09:00 (KST)'**
+  String get kotkOpen;
+
+  /// No description provided for @kotkClosedNow.
+  ///
+  /// In en, this message translates to:
+  /// **'This week\'s entries are closed'**
+  String get kotkClosedNow;
+
+  /// No description provided for @kotkCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{n} entered · top {max} by power make the bracket'**
+  String kotkCount(String n, String max);
+
+  /// No description provided for @kotkMine.
+  ///
+  /// In en, this message translates to:
+  /// **'Your entry: {name}'**
+  String kotkMine(String name);
+
+  /// No description provided for @kotkEnter.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter'**
+  String get kotkEnter;
+
+  /// No description provided for @kotkChange.
+  ///
+  /// In en, this message translates to:
+  /// **'Change bug'**
+  String get kotkChange;
+
+  /// No description provided for @kotkWithdraw.
+  ///
+  /// In en, this message translates to:
+  /// **'Withdraw'**
+  String get kotkWithdraw;
+
+  /// No description provided for @kotkPickTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose your bug'**
+  String get kotkPickTitle;
+
+  /// No description provided for @kotkConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter for real?'**
+  String get kotkConfirmTitle;
+
+  /// No description provided for @kotkConfirmBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Entering with: {name}\nUnless it wins the whole tournament (runner-up included), it becomes a specimen and can never duel, enter events, be a pet, breed or be fed again. This cannot be undone.\nIf it does not make the top-32 bracket, nothing happens.'**
+  String kotkConfirmBody(String name);
+
+  /// No description provided for @kotkConfirmGo.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter'**
+  String get kotkConfirmGo;
+
+  /// No description provided for @kotkEntered.
+  ///
+  /// In en, this message translates to:
+  /// **'Entered the King of Kings!'**
+  String get kotkEntered;
+
+  /// No description provided for @kotkFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t enter. Please try again later.'**
+  String get kotkFailed;
+
+  /// No description provided for @kotkNoAdult.
+  ///
+  /// In en, this message translates to:
+  /// **'You have no adult bug that can enter.'**
+  String get kotkNoAdult;
+
+  /// No description provided for @kotkRetiredBug.
+  ///
+  /// In en, this message translates to:
+  /// **'Specimens can no longer be used.'**
+  String get kotkRetiredBug;
+
+  /// No description provided for @kotkThisWeek.
+  ///
+  /// In en, this message translates to:
+  /// **'This week\'s results'**
+  String get kotkThisWeek;
+
+  /// No description provided for @kotkLastWeek.
+  ///
+  /// In en, this message translates to:
+  /// **'Last week\'s results'**
+  String get kotkLastWeek;
+
+  /// No description provided for @kotkBracket.
+  ///
+  /// In en, this message translates to:
+  /// **'View bracket'**
+  String get kotkBracket;
+
+  /// No description provided for @kotkBye.
+  ///
+  /// In en, this message translates to:
+  /// **'Bye'**
+  String get kotkBye;
+
+  /// No description provided for @kotkMyPlace.
+  ///
+  /// In en, this message translates to:
+  /// **'Your result: {place}'**
+  String kotkMyPlace(String place);
+
+  /// No description provided for @kotkPlace1.
+  ///
+  /// In en, this message translates to:
+  /// **'Champion'**
+  String get kotkPlace1;
+
+  /// No description provided for @kotkPlace2.
+  ///
+  /// In en, this message translates to:
+  /// **'Runner-up'**
+  String get kotkPlace2;
+
+  /// No description provided for @kotkPlaceN.
+  ///
+  /// In en, this message translates to:
+  /// **'Top {n}'**
+  String kotkPlaceN(String n);
+
+  /// No description provided for @kotkFinal.
+  ///
+  /// In en, this message translates to:
+  /// **'Final'**
+  String get kotkFinal;
+
+  /// No description provided for @kotkHall.
+  ///
+  /// In en, this message translates to:
+  /// **'Hall of Fame (top 16)'**
+  String get kotkHall;
+
+  /// No description provided for @kotkHallEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No specimens on display yet.'**
+  String get kotkHallEmpty;
+
+  /// No description provided for @kotkOffline.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load the King of Kings. Check your connection.'**
+  String get kotkOffline;
+
+  /// No description provided for @kotkResultToast.
+  ///
+  /// In en, this message translates to:
+  /// **'King of Kings result: {place}'**
+  String kotkResultToast(String place);
+
+  /// No description provided for @specimenBoxTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Specimen Case'**
+  String get specimenBoxTitle;
+
+  /// No description provided for @specimenBoxBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Bugs that lost in the King of Kings rest here as specimens. They take no storage slot and can no longer be used.'**
+  String get specimenBoxBody;
+
+  /// No description provided for @specimenBoxEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No specimens yet.'**
+  String get specimenBoxEmpty;
+
+  /// No description provided for @firstFreeInstant.
+  ///
+  /// In en, this message translates to:
+  /// **'First one free'**
+  String get firstFreeInstant;
+
+  /// No description provided for @growHowTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'How to get stronger'**
+  String get growHowTitle;
+
+  /// No description provided for @growHowBody.
+  ///
+  /// In en, this message translates to:
+  /// **'This boss is hard to beat right now (about {time}). These help a lot:'**
+  String growHowBody(String time);
+
+  /// No description provided for @growHowBuff.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn on buffs — big gold & attack boost'**
+  String get growHowBuff;
+
+  /// No description provided for @growHowMail.
+  ///
+  /// In en, this message translates to:
+  /// **'Mailbox — claim gifts & daily rewards'**
+  String get growHowMail;
+
+  /// No description provided for @growHowUpgrade.
+  ///
+  /// In en, this message translates to:
+  /// **'Recommended upgrade: {stat}'**
+  String growHowUpgrade(String stat);
+
+  /// No description provided for @growHowFight.
+  ///
+  /// In en, this message translates to:
+  /// **'Fight anyway'**
+  String get growHowFight;
+
+  /// No description provided for @giftArrivedToast.
+  ///
+  /// In en, this message translates to:
+  /// **'🎁 A surprise gift arrived! Claim it in the mailbox within 3 hours'**
+  String get giftArrivedToast;
+
+  /// No description provided for @giftExpiringToast.
+  ///
+  /// In en, this message translates to:
+  /// **'🎁 Your surprise gift expires in {min} min — claim it in the mailbox'**
+  String giftExpiringToast(int min);
+
+  /// No description provided for @tipPetTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Equip a pet'**
+  String get tipPetTitle;
+
+  /// No description provided for @tipPetBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Equip bugs from your storage as pets — they fight with you and raise your attack and HP. Hatch eggs in the incubator.'**
+  String get tipPetBody;
+
+  /// No description provided for @tipGearTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Craft equipment'**
+  String get tipGearTitle;
+
+  /// No description provided for @tipGearBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Use fossils from hunting to forge gear in the Equipment tab — it permanently boosts attack and HP.'**
+  String get tipGearBody;
+
+  /// No description provided for @tipGo.
+  ///
+  /// In en, this message translates to:
+  /// **'Go now'**
+  String get tipGo;
+
+  /// No description provided for @tourUpgrades.
+  ///
+  /// In en, this message translates to:
+  /// **'Upgrade your stats with gold here. Buy the \"Top pick\" row first to grow fastest. Hold to buy repeatedly.'**
+  String get tourUpgrades;
+
+  /// No description provided for @tourStage.
+  ///
+  /// In en, this message translates to:
+  /// **'Your current zone. Defeat 100 monsters to challenge the boss — beat it to open the next zone.'**
+  String get tourStage;
+
+  /// No description provided for @tourBuffs.
+  ///
+  /// In en, this message translates to:
+  /// **'Buffs. Turn them on for a big gold and attack boost — they are free, so keep them on.'**
+  String get tourBuffs;
+
+  /// No description provided for @tourMail.
+  ///
+  /// In en, this message translates to:
+  /// **'Mailbox. Lunch and dinner daily rewards and surprise gifts arrive here. Gifts expire after 3 hours.'**
+  String get tourMail;
+
+  /// No description provided for @tourMission.
+  ///
+  /// In en, this message translates to:
+  /// **'Missions. Tap to claim the reward when complete.'**
+  String get tourMission;
+
+  /// No description provided for @tourStorage.
+  ///
+  /// In en, this message translates to:
+  /// **'Storage — your caught bugs gather here. Hatch eggs and equip bugs as pets to fight alongside you.'**
+  String get tourStorage;
+
+  /// No description provided for @tourBattle.
+  ///
+  /// In en, this message translates to:
+  /// **'Duel — battle other players with three bugs you raised.'**
+  String get tourBattle;
+
+  /// No description provided for @tourShop.
+  ///
+  /// In en, this message translates to:
+  /// **'Shop — jelly, packs and bug egg draws.'**
+  String get tourShop;
+
+  /// No description provided for @tourSwitch.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to switch to the Equipment, Skills, Fairy and Research tabs.'**
+  String get tourSwitch;
+
+  /// No description provided for @tourNext.
+  ///
+  /// In en, this message translates to:
+  /// **'Next'**
+  String get tourNext;
+
+  /// No description provided for @tourDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Start'**
+  String get tourDone;
+
+  /// No description provided for @tourSkip.
+  ///
+  /// In en, this message translates to:
+  /// **'Skip'**
+  String get tourSkip;
+
+  /// No description provided for @missionGuideHunt.
+  ///
+  /// In en, this message translates to:
+  /// **'Your character hunts on its own. Tap the screen to hunt faster.'**
+  String get missionGuideHunt;
+
+  /// No description provided for @missionGuideUpgrade.
+  ///
+  /// In en, this message translates to:
+  /// **'Buy upgrades here to fill it. Start with the \"Recommended\" row.'**
+  String get missionGuideUpgrade;
+
+  /// No description provided for @missionGuideForge.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap the anvil to forge gear with 1 fossil. Each forge counts.'**
+  String get missionGuideForge;
+
+  /// No description provided for @missionGuideBoss.
+  ///
+  /// In en, this message translates to:
+  /// **'Defeat 100 monsters to challenge the boss here.'**
+  String get missionGuideBoss;
+
+  /// 체력·맷집 강화 효과 — 일반 몬스터 한 대를 몇 번 맞아도 버티나(늘어나는 숫자로)
+  ///
+  /// In en, this message translates to:
+  /// **'Survive {from} monster hits → {to}'**
+  String upgradeFxSurvive(String from, String to);
+
+  /// No description provided for @tabTourEquipScene.
+  ///
+  /// In en, this message translates to:
+  /// **'A little catching game — your character chases wild bugs. Tap when the chance comes to catch one.'**
+  String get tabTourEquipScene;
+
+  /// No description provided for @tabTourEquipStats.
+  ///
+  /// In en, this message translates to:
+  /// **'Your current stats including gear. They change right away when you swap gear.'**
+  String get tabTourEquipStats;
+
+  /// No description provided for @tabTourEquipGrid.
+  ///
+  /// In en, this message translates to:
+  /// **'Gear slots. Tap a slot to see and swap the equipped item.'**
+  String get tabTourEquipGrid;
+
+  /// No description provided for @tabTourEquipAnvil.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap the anvil to forge an item with 1 fossil. New items stack above — tap to equip or sell.'**
+  String get tabTourEquipAnvil;
+
+  /// No description provided for @tabTourEquipGrade.
+  ///
+  /// In en, this message translates to:
+  /// **'Raise the workshop grade to forge higher-grade gear. Costs gold and time.'**
+  String get tabTourEquipGrade;
+
+  /// No description provided for @tabTourEquipFilter.
+  ///
+  /// In en, this message translates to:
+  /// **'Filter — during auto forge, keep only the stats/grades you want and auto-sell the rest.'**
+  String get tabTourEquipFilter;
+
+  /// No description provided for @tabTourEquipRush.
+  ///
+  /// In en, this message translates to:
+  /// **'Rush — spend jelly to forge faster for a while.'**
+  String get tabTourEquipRush;
+
+  /// No description provided for @tabTourEquipAuto.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto — forges by itself while you have fossils.'**
+  String get tabTourEquipAuto;
+
+  /// No description provided for @tabTourStorageDex.
+  ///
+  /// In en, this message translates to:
+  /// **'Collection — every bug type you have caught. Collect types for rewards.'**
+  String get tabTourStorageDex;
+
+  /// No description provided for @tabTourStorageMats.
+  ///
+  /// In en, this message translates to:
+  /// **'Your materials — used for upgrades, training and breakthroughs.'**
+  String get tabTourStorageMats;
+
+  /// No description provided for @tabTourStorageCap.
+  ///
+  /// In en, this message translates to:
+  /// **'Storage slots. When full, new bugs stop coming in — clean up or expand with jelly.'**
+  String get tabTourStorageCap;
+
+  /// No description provided for @tabTourStoragePets.
+  ///
+  /// In en, this message translates to:
+  /// **'Equipped pets. Bugs equipped as pets hunt with you and raise attack and HP.'**
+  String get tabTourStoragePets;
+
+  /// No description provided for @tabTourStorageTools.
+  ///
+  /// In en, this message translates to:
+  /// **'Cleanup tools — \"Rarity filter\" turns low bugs into materials on arrival, \"Auto dismantle\" cleans up at once.'**
+  String get tabTourStorageTools;
+
+  /// No description provided for @tabTourStorageGrid.
+  ///
+  /// In en, this message translates to:
+  /// **'Your bugs. Tap one to equip as a pet, feed same-species bugs (raise rarity) or dismantle.'**
+  String get tabTourStorageGrid;
+
+  /// No description provided for @tabTourStorageBreed.
+  ///
+  /// In en, this message translates to:
+  /// **'Breeding — pair an adult male and female of the same species for an egg. It inherits traits.'**
+  String get tabTourStorageBreed;
+
+  /// No description provided for @tabTourStorageHatch.
+  ///
+  /// In en, this message translates to:
+  /// **'Incubator — put eggs in to hatch. Tap to collect when done.'**
+  String get tabTourStorageHatch;
+
+  /// No description provided for @tabTourBattleTicket.
+  ///
+  /// In en, this message translates to:
+  /// **'Duel tickets — 1 per match. They refill over time, with a few free refills a day.'**
+  String get tabTourBattleTicket;
+
+  /// No description provided for @tabTourBattleSquad.
+  ///
+  /// In en, this message translates to:
+  /// **'Your 3-bug squad. Put adults here — they fight in order, matches 1·2·3.'**
+  String get tabTourBattleSquad;
+
+  /// No description provided for @tabTourBattleStart.
+  ///
+  /// In en, this message translates to:
+  /// **'Start — pick an opponent in your league and duel. Wins give points.'**
+  String get tabTourBattleStart;
+
+  /// No description provided for @tabTourBattleRecovery.
+  ///
+  /// In en, this message translates to:
+  /// **'Recovery room — injured bugs rest here (jelly heals instantly).'**
+  String get tabTourBattleRecovery;
+
+  /// No description provided for @tabTourBattleTraining.
+  ///
+  /// In en, this message translates to:
+  /// **'Training — spend training points (earned as bugs grow) on attack, defense, HP and more.'**
+  String get tabTourBattleTraining;
+
+  /// No description provided for @tabTourBattleBoard.
+  ///
+  /// In en, this message translates to:
+  /// **'League board — resets every Monday. Top 20% move up, bottom 20% move down.'**
+  String get tabTourBattleBoard;
+
+  /// No description provided for @tabTourShopTop.
+  ///
+  /// In en, this message translates to:
+  /// **'Featured products. Your first purchase of each jelly pack gives double.'**
+  String get tabTourShopTop;
+
+  /// No description provided for @tabTourShopGacha.
+  ///
+  /// In en, this message translates to:
+  /// **'Egg draw — spend jelly on bug eggs. Better grades than the wild, with a pity counter.'**
+  String get tabTourShopGacha;
+
+  /// No description provided for @tabTourShopExchange.
+  ///
+  /// In en, this message translates to:
+  /// **'Exchange — trade jelly for gold or materials.'**
+  String get tabTourShopExchange;
+
+  /// No description provided for @tabTourSkillGacha.
+  ///
+  /// In en, this message translates to:
+  /// **'Skill draw — get skill shards. One free draw a day.'**
+  String get tabTourSkillGacha;
+
+  /// No description provided for @tabTourSkillSweep.
+  ///
+  /// In en, this message translates to:
+  /// **'Sweep — instantly get shards from bosses you have beaten. 3 free a day.'**
+  String get tabTourSkillSweep;
+
+  /// No description provided for @tabTourSkillGrade.
+  ///
+  /// In en, this message translates to:
+  /// **'Grade up — turn 10 spare shards into 1 wild shard of the next grade.'**
+  String get tabTourSkillGrade;
+
+  /// No description provided for @tabTourSkillShards.
+  ///
+  /// In en, this message translates to:
+  /// **'Your skill shards — used to unlock and level skills.'**
+  String get tabTourSkillShards;
+
+  /// No description provided for @tabTourSkillSlots.
+  ///
+  /// In en, this message translates to:
+  /// **'Equip slots — 2 at first, more as you reach new difficulties.'**
+  String get tabTourSkillSlots;
+
+  /// No description provided for @tabTourSkillList.
+  ///
+  /// In en, this message translates to:
+  /// **'Skill list — tap to unlock, level up and equip. Equipped skills fire automatically while hunting.'**
+  String get tabTourSkillList;
+
+  /// No description provided for @tabTourFairyCompanion.
+  ///
+  /// In en, this message translates to:
+  /// **'Your companion fairy. Its effect applies while hunting.'**
+  String get tabTourFairyCompanion;
+
+  /// No description provided for @tabTourFairyNest.
+  ///
+  /// In en, this message translates to:
+  /// **'Nest — put fairy eggs in to hatch.'**
+  String get tabTourFairyNest;
+
+  /// No description provided for @tabTourFairyGacha.
+  ///
+  /// In en, this message translates to:
+  /// **'Fairy egg draw — spend jelly on fairy eggs.'**
+  String get tabTourFairyGacha;
+
+  /// No description provided for @tabTourFairyDex.
+  ///
+  /// In en, this message translates to:
+  /// **'Fairy collection — types you have collected and rewards.'**
+  String get tabTourFairyDex;
+
+  /// No description provided for @tabTourFairyFeed.
+  ///
+  /// In en, this message translates to:
+  /// **'Feed — feed same-type fairies to raise the grade.'**
+  String get tabTourFairyFeed;
+
+  /// No description provided for @tabTourFairyRelease.
+  ///
+  /// In en, this message translates to:
+  /// **'Dismantle — turn unneeded fairies into fairy dust, used to level fairies.'**
+  String get tabTourFairyRelease;
+
+  /// No description provided for @tabTourResearchCurrency.
+  ///
+  /// In en, this message translates to:
+  /// **'Research costs. Research samples come from bosses and elites.'**
+  String get tabTourResearchCurrency;
+
+  /// No description provided for @tabTourResearchSlots.
+  ///
+  /// In en, this message translates to:
+  /// **'Research slots. Started research finishes over time — tap to collect.'**
+  String get tabTourResearchSlots;
+
+  /// No description provided for @tabTourResearchTabs.
+  ///
+  /// In en, this message translates to:
+  /// **'Research branches — hunting, growth, duel, gear, economy. Tap to switch.'**
+  String get tabTourResearchTabs;
+
+  /// No description provided for @tabTourResearchTree.
+  ///
+  /// In en, this message translates to:
+  /// **'Research list — tap a card to start or level a research. Research is permanent.'**
+  String get tabTourResearchTree;
+
+  /// No description provided for @tabTourResearchAbyss.
+  ///
+  /// In en, this message translates to:
+  /// **'Abyss — research that opens after clearing Extreme, paid with abyss spores.'**
+  String get tabTourResearchAbyss;
 }
 
 class _AppLocalizationsDelegate

@@ -72,9 +72,9 @@
       "kind": "huntHpDef",
       "maxLevel": 30,
       "name": {
-        "ko": "껍질 단련",
-        "en": "Shell Hardening",
-        "ja": "外殻の鍛錬"
+        "ko": "단단한 껍질",
+        "en": "Hard Shell",
+        "ja": "硬い外殻"
       },
       "requires": {
         "id": "jaw",
@@ -148,9 +148,9 @@
       "kind": "gold",
       "maxLevel": 30,
       "name": {
-        "ko": "더듬이 탐사",
-        "en": "Antenna Survey",
-        "ja": "触角探査"
+        "ko": "황금 더듬이",
+        "en": "Golden Antennae",
+        "ja": "黄金の触角"
       },
       "requires": {
         "id": "shell",
@@ -297,12 +297,12 @@
       "id": "regen",
       "image": "assets/images/ui/research/regen.webp",
       "branch": "hunt",
-      "kind": "huntRegen",
+      "kind": "killHeal",
       "maxLevel": 30,
       "name": {
-        "ko": "재생",
-        "en": "Regeneration",
-        "ja": "再生"
+        "ko": "처치 회복",
+        "en": "Kill Recovery",
+        "ja": "撃破回復"
       },
       "requires": {
         "id": "critStrike",
@@ -525,9 +525,9 @@
       "kind": "trainTime",
       "maxLevel": 30,
       "name": {
-        "ko": "훈련 이론",
+        "ko": "수련·훈련 이론",
         "en": "Training Theory",
-        "ja": "訓練理論"
+        "ja": "修練・訓練理論"
       },
       "requires": {
         "id": "incubator",
@@ -674,12 +674,12 @@
       "id": "salvage",
       "image": "assets/images/ui/research/salvage.webp",
       "branch": "nurture",
-      "kind": "salvageMat",
+      "kind": "petShare",
       "maxLevel": 30,
       "name": {
-        "ko": "분해 기술",
-        "en": "Salvage Technique",
-        "ja": "分解技術"
+        "ko": "펫 교감",
+        "en": "Pet Bond",
+        "ja": "ペットの絆"
       },
       "requires": {
         "id": "researchEff",
@@ -826,9 +826,9 @@
       "kind": "injuryTime",
       "maxLevel": 30,
       "name": {
-        "ko": "회복 연구",
-        "en": "Recovery Study",
-        "ja": "回復研究"
+        "ko": "부상 치료",
+        "en": "Injury Care",
+        "ja": "負傷治療"
       },
       "requires": {
         "id": "duelArmor",
@@ -915,7 +915,7 @@
         "row": 3
       },
       "effect": {
-        "perLevel": 0.000667,
+        "perLevel": 0.002,
         "growth": 1.0
       },
       "time": {
@@ -940,9 +940,9 @@
       "kind": "forgeTime",
       "maxLevel": 30,
       "name": {
-        "ko": "제련 비법",
-        "en": "Forging Secrets",
-        "ja": "製錬の秘法"
+        "ko": "공방 비법",
+        "en": "Workshop Secrets",
+        "ja": "工房の秘法"
       },
       "requires": null,
       "tree": {
@@ -975,9 +975,9 @@
       "kind": "starTime",
       "maxLevel": 30,
       "name": {
-        "ko": "별빛 연마",
-        "en": "Starlight Polish",
-        "ja": "星光研磨"
+        "ko": "별 강화 비법",
+        "en": "Star Upgrade Secrets",
+        "ja": "星強化の秘法"
       },
       "requires": {
         "id": "forgeLore",
@@ -1045,17 +1045,16 @@
       }
     },
     {
-      "id": "barter",
-      "image": "assets/images/ui/research/barter.webp",
+      "id": "giftSense",
+      "image": "assets/images/ui/research/giftSense.webp",
       "branch": "economy",
-      "kind": "exchangeGain",
+      "kind": "giftGold",
       "maxLevel": 30,
       "name": {
-        "ko": "교환 협상",
-        "en": "Barter",
-        "ja": "交換交渉"
+        "ko": "선물 감각",
+        "en": "Gift Sense",
+        "ja": "贈り物の勘"
       },
-      "requires": null,
       "tree": {
         "col": 1,
         "row": 0
@@ -1080,18 +1079,19 @@
       }
     },
     {
-      "id": "giftSense",
-      "image": "assets/images/ui/research/giftSense.webp",
+      "id": "barter",
+      "image": "assets/images/ui/research/barter.webp",
       "branch": "economy",
-      "kind": "giftGold",
+      "kind": "exchangeGain",
       "maxLevel": 30,
       "name": {
-        "ko": "선물 감각",
-        "en": "Gift Sense",
-        "ja": "贈り物の勘"
+        "ko": "교환 협상",
+        "en": "Barter",
+        "ja": "交換交渉"
       },
+      "requires": null,
       "requires": {
-        "id": "barter",
+        "id": "giftSense",
         "level": 5
       },
       "tree": {
@@ -1163,6 +1163,171 @@
       0.0,
       0.0,
       0.0
+    ]
+  },
+  "abyssLab": {
+    "_comment": "심연 연구소(2026-11-12 사장님 확정, 1.0.28) — 심연 포자로만 하는 연구. 포자: 그 주에 처음 깬 층 보스 sporesPerFloor 개(주 sporeFloorCap 층까지) + 10층 배수 역대 첫 도달 sporesMilestone 개, 방치 정산엔 없음(층은 직접 올라야 오른다). 보유 sporeCap 까지. 심연이 열리면 생기는 전용 1칸(진행도로만) · 젤리 즉시 완료 없음. 비용 cost.samplesFirst 를 포자로 읽는다. 효과는 심연 안에서만(90일 표·결투 밖). 결정(abC)과 따로 — 결정은 깊이(제곱), 포자는 꾸준한 등반(직선).",
+    "sporesPerFloor": 3,
+    "sporesMilestone": 30,
+    "sporeFloorCap": 120,
+    "sporeCap": 3000,
+    "research": [
+      {
+        "id": "abyssShortcut",
+        "image": "assets/images/ui/research/abyssShortcut.webp",
+        "branch": "hunt",
+        "kind": "abyssShortcut",
+        "maxLevel": 10,
+        "name": {
+          "ko": "심연 지름길",
+          "en": "Abyss Shortcut",
+          "ja": "深淵の近道"
+        },
+        "effect": {
+          "perLevel": 0.05,
+          "growth": 1
+        },
+        "time": {
+          "firstSeconds": 3600,
+          "growth": 1.3,
+          "decay": 1
+        },
+        "cost": {
+          "samplesFirst": 20,
+          "growth": 1.35,
+          "decay": 1
+        }
+      },
+      {
+        "id": "abyssFastFloor",
+        "image": "assets/images/ui/research/abyssFastFloor.webp",
+        "branch": "hunt",
+        "kind": "abyssFastFloor",
+        "maxLevel": 10,
+        "name": {
+          "ko": "빠른 하강",
+          "en": "Swift Descent",
+          "ja": "素早い降下"
+        },
+        "effect": {
+          "perLevel": 0.03,
+          "growth": 1
+        },
+        "time": {
+          "firstSeconds": 3600,
+          "growth": 1.3,
+          "decay": 1
+        },
+        "cost": {
+          "samplesFirst": 20,
+          "growth": 1.35,
+          "decay": 1
+        }
+      },
+      {
+        "id": "mutationTame",
+        "image": "assets/images/ui/research/mutationTame.webp",
+        "branch": "hunt",
+        "kind": "mutationTame",
+        "maxLevel": 10,
+        "name": {
+          "ko": "변이 길들이기",
+          "en": "Mutation Taming",
+          "ja": "変異の手懐け"
+        },
+        "effect": {
+          "perLevel": 0.05,
+          "growth": 1
+        },
+        "time": {
+          "firstSeconds": 3600,
+          "growth": 1.3,
+          "decay": 1
+        },
+        "cost": {
+          "samplesFirst": 20,
+          "growth": 1.35,
+          "decay": 1
+        }
+      },
+      {
+        "id": "crystalRefine",
+        "image": "assets/images/ui/research/crystalRefine.webp",
+        "branch": "hunt",
+        "kind": "crystalBonus",
+        "maxLevel": 10,
+        "name": {
+          "ko": "결정 정제",
+          "en": "Crystal Refining",
+          "ja": "結晶の精製"
+        },
+        "effect": {
+          "perLevel": 0.05,
+          "growth": 1
+        },
+        "time": {
+          "firstSeconds": 3600,
+          "growth": 1.3,
+          "decay": 1
+        },
+        "cost": {
+          "samplesFirst": 20,
+          "growth": 1.35,
+          "decay": 1
+        }
+      },
+      {
+        "id": "sporeSense",
+        "image": "assets/images/ui/research/sporeSense.webp",
+        "branch": "hunt",
+        "kind": "sporeBonus",
+        "maxLevel": 10,
+        "name": {
+          "ko": "포자 감각",
+          "en": "Spore Sense",
+          "ja": "胞子の勘"
+        },
+        "effect": {
+          "perLevel": 0.05,
+          "growth": 1
+        },
+        "time": {
+          "firstSeconds": 3600,
+          "growth": 1.3,
+          "decay": 1
+        },
+        "cost": {
+          "samplesFirst": 20,
+          "growth": 1.35,
+          "decay": 1
+        }
+      },
+      {
+        "id": "abyssRest",
+        "image": "assets/images/ui/research/abyssRest.webp",
+        "branch": "hunt",
+        "kind": "abyssIdleGold",
+        "maxLevel": 10,
+        "name": {
+          "ko": "심연 휴식",
+          "en": "Abyss Rest",
+          "ja": "深淵の休息"
+        },
+        "effect": {
+          "perLevel": 0.03,
+          "growth": 1
+        },
+        "time": {
+          "firstSeconds": 3600,
+          "growth": 1.3,
+          "decay": 1
+        },
+        "cost": {
+          "samplesFirst": 20,
+          "growth": 1.35,
+          "decay": 1
+        }
+      }
     ]
   }
 }

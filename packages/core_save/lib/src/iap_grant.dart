@@ -47,7 +47,7 @@ IapBlock iapPurchaseBlock(
   required DateTime now,
 }) {
   final eggs = p.grant.bugEggs.length;
-  if (eggs > 0 && s.bugs.length + eggs > s.storageCapacity) {
+  if (eggs > 0 && s.storageUsed + eggs > s.storageCapacity) {
     return IapBlock.storageFull;
   }
   switch (p.type) {
@@ -63,6 +63,10 @@ IapBlock iapPurchaseBlock(
       return IapBlock.none;
   }
 }
+
+/// [p] 를 지금 사면 첫 구매 보너스([IapProduct.firstBonusJelly])를 받는가 — 상점 표시와 지급이 같은 판정.
+bool iapFirstBonusAvailable(SaveGame s, IapProduct p) =>
+    p.firstBonusJelly > 0 && !s.boughtOnce.contains(p.id);
 
 /// 계정당 1회 상품인가(두 번째 영수증을 거절하는 대상).
 bool iapIsOncePerAccount(IapProduct p) =>
@@ -100,6 +104,21 @@ SaveGame applyIapGrant(
   final t = now.toUtc();
   var out = _applyGrantGoods(s, p.grant, fairy);
   out = _grantBugEggs(out, p.grant, t, purchaseId, speciesOf, newGen);
+  // 첫 구매 보너스(2026-11-09) — 이 계정이 이 상품을 처음 사면 한 번 더 준다. 판정은 지급 **전** 세이브로.
+  // 운영 지급(`admin:상품:사유`, 서버 /admin/grant)은 결제가 아니라 뺀다 — 붙이면 보상 팩이 2배로 나가고
+  // 그 유저는 진짜 첫 결제 때 보너스를 못 받는다.
+  final firstBonus =
+      !(purchaseId?.startsWith('admin:') ?? false) &&
+      iapFirstBonusAvailable(s, p);
+  if (firstBonus) {
+    out = out.copyWith(
+      materials: {
+        ...out.materials,
+        MaterialKind.jelly:
+            (out.materials[MaterialKind.jelly] ?? 0) + p.firstBonusJelly,
+      },
+    );
+  }
 
   DateTime? extend(DateTime? cur, int days) {
     final base = (cur != null && cur.isAfter(t)) ? cur : t;
@@ -109,7 +128,9 @@ SaveGame applyIapGrant(
   return out.copyWith(
     adsRemoved: out.adsRemoved || p.type == IapType.removeAds,
     starterBought: out.starterBought || p.type == IapType.starter,
-    boughtOnce: p.type == IapType.oncePack
+    // 첫 구매 보너스를 받은 상품도 적는다 — 이 집합은 1회 상품(oncePack)만 구매를 막으므로
+    // 젤리 팩 재구매에는 영향이 없다([iapPurchaseBlock]).
+    boughtOnce: p.type == IapType.oncePack || firstBonus
         ? {...out.boughtOnce, p.id}
         : out.boughtOnce,
     weeklyBought: p.type == IapType.weekly

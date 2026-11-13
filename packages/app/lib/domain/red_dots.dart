@@ -235,6 +235,7 @@ RedDots computeRedDots({
           save.dexConqueredWith(dexCfg.conquerLevel),
           save.claimedDex,
           bosses: bosses,
+          variants: save.dexVariants,
         )
         .isNotEmpty;
   }
@@ -285,7 +286,10 @@ RedDots computeRedDots({
   }
 
   // ── 연구소: 빈 칸 + 시작 가능 · 끝난 연구 ──
-  final researchDone = save.researchSlots.any((r) => due(r.endsAt));
+  final abyssSlot = save.abyssLabSlot;
+  final researchDone =
+      save.researchSlots.any((r) => due(r.endsAt)) ||
+      (abyssSlot != null && due(abyssSlot.endsAt));
   final researchIdle = anyResearchStartable(
     save,
     data,

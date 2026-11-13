@@ -639,7 +639,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String offlineBugsBlocked(int count) {
-    return '채집함이 가득 차서\n알 $count개를 받지 못했어요';
+    return '칸이 없어\n알 $count개를 놓쳤어요';
   }
 
   @override
@@ -958,6 +958,34 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get whatsNewOk => '확인';
+
+  @override
+  String get whatsNew28Kotk =>
+      '왕중왕전 — 매주 곤충 1마리로 겨루는 하드모드 토너먼트(홈 배너). 우승하면 젤리·재료·황금 왕관, 우승하지 못하면 그 곤충은 표본이 돼요';
+
+  @override
+  String get whatsNew28Feed =>
+      '먹이기 — 같은 종 곤충·같은 종류 요정을 먹이면 양분이 차서 희귀도·등급이 올라요(정수로 바꾸기는 먹이기로 합쳐졌어요)';
+
+  @override
+  String get whatsNew28Upgrade =>
+      '강화 — 각성(정해진 레벨에 덤 레벨)·대성공 · 효과 미리보기와 추천 · 50레벨까지는 골드로만 올려요';
+
+  @override
+  String get whatsNew28Abyss =>
+      '심연 — 매주 바뀌는 변이 · 심연 결정으로 각인·강화 상한 돌파 · 심연 포자로 연구소 \'심연\' 연구';
+
+  @override
+  String get whatsNew28Fun =>
+      '주말 이벤트 · 업적과 칭호 · 종별 크기 순위 · 순위표에서 연습 결투 · 표본함(채집함 도감 옆)';
+
+  @override
+  String get whatsNew28Shop =>
+      '젤리 팩은 팩마다 첫 구매 2배 · 즉시 부화·산란·돌파는 처음 한 번 무료 · 처음 5번 부화는 최대 5분';
+
+  @override
+  String get whatsNew28Dex =>
+      '도감 젤리는 발견·정복·이색·보스 수집을 각각 모두 채우면 10개씩으로 바뀌었어요(중간 보상의 골드·화석은 그대로)';
 
   @override
   String get whatsNewAvatar =>
@@ -1498,6 +1526,11 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
+  String autoReleaseDoneCount(int count) {
+    return '$count마리를 분해했어요';
+  }
+
+  @override
   String autoReleasePreview(Object count, Object mats) {
     return '$count마리를 분해해 재료 $mats개를 얻게 됩니다';
   }
@@ -1686,7 +1719,12 @@ class AppLocalizationsKo extends AppLocalizations {
   String get roadmapReplay => '재도전';
 
   @override
-  String get chapterClearTitle => '챕터 클리어! 🎉';
+  String get chapterClearTitle => '사냥터 클리어! 🎉';
+
+  @override
+  String chapterClearZoneMsg(int zone, String boss) {
+    return '사냥터 $zone 보스 $boss 격파! 다음 사냥터가 열렸어요';
+  }
 
   @override
   String chapterClearMsg(String difficulty, String boss) {
@@ -2685,6 +2723,185 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get nicknameRequiredBody => '다른 채집가들에게 표시될 이름이에요. 처음 한 번만 정하면 됩니다.';
+
+  @override
+  String get nicknameSuggestPrefix => '채집가';
+
+  @override
+  String get nicknameSuggestedNote => '추천 이름을 넣어 뒀어요. 그대로 써도 되고 바꿔도 돼요.';
+
+  @override
+  String get bugDetailMore => '성장·능력치 자세히';
+
+  @override
+  String get bugDetailLess => '간단히 보기';
+
+  @override
+  String storeFirstBonus(int n) {
+    return '첫 구매 2배! 젤리 +$n 더';
+  }
+
+  @override
+  String jellyShortHave(int n) {
+    return '보유 젤리 $n';
+  }
+
+  @override
+  String get jellyShortFirstBonus => '젤리 팩은 첫 구매 때 2배로 받아요!';
+
+  @override
+  String get discoveryNewTitle => '새 곤충 발견!';
+
+  @override
+  String get discoveryVariantTitle => '이색 곤충 발견!';
+
+  @override
+  String get discoveryVariantNote => '아주 드물게 나오는, 색이 다른 개체예요!';
+
+  @override
+  String discoveryDexProgress(int n, int total) {
+    return '도감 $n / $total종';
+  }
+
+  @override
+  String get discoveryOk => '좋아요!';
+
+  @override
+  String rarityAutoFeedBody(String ups, String fodder) {
+    return '같은 종 곤충을 먹여 희귀도를 올려요(희귀도가 낮은 곤충일수록 조금 채워요).\n올리기 $ups번 · 재료로 사라지는 곤충 $fodder마리';
+  }
+
+  @override
+  String guideRarityFeed(String common, String epic, String legend) {
+    return '희귀도 올리기: 같은 종 곤충을 먹이면 양분이 차요. 희귀도가 낮은 곤충일수록 조금(일반 $common), 높을수록 많이(영웅 $epic) 채우고, 전설이 되려면 양분이 $legend 필요해요. 이 곤충보다 희귀도가 높은 곤충과 보호·투자한 곤충은 먹이지 않아요. 키운 능력치는 그대로예요.';
+  }
+
+  @override
+  String rarityWorthBtn(int cur, int next) {
+    return '양분 $cur / $next';
+  }
+
+  @override
+  String get rarityFeedTitle => '곤충 먹이기';
+
+  @override
+  String get rarityFeedBody =>
+      '같은 종 곤충을 먹이면 양분이 찹니다. 희귀도가 낮은 곤충일수록 조금, 높을수록 많이 채워요. 양분이 가득 차면 희귀도가 오르고, 등급 올리기에 쓰는 등급 양분도 함께 쌓여요.';
+
+  @override
+  String rarityFeedGauge(int cur, int next, String name) {
+    return '양분 $cur / $next → $name';
+  }
+
+  @override
+  String rarityFeedToNext(int n, String to) {
+    return '다음 단계까지 $n마리 → $to';
+  }
+
+  @override
+  String rarityFeedAll(int n, String to) {
+    return '전부 먹이기 $n마리 → $to';
+  }
+
+  @override
+  String get rarityFeedNone => '먹일 수 있는 같은 종 곤충이 없어요';
+
+  @override
+  String get rarityNeedOnline => '인터넷에 연결된 상태에서 올릴 수 있어요';
+
+  @override
+  String guideFairyFeed(
+    String common,
+    String epic,
+    String mythic,
+    String perLevel,
+    String caps,
+  ) {
+    return '같은 종류 요정을 먹이면 양분이 차고, 가득 차면 등급이 올라요. 등급이 낮은 요정일수록 조금(일반 $common), 높을수록 많이(영웅 $epic) 채우고, 신화까지 양분이 $mythic 필요해요. 등급이 올라도 품질은 그대로 이어 가요. 동행 중·레벨을 올린 요정과 더 높은 등급 요정은 재료가 되지 않아요. 레벨 1당 능력치 +$perLevel · 등급별 최대 레벨 $caps.';
+  }
+
+  @override
+  String get fairyFeedBtn => '먹이기';
+
+  @override
+  String get fairyFeedTitle => '요정 먹이기';
+
+  @override
+  String get fairyFeedBody =>
+      '같은 종류 요정을 먹이면 양분이 찹니다. 등급이 낮은 요정일수록 조금, 높을수록 많이 채워요. 양분이 가득 차면 등급이 오르고, 품질은 그대로 이어 가요.';
+
+  @override
+  String get fairyFeedNone => '먹일 수 있는 같은 종류 요정이 없어요';
+
+  @override
+  String get fairyFeedNote => '동행 중·레벨을 올린 요정과 이 요정보다 등급이 높은 요정은 먹이지 않아요.';
+
+  @override
+  String fairyFeedUp(String grade) {
+    return '$grade 등급이 되었어요!';
+  }
+
+  @override
+  String get fairyFeedStored => '양분이 쌓였어요';
+
+  @override
+  String get fairyFeedHubHint =>
+      '요정을 눌러 [먹이기]로 같은 종류 요정을 먹일 수 있어요. 자동 먹이기는 종류마다 가장 아끼는 요정에 먹여요.';
+
+  @override
+  String get fairyAutoFeed => '자동 먹이기';
+
+  @override
+  String fairyAutoFeedConfirm(String ups, String used) {
+    return '등급 올리기 $ups번 · 재료로 사라지는 요정 $used마리';
+  }
+
+  @override
+  String fairyAutoFeedDone(String ups) {
+    return '등급이 $ups번 올랐어요';
+  }
+
+  @override
+  String get guideStorageFeed =>
+      '필요 없는 곤충은 분해(재료)하거나, 같은 종 곤충에게 먹여요(곤충 상세의 양분 버튼). 먹이면 희귀도 양분과 등급 양분이 함께 쌓이고, 등급 양분은 그 곤충의 등급 올리기·패시브 재굴림에 쓰여요. 예전에 모은 정수는 그 종에서 먼저 쓰여요. 아끼는 곤충은 잠그면 분해·먹이기 재료로 쓰이지 않아요. 장착·부화 중·훈련 중인 곤충도 재료가 되지 않아요.';
+
+  @override
+  String guidePassiveRerollFeed(String essence, String jelly) {
+    return '재굴림: 등급 양분 $essence 또는 젤리 $jelly개로 크기를 다시 정하고, 새 값과 지금 값 중 골라요(남은 옛 정수를 먼저 써요). 종류는 바뀌지 않아요.';
+  }
+
+  @override
+  String rarityFeedGrade(int n) {
+    return '등급 양분 +$n';
+  }
+
+  @override
+  String igGradeUpFunds(String have, String need) {
+    return '등급 양분 $have / $need';
+  }
+
+  @override
+  String igNeedMoreFunds(String n) {
+    return '등급 양분 $n 더 필요해요 — 같은 종 곤충을 먹여 채워요';
+  }
+
+  @override
+  String igLegacyEssenceFirst(String n) {
+    return '남은 옛 정수 $n개를 먼저 써요';
+  }
+
+  @override
+  String passiveRerollFundsHave(String have) {
+    return '등급 양분 보유 $have';
+  }
+
+  @override
+  String get rarityFeedNote => '보호·투자한 곤충과 이 곤충보다 희귀도가 높은 곤충은 먹이지 않아요.';
+
+  @override
+  String rarityFeedStored(int cur, int next) {
+    return '양분이 쌓였어요 ($cur / $next)';
+  }
 
   @override
   String get renameForcedTitle => '닉네임을 변경해 주세요';
@@ -4302,7 +4519,9 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
-  String get abyssWeekReset => '새 주가 시작됐어요 — 심연 1층부터!';
+  String abyssWeekReset(int n) {
+    return '새 주가 시작됐어요 — 심연 $n층부터!';
+  }
 
   @override
   String get abyssRankRewardTitle => '심연 주간 순위 보상';
@@ -8170,7 +8389,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String guideRarityEffect(String hunt, String duel) {
-    return '희귀도가 높을수록 펫으로 장착했을 때 사냥 기여가 커지고($hunt), 결투·대회의 체력·공격·방어가 올라가요(전설 $duel). 정수로 바꿀 때 가치도 커지고, 부화·짝짓기 시간은 길어져요.';
+    return '희귀도가 높을수록 펫으로 장착했을 때 사냥 기여가 커지고($hunt), 결투·대회의 체력·공격·방어가 올라가요(전설 $duel). 먹이기 재료로 쓰면 등급 양분도 더 많이 채우고, 부화·짝짓기 시간은 길어져요.';
   }
 
   @override
@@ -8181,6 +8400,11 @@ class AppLocalizationsKo extends AppLocalizations {
   @override
   String guidePotionCost(String costs, String max, String bonus) {
     return '등급 올리기에 드는 그 종 정수: $costs(일반→고급부터 차례로). 성장물약을 한 번에 $max개까지 함께 쓰면 새로 굴린 능력치 품질에 1개당 +$bonus점이 더해져요(100점까지).';
+  }
+
+  @override
+  String guidePotionCostFeed(String costs, String max, String bonus) {
+    return '등급 올리기에 드는 등급 양분: $costs(일반→고급부터 차례로 · 남은 옛 정수를 먼저 써요). 성장물약을 한 번에 $max개까지 함께 쓰면 새로 굴린 능력치 품질에 1개당 +$bonus점이 더해져요(100점까지).';
   }
 
   @override
@@ -8364,7 +8588,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get whatsNew26Pass =>
-      '새 상품: 연구 패스(앱을 꺼 둔 사이에도 연구 표본이 모이고 연구 시간 −15%)와 올인원 패스(패스 4종 묶음) · 곤충학자 패스의 방치 골드가 2배가 됐어요';
+      '새 상품: 연구 패스(앱을 꺼 둔 사이에도 연구 샘플이 모이고 연구 시간 −15%)와 올인원 패스(패스 4종 묶음) · 곤충학자 패스의 방치 골드가 2배가 됐어요';
 
   @override
   String get whatsNew26SexSize => '암컷 곤충이 암컷 그림과 암컷 크기로 보여요 — 결투 힘은 그대로예요';
@@ -8382,7 +8606,7 @@ class AppLocalizationsKo extends AppLocalizations {
       '연구가 끝나면 칸에 \'연구 완료\' 버튼이 떠요 — 눌러서 받아야 레벨이 올라요';
 
   @override
-  String get researchSamples => '연구 표본';
+  String get researchSamples => '연구 샘플';
 
   @override
   String get researchSlotEmpty => '비어 있음';
@@ -8461,7 +8685,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get researchHowToGet =>
-      '연구 표본은 정예·보스가 떨어뜨려요. 골드·재료 비용은 가 본 가장 높은 사냥터 기준이에요.';
+      '연구 샘플은 정예·보스가 떨어뜨려요. 골드·재료 비용은 가 본 가장 높은 사냥터 기준이에요.';
 
   @override
   String get researchUnitPp => '%p';
@@ -8497,7 +8721,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get notifResearchBody => '연구가 끝났어요. 연구소에서 다음 연구를 시작해 보세요.';
 
   @override
-  String get researchPassHint => '연구 패스: 앱을 꺼도 표본이 모여요';
+  String get researchPassHint => '연구 패스: 앱을 꺼도 샘플이 모여요';
 
   @override
   String get researchPassHintGo => '상점';
@@ -8594,7 +8818,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get researchFxHuntEvade => '사냥 회피';
 
   @override
-  String get researchFxHuntExp => '경험치 획득';
+  String get researchFxHuntExp => '경험치 획득(방치 포함)';
 
   @override
   String get researchFxSkillCooldown => '스킬 쿨타임';
@@ -8612,7 +8836,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get researchFxTraitChance => '혈통 특성 열림 확률';
 
   @override
-  String get researchFxPotionChance => '성장물약 드롭 확률';
+  String get researchFxPotionChance => '성장물약 드롭 확률 · 10레벨마다 하루 한도 +1';
 
   @override
   String get researchFxSalvageMat => '분해·방생 재료';
@@ -8627,5 +8851,720 @@ class AppLocalizationsKo extends AppLocalizations {
   String get researchFxDuelCrit => '결투 치명 확률';
 
   @override
-  String get researchFxDuelGrit => '탭 반격 문턱';
+  String get researchFxDuelGrit => '탭 반격이 쉬워짐(문턱)';
+
+  @override
+  String get researchFxKillHeal => '처치 회복량';
+
+  @override
+  String get researchFxPetShare => '장착 펫 기여(공격·체력)';
+
+  @override
+  String abyssSporesGot(String n) {
+    return '심연 포자 +$n';
+  }
+
+  @override
+  String get researchTabAbyss => '심연';
+
+  @override
+  String get abyssSpores => '심연 포자';
+
+  @override
+  String get abyssLabInfo =>
+      '심연 포자는 이번 주에 처음 깬 층의 보스와, 10층마다 처음 닿을 때 나와요. 심연 연구의 효과는 심연 안에서만 붙어요.';
+
+  @override
+  String get abyssLabLocked => '극한 최종 보스를 잡아 심연을 열면 연구할 수 있어요.';
+
+  @override
+  String get abyssLabSlotTitle => '심연 연구 칸';
+
+  @override
+  String get abyssLabSlotEmpty => '비어 있어요 — 아래에서 연구를 고르세요';
+
+  @override
+  String get abyssLabNoSpores => '심연 포자가 모자라요';
+
+  @override
+  String get researchFxAbyssShortcut => '새 주 시작 층(지난주 최고 층 대비, 10층 단위)';
+
+  @override
+  String get researchFxAbyssFastFloor => '심연 보스 도전까지 처치 수';
+
+  @override
+  String get researchFxMutationTame => '주간 변이의 불리한 효과';
+
+  @override
+  String get researchFxCrystalBonus => '심연 결정 획득';
+
+  @override
+  String get researchFxSporeBonus => '심연 포자 획득';
+
+  @override
+  String get researchFxAbyssIdleGold => '심연 방치 골드';
+
+  @override
+  String get upgradeRecommend => '추천';
+
+  @override
+  String upgradeFxHits(String from, String to) {
+    return '몬스터 처치 $from대 → $to대';
+  }
+
+  @override
+  String upgradeFxBoss(String from, String to) {
+    return '보스 약 $from → $to';
+  }
+
+  @override
+  String upgradeFxBite(String from, String to) {
+    return '한 대 맞으면 $from% → $to%';
+  }
+
+  @override
+  String upgradeFxGold(String from, String to) {
+    return '골드 수입 +$from% → +$to%';
+  }
+
+  @override
+  String upgradeFxXp(String from, String to) {
+    return '경험치 +$from% → +$to%';
+  }
+
+  @override
+  String upgradeFxBugs(String from, String to) {
+    return '곤충 발견 +$from% → +$to%';
+  }
+
+  @override
+  String upgradeFxMats(String from, String to) {
+    return '재료 +$from% → +$to%';
+  }
+
+  @override
+  String upgradeFxSec(String n) {
+    return '$n초';
+  }
+
+  @override
+  String upgradeFxMin(String n) {
+    return '$n분';
+  }
+
+  @override
+  String upgradeAwakenNext(String level) {
+    return '각성 Lv.$level';
+  }
+
+  @override
+  String upgradeAwakenToast(String name, String n) {
+    return '각성! $name +$n레벨 덤';
+  }
+
+  @override
+  String upgradeLuckyToast(String n) {
+    return '대성공! +$n레벨 덤';
+  }
+
+  @override
+  String upgradeAwakenInfo(String levels) {
+    return '각성: Lv.$levels에 닿으면 레벨이 덤으로 붙어요.';
+  }
+
+  @override
+  String bossLostRecommend(String name) {
+    return '추천 강화: $name';
+  }
+
+  @override
+  String get upgradeCapBreak => '한계 돌파';
+
+  @override
+  String upgradeCapNeed(String have, String need) {
+    return '심연 결정이 모자라요 ($have/$need) — 심연 10층마다 받아요';
+  }
+
+  @override
+  String upgradeCapOpened(String name, String n) {
+    return '$name 상한 +$n레벨!';
+  }
+
+  @override
+  String abyssCrystalsGot(String n) {
+    return '심연 결정 +$n';
+  }
+
+  @override
+  String abyssMutationTitle(String name) {
+    return '이번 주 심연: $name';
+  }
+
+  @override
+  String get abyssImprintTitle => '심연 각인';
+
+  @override
+  String get abyssImprintBody =>
+      '심연 10층마다 받는 결정으로 영구 능력치를 올려요. 강화를 끝까지 찍은 줄은 결정으로 한계 돌파도 할 수 있어요.';
+
+  @override
+  String abyssCrystalsHave(String n) {
+    return '보유 💠$n';
+  }
+
+  @override
+  String abyssImprintLevel(String level, String pct) {
+    return 'Lv.$level (+$pct%)';
+  }
+
+  @override
+  String weekendEventBar(String name, String desc, String left) {
+    return '🎉 $name · $desc · $left 남음';
+  }
+
+  @override
+  String weekendHours(String n) {
+    return '$n시간';
+  }
+
+  @override
+  String get achievementsTitle => '업적 · 칭호';
+
+  @override
+  String get achievementsBody => '달성한 업적을 누르면 칭호로 달아요. 칭호는 상대 프로필에 보여요.';
+
+  @override
+  String get achievementsWearing => '다는 중';
+
+  @override
+  String get sizeRankButton => '크기 순위';
+
+  @override
+  String sizeRankTitle(String name) {
+    return '$name 크기 순위';
+  }
+
+  @override
+  String get sizeRankEmpty => '아직 기록이 없어요. 가장 큰 개체를 잡아 1위에 올라 보세요!';
+
+  @override
+  String get sizeRankOffline => '순위를 불러오지 못했어요. 연결을 확인해 주세요.';
+
+  @override
+  String sizeRankMine(String rank, String size) {
+    return '내 순위 $rank위 · ${size}mm';
+  }
+
+  @override
+  String get practiceDuel => '연습 결투';
+
+  @override
+  String get practiceOffline => '연습 결투는 서버에 연결돼 있을 때만 할 수 있어요.';
+
+  @override
+  String get practiceCooldown => '연습 결투는 잠시 뒤에 다시 할 수 있어요.';
+
+  @override
+  String get practiceFailed => '상대의 방어팀을 불러오지 못했어요.';
+
+  @override
+  String get kotkTitle => '왕중왕전';
+
+  @override
+  String get kotkRulesTitle => '하드모드 규칙';
+
+  @override
+  String get kotkEntryTitle => '내 참가 곤충';
+
+  @override
+  String get leaderboardLoadFail => '순위를 불러오지 못했어요. 잠시 뒤 다시 시도해 주세요.';
+
+  @override
+  String kotkMinNote(String n) {
+    return '참가 $n명 이상인 주에만 젤리·뱃지·왕관을 줘요(그보다 적으면 재료만).';
+  }
+
+  @override
+  String get kotkPendingNote => '결과는 월요일 09시에 확정돼요(표본·보상 반영).';
+
+  @override
+  String kotkMinResult(String n) {
+    return '이번 주는 참가가 $n명보다 적어 재료만 받았어요.';
+  }
+
+  @override
+  String get notifKotkTitle => '왕중왕전 마감 임박';
+
+  @override
+  String get notifKotkBody => '이번 주 왕중왕전에 아직 참가하지 않았어요. 내일 09시에 마감돼요.';
+
+  @override
+  String get weeklyTitle => '지난주 기록';
+
+  @override
+  String get weeklySubtitle => '새 주가 시작됐어요!';
+
+  @override
+  String weeklyLevels(String n) {
+    return '강화 $n레벨 올렸어요';
+  }
+
+  @override
+  String weeklyLucky(String n) {
+    return '강화 대성공 $n번';
+  }
+
+  @override
+  String weeklyAwaken(String n) {
+    return '각성 $n번';
+  }
+
+  @override
+  String weeklyAbyss(String n) {
+    return '심연 최고 $n층';
+  }
+
+  @override
+  String get kotkRewardNone => '보상 없음';
+
+  @override
+  String get kotkWithdrawn => '참가를 취소했어요';
+
+  @override
+  String get kotkSpecimenOpen => '표본함 보기';
+
+  @override
+  String get kotkHallIn => '명예의 전당에 올랐어요!';
+
+  @override
+  String get kotkPetWarn => '지금 펫으로 장착 중이에요 — 지면 펫에서도 빠져요.';
+
+  @override
+  String beginnerHatchTag(String left, String min) {
+    return '신규 혜택 $left번 남음 · 최대 $min분';
+  }
+
+  @override
+  String badgeKotk(String round) {
+    return '제$round회 왕중왕';
+  }
+
+  @override
+  String kotkRound(String n) {
+    return '제$n회';
+  }
+
+  @override
+  String get kotkPreparing => '준비 중';
+
+  @override
+  String kotkPreparingBody(String m1, String d1, String m2, String d2) {
+    return '제1회 왕중왕전은 $m1월 $d1일(월) 09시부터 참가를 받고, $m2월 $d2일(일) 09시에 결과가 나와요.';
+  }
+
+  @override
+  String get kotkRewardsTitle => '성적 보상';
+
+  @override
+  String kotkRewardJelly(String n) {
+    return '젤리 $n';
+  }
+
+  @override
+  String kotkRewardPotion(String n) {
+    return '성장물약 $n';
+  }
+
+  @override
+  String kotkRewardFossil(String n) {
+    return '화석 $n';
+  }
+
+  @override
+  String kotkRewardElement(String n) {
+    return '오행석 $n';
+  }
+
+  @override
+  String kotkRewardTemper(String n) {
+    return '기질석 $n';
+  }
+
+  @override
+  String get kotkRewardChamp => '우승 곤충에 황금 왕관 · 대표 뱃지';
+
+  @override
+  String get kotkResultTitle => '왕중왕전 결과';
+
+  @override
+  String get kotkResultNone => '대진(상위 32마리)에 오르지 못했어요. 곤충은 그대로예요.';
+
+  @override
+  String get kotkResultRetired => '진 곤충은 표본이 되어 표본함으로 갔어요.';
+
+  @override
+  String get kotkResultChamp => '우승 곤충에 황금 왕관이 붙었어요!';
+
+  @override
+  String get kotkPreparingErr => '아직 준비 중이에요. 첫 회차부터 참가할 수 있어요.';
+
+  @override
+  String get kotkChampMark => '왕중왕';
+
+  @override
+  String get kotkRules =>
+      '주마다 곤충 1마리로 참가해요. 일요일 09시에 접수가 닫히면 전투력 상위 32마리가 토너먼트를 치러요(한 경기 = 2판 먼저 이기기).\n우승하지 못한 곤충(준우승 포함)은 표본이 되어 결투·대회·펫·짝짓기·먹이에 다시 쓸 수 없어요 — 진 곤충은 소모돼요(채집함 칸은 차지하지 않아요). 대진에 못 오르면 그대로예요.\n결과는 일요일 09시에 나오고, 운영 확인을 거쳐 월요일 09시에 확정돼요(표본·보상).\n16강 이상은 명예의 전당에 남아요.';
+
+  @override
+  String get kotkOpen => '접수 중 · 일요일 09시 마감';
+
+  @override
+  String get kotkClosedNow => '이번 주 접수가 끝났어요';
+
+  @override
+  String kotkCount(String n, String max) {
+    return '참가 $n명 · 전투력 상위 $max마리가 대진에 올라요';
+  }
+
+  @override
+  String kotkMine(String name) {
+    return '내 참가: $name';
+  }
+
+  @override
+  String get kotkEnter => '참가하기';
+
+  @override
+  String get kotkChange => '곤충 바꾸기';
+
+  @override
+  String get kotkWithdraw => '참가 취소';
+
+  @override
+  String get kotkPickTitle => '참가할 곤충';
+
+  @override
+  String get kotkConfirmTitle => '정말 참가할까요?';
+
+  @override
+  String kotkConfirmBody(String name) {
+    return '참가 곤충: $name\n우승하지 못하면(준우승 포함) 이 곤충은 표본이 되어 결투·대회·펫·짝짓기·먹이에 다시 쓸 수 없어요. 되돌릴 수 없어요.\n대진(상위 32마리)에 못 오르면 그대로예요.';
+  }
+
+  @override
+  String get kotkConfirmGo => '참가';
+
+  @override
+  String get kotkEntered => '왕중왕전에 참가했어요!';
+
+  @override
+  String get kotkFailed => '참가하지 못했어요. 잠시 뒤 다시 해 주세요.';
+
+  @override
+  String get kotkNoAdult => '참가할 수 있는 성충이 없어요.';
+
+  @override
+  String get kotkRetiredBug => '표본이 된 곤충은 다시 쓸 수 없어요.';
+
+  @override
+  String get kotkThisWeek => '이번 주 결과';
+
+  @override
+  String get kotkLastWeek => '지난주 결과';
+
+  @override
+  String get kotkBracket => '대진표 보기';
+
+  @override
+  String get kotkBye => '부전승';
+
+  @override
+  String kotkMyPlace(String place) {
+    return '내 성적: $place';
+  }
+
+  @override
+  String get kotkPlace1 => '우승';
+
+  @override
+  String get kotkPlace2 => '준우승';
+
+  @override
+  String kotkPlaceN(String n) {
+    return '$n강';
+  }
+
+  @override
+  String get kotkFinal => '결승';
+
+  @override
+  String get kotkHall => '명예의 전당 (16강 이상)';
+
+  @override
+  String get kotkHallEmpty => '아직 전시된 표본이 없어요.';
+
+  @override
+  String get kotkOffline => '왕중왕전을 불러오지 못했어요. 연결을 확인해 주세요.';
+
+  @override
+  String kotkResultToast(String place) {
+    return '왕중왕전 결과: $place';
+  }
+
+  @override
+  String get specimenBoxTitle => '표본함';
+
+  @override
+  String get specimenBoxBody =>
+      '왕중왕전에서 진 곤충이 표본으로 잠들어 있어요. 채집함 칸을 차지하지 않고, 어디에도 쓸 수 없어요.';
+
+  @override
+  String get specimenBoxEmpty => '아직 표본이 없어요.';
+
+  @override
+  String get firstFreeInstant => '첫 1회 무료';
+
+  @override
+  String get growHowTitle => '강해지는 법';
+
+  @override
+  String growHowBody(String time) {
+    return '지금 힘으로는 이 보스를 잡기 어려워요(약 $time). 아래를 챙기면 훨씬 빨라져요.';
+  }
+
+  @override
+  String get growHowBuff => '버프 켜기 — 골드·공격이 크게 올라요';
+
+  @override
+  String get growHowMail => '편지함 — 선물·일일 보상 받기';
+
+  @override
+  String growHowUpgrade(String stat) {
+    return '추천 강화: $stat';
+  }
+
+  @override
+  String get growHowFight => '그래도 도전';
+
+  @override
+  String get giftArrivedToast => '🎁 깜짝 선물이 도착했어요! 3시간 안에 편지함에서 받으세요';
+
+  @override
+  String giftExpiringToast(int min) {
+    return '🎁 깜짝 선물이 $min분 뒤에 사라져요 — 편지함에서 받으세요';
+  }
+
+  @override
+  String get tipPetTitle => '펫을 장착해 보세요';
+
+  @override
+  String get tipPetBody =>
+      '채집함에서 곤충을 펫으로 장착하면 사냥할 때 함께 싸워서 공격·체력이 올라요. 알은 부화기에 넣어 키워요.';
+
+  @override
+  String get tipGearTitle => '장비를 만들어 보세요';
+
+  @override
+  String get tipGearBody => '사냥하며 모은 화석으로 장비 탭에서 장비를 제련해 끼면 공격·체력이 오래도록 올라요.';
+
+  @override
+  String get tipGo => '바로 가기';
+
+  @override
+  String get tourUpgrades =>
+      '여기서 골드로 능력을 강화해요. \"추천\"이 붙은 줄부터 사면 가장 빨리 강해져요. 꾹 누르면 연속으로 사요.';
+
+  @override
+  String get tourStage =>
+      '지금 있는 사냥터예요. 몬스터 100마리를 잡으면 보스에 도전할 수 있고, 보스를 잡으면 다음 사냥터가 열려요.';
+
+  @override
+  String get tourBuffs => '버프예요. 켜 두면 골드·공격이 크게 올라요 — 무료로 켤 수 있으니 꼭 켜 두세요.';
+
+  @override
+  String get tourMail =>
+      '편지함이에요. 점심·저녁 일일 보상과 깜짝 선물이 여기로 와요. 선물은 3시간 안에 받아야 해요.';
+
+  @override
+  String get tourMission => '미션이에요. 다 채우면 눌러서 보상을 받아요.';
+
+  @override
+  String get tourStorage => '채집함 — 잡은 곤충이 모여요. 알을 부화시키고, 곤충을 펫으로 장착하면 함께 싸워요.';
+
+  @override
+  String get tourBattle => '결투 — 키운 곤충 3마리로 다른 사람과 겨뤄요.';
+
+  @override
+  String get tourShop => '상점 — 젤리·패키지·곤충 알 뽑기가 있어요.';
+
+  @override
+  String get tourSwitch => '누르면 장비·스킬·요정·연구소 탭으로 바뀌어요.';
+
+  @override
+  String get tourNext => '다음';
+
+  @override
+  String get tourDone => '시작하기';
+
+  @override
+  String get tourSkip => '건너뛰기';
+
+  @override
+  String get missionGuideHunt => '가만히 두면 캐릭터가 몬스터를 잡아요. 화면을 톡톡 누르면 더 빨라요.';
+
+  @override
+  String get missionGuideUpgrade => '여기 강화 버튼을 누르면 채워져요. \"추천\"이 붙은 줄부터 사 보세요.';
+
+  @override
+  String get missionGuideForge => '모루를 누르면 화석 1개로 장비를 한 번 제련해요. 제련할 때마다 채워져요.';
+
+  @override
+  String get missionGuideBoss => '몬스터 100마리를 잡으면 여기서 보스에 도전할 수 있어요.';
+
+  @override
+  String upgradeFxSurvive(String from, String to) {
+    return '몬스터에게 $from대 버텨요 → $to대';
+  }
+
+  @override
+  String get tabTourEquipScene =>
+      '캐릭터가 야생 곤충을 쫓아다니는 채집 놀이 화면이에요. 기회가 오면 눌러서 잡을 수 있어요.';
+
+  @override
+  String get tabTourEquipStats => '장비까지 더한 지금 능력치예요. 장비를 바꾸면 여기 숫자가 바로 바뀌어요.';
+
+  @override
+  String get tabTourEquipGrid => '장비 칸이에요. 칸을 누르면 지금 낀 장비와 능력치를 보고 바꿀 수 있어요.';
+
+  @override
+  String get tabTourEquipAnvil =>
+      '모루를 누르면 화석 1개로 장비를 하나 만들어요. 만든 장비는 위에 쌓이고, 눌러서 끼거나 팔아요.';
+
+  @override
+  String get tabTourEquipGrade => '공방 등급을 올리면 더 좋은 등급의 장비가 나와요. 골드와 시간이 들어요.';
+
+  @override
+  String get tabTourEquipFilter => '필터 — 자동 제련 때 원하는 능력치·등급만 남기고 나머지는 저절로 팔아요.';
+
+  @override
+  String get tabTourEquipRush => '가속 — 젤리로 잠시 동안 제련이 빨라져요.';
+
+  @override
+  String get tabTourEquipAuto => '자동 — 켜 두면 화석이 있는 동안 저절로 제련해요.';
+
+  @override
+  String get tabTourStorageDex => '도감 — 지금까지 잡은 곤충 종류예요. 종류를 모으면 보상을 받아요.';
+
+  @override
+  String get tabTourStorageMats => '가진 재료예요. 강화·훈련·돌파 같은 곳에 써요.';
+
+  @override
+  String get tabTourStorageCap =>
+      '채집함 칸이에요. 가득 차면 새 곤충이 들어오지 않아요 — 정리하거나 젤리로 늘려요.';
+
+  @override
+  String get tabTourStoragePets =>
+      '장착한 펫이에요. 곤충을 펫으로 끼우면 사냥을 함께 하며 공격·체력을 올려 줘요.';
+
+  @override
+  String get tabTourStorageTools =>
+      '정리 도구 — \"받을 희귀도\"로 낮은 곤충은 재료로 바로 바꾸고, \"자동 분해\"로 한 번에 정리해요.';
+
+  @override
+  String get tabTourStorageGrid =>
+      '잡은 곤충이에요. 누르면 펫 장착, 같은 종 먹이기(희귀도 올리기), 분해를 할 수 있어요.';
+
+  @override
+  String get tabTourStorageBreed =>
+      '짝짓기 — 같은 종 수컷·암컷 성충으로 알을 얻어요. 부모의 속성·기질을 물려받아요.';
+
+  @override
+  String get tabTourStorageHatch => '부화기 — 알을 넣어 부화시켜요. 다 되면 눌러서 받아요.';
+
+  @override
+  String get tabTourBattleTicket =>
+      '결투 티켓이에요. 결투 한 판에 1장 — 시간이 지나면 차고, 하루 몇 번은 무료로 충전해요.';
+
+  @override
+  String get tabTourBattleSquad =>
+      '출정 곤충 3칸이에요. 성충을 넣어 팀을 짜요 — 순서대로 1·2·3판에 나가요.';
+
+  @override
+  String get tabTourBattleStart => '전투 시작 — 같은 리그에서 상대를 골라 결투해요. 이기면 점수를 얻어요.';
+
+  @override
+  String get tabTourBattleRecovery => '회복실 — 결투에서 다친 곤충을 쉬게 해요(젤리로 바로 회복).';
+
+  @override
+  String get tabTourBattleTraining =>
+      '훈련소 — 키운 만큼 생기는 훈련 포인트를 공격·방어·체력 등에 골라 찍어요.';
+
+  @override
+  String get tabTourBattleBoard =>
+      '리그 순위표 — 매주 월요일에 새로 시작해요. 위쪽 20%는 올라가고 아래쪽 20%는 내려가요.';
+
+  @override
+  String get tabTourShopTop => '추천 상품이에요. 처음 사는 젤리 묶음은 2배로 받아요.';
+
+  @override
+  String get tabTourShopGacha =>
+      '알 뽑기 — 젤리로 곤충 알을 뽑아요. 높은 등급이 잘 나오고, 여러 번 뽑으면 천장이 있어요.';
+
+  @override
+  String get tabTourShopExchange => '교환소 — 젤리를 골드·재료로 바꿔요.';
+
+  @override
+  String get tabTourSkillGacha => '스킬 뽑기 — 스킬 조각을 얻어요. 하루 한 번은 무료예요.';
+
+  @override
+  String get tabTourSkillSweep => '소탕 — 잡아 본 보스의 조각을 바로 받아요. 하루 3번 무료.';
+
+  @override
+  String get tabTourSkillGrade => '승급 — 남는 조각 10개를 한 등급 위 만능 조각 1개로 바꿔요.';
+
+  @override
+  String get tabTourSkillShards => '가진 스킬 조각이에요. 스킬을 열고 키우는 데 써요.';
+
+  @override
+  String get tabTourSkillSlots => '장착 칸이에요. 처음엔 2칸이고, 새 난이도에 갈 때마다 늘어나요.';
+
+  @override
+  String get tabTourSkillList =>
+      '스킬 목록 — 눌러서 열고, 키우고, 장착해요. 장착하면 사냥 중에 저절로 써요.';
+
+  @override
+  String get tabTourFairyCompanion => '동행 요정이에요. 데리고 다니는 요정의 효과가 사냥에 붙어요.';
+
+  @override
+  String get tabTourFairyNest => '둥지 — 요정 알을 넣어 부화시켜요.';
+
+  @override
+  String get tabTourFairyGacha => '요정 알 뽑기 — 젤리로 요정 알을 뽑아요.';
+
+  @override
+  String get tabTourFairyDex => '요정 도감 — 모은 요정 종류와 보상이에요.';
+
+  @override
+  String get tabTourFairyFeed => '먹이기 — 같은 종류 요정을 먹여 등급을 올려요.';
+
+  @override
+  String get tabTourFairyRelease =>
+      '분해 — 필요 없는 요정을 요정 가루로 바꿔요. 가루로 요정 레벨을 올려요.';
+
+  @override
+  String get tabTourResearchCurrency => '연구에 드는 재료예요. 연구 샘플은 보스·정예를 잡으면 모여요.';
+
+  @override
+  String get tabTourResearchSlots =>
+      '연구 칸이에요. 연구를 넣으면 시간이 지나 끝나고, 다 되면 눌러서 받아요.';
+
+  @override
+  String get tabTourResearchTabs => '연구 분야예요 — 사냥·육성·결투·장비·경제. 눌러서 분야를 바꿔요.';
+
+  @override
+  String get tabTourResearchTree =>
+      '연구 목록 — 카드를 눌러 연구를 시작하거나 레벨을 올려요. 연구는 영구히 남아요.';
+
+  @override
+  String get tabTourResearchAbyss => '심연 — 극한을 깨면 열리는 심연 전용 연구예요. 심연 포자로 해요.';
 }

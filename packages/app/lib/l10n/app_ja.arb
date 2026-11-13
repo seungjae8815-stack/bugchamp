@@ -198,7 +198,7 @@
   "retreat": "撤退!",
   "offlineReward": "おかえり!💰{gold}・🔷{xp} 獲得",
   "offlineTitle": "おかえりなさい！",
-  "offlineBugsBlocked": "採集箱がいっぱいで\n卵{count}個を受け取れませんでした",
+  "offlineBugsBlocked": "空きがなくて\n卵{count}個を逃しました",
   "fairyRerollPending": "再抽選の結果を選ぶ",
   "offlineBugs": "🥚 虫の卵を{count}個採集しました",
   "offlineElapsed": "{time} の間に貯まった放置報酬です",
@@ -325,6 +325,13 @@
   "whatsNewTitle": "アップデート内容",
   "whatsNewSubtitle": "v{version} の変更点",
   "whatsNewOk": "OK",
+  "whatsNew28Kotk": "王中王戦 — 毎週昆虫1匹で戦うハードモードのトーナメント（ホームのバナー）。優勝するとゼリー・素材・黄金の王冠、優勝できなければその昆虫は標本になります",
+  "whatsNew28Feed": "食べさせる — 同じ種の昆虫・同じ種類の妖精を食べさせると養分がたまり、希少度・等級が上がります（精髄への変換は食べさせるに統合されました）",
+  "whatsNew28Upgrade": "強化 — 覚醒（決まったレベルでおまけレベル）・大成功・効果プレビューとおすすめ・Lv.50まではゴールドだけで上がります",
+  "whatsNew28Abyss": "深淵 — 毎週変わる変異・深淵の結晶で刻印と強化上限突破・深淵胞子で研究所の「深淵」研究",
+  "whatsNew28Fun": "週末イベント・実績と称号・種ごとのサイズランキング・ランキングから練習決闘・標本ケース（図鑑の隣）",
+  "whatsNew28Shop": "ゼリーパックはパックごとに初回購入2倍・即時孵化/産卵/突破は初回無料・最初の5回の孵化は最大5分",
+  "whatsNew28Dex": "図鑑のゼリーは発見・征服・色違い・ボス収集をそれぞれすべて埋めると10個ずつに変わりました（途中のゴールド・化石はそのまま）",
   "whatsNewAvatar": "プロフィール画像 — ホーム左上の肖像 → カードの画像をタップして21種から選べます(チャット・ランキング・決闘・大会に表示)",
   "whatsNewDuelPower": "決闘の戦闘力がすべての能力値を反映した実戦戦闘力になりました",
   "whatsNewPolish": "装備の磨き — オプションの種類を選び、以前の値と新しい値のどちらを残すか選べます",
@@ -515,6 +522,7 @@
   "autoReleaseHint": "条件に合う虫をまとめて分解し、素材に変えます。装着中・孵化中・育てた虫（修練・突破・強化）は対象外です。",
   "autoReleaseNone": "条件に合う虫がいません",
   "autoReleaseDone": "{count}匹を分解して素材{mats}個を獲得しました",
+  "autoReleaseDoneCount": "{count}匹を分解しました",
   "autoReleasePreview": "{count}匹を分解して素材{mats}個を獲得します",
   "autoReleaseRun": "分解する",
   "autoFilterGrades": "対象の等級",
@@ -572,7 +580,8 @@
   "roadmapFinalBoss": "最終ボス",
   "roadmapEnter": "続きから",
   "roadmapReplay": "再挑戦",
-  "chapterClearTitle": "チャプタークリア！🎉",
+  "chapterClearTitle": "狩り場クリア！🎉",
+  "chapterClearZoneMsg": "狩り場{zone}のボス {boss} を撃破！次の狩り場が開きました",
   "chapterClearMsg": "{difficulty} 制覇！最終ボス {boss} を撃破！",
   "chapterClearReward": "クリア報酬",
   "mailTitle": "メールボックス",
@@ -887,6 +896,240 @@
   "rankTopStreak": "1位を{days}日連続キープ 👑",
   "nicknameRequiredTitle": "ニックネームを決めてください",
   "nicknameRequiredBody": "他の採集者に表示される名前です。最初の一度だけ設定します。",
+  "nicknameSuggestPrefix": "採集家",
+  "nicknameSuggestedNote": "おすすめの名前を入れておきました。そのままでも変えてもOKです。",
+  "bugDetailMore": "成長・能力の詳細",
+  "bugDetailLess": "簡単に表示",
+  "storeFirstBonus": "初回購入2倍！ゼリー+{n}おまけ",
+  "@storeFirstBonus": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "jellyShortHave": "所持ゼリー {n}",
+  "@jellyShortHave": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "jellyShortFirstBonus": "ゼリーパックは初回購入で2倍もらえます！",
+  "discoveryNewTitle": "新しい昆虫を発見！",
+  "discoveryVariantTitle": "色違いを発見！",
+  "discoveryVariantNote": "とても珍しい、色の違う個体です！",
+  "discoveryDexProgress": "図鑑 {n} / {total}種",
+  "@discoveryDexProgress": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "discoveryOk": "やった！",
+  "rarityAutoFeedBody": "同じ種の昆虫を食べさせて希少度を上げます（希少度が低い昆虫ほど少しだけたまります）。\nアップ{ups}回・素材として消える昆虫{fodder}匹",
+  "@rarityAutoFeedBody": {
+    "placeholders": {
+      "ups": {
+        "type": "String"
+      },
+      "fodder": {
+        "type": "String"
+      }
+    }
+  },
+  "guideRarityFeed": "希少度アップ：同じ種の昆虫を食べさせると養分がたまります。希少度が低いほど少し（一般{common}）、高いほど多く（英雄{epic}）たまり、伝説には{legend}必要です。この昆虫より希少度が高い昆虫と、保護・育成した昆虫は食べさせません。育てた能力はそのままです。",
+  "@guideRarityFeed": {
+    "placeholders": {
+      "common": {
+        "type": "String"
+      },
+      "epic": {
+        "type": "String"
+      },
+      "legend": {
+        "type": "String"
+      }
+    }
+  },
+  "rarityWorthBtn": "養分 {cur} / {next}",
+  "@rarityWorthBtn": {
+    "placeholders": {
+      "cur": {
+        "type": "int"
+      },
+      "next": {
+        "type": "int"
+      }
+    }
+  },
+  "rarityFeedTitle": "昆虫を食べさせる",
+  "rarityFeedBody": "同じ種の昆虫を食べさせると養分がたまります。希少度が低いほど少し、高いほど多くたまります。養分が満タンになると希少度が上がり、等級アップに使う等級の養分も同時にたまります。",
+  "rarityFeedGauge": "養分 {cur} / {next} → {name}",
+  "@rarityFeedGauge": {
+    "placeholders": {
+      "cur": {
+        "type": "int"
+      },
+      "next": {
+        "type": "int"
+      },
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "rarityFeedToNext": "次の段階まで {n}匹 → {to}",
+  "@rarityFeedToNext": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      },
+      "to": {
+        "type": "String"
+      }
+    }
+  },
+  "rarityFeedAll": "全部食べさせる {n}匹 → {to}",
+  "@rarityFeedAll": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      },
+      "to": {
+        "type": "String"
+      }
+    }
+  },
+  "rarityFeedNone": "食べさせられる同じ種の昆虫がいません",
+  "rarityNeedOnline": "インターネットに接続した状態で上げられます",
+  "guideFairyFeed": "同じ種類の妖精を食べさせると養分がたまり、満タンで等級が上がります。等級が低いほど少し（一般{common}）、高いほど多く（英雄{epic}）たまり、神話には養分{mythic}が必要です。等級が上がっても品質は引き継ぎます。同行中・レベルを上げた妖精と、より高い等級の妖精は素材になりません。レベル1ごとに能力+{perLevel}・等級別の最大レベル{caps}。",
+  "@guideFairyFeed": {
+    "placeholders": {
+      "common": {
+        "type": "String"
+      },
+      "epic": {
+        "type": "String"
+      },
+      "mythic": {
+        "type": "String"
+      },
+      "perLevel": {
+        "type": "String"
+      },
+      "caps": {
+        "type": "String"
+      }
+    }
+  },
+  "fairyFeedBtn": "食べさせる",
+  "fairyFeedTitle": "妖精に食べさせる",
+  "fairyFeedBody": "同じ種類の妖精を食べさせると養分がたまります。等級が低い妖精ほど少し、高いほど多くたまります。養分が満タンになると等級が上がり、品質はそのまま引き継ぎます。",
+  "fairyFeedNone": "食べさせられる同じ種類の妖精がいません",
+  "fairyFeedNote": "同行中・レベルを上げた妖精と、この妖精より等級が高い妖精は食べさせません。",
+  "fairyFeedUp": "{grade}に上がりました！",
+  "@fairyFeedUp": {
+    "placeholders": {
+      "grade": {
+        "type": "String"
+      }
+    }
+  },
+  "fairyFeedStored": "養分がたまりました",
+  "fairyFeedHubHint": "妖精をタップして［食べさせる］で同じ種類の妖精を食べさせられます。自動では種類ごとに一番大事な妖精に食べさせます。",
+  "fairyAutoFeed": "自動で食べさせる",
+  "fairyAutoFeedConfirm": "等級アップ{ups}回・素材として消える妖精{used}匹",
+  "@fairyAutoFeedConfirm": {
+    "placeholders": {
+      "ups": {
+        "type": "String"
+      },
+      "used": {
+        "type": "String"
+      }
+    }
+  },
+  "fairyAutoFeedDone": "等級が{ups}回上がりました",
+  "@fairyAutoFeedDone": {
+    "placeholders": {
+      "ups": {
+        "type": "String"
+      }
+    }
+  },
+  "guideStorageFeed": "いらない昆虫は分解（素材）するか、同じ種の昆虫に食べさせます（昆虫詳細の養分ボタン）。食べさせると希少度の養分と等級の養分が同時にたまり、等級の養分はその昆虫の等級アップ・パッシブ再抽選に使います。以前ためたエッセンスはその種で先に使います。大事な昆虫はロックすれば分解・食べさせる素材になりません。装備中・孵化中・訓練中の昆虫も素材になりません。",
+  "guidePassiveRerollFeed": "再抽選：等級の養分{essence}またはゼリー{jelly}個で大きさを決め直し、新しい値と今の値から選びます（残っている旧エッセンスを先に使います）。種類は変わりません。",
+  "@guidePassiveRerollFeed": {
+    "placeholders": {
+      "essence": {
+        "type": "String"
+      },
+      "jelly": {
+        "type": "String"
+      }
+    }
+  },
+  "rarityFeedGrade": "等級の養分 +{n}",
+  "@rarityFeedGrade": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "igGradeUpFunds": "等級の養分 {have} / {need}",
+  "@igGradeUpFunds": {
+    "placeholders": {
+      "have": {
+        "type": "String"
+      },
+      "need": {
+        "type": "String"
+      }
+    }
+  },
+  "igNeedMoreFunds": "等級の養分があと{n}必要です — 同じ種の昆虫を食べさせてためます",
+  "@igNeedMoreFunds": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
+  "igLegacyEssenceFirst": "残っている旧エッセンス{n}個を先に使います",
+  "@igLegacyEssenceFirst": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
+  "passiveRerollFundsHave": "等級の養分 {have}",
+  "@passiveRerollFundsHave": {
+    "placeholders": {
+      "have": {
+        "type": "String"
+      }
+    }
+  },
+  "rarityFeedNote": "保護・育成した昆虫と、この昆虫より希少度が高い昆虫は食べさせません。",
+  "rarityFeedStored": "養分がたまりました（{cur} / {next}）",
+  "@rarityFeedStored": {
+    "placeholders": {
+      "cur": {
+        "type": "int"
+      },
+      "next": {
+        "type": "int"
+      }
+    }
+  },
   "renameForcedTitle": "ニックネームを変更してください",
   "renameForcedBody": "運営がニックネームの変更を求めています。\n他のプレイヤーに表示される名前のため、ルールに沿う必要があります。\n今回の変更は無料です。",
   "nicknameChangeTitle": "ニックネーム変更",
@@ -1430,7 +1673,7 @@
   "abyssFloorClear": "{n}階突破！",
   "abyssMilestone": "{n}階に初到達！化石 +{fossil}",
   "abyssBest": "最高 {n}階",
-  "abyssWeekReset": "新しい週です — 深淵1階から！",
+  "abyssWeekReset": "新しい週です — 深淵{n}階から！",
   "abyssRankRewardTitle": "深淵 週間順位報酬",
   "abyssRankRewardBody": "先週は深淵{floor}階・{rank}位でした！",
   "boardTitle": "ランキング",
@@ -2464,9 +2707,10 @@
   "whatsNew22Convenience2": "卵10回ガチャ · 回復室「すべて回復」 · 孵化器「良い卵から入れる」 · 妖精のレベルを一気に上げる · 狩りの強化「根性」を「体力」に改名",
   "guideRarityTitle": "昆虫の希少度（一般〜伝説）",
   "guideRarityBody": "希少度は種ではなく昆虫ごとに決まります。同じ種でも一般から伝説まであります。希少度は宝石（◆）の色、個体等級は名札で表示されます。\n野生・ペアリング：{wild}\n卵ガチャ：{gacha}",
-  "guideRarityEffect": "希少度が高いほど、ペットとして装備したときの狩り貢献が大きくなり（{hunt}）、決闘・大会の体力・攻撃・防御が上がります（伝説 {duel}）。エッセンスに変えたときの価値も上がり、孵化・ペアリングの時間は長くなります。",
+  "guideRarityEffect": "希少度が高いほど、ペットとして装備したときの狩り貢献が大きくなり（{hunt}）、決闘・大会の体力・攻撃・防御が上がります（伝説 {duel}）。餌にしたときに満たす等級の養分も多くなり、孵化・ペアリングの時間は長くなります。",
   "guideRarityUp": "希少度アップ：同じ種・同じ希少度の昆虫{n}匹を素材にすると1段階上がります（伝説まで）。育てた能力値はそのままです。装備中・孵化中・訓練中・ロック中の昆虫、色違い・育成済みの昆虫は素材にしません。",
   "guidePotionCost": "等級アップに必要な同種のエッセンス：{costs}（一般→上級から順に）。成長ポーションは1回に{max}個まで一緒に使え、1個につき新しく振った能力値品質に+{bonus}点加わります（100点まで）。",
+  "guidePotionCostFeed": "等級アップに必要な等級の養分：{costs}（一般→上級から順に・残っている旧エッセンスを先に使います）。成長ポーションは1回に{max}個まで一緒に使え、1個につき新しく振った能力値品質に+{bonus}点加わります（100点まで）。",
   "guidePotionGet": "成長ポーションはゼリー{jelly}個で1日{daily}個まで買えます。無料では精鋭（{elite}）、ボス初撃破（{bossFirst}個）、ボス再撃破（{bossChance}）、その日最初のミッション、深淵{every}階ごと（{abyss}個）で手に入ります。精鋭・ボスの確率ドロップは1日{cap}個までで、「採集の手」が有効なら確率×{mult}です。",
   "guideZoneTitle": "狩場・ボス・難易度・深淵",
   "guideZoneBody": "難易度（やさしい・ふつう・むずかしい・極限）ごとに狩場{zones}か所と最終ボスがあります。狩場でモンスターを{kills}匹倒すとボス挑戦が開き、ボスを倒すと次の狩場へ進みます。狩場を初めてクリアすると、その狩場の{mins}分ぶんのゴールドがもらえます。",
@@ -2509,7 +2753,7 @@
   "whatsNew26Account": "アカウント：iPhoneでもGoogleでログインできます・ログアウトするとこの端末は最初から始まります（進行はアカウントに残り、再ログインで戻ります）",
   "whatsNew27Arena": "決闘の土俵が毎戦変わります — 1戦目は相手を選ぶときに表示された土俵、2戦目からは前の戦いと違う土俵です",
   "whatsNew27Research": "研究が終わると枠に「研究完了」ボタンが出ます — 押して受け取るとレベルが上がります",
-  "researchSamples": "研究標本",
+  "researchSamples": "研究サンプル",
   "researchSlotEmpty": "空き",
   "researchSlotOpensAt": "{tier}で解放",
   "researchSlotBuy": "解放",
@@ -2529,7 +2773,7 @@
   "researchLockedReq": "{name} Lv{lv} が必要",
   "researchDoneToast": "{name} Lv{lv} 研究完了！",
   "researchCostMaterials": "素材 各{n}",
-  "researchHowToGet": "研究標本は精鋭・ボスがドロップします。ゴールド・素材のコストは到達した最も高い狩場が基準です。",
+  "researchHowToGet": "研究サンプルは精鋭・ボスがドロップします。ゴールド・素材のコストは到達した最も高い狩場が基準です。",
   "researchUnitPp": "%p",
   "researchErrMaxLevel": "すでに最大レベルです",
   "researchErrLocked": "前の研究を先に上げてください",
@@ -2541,7 +2785,7 @@
   "researchErrGeneric": "研究を進められません",
   "notifResearchTitle": "研究完了！",
   "notifResearchBody": "研究が終わりました。研究所で次の研究を始めましょう。",
-  "researchPassHint": "研究パス：閉じていても標本が集まる",
+  "researchPassHint": "研究パス：閉じていてもサンプルが集まる",
   "researchPassHintGo": "ショップ",
   "passExpireTitle": "パスがもうすぐ終わります",
   "passExpireBody": "{names} — 残り{days}日です。ショップで延長できます",
@@ -2572,16 +2816,228 @@
   "researchFxHuntCritDmg": "狩り会心ダメージ",
   "researchFxHuntRegen": "狩り体力回復",
   "researchFxHuntEvade": "狩り回避",
-  "researchFxHuntExp": "経験値獲得",
+  "researchFxHuntExp": "経験値獲得（放置も）",
   "researchFxSkillCooldown": "スキルクールタイム",
   "researchFxForgeTime": "工房アップグレード・超越時間",
   "researchFxStarTime": "星強化時間",
   "researchFxPolishCost": "磨きコスト",
   "researchFxTraitChance": "血統特性の発現確率",
-  "researchFxPotionChance": "成長ポーションのドロップ確率",
+  "researchFxPotionChance": "成長ポーションのドロップ率・10レベルごとに1日上限+1",
   "researchFxSalvageMat": "分解・放生の素材",
   "researchFxExchangeGain": "交換所の受取量",
   "researchFxGiftGold": "ギフト・デイリー報酬のゴールド・素材",
   "researchFxDuelCrit": "決闘会心率",
-  "researchFxDuelGrit": "タップ反撃のしきい値"
+  "researchFxDuelGrit": "タップ反撃が楽に（しきい値）",
+  "researchFxKillHeal": "撃破回復量",
+  "researchFxPetShare": "装着ペットの寄与（攻撃・体力）",
+  "abyssSporesGot": "深淵胞子 +{n}",
+  "researchTabAbyss": "深淵",
+  "abyssSpores": "深淵胞子",
+  "abyssLabInfo": "深淵胞子は今週初めて倒した階のボスと、10階ごとの初到達で手に入ります。深淵研究の効果は深淵の中だけです。",
+  "abyssLabLocked": "極限の最終ボスを倒して深淵を開くと研究できます。",
+  "abyssLabSlotTitle": "深淵研究枠",
+  "abyssLabSlotEmpty": "空いています — 下から研究を選んでください",
+  "abyssLabNoSpores": "深淵胞子が足りません",
+  "researchFxAbyssShortcut": "新しい週の開始階（先週の最高階比・10階単位）",
+  "researchFxAbyssFastFloor": "深淵ボス挑戦までの撃破数",
+  "researchFxMutationTame": "週間変異の不利な効果",
+  "researchFxCrystalBonus": "深淵結晶の獲得",
+  "researchFxSporeBonus": "深淵胞子の獲得",
+  "researchFxAbyssIdleGold": "深淵の放置ゴールド",
+  "upgradeRecommend": "おすすめ",
+  "upgradeFxHits": "撃破 {from}発 → {to}発",
+  "upgradeFxBoss": "ボス 約{from} → {to}",
+  "upgradeFxBite": "被弾1発 {from}% → {to}%",
+  "upgradeFxGold": "ゴールド収入 +{from}% → +{to}%",
+  "upgradeFxXp": "経験値 +{from}% → +{to}%",
+  "upgradeFxBugs": "昆虫発見 +{from}% → +{to}%",
+  "upgradeFxMats": "素材 +{from}% → +{to}%",
+  "upgradeFxSec": "{n}秒",
+  "upgradeFxMin": "{n}分",
+  "upgradeAwakenNext": "覚醒 Lv.{level}",
+  "upgradeAwakenToast": "覚醒！{name} +{n}レベル",
+  "upgradeLuckyToast": "大成功！+{n}レベル",
+  "upgradeAwakenInfo": "覚醒：Lv.{levels} に届くとレベルがおまけで付きます。",
+  "bossLostRecommend": "おすすめ強化：{name}",
+  "upgradeCapBreak": "限界突破",
+  "upgradeCapNeed": "深淵の結晶が足りません（{have}/{need}）— 深淵10階ごとにもらえます",
+  "upgradeCapOpened": "{name} 上限 +{n}レベル！",
+  "abyssCrystalsGot": "深淵の結晶 +{n}",
+  "abyssMutationTitle": "今週の深淵：{name}",
+  "abyssImprintTitle": "深淵の刻印",
+  "abyssImprintBody": "深淵10階ごとにもらえる結晶で永久ステータスを上げます。最大まで強化した項目は結晶で限界突破もできます。",
+  "abyssCrystalsHave": "所持 💠{n}",
+  "abyssImprintLevel": "Lv.{level}（+{pct}%）",
+  "weekendEventBar": "🎉 {name} · {desc} · 残り{left}",
+  "weekendHours": "{n}時間",
+  "achievementsTitle": "実績・称号",
+  "achievementsBody": "達成した実績をタップすると称号として付けられます。称号は相手のプロフィールに表示されます。",
+  "achievementsWearing": "装着中",
+  "sizeRankButton": "サイズ順位",
+  "sizeRankTitle": "{name} サイズ順位",
+  "sizeRankEmpty": "まだ記録がありません。一番大きな個体を捕まえて1位になろう！",
+  "sizeRankOffline": "順位を読み込めませんでした。接続を確認してください。",
+  "sizeRankMine": "自分 {rank}位 · {size}mm",
+  "practiceDuel": "練習決闘",
+  "practiceOffline": "練習決闘はサーバー接続中のみできます。",
+  "practiceCooldown": "練習決闘は少し待ってから再挑戦できます。",
+  "practiceFailed": "相手の防衛チームを読み込めませんでした。",
+  "kotkTitle": "王中王戦",
+  "kotkRulesTitle": "ハードモードのルール",
+  "kotkEntryTitle": "エントリー",
+  "leaderboardLoadFail": "ランキングを読み込めませんでした。しばらくしてからもう一度お試しください。",
+  "kotkMinNote": "参加{n}人以上の週だけゼリー・バッジ・王冠を贈ります（それ未満は素材のみ）。",
+  "@kotkMinNote": {"placeholders":{"n":{"type":"String"}}},
+  "kotkPendingNote": "結果は月曜9時に確定します（標本・報酬を反映）。",
+  "kotkMinResult": "今週は参加が{n}人未満だったため、素材のみ受け取りました。",
+  "@kotkMinResult": {"placeholders":{"n":{"type":"String"}}},
+  "notifKotkTitle": "王中王戦の締切が近づいています",
+  "notifKotkBody": "今週の王中王戦にまだ参加していません。明日9時に締め切ります。",
+  "weeklyTitle": "先週の記録",
+  "weeklySubtitle": "新しい週が始まりました！",
+  "weeklyLevels": "強化を{n}レベル上げました",
+  "@weeklyLevels": {"placeholders":{"n":{"type":"String"}}},
+  "weeklyLucky": "強化大成功 {n}回",
+  "@weeklyLucky": {"placeholders":{"n":{"type":"String"}}},
+  "weeklyAwaken": "覚醒 {n}回",
+  "@weeklyAwaken": {"placeholders":{"n":{"type":"String"}}},
+  "weeklyAbyss": "深淵 最高{n}層",
+  "@weeklyAbyss": {"placeholders":{"n":{"type":"String"}}},
+  "kotkRewardNone": "報酬なし",
+  "kotkWithdrawn": "参加を取り消しました",
+  "kotkSpecimenOpen": "標本ケースを見る",
+  "kotkHallIn": "殿堂入りしました！",
+  "kotkPetWarn": "現在ペットとして装着中です — 負けるとペットからも外れます。",
+  "beginnerHatchTag": "新規特典 残り{left}回・最大{min}分",
+  "@beginnerHatchTag": {"placeholders":{"left":{"type":"String"},"min":{"type":"String"}}},
+  "badgeKotk": "第{round}回 王中王",
+  "@badgeKotk": {"placeholders":{"round":{"type":"String"}}},
+  "kotkRound": "第{n}回",
+  "@kotkRound": {"placeholders":{"n":{"type":"String"}}},
+  "kotkPreparing": "準備中",
+  "kotkPreparingBody": "第1回王中王戦は{m1}月{d1}日(月)9時からエントリーを受け付け、{m2}月{d2}日(日)9時に結果が出ます。",
+  "@kotkPreparingBody": {"placeholders":{"m1":{"type":"String"},"d1":{"type":"String"},"m2":{"type":"String"},"d2":{"type":"String"}}},
+  "kotkRewardsTitle": "成績報酬",
+  "kotkRewardJelly": "ゼリー{n}",
+  "@kotkRewardJelly": {"placeholders":{"n":{"type":"String"}}},
+  "kotkRewardPotion": "成長ポーション{n}",
+  "@kotkRewardPotion": {"placeholders":{"n":{"type":"String"}}},
+  "kotkRewardFossil": "化石{n}",
+  "@kotkRewardFossil": {"placeholders":{"n":{"type":"String"}}},
+  "kotkRewardElement": "五行石{n}",
+  "@kotkRewardElement": {"placeholders":{"n":{"type":"String"}}},
+  "kotkRewardTemper": "気質石{n}",
+  "@kotkRewardTemper": {"placeholders":{"n":{"type":"String"}}},
+  "kotkRewardChamp": "優勝した昆虫に黄金の王冠・代表バッジ",
+  "kotkResultTitle": "王中王戦の結果",
+  "kotkResultNone": "トーナメント(上位32匹)に入れませんでした。昆虫はそのままです。",
+  "kotkResultRetired": "負けた昆虫は標本になり、標本ケースに移りました。",
+  "kotkResultChamp": "優勝した昆虫に黄金の王冠が付きました！",
+  "kotkPreparingErr": "まだ準備中です。第1回から参加できます。",
+  "kotkChampMark": "王中王",
+  "kotkRules": "毎週昆虫1匹で参加します。日曜9時に受付が締まると戦闘力上位32匹がトーナメントを戦います（1試合 = 先に2勝）。\n優勝できなかった昆虫（準優勝も含む）は標本になり、決闘・大会・ペット・交配・食べさせる素材に二度と使えません — 負けた昆虫は消耗します（採集箱の枠は使いません）。トーナメントに入れなければそのままです。\n結果は日曜9時に出て、運営の確認を経て月曜9時に確定します（標本・報酬）。\nベスト16以上は殿堂に残ります。",
+  "kotkOpen": "受付中 · 日曜9時締切",
+  "kotkClosedNow": "今週の受付は終了しました",
+  "kotkCount": "参加{n}人 · 戦闘力上位{max}匹が出場",
+  "kotkMine": "参加中：{name}",
+  "kotkEnter": "参加する",
+  "kotkChange": "昆虫を変更",
+  "kotkWithdraw": "参加取消",
+  "kotkPickTitle": "参加する昆虫",
+  "kotkConfirmTitle": "本当に参加しますか？",
+  "kotkConfirmBody": "参加する昆虫: {name}\n優勝できなければ（準優勝も含む）この昆虫は標本になり、決闘・大会・ペット・交配・食べさせる素材に二度と使えません。元に戻せません。\n上位32匹に入れなければそのままです。",
+  "kotkConfirmGo": "参加",
+  "kotkEntered": "王中王戦に参加しました！",
+  "kotkFailed": "参加できませんでした。後でもう一度お試しください。",
+  "kotkNoAdult": "参加できる成虫がいません。",
+  "kotkRetiredBug": "標本になった昆虫はもう使えません。",
+  "kotkThisWeek": "今週の結果",
+  "kotkLastWeek": "先週の結果",
+  "kotkBracket": "トーナメント表",
+  "kotkBye": "不戦勝",
+  "kotkMyPlace": "自分の成績：{place}",
+  "kotkPlace1": "優勝",
+  "kotkPlace2": "準優勝",
+  "kotkPlaceN": "ベスト{n}",
+  "kotkFinal": "決勝",
+  "kotkHall": "殿堂（ベスト16以上）",
+  "kotkHallEmpty": "まだ展示された標本はありません。",
+  "kotkOffline": "王中王戦を読み込めませんでした。接続を確認してください。",
+  "kotkResultToast": "王中王戦の結果：{place}",
+  "specimenBoxTitle": "標本ケース",
+  "specimenBoxBody": "王中王戦で負けた昆虫が標本として眠っています。採集箱の枠を使わず、どこにも使えません。",
+  "specimenBoxEmpty": "まだ標本はありません。",
+  "firstFreeInstant": "初回無料",
+  "growHowTitle": "強くなる方法",
+  "growHowBody": "今の力ではこのボスは倒しにくいです(約{time})。下のことをすると、ずっと早くなります。",
+  "growHowBuff": "バフをオン — ゴールド・攻撃が大きく上がる",
+  "growHowMail": "メールボックス — ギフト・デイリー報酬を受け取る",
+  "growHowUpgrade": "おすすめ強化: {stat}",
+  "growHowFight": "それでも挑戦",
+  "giftArrivedToast": "🎁 サプライズギフトが届きました！3時間以内にメールボックスで受け取ってください",
+  "giftExpiringToast": "🎁 サプライズギフトがあと{min}分で消えます — メールボックスで受け取ってください",
+  "tipPetTitle": "ペットを装備しよう",
+  "tipPetBody": "採集箱の昆虫をペットとして装備すると、狩りで一緒に戦って攻撃・体力が上がります。卵はふ化器で育てます。",
+  "tipGearTitle": "装備を作ろう",
+  "tipGearBody": "狩りで集めた化石で装備タブから装備を製錬して身につけると、攻撃・体力がずっと上がります。",
+  "tipGo": "今すぐ行く",
+  "tourUpgrades": "ここでゴールドを使って能力を強化します。「おすすめ」の行から買うと一番早く強くなります。長押しで連続購入。",
+  "tourStage": "今いる狩り場です。モンスターを100体倒すとボスに挑戦でき、ボスを倒すと次の狩り場が開きます。",
+  "tourBuffs": "バフです。オンにするとゴールド・攻撃が大きく上がります。無料なので必ずオンにしましょう。",
+  "tourMail": "メールボックスです。昼・夜のデイリー報酬とサプライズギフトが届きます。ギフトは3時間以内に受け取りましょう。",
+  "tourMission": "ミッションです。達成したらタップして報酬を受け取りましょう。",
+  "tourStorage": "採集箱 — 捕まえた昆虫が集まります。卵をふ化させ、昆虫をペットに装備すると一緒に戦います。",
+  "tourBattle": "決闘 — 育てた昆虫3匹でほかのプレイヤーと戦います。",
+  "tourShop": "ショップ — ゼリー・パッケージ・昆虫の卵ガチャがあります。",
+  "tourSwitch": "タップすると装備・スキル・妖精・研究所タブに切り替わります。",
+  "tourNext": "次へ",
+  "tourDone": "はじめる",
+  "tourSkip": "スキップ",
+  "missionGuideHunt": "キャラクターが自動でモンスターを倒します。画面をタップするともっと速くなります。",
+  "missionGuideUpgrade": "ここの強化ボタンを押すと進みます。「おすすめ」の行から買ってみましょう。",
+  "missionGuideForge": "金床をタップすると化石1個で装備を1回製錬します。製錬するたびに進みます。",
+  "missionGuideBoss": "モンスターを100体倒すと、ここでボスに挑戦できます。",
+  "upgradeFxSurvive": "モンスターの攻撃に{from}回耐える → {to}回",
+  "tabTourEquipScene": "キャラクターが野生の昆虫を追いかける採集あそび画面です。チャンスが来たらタップして捕まえましょう。",
+  "tabTourEquipStats": "装備を含めた今の能力値です。装備を変えるとすぐに変わります。",
+  "tabTourEquipGrid": "装備スロットです。タップすると装備中のアイテムを確認・交換できます。",
+  "tabTourEquipAnvil": "金床をタップすると化石1個で装備を1つ作ります。作った装備は上に積まれ、タップで装備・売却します。",
+  "tabTourEquipGrade": "工房ランクを上げると、より良いランクの装備が出ます。ゴールドと時間がかかります。",
+  "tabTourEquipFilter": "フィルター — 自動製錬で欲しい能力値・ランクだけ残し、残りは自動で売ります。",
+  "tabTourEquipRush": "加速 — ゼリーでしばらく製錬が速くなります。",
+  "tabTourEquipAuto": "自動 — オンにすると化石がある間、自動で製錬します。",
+  "tabTourStorageDex": "図鑑 — これまでに捕まえた昆虫の種類です。集めると報酬がもらえます。",
+  "tabTourStorageMats": "持っている素材です。強化・訓練・突破などに使います。",
+  "tabTourStorageCap": "採集箱の枠です。いっぱいになると新しい昆虫が入りません — 整理するかゼリーで増やしましょう。",
+  "tabTourStoragePets": "装備中のペットです。昆虫をペットにすると一緒に狩りをして攻撃・体力が上がります。",
+  "tabTourStorageTools": "整理ツール —「受け取る希少度」で低い昆虫をすぐ素材にし、「自動分解」でまとめて整理します。",
+  "tabTourStorageGrid": "捕まえた昆虫です。タップするとペット装備、同じ種を食べさせる（希少度アップ）、分解ができます。",
+  "tabTourStorageBreed": "ペアリング — 同じ種のオス・メスの成虫で卵を得ます。親の属性・気質を受け継ぎます。",
+  "tabTourStorageHatch": "ふ化器 — 卵を入れてふ化させます。終わったらタップして受け取ります。",
+  "tabTourBattleTicket": "決闘チケットです。1試合に1枚 — 時間で回復し、1日に数回は無料で補充できます。",
+  "tabTourBattleSquad": "出陣の3枠です。成虫を入れてチームを組みます — 順番に1・2・3戦目に出ます。",
+  "tabTourBattleStart": "戦闘開始 — 同じリーグの相手を選んで決闘します。勝つとポイントがもらえます。",
+  "tabTourBattleRecovery": "回復室 — 決闘でけがをした昆虫を休ませます（ゼリーですぐ回復）。",
+  "tabTourBattleTraining": "訓練所 — 育てた分だけ増える訓練ポイントを攻撃・防御・体力などに振り分けます。",
+  "tabTourBattleBoard": "リーグ順位表 — 毎週月曜にリセット。上位20%は昇格、下位20%は降格します。",
+  "tabTourShopTop": "おすすめ商品です。ゼリーパックは初回購入で2倍もらえます。",
+  "tabTourShopGacha": "卵ガチャ — ゼリーで昆虫の卵を引きます。野生より高ランクが出やすく、天井もあります。",
+  "tabTourShopExchange": "交換所 — ゼリーをゴールド・素材に交換します。",
+  "tabTourSkillGacha": "スキルガチャ — スキルのかけらを得ます。1日1回無料です。",
+  "tabTourSkillSweep": "掃討 — 倒したことのあるボスのかけらをすぐ受け取ります。1日3回無料。",
+  "tabTourSkillGrade": "昇級 — 余ったかけら10個を1つ上の万能かけら1個に変えます。",
+  "tabTourSkillShards": "持っているスキルのかけらです。スキルの解放・強化に使います。",
+  "tabTourSkillSlots": "装備枠です。最初は2枠で、新しい難易度に行くたびに増えます。",
+  "tabTourSkillList": "スキル一覧 — タップで解放・強化・装備。装備すると狩り中に自動で使います。",
+  "tabTourFairyCompanion": "同行中の妖精です。連れている妖精の効果が狩りに付きます。",
+  "tabTourFairyNest": "巣 — 妖精の卵を入れてふ化させます。",
+  "tabTourFairyGacha": "妖精の卵ガチャ — ゼリーで妖精の卵を引きます。",
+  "tabTourFairyDex": "妖精図鑑 — 集めた妖精の種類と報酬です。",
+  "tabTourFairyFeed": "食べさせる — 同じ種類の妖精を食べさせてランクを上げます。",
+  "tabTourFairyRelease": "分解 — いらない妖精を妖精の粉に変えます。粉で妖精のレベルを上げます。",
+  "tabTourResearchCurrency": "研究に使う素材です。研究サンプルはボス・精鋭を倒すと集まります。",
+  "tabTourResearchSlots": "研究枠です。研究を入れると時間で完了し、終わったらタップして受け取ります。",
+  "tabTourResearchTabs": "研究分野です — 狩り・育成・決闘・装備・経済。タップで切り替えます。",
+  "tabTourResearchTree": "研究一覧 — カードをタップして研究を開始・強化します。研究はずっと残ります。",
+  "tabTourResearchAbyss": "深淵 — 極限クリア後に開く深淵専用の研究です。深淵の胞子で行います。"
 }

@@ -116,24 +116,29 @@ void main() {
       expect(b / n, closeTo(grade.potionEliteChance * (1 + v), 0.0006));
     });
 
-    test('하루 한도(potionDropDaily)는 연구가 있어도 그대로', () {
-      var s = base;
-      var total = 0;
-      final rng = Random(3);
-      for (var i = 0; i < 200000; i++) {
-        final r = rollPotionDrop(
-          s,
-          grade,
-          rng,
-          PotionSource.elite,
-          now: t0,
-          research: maxed,
-        );
-        s = r.save;
-        total += r.got;
-      }
-      expect(total, grade.potionDropDaily);
-    });
+    test(
+      '하루 한도 = potionDropDaily + 약초학 보너스(10레벨마다 +1, 최대 +3 — 2026-11-12)',
+      () {
+        var s = base;
+        var total = 0;
+        final rng = Random(3);
+        for (var i = 0; i < 200000; i++) {
+          final r = rollPotionDrop(
+            s,
+            grade,
+            rng,
+            PotionSource.elite,
+            now: t0,
+            research: maxed,
+          );
+          s = r.save;
+          total += r.got;
+        }
+        expect(total, grade.potionDropDaily + 3);
+        expect(potionDropDailyFor(grade, maxed), grade.potionDropDaily + 3);
+        expect(potionDropDailyFor(grade), grade.potionDropDaily);
+      },
+    );
 
     test('방치 기댓값(expectedOfflineGain)도 같은 확률', () {
       final buffs = BuffConfig.fromJson(read('buffs.json'));
@@ -204,38 +209,6 @@ void main() {
         );
       }
     }
-  });
-
-  test('분해 기술 — 방치 정산 자동 방생 재료 × (1 + v)', () {
-    final s = SaveGame.initial(
-      createdAt: t0,
-    ).copyWith(lastSeen: t0, bugFilterMinGrade: Grade.legendary);
-    int mats(ResearchEffects r) {
-      var id = 0;
-      final d = rollIdleDrops(
-        save: s,
-        rolls: 3000,
-        species: species,
-        run: run,
-        pet: pets,
-        bugFind: 1,
-        materialFind: 0, // 재료 드롭을 빼고 방생 재료만 본다.
-        now: t0,
-        rng: Random(11),
-        newId: () => 'b${id++}',
-        research: r,
-      );
-      return kRegularMaterials.fold<int>(
-        0,
-        (a, k) => a + (d.materials[k] ?? 0),
-      );
-    }
-
-    final a = mats(none);
-    expect(a, greaterThan(0));
-    final b = mats(maxed);
-    final v = maxed.of(ResearchEffect.salvageMat);
-    expect(b / a, closeTo(1 + v, 0.05));
   });
 
   test('제련 비법 — 초월 시간(startForgeTranscend)', () {

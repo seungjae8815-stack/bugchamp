@@ -28,6 +28,13 @@ import 'art.dart';
       Icons.emoji_events_rounded,
       'badge_champion',
     ),
+    // 왕중왕전 우승(2026-11-12) — 그림은 왕중왕전 트로피.
+    'kotk' => (
+      l.badgeKotk('${b.round}'),
+      const Color(0xFFFFD977),
+      Icons.emoji_events_rounded,
+      'badge_kotk',
+    ),
     'silver' => (
       l.badgeSilver(b.round),
       const Color(0xFFC0C7D0),

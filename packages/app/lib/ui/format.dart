@@ -109,3 +109,34 @@ String formatCompact(num value) {
       : (v >= 10 ? v.toStringAsFixed(1) : v.toStringAsFixed(2));
   return '$s${_suffixFor(tier)}';
 }
+
+/// 한국어 글을 **띄어쓰기에서만** 줄바꿈하게 한다(2026-11-12 사장님 지적 — "전/투력"·"쓸/수"처럼 낱말 가운데서 끊겼다).
+/// Flutter 는 한글을 글자마다 끊을 수 있게 보므로, 한글이 낀 글자 사이에 단어 결합자(U+2060, 보이지 않음)를 넣는다.
+/// 영어·숫자끼리는 건드리지 않는다(원래 낱말 단위로 끊긴다). 이미 넣은 글에 다시 써도 같다. 한 줄보다 긴 낱말은 그래도 끊긴다.
+/// 앱 전체에 걸려 있다 — 한국어 번역 문구(`KeepWordsDelegate`)와 게임 데이터의 `ko` 글(`GameData.loadFromBundle`).
+// 2,516개 번역 감싸기가 모두 부르므로 펼치지 않는다 — 펼치면 앱 코드가 ABI 마다 약 8MB 커졌다(2026-11-12).
+@pragma('vm:never-inline')
+String keepWords(String s) {
+  if (s.isEmpty) return s;
+  final out = StringBuffer();
+  final runes = s.runes.toList();
+  for (var i = 0; i < runes.length; i++) {
+    final a = runes[i];
+    out.writeCharCode(a);
+    if (i + 1 >= runes.length) continue;
+    final b = runes[i + 1];
+    if (_space(a) || _space(b) || a == _wj || b == _wj) continue;
+    if (_hangul(a) || _hangul(b)) out.writeCharCode(_wj);
+  }
+  return out.toString();
+}
+
+const _wj = 0x2060;
+bool _space(int c) => c == 0x20 || c == 0x0A || c == 0x09 || c == 0x0D;
+bool _hangul(int c) =>
+    (c >= 0xAC00 && c <= 0xD7A3) ||
+    (c >= 0x1100 && c <= 0x11FF) ||
+    (c >= 0x3130 && c <= 0x318F);
+
+/// 끊기면 안 되는 짧은 묶음(`젤리 50`·`11월 22일`) — 안의 띄어쓰기를 줄바꿈 없는 공백으로.
+String noBreak(String s) => s.replaceAll(' ', ' ');

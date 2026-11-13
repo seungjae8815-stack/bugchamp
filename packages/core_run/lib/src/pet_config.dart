@@ -66,6 +66,8 @@ class PetConfig {
     this.breakthroughMaterial = const [100, 250, 600, 1500],
     this.breakthroughJellyPerMinute = 0.5,
     this.incubatorSlotsInitial = 1,
+    this.beginnerHatchCount = 0,
+    this.beginnerHatchMaxSec = 0,
     this.incubatorSlotsMax = 3,
     this.incubatorExpandJelly = 30,
     this.incubateDurationsSec = const {},
@@ -236,6 +238,11 @@ class PetConfig {
 
   /// 부화기 초기/최대 슬롯 수, 슬롯 확장 젤리 비용.
   final int incubatorSlotsInitial;
+
+  /// 신규 부화 단축(2026-11-12 사장님 확정, `pets.json → beginnerHatch`) — 계정의 처음 [beginnerHatchCount] 번 부화는
+  /// 최대 [beginnerHatchMaxSec] 초. 부화기가 1칸뿐이라 첫 알이 희귀(90분)·영웅(5시간)이면 시작하자마자 멈췄다. 0 = 끔.
+  final int beginnerHatchCount;
+  final int beginnerHatchMaxSec;
   final int incubatorSlotsMax;
   final int incubatorExpandJelly;
 
@@ -613,6 +620,10 @@ class PetConfig {
           (json['breakthroughJellyPerMinute'] as num?)?.toDouble() ?? 0.5,
       incubatorSlotsInitial:
           (json['incubatorSlotsInitial'] as num?)?.toInt() ?? 1,
+      beginnerHatchCount:
+          ((json['beginnerHatch'] as Map?)?['count'] as num?)?.toInt() ?? 0,
+      beginnerHatchMaxSec:
+          ((json['beginnerHatch'] as Map?)?['maxSec'] as num?)?.toInt() ?? 0,
       incubatorSlotsMax: (json['incubatorSlotsMax'] as num?)?.toInt() ?? 3,
       incubatorExpandJelly:
           (json['incubatorExpandJelly'] as num?)?.toInt() ?? 30,
@@ -877,7 +888,12 @@ SpeciesPassive? passiveOf(IndividualBug bug, Species species, PetConfig cfg) {
 }
 
 /// 장착 펫들의 총 보너스 배율(공격/체력).
-PetBonus computePetBonus(Iterable<PetStat> pets, PetConfig cfg) {
+/// [share] — 펫 기여 몫에 곱하는 배율(연구 "펫 교감" [researchPetShareMult], 2026-11-12). 종 패시브에는 안 곱한다.
+PetBonus computePetBonus(
+  Iterable<PetStat> pets,
+  PetConfig cfg, {
+  double share = 1,
+}) {
   var atk = 0.0;
   var hp = 0.0;
   // 종 패시브는 **합산**한다. 같은 종을 둘 끼면 두 배 — 특화 편성이 성립해야
@@ -895,7 +911,11 @@ PetBonus computePetBonus(Iterable<PetStat> pets, PetConfig cfg) {
     if (kind == null) continue;
     passives[kind] = (passives[kind] ?? 0) + sp.value;
   }
-  return PetBonus(attackMult: 1 + atk, hpMult: 1 + hp, passives: passives);
+  return PetBonus(
+    attackMult: 1 + atk * share,
+    hpMult: 1 + hp * share,
+    passives: passives,
+  );
 }
 
 /// 종 패시브 가산치를 능력치에 실제로 얹는다.

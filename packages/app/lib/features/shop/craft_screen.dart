@@ -23,6 +23,7 @@ import '../../ui/jelly_confirm.dart';
 import '../../ui/jelly_short.dart';
 import '../../ui/toast.dart';
 import '../../ui/colors.dart';
+import '../../ui/tour.dart';
 
 /// 상점 탭 — 인앱결제 카탈로그(iap.json).
 ///
@@ -102,12 +103,15 @@ class _StoreSection extends ConsumerWidget {
         var j = devMode ? i - 1 : i;
         if (j < top.length) {
           final p = top[j];
-          return StoreProductCard(
-            product: p,
-            save: save,
-            now: now,
-            locale: locale,
-            storePrice: prices[p.id],
+          return tourMark(
+            j == 0 ? 'shop.top' : null,
+            StoreProductCard(
+              product: p,
+              save: save,
+              now: now,
+              locale: locale,
+              storePrice: prices[p.id],
+            ),
           );
         }
         j -= top.length;
@@ -115,12 +119,18 @@ class _StoreSection extends ConsumerWidget {
         // 가진 사람이 쓸 곳을 먼저 봐야, 젤리가 남아서 안 사는 상태가 끊긴다.
         if (j == 0) {
           // 개체 등급이 켜지면 성장물약(등급 올리기 재료)을 뽑기 바로 아래에.
-          if (!individualGradeOn(data)) return const _GachaCard();
-          return const Column(
-            children: [_GachaCard(), SizedBox(height: 8), _PotionCard()],
+          if (!individualGradeOn(data)) {
+            return tourMark('shop.gacha', const _GachaCard());
+          }
+          return Column(
+            children: [
+              tourMark('shop.gacha', const _GachaCard()),
+              const SizedBox(height: 8),
+              const _PotionCard(),
+            ],
           );
         }
-        if (j == 1) return const _ExchangeCard();
+        if (j == 1) return tourMark('shop.exchange', const _ExchangeCard());
         final idx = j - 2;
         if (idx == products.length) return _restoreRow(context, ref, l);
         return StoreProductCard(
@@ -388,6 +398,20 @@ class StoreProductCard extends ConsumerWidget {
                       color: Color(0x99FFFFFF),
                       fontSize: 11,
                       height: 1.3,
+                    ),
+                  ),
+                ],
+                // 첫 구매 보너스(2026-11-09) — 지급과 같은 판정(core_save `iapFirstBonusAvailable`).
+                if (iapFirstBonusAvailable(save, product)) ...[
+                  const SizedBox(height: 3),
+                  Text(
+                    AppLocalizations.of(
+                      context,
+                    ).storeFirstBonus(product.firstBonusJelly),
+                    style: const TextStyle(
+                      color: kHoney,
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w900,
                     ),
                   ),
                 ],
@@ -667,7 +691,7 @@ class _GachaCard extends ConsumerWidget {
     final save = ref.read(saveControllerProvider).requireValue;
     final cfg = ref.read(gameDataProvider).requireValue.petConfig;
     if (cfg == null) return;
-    final free = save.storageCapacity - save.bugs.length;
+    final free = save.storageCapacity - save.storageUsed;
     if (free < count) {
       showCenterToast(context, l.gachaStorageNeed('$count', '$free'));
       return;

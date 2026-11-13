@@ -120,6 +120,32 @@ void main() {
     expect(d, contains('시간·젤리 판정 실패'));
   });
 
+  test('뒤처진 기기 업로드 — 레벨과 함께 저장본에서 돌던 진행 칸도 지킨다(2026-11-03 강군 님)', () {
+    final running = ResearchSlot(
+      id: 'shell',
+      level: 1,
+      endsAt: t0.add(const Duration(hours: 3)),
+    );
+    final s = stored(levels: {'jaw': 4}, slots: [running]);
+    // 옛 로컬: jaw 2 에서 jaw 3 을 돌리던 상태 — 저장본 레벨 4 로 지켜지면 그 칸은 무효다.
+    final stale = s
+        .copyWith(
+          researchLevels: {'jaw': 2},
+          researchSlots: [
+            ResearchSlot(
+              id: 'jaw',
+              level: 3,
+              endsAt: t0.add(const Duration(hours: 1)),
+            ),
+          ],
+        )
+        .toJson();
+    final out = up(s, stale);
+    expect(out.researchLevels['jaw'], 4);
+    expect(out.researchSlots.single.id, 'shell');
+    expect(out.researchSlots.single.endsAt, running.endsAt);
+  });
+
   test('끝났지만 아직 안 받은 칸(연구 완료 버튼 전)은 업로드마다 그대로 남아도 걸리지 않는다', () {
     final slot = ResearchSlot(
       id: 'jaw',
@@ -166,16 +192,16 @@ void main() {
           researchSlots: [
             // 방금 시작한 칸(흐른 몫 0).
             ResearchSlot(
-              id: 'barter',
+              id: 'giftSense',
               level: 1,
-              endsAt: t0.add(rc.timeAt(rc.byId('barter')!, 1)),
+              endsAt: t0.add(rc.timeAt(rc.byId('giftSense')!, 1)),
             ),
           ],
         )
         .toJson();
     final out = up(s, json);
     expect(out.researchLevels['jaw'], 2);
-    expect(out.researchSlots.single.id, 'barter');
+    expect(out.researchSlots.single.id, 'giftSense');
     expect(reasons(s, json), isNot(contains('research')));
   });
 
@@ -398,7 +424,7 @@ void main() {
   });
 
   test('되돌릴 때 이번 업로드에 시작한 단계의 시작 값을 돌려준다', () {
-    final barter = rc.byId('barter')!;
+    final barter = rc.byId('giftSense')!;
     final c = rc.costAt(barter, 1);
     final s = stored(samples: 50).copyWith(gold: 1000000);
     // 정직하게 교환 협상 Lv1 을 시작해 값을 냈는데, 같은 업로드의 다른 칸이 위조로 걸렸다.
@@ -409,7 +435,7 @@ void main() {
           researchLevels: {'jaw': 20},
           researchSlots: [
             ResearchSlot(
-              id: 'barter',
+              id: 'giftSense',
               level: 1,
               endsAt: t0.add(rc.timeAt(barter, 1)),
             ),
@@ -425,7 +451,7 @@ void main() {
 
   test('기기 시계가 3분 늦어도 새 진행 칸은 인정', () {
     final s = stored();
-    final def = rc.byId('barter')!;
+    final def = rc.byId('giftSense')!;
     final skewed = t0.subtract(const Duration(minutes: 3));
     final out = up(
       s,
@@ -433,7 +459,7 @@ void main() {
           .copyWith(
             researchSlots: [
               ResearchSlot(
-                id: 'barter',
+                id: 'giftSense',
                 level: 1,
                 endsAt: skewed.add(rc.timeAt(def, 1)),
               ),
@@ -441,7 +467,7 @@ void main() {
           )
           .toJson(),
     );
-    expect(out.researchSlots.single.id, 'barter');
+    expect(out.researchSlots.single.id, 'giftSense');
   });
 
   test('3번째 칸은 심연(2026-10-25) — 극한 최종 보스 기록 없이 심연을 적어 올리면 2칸으로 판정한다', () {
@@ -449,7 +475,7 @@ void main() {
     final fin3 = run.bossArtId(3, run.zonesPerTier);
     final s = stored().copyWith(maxTierReached: 3);
     final three = [
-      for (final id in ['jaw', 'incubator', 'barter'])
+      for (final id in ['jaw', 'incubator', 'giftSense'])
         ResearchSlot(
           id: id,
           level: 1,
@@ -692,7 +718,7 @@ void main() {
       ..['rsL'] = {
         'jaw': 'abc',
         'shell': null,
-        'barter': 1.5e300,
+        'giftSense': 1.5e300,
         'x': [1],
       }
       ..['rsS'] = [
@@ -714,7 +740,7 @@ void main() {
   });
 
   test('환불 골드는 업로드 골드 허용치를 함께 쓴다 — 이월 창 안에서 되풀이해도 직접 올린 상한을 못 넘는다', () {
-    final barter = rc.byId('barter')!;
+    final barter = rc.byId('giftSense')!;
     var s = stored().copyWith(
       gold: 1000000,
       goldCarry: 1 << 40,
@@ -732,7 +758,7 @@ void main() {
                   researchLevels: {'jaw': 20},
                   researchSlots: [
                     ResearchSlot(
-                      id: 'barter',
+                      id: 'giftSense',
                       level: 1,
                       endsAt: t.add(rc.timeAt(barter, 1)),
                     ),
@@ -765,11 +791,11 @@ void main() {
             researchSlotsBought: 1,
             // 칸 값 + 즉시 완료 젤리를 냈다. 그런데 다른 줄(교환 협상 Lv20)이 위조로 걸린다.
             materials: {MaterialKind.jelly: uploaded},
-            researchLevels: {'jaw': 1, 'barter': 20},
+            researchLevels: {'jaw': 1, 'giftSense': 20},
           )
           .toJson(),
     );
-    expect(out.researchLevels['barter'], isNull);
+    expect(out.researchLevels['giftSense'], isNull);
     expect(out.researchLevels['jaw'], isNull);
     expect(out.researchSlotsBought, 1);
     expect(out.materialCount(MaterialKind.jelly), uploaded);
@@ -804,17 +830,17 @@ void main() {
     final lv1 = rc.timeAt(jaw, 1);
     final s = stored(elapsed: lv1);
     final json = s
-        .copyWith(maxTierReached: 3, researchLevels: {'jaw': 1, 'barter': 1})
+        .copyWith(maxTierReached: 3, researchLevels: {'jaw': 1, 'giftSense': 1})
         .toJson();
     final out = up(s, json);
-    expect(out.researchLevels['barter'], isNull);
+    expect(out.researchLevels['giftSense'], isNull);
     // 극한을 정말 가 본 저장본이면 3칸이라 인정.
     final real = stored(elapsed: lv1).copyWith(maxTierReached: 3);
     final ok = up(
       real,
-      real.copyWith(researchLevels: {'jaw': 1, 'barter': 1}).toJson(),
+      real.copyWith(researchLevels: {'jaw': 1, 'giftSense': 1}).toJson(),
     );
-    expect(ok.researchLevels['barter'], 1);
+    expect(ok.researchLevels['giftSense'], 1);
   });
 
   test('기기 시계가 3분 빠르면 저장본 칸의 자연 완료가 서버 시각보다 일찍 온다 — 인정', () {

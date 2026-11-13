@@ -17,6 +17,7 @@ import '../../ui/game_dialog.dart';
 import '../../ui/jelly_confirm.dart';
 import '../../ui/toast.dart';
 import '../../ui/colors.dart';
+import '../../ui/tour.dart';
 
 const _honey = kHoney;
 
@@ -70,7 +71,10 @@ class _FairyPanelState extends ConsumerState<FairyPanel> {
       children: [
         _header(l, save, cfg),
         const SizedBox(height: 8),
-        _CompanionCard(fairy: f.companion, cfg: cfg),
+        tourMark(
+          'fairy.companion',
+          _CompanionCard(fairy: f.companion, cfg: cfg),
+        ),
         const SizedBox(height: 8),
         Row(
           children: [
@@ -186,70 +190,85 @@ class _FairyPanelState extends ConsumerState<FairyPanel> {
         ),
         const SizedBox(width: 6),
         Expanded(
-          child: _btn(
-            l.fairyNestBtn,
-            fairyNestImage(size: 18),
-            () => _open(const _NestDialog()),
-            badge: ready,
-          ),
-        ),
-        const SizedBox(width: 4),
-        Expanded(
-          child: _btn(
-            l.fairyGachaBtn,
-            fairyEggImage(FairyGrade.legendary, size: 18),
-            () => _open(const _GachaDialog()),
-          ),
-        ),
-        const SizedBox(width: 4),
-        Expanded(
-          child: _btn(
-            l.fairyDexBtn,
-            // 그림이 있으면 그림(docs/art_prompts_fairy_fx.md), 없으면 아이콘.
-            gameImageChain(
-              const ['assets/images/fairies/fairy_dex.webp'],
-              size: 18,
-              fallback: const Icon(
-                Icons.menu_book_rounded,
-                size: 15,
-                color: _honey,
-              ),
+          child: tourMark(
+            'fairy.nest',
+            _btn(
+              l.fairyNestBtn,
+              fairyNestImage(size: 18),
+              () => _open(const _NestDialog()),
+              badge: ready,
             ),
-            () => _open(const _DexDialog()),
           ),
         ),
         const SizedBox(width: 4),
         Expanded(
-          child: _btn(
-            l.fairyMergeBtn,
-            gameImageChain(
-              const ['assets/images/fairies/fairy_automerge.webp'],
-              size: 18,
-              fallback: const Icon(
-                Icons.merge_type_rounded,
-                size: 15,
-                color: _honey,
-              ),
+          child: tourMark(
+            'fairy.gacha',
+            _btn(
+              l.fairyGachaBtn,
+              fairyEggImage(FairyGrade.legendary, size: 18),
+              () => _open(const _GachaDialog()),
             ),
-            () => _open(const _MergeHubDialog()),
           ),
         ),
         const SizedBox(width: 4),
         Expanded(
-          child: _btn(
-            l.fairyReleaseBtn,
-            gameImageChain(
-              const ['assets/images/fairies/fairy_release.webp'],
-              size: 18,
-              fallback: const Icon(
-                Icons.recycling_rounded,
-                size: 15,
-                color: _honey,
+          child: tourMark(
+            'fairy.dex',
+            _btn(
+              l.fairyDexBtn,
+              // 그림이 있으면 그림(docs/art_prompts_fairy_fx.md), 없으면 아이콘.
+              gameImageChain(
+                const ['assets/images/fairies/fairy_dex.webp'],
+                size: 18,
+                fallback: const Icon(
+                  Icons.menu_book_rounded,
+                  size: 15,
+                  color: _honey,
+                ),
               ),
+              () => _open(const _DexDialog()),
             ),
-            () => _open(const _ReleaseHubDialog()),
-            // 자동 분해가 켜져 있으면 테두리로 알린다(모르고 알이 사라진다고 느끼지 않게).
-            badge: save.fairy.autoReleaseUpTo != null,
+          ),
+        ),
+        const SizedBox(width: 4),
+        Expanded(
+          child: tourMark(
+            'fairy.feed',
+            _btn(
+              cfg.gaugeOn ? l.fairyFeedBtn : l.fairyMergeBtn,
+              gameImageChain(
+                const ['assets/images/fairies/fairy_automerge.webp'],
+                size: 18,
+                fallback: const Icon(
+                  Icons.merge_type_rounded,
+                  size: 15,
+                  color: _honey,
+                ),
+              ),
+              () => _open(const _MergeHubDialog()),
+            ),
+          ),
+        ),
+        const SizedBox(width: 4),
+        Expanded(
+          child: tourMark(
+            'fairy.release',
+            _btn(
+              l.fairyReleaseBtn,
+              gameImageChain(
+                const ['assets/images/fairies/fairy_release.webp'],
+                size: 18,
+                fallback: const Icon(
+                  Icons.recycling_rounded,
+                  size: 15,
+                  color: _honey,
+                ),
+              ),
+              () => _open(const _ReleaseHubDialog()),
+              // 자동 분해가 켜져 있으면 테두리로 알린다(모르고 알이 사라진다고 느끼지 않게).
+              badge: save.fairy.autoReleaseUpTo != null,
+            ),
           ),
         ),
       ],
@@ -315,8 +334,138 @@ String _err(AppLocalizations l, String? e) => switch (e) {
   'max_grade' => l.fairyErrMaxGrade,
   'max_level' => l.fairyErrMaxLevel,
   'reroll_pending' => l.fairyErrRerollPending,
+  'offline' => l.rarityNeedOnline,
+  'no_fodder' => l.fairyFeedNone,
   _ => l.fairyErrGeneric,
 };
+
+/// 요정 먹이기 창(2026-11-09 사장님 확정 — 곤충과 같은 양분 게이지). 같은 종류 · 이 요정 이하 등급 요정을 먹인다.
+/// 재료는 core_save `fairyFeedPlan`(채우는 양 작은 것부터) — 사라질 요정을 먼저 보여 준다.
+class _FeedFairyDialog extends ConsumerStatefulWidget {
+  const _FeedFairyDialog({required this.targetId});
+  final String targetId;
+
+  @override
+  ConsumerState<_FeedFairyDialog> createState() => _FeedFairyDialogState();
+}
+
+class _FeedFairyDialogState extends ConsumerState<_FeedFairyDialog> {
+  bool _busy = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    final save = ref.watch(saveControllerProvider).requireValue;
+    final cfg = ref.watch(gameDataProvider).value!.fairyConfig!;
+    final locale = Localizations.localeOf(context).languageCode;
+    final fs = save.fairy;
+    final t = fs.fairyById(widget.targetId);
+    if (t == null) return const SizedBox.shrink();
+    final next = t.grade.next;
+    final have = cfg.gaugeAtOf(t.grade) + t.gauge;
+    final goal = next == null ? have : cfg.gaugeAtOf(next);
+    final toNext = fairyFeedPlan(fs, cfg, t, toNext: true);
+    final all = fairyFeedPlan(fs, cfg, t, toNext: false);
+    final allTo = cfg.gradeForGauge(
+      all.fold(have, (a, f) => a + fairyFeedValue(f, cfg)),
+    );
+    final name = cfg.byId(t.kind)?.name.resolve(locale) ?? t.kind;
+    return GameDialog(
+      title: l.fairyFeedTitle,
+      actions: [
+        TextButton(onPressed: popOnTap(context), child: Text(l.actionCancel)),
+        if (toNext.isNotEmpty)
+          OutlinedButton(
+            onPressed: _busy ? null : () => _go(toNext: true),
+            child: Text(
+              l.rarityFeedToNext(toNext.length, fairyGradeLabel(l, next!)),
+            ),
+          ),
+        FilledButton(
+          onPressed: _busy || all.isEmpty ? null : () => _go(toNext: false),
+          child: Text(l.rarityFeedAll(all.length, fairyGradeLabel(l, allTo))),
+        ),
+      ],
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            l.fairyFeedBody,
+            style: const TextStyle(color: Color(0xDDFFFFFF), fontSize: 13),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            next == null
+                ? fairyGradeLabel(l, t.grade)
+                : l.rarityFeedGauge(have, goal, fairyGradeLabel(l, next)),
+            style: const TextStyle(
+              color: Color(0xFFFFD27A),
+              fontSize: 13,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 8),
+          if (all.isEmpty)
+            Text(
+              l.fairyFeedNone,
+              style: const TextStyle(color: Color(0x99FFFFFF), fontSize: 12),
+            )
+          else ...[
+            Text(
+              l.rarityUpFodderHead,
+              style: const TextStyle(color: Color(0x99FFFFFF), fontSize: 11.5),
+            ),
+            for (final f in all.take(12))
+              Text(
+                '$name · ${fairyGradeLabel(l, f.grade)} · +${fairyFeedValue(f, cfg)}',
+                style: const TextStyle(color: Colors.white, fontSize: 12),
+              ),
+            if (all.length > 12)
+              Text(
+                '… +${all.length - 12}',
+                style: const TextStyle(color: Color(0x99FFFFFF), fontSize: 12),
+              ),
+          ],
+          const SizedBox(height: 6),
+          Text(
+            l.fairyFeedNote,
+            style: const TextStyle(color: Color(0x99FFFFFF), fontSize: 11),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _go({required bool toNext}) async {
+    final l = AppLocalizations.of(context);
+    setState(() => _busy = true);
+    final before = ref
+        .read(saveControllerProvider)
+        .requireValue
+        .fairy
+        .fairyById(widget.targetId)
+        ?.grade;
+    final r = await ref
+        .read(saveControllerProvider.notifier)
+        .fairyFeed(widget.targetId, toNext: toNext);
+    if (!mounted) return;
+    setState(() => _busy = false);
+    if (!r.isOk) {
+      showCenterToast(context, _err(l, r.error));
+      return;
+    }
+    final to = FairyGrade.fromKeyOrNull(r.extra['to'] as String?);
+    // 닫힌 창의 context 로 띄우지 않는다(1.0.27 팝업 크래시와 같은 이유) — 바깥 네비게이터 쪽으로.
+    final nav = Navigator.of(context);
+    nav.pop();
+    if (to != null && before != null && to.index > before.index) {
+      showCenterToast(nav.context, l.fairyFeedUp(fairyGradeLabel(l, to)));
+    } else {
+      showCenterToast(nav.context, l.fairyFeedStored);
+    }
+  }
+}
 
 Future<bool> _confirm(BuildContext context, String title, String body) async {
   final l = AppLocalizations.of(context);
@@ -1325,20 +1474,34 @@ class _FairyDetailState extends ConsumerState<_FairyDetailDialog> {
                     ],
                   ),
                 ),
-              OutlinedButton(
-                onPressed: f.grade.next == null || _busy
-                    ? null
-                    : isComp
-                    // 동행 요정은 재료가 될 수 없다 — 눌러서 실패만 뜨면 이유를 모른다(2026-10-01 점검).
-                    ? () => showCenterToast(context, l.fairyMergeEquipped)
-                    : () => showDialog<void>(
-                        context: context,
-                        barrierColor: const Color(0xB3000000),
-                        builder: (_) =>
-                            fairyButtons(_MergeDialog(mainId: f.id)),
-                      ),
-                child: Text(l.fairyMerge),
-              ),
+              // 먹이기(2026-11-09) — 동행 요정도 먹이는 대상이 된다(재료로는 안 쓰인다). 꺼져 있으면 옛 합성.
+              if (cfg.gaugeOn)
+                OutlinedButton(
+                  onPressed: f.grade.next == null || _busy
+                      ? null
+                      : () => showDialog<void>(
+                          context: context,
+                          barrierColor: const Color(0xB3000000),
+                          builder: (_) =>
+                              fairyButtons(_FeedFairyDialog(targetId: f.id)),
+                        ),
+                  child: Text(l.fairyFeedBtn),
+                )
+              else
+                OutlinedButton(
+                  onPressed: f.grade.next == null || _busy
+                      ? null
+                      : isComp
+                      // 동행 요정은 재료가 될 수 없다 — 눌러서 실패만 뜨면 이유를 모른다(2026-10-01 점검).
+                      ? () => showCenterToast(context, l.fairyMergeEquipped)
+                      : () => showDialog<void>(
+                          context: context,
+                          barrierColor: const Color(0xB3000000),
+                          builder: (_) =>
+                              fairyButtons(_MergeDialog(mainId: f.id)),
+                        ),
+                  child: Text(l.fairyMerge),
+                ),
               // 재굴림(2026-10-04) — 대기 결과가 있으면 그것부터 고르게 한다(다른 요정 것이어도).
               if (cfg.rerollJelly > 0 && cfg.rerollDailyCap > 0)
                 OutlinedButton(
@@ -1857,6 +2020,29 @@ class _MergeHubDialogState extends ConsumerState<_MergeHubDialog> {
     final l = AppLocalizations.of(context);
     final save = ref.watch(saveControllerProvider).requireValue;
     final cfg = ref.watch(gameDataProvider).value!.fairyConfig!;
+    // 먹이기(2026-11-09) — 직접 먹이기는 요정 상세의 [먹이기], 여기는 자동 먹이기만.
+    if (cfg.gaugeOn) {
+      return GameDialog(
+        title: l.fairyFeedTitle,
+        iconWidget: gameImageChain(
+          const ['assets/images/fairies/fairy_automerge.webp'],
+          size: 40,
+          fallback: const Icon(Icons.merge_type_rounded, color: _honey),
+        ),
+        actions: [
+          TextButton(onPressed: popOnTap(context), child: Text(l.actionCancel)),
+          FilledButton(
+            onPressed: _busy ? null : _autoFeed,
+            child: Text(l.fairyAutoFeed),
+          ),
+        ],
+        child: Text(
+          l.fairyFeedHubHint,
+          textAlign: TextAlign.center,
+          style: const TextStyle(color: Colors.white70, fontSize: 12),
+        ),
+      );
+    }
     final fs = save.fairy;
     _picked.removeWhere((id) => fs.fairyById(id) == null);
     final first = _picked.isEmpty ? null : fs.fairyById(_picked.first);
@@ -1985,6 +2171,50 @@ class _MergeHubDialogState extends ConsumerState<_MergeHubDialog> {
 
   /// 자동 합성 — 예상(쓰는 수 → 남는 요정의 종류·등급)을 **먼저 보여 주고** 확인받는다(§2.7).
   /// 능력치는 실행할 때 새로 굴리므로 예상에는 종류·등급만 보인다.
+  /// 자동 먹이기(2026-11-09) — 종류마다 가장 아끼는 요정에 다음 등급 몫씩 먹인다. 결과를 먼저 보여 주고 확인받는다(§2.7).
+  Future<void> _autoFeed() async {
+    final l = AppLocalizations.of(context);
+    final ctrl = ref.read(saveControllerProvider.notifier);
+    final dry = await ctrl.fairyAutoFeed(dryRun: true);
+    if (!mounted) return;
+    final ups = (dry.extra['ups'] as int?) ?? 0;
+    final used = (dry.extra['used'] as int?) ?? 0;
+    if (!dry.isOk || ups == 0) {
+      showCenterToast(context, l.fairyFeedNone);
+      return;
+    }
+    final ok = await showGameDialog<bool>(
+      context,
+      title: l.fairyAutoFeed,
+      content: Text(
+        l.fairyAutoFeedConfirm('$ups', '$used'),
+        textAlign: TextAlign.center,
+        style: const TextStyle(color: Colors.white, fontSize: 12.5),
+      ),
+      actions: [
+        gameDialogButton(
+          l.actionCancel,
+          () => Navigator.of(context, rootNavigator: true).pop(false),
+          primary: false,
+        ),
+        gameDialogButton(
+          l.fairyAutoFeed,
+          () => Navigator.of(context, rootNavigator: true).pop(true),
+        ),
+      ],
+    );
+    if (ok != true || !mounted) return;
+    setState(() => _busy = true);
+    final r = await ctrl.fairyAutoFeed();
+    if (!mounted) return;
+    setState(() => _busy = false);
+    if (!r.isOk) {
+      showCenterToast(context, _err(l, r.error));
+      return;
+    }
+    showCenterToast(context, l.fairyAutoFeedDone('${r.extra['ups']}'));
+  }
+
   Future<void> _auto() async {
     final l = AppLocalizations.of(context);
     final ctrl = ref.read(saveControllerProvider.notifier);

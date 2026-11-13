@@ -89,7 +89,7 @@ void main() {
       final ctrl = c.read(saveControllerProvider.notifier);
 
       // 한 칸 남았다 → 100 을 눌러도 1 만 산다.
-      expect(await ctrl.buyUpgrade(UpgradeKind.crit, count: 100), 1);
+      expect((await ctrl.buyUpgrade(UpgradeKind.crit, count: 100)).levels, 1);
       expect(
         c
             .read(saveControllerProvider)
@@ -98,7 +98,7 @@ void main() {
         cap,
       );
       // 상한에서 또 누르면 0.
-      expect(await ctrl.buyUpgrade(UpgradeKind.crit, count: 10), 0);
+      expect((await ctrl.buyUpgrade(UpgradeKind.crit, count: 10)).levels, 0);
     });
   });
 }

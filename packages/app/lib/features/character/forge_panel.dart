@@ -24,6 +24,7 @@ import 'polish_dialog.dart';
 import '../../ui/colors.dart';
 import '../../domain/red_dots.dart';
 import '../../ui/red_dot.dart';
+import '../../ui/tour.dart';
 
 const _honey = kHoney;
 
@@ -407,6 +408,7 @@ class _ForgeBarState extends ConsumerState<ForgeBar> {
         RedDotBadge(
           show: ref.watch(redDotsProvider).forge,
           child: _SquareButton(
+            key: TourKeys.named('equip.grade'),
             icon: Icons.workspace_premium_rounded,
             art: 'forge_grade',
             label: l.forgeGradeButton,
@@ -431,6 +433,7 @@ class _ForgeBarState extends ConsumerState<ForgeBar> {
                 // **모루 자체가 버튼**이다. 칸 전체를 누르게 하면 모루를
                 // 겨냥해 누른 게 아니라 "칸을 눌렀다"는 느낌이 든다.
                 _AnvilButton(
+                  key: TourKeys.forge,
                   cycle: _cycle(forge),
                   auto: _autoOn,
                   onStrike: _onStrikeDone,
@@ -530,6 +533,7 @@ class _ForgeBarState extends ConsumerState<ForgeBar> {
           mainAxisSize: MainAxisSize.min,
           children: [
             _SquareButton(
+              key: TourKeys.named('equip.filter'),
               icon: Icons.tune_rounded,
               label: l.forgeFilter,
               // 등급 필터만 걸어 둔 경우에도 켜진 것으로 보여야 한다 —
@@ -552,6 +556,7 @@ class _ForgeBarState extends ConsumerState<ForgeBar> {
             // 망치질 가속 — **젤리 소비처**. 순수 시간 절약이라 P2W 위험이 없다.
             // 남은 시간을 라벨에 띄워, 켜져 있는 동안 다시 안 사게 한다.
             _SquareButton(
+              key: TourKeys.named('equip.rush'),
               icon: Icons.fast_forward_rounded,
               label: l.forgeRush,
               sub: rushLeft > 0 ? '$rushLeft' : '${forge.rushJelly}',
@@ -560,6 +565,7 @@ class _ForgeBarState extends ConsumerState<ForgeBar> {
             ),
             const SizedBox(height: 6),
             _SquareButton(
+              key: TourKeys.named('equip.auto'),
               icon: _autoOn ? Icons.stop_rounded : Icons.autorenew_rounded,
               // 켜져 있을 땐 "멈춤" 아이콘 그대로 — 그림은 꺼져 있을 때(자동 시작)만.
               art: _autoOn ? null : 'forge_auto',
@@ -652,6 +658,7 @@ class _JellyChip extends StatelessWidget {
 /// 밀린다.
 class _SquareButton extends StatelessWidget {
   const _SquareButton({
+    super.key,
     required this.icon,
     required this.label,
     required this.onTap,
@@ -861,6 +868,7 @@ class _ForgePile extends StatelessWidget {
 /// 있어야 "제련했다"가 손에 남는다.
 class _AnvilButton extends StatefulWidget {
   const _AnvilButton({
+    super.key,
     required this.cycle,
     required this.auto,
     required this.onStrike,

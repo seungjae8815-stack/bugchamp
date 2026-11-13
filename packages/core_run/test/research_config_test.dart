@@ -124,7 +124,21 @@ void main() {
     expect(c.defs.length, 29);
     final ids = c.defs.map((d) => d.id).toSet();
     expect(ids.length, 29);
-    expect(c.defs.map((d) => d.effect).toSet(), ResearchEffect.values.toSet());
+    // 재생(huntRegen)·분해 기술(salvageMat)은 2026-11-12 같은 id 가 처치 회복·펫 교감으로 바뀌어 쓰는 연구가 없다(값은 옛 키 호환용).
+    expect(
+      c.defs.map((d) => d.effect).toSet(),
+      ResearchEffect.values.toSet().difference({
+        ResearchEffect.huntRegen,
+        ResearchEffect.salvageMat,
+        // 심연 연구소(abyssLab) 전용 — 일반 연구 목록 밖.
+        ResearchEffect.abyssShortcut,
+        ResearchEffect.abyssFastFloor,
+        ResearchEffect.mutationTame,
+        ResearchEffect.crystalBonus,
+        ResearchEffect.sporeBonus,
+        ResearchEffect.abyssIdleGold,
+      }),
+    );
     // 분야마다 첫 연구만 바로 열리고, 나머지는 같은 분야 **앞에 적힌** 연구 5레벨(갈래 — 설계 §11).
     // 트리 칸은 분야 안에서 겹치지 않고 열 0~2 · 부모보다 아래 행.
     for (final b in ResearchBranch.values) {

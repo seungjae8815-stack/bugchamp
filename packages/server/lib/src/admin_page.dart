@@ -84,6 +84,7 @@ const String adminHtml = r'''<!doctype html>
     <button id="t-code" onclick="tab('code')">선물코드</button>
     <button id="t-chat" onclick="tab('chat')">채팅</button>
     <button id="t-grant" onclick="tab('grant')">지급</button>
+    <button id="t-kotk" onclick="tab('kotk')">왕중왕전</button>
   </div>
 
   <section id="s-user">
@@ -208,6 +209,17 @@ const String adminHtml = r'''<!doctype html>
     </div>
   </section>
 
+  <section id="s-kotk">
+    <div class="card">
+      <h2>왕중왕전 확인</h2>
+      <p class="hint">일요일 09시에 접수가 닫히면 결과가 보이고, <b>월요일 09시에 확정</b>됩니다(표본·보상 반영).
+      그 사이에 전투력이 비정상적으로 높은 참가를 확인하고, 조작으로 보이면 실격시키세요 — 그 참가는 빠지고 대진을 다시 계산합니다.
+      확정된 주는 바꿀 수 없습니다.</p>
+      <button class="act" onclick="loadKotk()">새로고침</button>
+      <div id="k-list"></div>
+    </div>
+  </section>
+
   <section id="s-chat">
     <div class="card">
       <h2>운영자로 보내기</h2>
@@ -259,7 +271,8 @@ async function login() {
 function logout() { sessionStorage.removeItem('adminKey'); location.reload(); }
 function tab(name) {
   if (name === 'grant') loadProducts();
-  for (const n of ['user','notice','mail','code','chat','grant']) {
+  if (name === 'kotk') loadKotk();
+  for (const n of ['user','notice','mail','code','chat','grant','kotk']) {
     document.getElementById('s-' + n).className = n === name ? 'on' : '';
     document.getElementById('t-' + n).className = n === name ? 'on' : '';
   }
@@ -291,6 +304,31 @@ function rewardPills(r) {
   for (const [k, n] of FAIRY_STONES) if ((f.stones || {})[k] > 0) p.push('속성석(' + n + ') ' + f.stones[k]);
   for (const [k, n] of FAIRY_ACCS) if ((f.accelerators || {})[k] > 0) p.push(n + ' ' + f.accelerators[k]);
   return p.map(x => '<span class="pill">' + esc(x) + '</span>').join('');
+}
+
+async function loadKotk() {
+  const box = document.getElementById('k-list');
+  box.innerHTML = '불러오는 중…';
+  try {
+    const d = await api('/admin/kotk');
+    box.innerHTML = (d.weeks || []).map(w =>
+      '<h2 style="margin-top:14px">' + esc(w.week) + (w.round ? ' · 제' + w.round + '회' : ' · 준비 중') +
+      ' · 참가 ' + w.count + '명 · ' + (w.confirmed ? '확정됨' : (w.closed ? '확정 전(확인 기간)' : '접수 중')) + '</h2>' +
+      (w.entries || []).map(e =>
+        '<div class="item"><div class="body"><b>' + (e.place ? e.place + '위 · ' : '') + esc(e.nickname || '') +
+        '</b> · ' + esc(e.species || '') + ' · 전투력 ' + Math.round(e.power || 0).toLocaleString() +
+        '<div class="sub">' + esc(e.userId) + '</div>' +
+        '<details><summary class="sub">능력치</summary><pre class="sub" style="white-space:pre-wrap">' +
+        esc(JSON.stringify(e.bug)) + '</pre></details></div>' +
+        (w.confirmed ? '' : '<button class="item-btn" data-w="' + esc(w.week) + '" data-u="' + esc(e.userId) + '" onclick="disqualify(this.dataset.w, this.dataset.u)">실격</button>') +
+        '</div>').join('')
+    ).join('');
+  } catch (e) { box.innerHTML = '불러오기 실패: ' + esc(e.message); }
+}
+async function disqualify(week, uid) {
+  if (!confirm(week + ' 주의 ' + uid + ' 참가를 실격시킬까요? 대진을 다시 계산합니다.')) return;
+  try { await api('/admin/kotk/disqualify', { week: week, userId: uid }); toast('실격 처리했습니다'); loadKotk(); }
+  catch (e) { toast('실패: ' + e.message); }
 }
 
 async function refresh() {

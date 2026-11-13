@@ -13,6 +13,8 @@ class BugRarityConfig {
     this.huntMult = const [0.90, 1.00, 1.15, 1.35, 1.60],
     this.duelMult = const [1.0, 1.0, 1.0, 1.0, 1.0],
     this.upFodder = 3,
+    this.worth = const [],
+    this.feed = const [],
   });
 
   final bool enabled;
@@ -31,6 +33,40 @@ class BugRarityConfig {
 
   /// 희귀도 올리기 재료 — 같은 종 · 같은 희귀도 곤충 몇 마리로 한 단계(2026-10-16 사장님 확정 3). 0 = 끔.
   final int upFodder;
+
+  /// 곤충 양분 **문턱**(일반 → 전설, 2026-11-09 사장님 확정 — "전설까지 양분 약 1,000"). 곤충의 양분 = 이 희귀도 문턱 +
+  /// 모은 양분(`IndividualBug.rarityWorth`). 양분이 다음 희귀도 문턱에 닿으면 그 희귀도가 된다([rarityForWorth]).
+  /// 비어 있으면 끔(옛 3마리 규칙).
+  final List<int> worth;
+
+  /// 먹이면 채우는 양(일반 → 전설, 2026-11-09 사장님 확정 **2배씩** 4·8·16·32 — "영웅이 나오면 전설이 쉬워진다").
+  /// 문턱(4배씩)보다 완만해서 높은 희귀도 곤충 하나가 지름길이 되지 않는다(영웅 하나 = 전설의 3%). 같은 종을 야생 확률로
+  /// 먹이면 전설까지 약 100마리(4배씩이던 첫안은 약 38마리, 간이 시뮬). 비어 있으면 문턱과 같은 값([worth]).
+  /// 문턱보다 크면 안 된다 — 업로드 사이에 올린 곤충을 바로 먹일 때 서버 검사가 총량 보존에 기댄다(`takeRarityWorth`).
+  final List<int> feed;
+
+  /// 양분 게이지가 켜졌는가.
+  bool get worthOn => enabled && worth.length >= Grade.values.length;
+
+  /// [rarity] 곤충의 양분 문턱(양분 게이지가 꺼져 있으면 0).
+  int worthOfRarity(Grade rarity) => worthOn ? worth[rarity.index] : 0;
+
+  /// [rarity] 곤충 하나를 먹이면 채우는 양(그 곤충이 모은 양분은 따로 더한다).
+  int feedOfRarity(Grade rarity) {
+    if (!worthOn) return 0;
+    if (feed.length < Grade.values.length) return worth[rarity.index];
+    return feed[rarity.index];
+  }
+
+  /// 총 가치 [w] 가 닿는 가장 높은 희귀도.
+  Grade rarityForWorth(int w) {
+    var r = Grade.common;
+    if (!worthOn) return r;
+    for (final g in Grade.values) {
+      if (w >= worth[g.index]) r = g;
+    }
+    return r;
+  }
 
   /// [bug] 의 희귀도. 앱·서버·시뮬이 모두 이 함수를 거친다 — 갈리면 "화면 희귀도와 실제 효과가 다르다"가 된다.
   /// 꺼져 있으면 종 희귀도(옛 규칙). 켜져 있으면 곤충에 정해 준 값, 없으면 id 롤(뽑기 출신은 뽑기 표).
@@ -103,6 +139,12 @@ class BugRarityConfig {
       huntMult: dl('huntMult', d.huntMult),
       duelMult: dl('duelMult', d.duelMult),
       upFodder: (j['upFodder'] as num?)?.toInt() ?? d.upFodder,
+      worth: j['worth'] is List
+          ? [for (final x in j['worth'] as List) (x as num).toInt()]
+          : d.worth,
+      feed: j['feed'] is List
+          ? [for (final x in j['feed'] as List) (x as num).toInt()]
+          : d.feed,
     );
   }
 }

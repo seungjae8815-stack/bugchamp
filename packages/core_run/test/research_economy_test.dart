@@ -14,7 +14,6 @@ Map<String, dynamic> _json(String f) =>
 void main() {
   final forge = ForgeConfig.fromJson(_json('forge.json'));
   final items = ItemConfig.fromJson(_json('items.json'));
-  final pets = PetConfig.fromJson(_json('pets.json'));
   final run = RunConfig.fromJson(_json('run_config.json'));
   final rc = ResearchConfig.fromJson(_json('research.json'));
   final maxed = researchEffects(rc, {
@@ -35,7 +34,8 @@ void main() {
     for (final e in [
       ResearchEffect.traitChance,
       ResearchEffect.potionChance,
-      ResearchEffect.salvageMat,
+      ResearchEffect.petShare,
+      ResearchEffect.killHeal,
       ResearchEffect.exchangeGain,
       ResearchEffect.giftGold,
     ]) {
@@ -131,15 +131,18 @@ void main() {
     }
   });
 
-  test('분해 기술 — 방생 재료 × (1 + v) 반올림(0 이면 그대로)', () {
-    for (final g in Grade.values) {
-      final base = pets.releaseMaterial(g);
-      expect(pets.releaseMaterial(g, research: none), base);
-      expect(
-        pets.releaseMaterial(g, research: maxed),
-        (base * (1 + v(ResearchEffect.salvageMat))).round(),
-      );
-    }
+  test('펫 교감 · 처치 회복(2026-11-12 교체) — 펫 기여 몫 · 처치 회복량 × (1 + v)', () {
+    expect(v(ResearchEffect.petShare), greaterThan(0));
+    expect(v(ResearchEffect.killHeal), greaterThan(0));
+    expect(researchPetShareMult(none), 1);
+    expect(researchKillHealMult(maxed), 1 + v(ResearchEffect.killHeal));
+    // 분해 재료·사냥 재생 연구는 더 없다(같은 id 가 효과를 바꿨다).
+    expect(v(ResearchEffect.salvageMat), 0);
+    expect(v(ResearchEffect.huntRegen), 0);
+  });
+
+  test('약초학 하루 한도 — 효과 10%(=10레벨)마다 +1, 최대 +3', () {
+    expect(v(ResearchEffect.potionChance), closeTo(0.3, 1e-6));
   });
 
   test('교환 협상 — 교환소 골드·재료 × (1 + v)', () {

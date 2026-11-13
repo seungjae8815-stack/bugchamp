@@ -205,7 +205,7 @@
   "retreat": "후퇴!",
   "offlineReward": "돌아왔어요! 💰{gold} · 🔷{xp} 획득",
   "offlineTitle": "돌아왔어요!",
-  "offlineBugsBlocked": "채집함이 가득 차서\n알 {count}개를 받지 못했어요",
+  "offlineBugsBlocked": "칸이 없어\n알 {count}개를 놓쳤어요",
   "fairyRerollPending": "재굴림 결과 고르기",
   "offlineBugs": "🥚 곤충 알 {count}개를 채집했어요",
   "offlineElapsed": "{time} 동안 모은 방치 보상이에요",
@@ -353,6 +353,13 @@
     }
   },
   "whatsNewOk": "확인",
+  "whatsNew28Kotk": "왕중왕전 — 매주 곤충 1마리로 겨루는 하드모드 토너먼트(홈 배너). 우승하면 젤리·재료·황금 왕관, 우승하지 못하면 그 곤충은 표본이 돼요",
+  "whatsNew28Feed": "먹이기 — 같은 종 곤충·같은 종류 요정을 먹이면 양분이 차서 희귀도·등급이 올라요(정수로 바꾸기는 먹이기로 합쳐졌어요)",
+  "whatsNew28Upgrade": "강화 — 각성(정해진 레벨에 덤 레벨)·대성공 · 효과 미리보기와 추천 · 50레벨까지는 골드로만 올려요",
+  "whatsNew28Abyss": "심연 — 매주 바뀌는 변이 · 심연 결정으로 각인·강화 상한 돌파 · 심연 포자로 연구소 '심연' 연구",
+  "whatsNew28Fun": "주말 이벤트 · 업적과 칭호 · 종별 크기 순위 · 순위표에서 연습 결투 · 표본함(채집함 도감 옆)",
+  "whatsNew28Shop": "젤리 팩은 팩마다 첫 구매 2배 · 즉시 부화·산란·돌파는 처음 한 번 무료 · 처음 5번 부화는 최대 5분",
+  "whatsNew28Dex": "도감 젤리는 발견·정복·이색·보스 수집을 각각 모두 채우면 10개씩으로 바뀌었어요(중간 보상의 골드·화석은 그대로)",
   "whatsNewAvatar": "프로필 그림 — 홈 왼쪽 위 초상화 → 프로필 카드의 그림을 눌러 21개 중에서 골라요(채팅·랭킹·결투·대회에 보여요)",
   "whatsNewDuelPower": "결투 전투력이 모든 능력치를 반영한 실전 전투력으로 바뀌었어요",
   "whatsNewPolish": "장비 다듬기 — 옵션 종류를 고르고, 이전 값과 새 값 중 남길 쪽을 골라요",
@@ -543,6 +550,7 @@
   "autoReleaseHint": "고른 조건에 맞는 곤충을 한 번에 분해해 재료로 바꿔요. 장착 중·부화 중·키운 곤충(수련·돌파·강화)은 건드리지 않아요.",
   "autoReleaseNone": "조건에 맞는 곤충이 없어요",
   "autoReleaseDone": "{count}마리를 분해해 재료 {mats}개를 얻었어요",
+  "autoReleaseDoneCount": "{count}마리를 분해했어요",
   "autoReleasePreview": "{count}마리를 분해해 재료 {mats}개를 얻게 됩니다",
   "autoReleaseRun": "분해하기",
   "autoFilterGrades": "대상 등급",
@@ -600,7 +608,8 @@
   "roadmapFinalBoss": "최종 보스",
   "roadmapEnter": "이어하기",
   "roadmapReplay": "재도전",
-  "chapterClearTitle": "챕터 클리어! 🎉",
+  "chapterClearTitle": "사냥터 클리어! 🎉",
+  "chapterClearZoneMsg": "사냥터 {zone} 보스 {boss} 격파! 다음 사냥터가 열렸어요",
   "chapterClearMsg": "{difficulty} 정복! 최종보스 {boss} 격파!",
   "chapterClearReward": "클리어 보상",
   "mailTitle": "편지함",
@@ -943,6 +952,240 @@
   "rankTopStreak": "1위 유지 {days}일째 👑",
   "nicknameRequiredTitle": "닉네임을 정해주세요",
   "nicknameRequiredBody": "다른 채집가들에게 표시될 이름이에요. 처음 한 번만 정하면 됩니다.",
+  "nicknameSuggestPrefix": "채집가",
+  "nicknameSuggestedNote": "추천 이름을 넣어 뒀어요. 그대로 써도 되고 바꿔도 돼요.",
+  "bugDetailMore": "성장·능력치 자세히",
+  "bugDetailLess": "간단히 보기",
+  "storeFirstBonus": "첫 구매 2배! 젤리 +{n} 더",
+  "@storeFirstBonus": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "jellyShortHave": "보유 젤리 {n}",
+  "@jellyShortHave": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "jellyShortFirstBonus": "젤리 팩은 첫 구매 때 2배로 받아요!",
+  "discoveryNewTitle": "새 곤충 발견!",
+  "discoveryVariantTitle": "이색 곤충 발견!",
+  "discoveryVariantNote": "아주 드물게 나오는, 색이 다른 개체예요!",
+  "discoveryDexProgress": "도감 {n} / {total}종",
+  "@discoveryDexProgress": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "discoveryOk": "좋아요!",
+  "rarityAutoFeedBody": "같은 종 곤충을 먹여 희귀도를 올려요(희귀도가 낮은 곤충일수록 조금 채워요).\n올리기 {ups}번 · 재료로 사라지는 곤충 {fodder}마리",
+  "@rarityAutoFeedBody": {
+    "placeholders": {
+      "ups": {
+        "type": "String"
+      },
+      "fodder": {
+        "type": "String"
+      }
+    }
+  },
+  "guideRarityFeed": "희귀도 올리기: 같은 종 곤충을 먹이면 양분이 차요. 희귀도가 낮은 곤충일수록 조금(일반 {common}), 높을수록 많이(영웅 {epic}) 채우고, 전설이 되려면 양분이 {legend} 필요해요. 이 곤충보다 희귀도가 높은 곤충과 보호·투자한 곤충은 먹이지 않아요. 키운 능력치는 그대로예요.",
+  "@guideRarityFeed": {
+    "placeholders": {
+      "common": {
+        "type": "String"
+      },
+      "epic": {
+        "type": "String"
+      },
+      "legend": {
+        "type": "String"
+      }
+    }
+  },
+  "rarityWorthBtn": "양분 {cur} / {next}",
+  "@rarityWorthBtn": {
+    "placeholders": {
+      "cur": {
+        "type": "int"
+      },
+      "next": {
+        "type": "int"
+      }
+    }
+  },
+  "rarityFeedTitle": "곤충 먹이기",
+  "rarityFeedBody": "같은 종 곤충을 먹이면 양분이 찹니다. 희귀도가 낮은 곤충일수록 조금, 높을수록 많이 채워요. 양분이 가득 차면 희귀도가 오르고, 등급 올리기에 쓰는 등급 양분도 함께 쌓여요.",
+  "rarityFeedGauge": "양분 {cur} / {next} → {name}",
+  "@rarityFeedGauge": {
+    "placeholders": {
+      "cur": {
+        "type": "int"
+      },
+      "next": {
+        "type": "int"
+      },
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "rarityFeedToNext": "다음 단계까지 {n}마리 → {to}",
+  "@rarityFeedToNext": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      },
+      "to": {
+        "type": "String"
+      }
+    }
+  },
+  "rarityFeedAll": "전부 먹이기 {n}마리 → {to}",
+  "@rarityFeedAll": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      },
+      "to": {
+        "type": "String"
+      }
+    }
+  },
+  "rarityFeedNone": "먹일 수 있는 같은 종 곤충이 없어요",
+  "rarityNeedOnline": "인터넷에 연결된 상태에서 올릴 수 있어요",
+  "guideFairyFeed": "같은 종류 요정을 먹이면 양분이 차고, 가득 차면 등급이 올라요. 등급이 낮은 요정일수록 조금(일반 {common}), 높을수록 많이(영웅 {epic}) 채우고, 신화까지 양분이 {mythic} 필요해요. 등급이 올라도 품질은 그대로 이어 가요. 동행 중·레벨을 올린 요정과 더 높은 등급 요정은 재료가 되지 않아요. 레벨 1당 능력치 +{perLevel} · 등급별 최대 레벨 {caps}.",
+  "@guideFairyFeed": {
+    "placeholders": {
+      "common": {
+        "type": "String"
+      },
+      "epic": {
+        "type": "String"
+      },
+      "mythic": {
+        "type": "String"
+      },
+      "perLevel": {
+        "type": "String"
+      },
+      "caps": {
+        "type": "String"
+      }
+    }
+  },
+  "fairyFeedBtn": "먹이기",
+  "fairyFeedTitle": "요정 먹이기",
+  "fairyFeedBody": "같은 종류 요정을 먹이면 양분이 찹니다. 등급이 낮은 요정일수록 조금, 높을수록 많이 채워요. 양분이 가득 차면 등급이 오르고, 품질은 그대로 이어 가요.",
+  "fairyFeedNone": "먹일 수 있는 같은 종류 요정이 없어요",
+  "fairyFeedNote": "동행 중·레벨을 올린 요정과 이 요정보다 등급이 높은 요정은 먹이지 않아요.",
+  "fairyFeedUp": "{grade} 등급이 되었어요!",
+  "@fairyFeedUp": {
+    "placeholders": {
+      "grade": {
+        "type": "String"
+      }
+    }
+  },
+  "fairyFeedStored": "양분이 쌓였어요",
+  "fairyFeedHubHint": "요정을 눌러 [먹이기]로 같은 종류 요정을 먹일 수 있어요. 자동 먹이기는 종류마다 가장 아끼는 요정에 먹여요.",
+  "fairyAutoFeed": "자동 먹이기",
+  "fairyAutoFeedConfirm": "등급 올리기 {ups}번 · 재료로 사라지는 요정 {used}마리",
+  "@fairyAutoFeedConfirm": {
+    "placeholders": {
+      "ups": {
+        "type": "String"
+      },
+      "used": {
+        "type": "String"
+      }
+    }
+  },
+  "fairyAutoFeedDone": "등급이 {ups}번 올랐어요",
+  "@fairyAutoFeedDone": {
+    "placeholders": {
+      "ups": {
+        "type": "String"
+      }
+    }
+  },
+  "guideStorageFeed": "필요 없는 곤충은 분해(재료)하거나, 같은 종 곤충에게 먹여요(곤충 상세의 양분 버튼). 먹이면 희귀도 양분과 등급 양분이 함께 쌓이고, 등급 양분은 그 곤충의 등급 올리기·패시브 재굴림에 쓰여요. 예전에 모은 정수는 그 종에서 먼저 쓰여요. 아끼는 곤충은 잠그면 분해·먹이기 재료로 쓰이지 않아요. 장착·부화 중·훈련 중인 곤충도 재료가 되지 않아요.",
+  "guidePassiveRerollFeed": "재굴림: 등급 양분 {essence} 또는 젤리 {jelly}개로 크기를 다시 정하고, 새 값과 지금 값 중 골라요(남은 옛 정수를 먼저 써요). 종류는 바뀌지 않아요.",
+  "@guidePassiveRerollFeed": {
+    "placeholders": {
+      "essence": {
+        "type": "String"
+      },
+      "jelly": {
+        "type": "String"
+      }
+    }
+  },
+  "rarityFeedGrade": "등급 양분 +{n}",
+  "@rarityFeedGrade": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "igGradeUpFunds": "등급 양분 {have} / {need}",
+  "@igGradeUpFunds": {
+    "placeholders": {
+      "have": {
+        "type": "String"
+      },
+      "need": {
+        "type": "String"
+      }
+    }
+  },
+  "igNeedMoreFunds": "등급 양분 {n} 더 필요해요 — 같은 종 곤충을 먹여 채워요",
+  "@igNeedMoreFunds": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
+  "igLegacyEssenceFirst": "남은 옛 정수 {n}개를 먼저 써요",
+  "@igLegacyEssenceFirst": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
+  "passiveRerollFundsHave": "등급 양분 보유 {have}",
+  "@passiveRerollFundsHave": {
+    "placeholders": {
+      "have": {
+        "type": "String"
+      }
+    }
+  },
+  "rarityFeedNote": "보호·투자한 곤충과 이 곤충보다 희귀도가 높은 곤충은 먹이지 않아요.",
+  "rarityFeedStored": "양분이 쌓였어요 ({cur} / {next})",
+  "@rarityFeedStored": {
+    "placeholders": {
+      "cur": {
+        "type": "int"
+      },
+      "next": {
+        "type": "int"
+      }
+    }
+  },
   "renameForcedTitle": "닉네임을 변경해 주세요",
   "renameForcedBody": "운영자가 닉네임 변경을 요청했어요.\n다른 이용자에게 표시되는 이름이라 규칙에 맞아야 합니다.\n이번 변경은 무료예요.",
   "nicknameChangeTitle": "닉네임 변경",
@@ -1505,7 +1748,7 @@
   "abyssFloorClear": "{n}층 돌파!",
   "abyssMilestone": "{n}층 첫 도달! 화석 +{fossil}",
   "abyssBest": "역대 최고 {n}층",
-  "abyssWeekReset": "새 주가 시작됐어요 — 심연 1층부터!",
+  "abyssWeekReset": "새 주가 시작됐어요 — 심연 {n}층부터!",
   "abyssRankRewardTitle": "심연 주간 순위 보상",
   "abyssRankRewardBody": "지난주 심연 {floor}층 · {rank}위를 차지했어요!",
   "boardTitle": "순위표",
@@ -1617,7 +1860,9 @@
   "eventEntryEmpty": "아래에서 가장 잘 키운 곤충을 골라 무대에 올려요",
   "eventBuffNow": "지금 받고 있는 강화",
   "eventCardMaxed": "최대치",
-  "@eventCardMaxed": {"description": "대회 카드 — 누적 상한에 닿아 더 골라도 수치가 오르지 않는 카드 표시"},
+  "@eventCardMaxed": {
+    "description": "대회 카드 — 누적 상한에 닿아 더 골라도 수치가 오르지 않는 카드 표시"
+  },
   "eventBuffNone": "받은 강화 없음",
   "eventBuffRevive": "부활 {n}",
   "eventFallRetry": "체력 -{pct}% · 같은 웨이브를 다시 싸워요",
@@ -2450,14 +2695,53 @@
   "respecGift1021Toast": "1.0.21 업데이트 기념 — 모든 곤충의 훈련 다시 찍기가 한 번 무료예요(대기 없음)",
   "dexBestRarity": "최고 희귀도",
   "rarityUpBtn": "희귀도 올리기 {have}/{need}",
-  "@rarityUpBtn": {"placeholders": {"have": {"type": "int"}, "need": {"type": "int"}}},
+  "@rarityUpBtn": {
+    "placeholders": {
+      "have": {
+        "type": "int"
+      },
+      "need": {
+        "type": "int"
+      }
+    }
+  },
   "rarityUpTitle": "희귀도 올리기",
   "rarityUpConfirm": "같은 종 · 희귀도 {grade} 곤충 {n}마리를 재료로 써서 희귀도 {next}(으)로 올려요.\n재료 곤충은 사라져요(키운 곤충·등급 올린 곤충·뽑기 출신·장착·잠금 곤충은 쓰지 않아요).",
-  "@rarityUpConfirm": {"placeholders": {"grade": {"type": "String"}, "n": {"type": "int"}, "next": {"type": "String"}}},
+  "@rarityUpConfirm": {
+    "placeholders": {
+      "grade": {
+        "type": "String"
+      },
+      "n": {
+        "type": "int"
+      },
+      "next": {
+        "type": "String"
+      }
+    }
+  },
   "rarityUpNeed": "같은 종 · 희귀도 {grade} 곤충이 {need}마리 필요해요(지금 {have}마리 · 키운 곤충·등급 올린 곤충·뽑기 출신·장착·잠금 곤충은 재료가 아니에요)",
-  "@rarityUpNeed": {"placeholders": {"grade": {"type": "String"}, "need": {"type": "int"}, "have": {"type": "int"}}},
+  "@rarityUpNeed": {
+    "placeholders": {
+      "grade": {
+        "type": "String"
+      },
+      "need": {
+        "type": "int"
+      },
+      "have": {
+        "type": "int"
+      }
+    }
+  },
   "rarityUpDone": "희귀도가 {grade}(으)로 올랐어요!",
-  "@rarityUpDone": {"placeholders": {"grade": {"type": "String"}}},
+  "@rarityUpDone": {
+    "placeholders": {
+      "grade": {
+        "type": "String"
+      }
+    }
+  },
   "rarityUpMax": "이미 가장 높은 희귀도예요",
   "rarityUpGo": "올리기",
   "arenaName": "{arena} 경기장",
@@ -2544,9 +2828,10 @@
   "whatsNew22Convenience2": "알 10회 뽑기 · 회복실 「모두 회복」 · 부화기 「좋은 알부터 넣기」 · 요정 레벨 한 번에 올리기 · 사냥 강화 「근성」 이름을 「체력」으로",
   "guideRarityTitle": "곤충 희귀도 (일반~전설)",
   "guideRarityBody": "희귀도는 종이 아니라 곤충마다 정해져요. 같은 종이라도 일반부터 전설까지 있어요. 희귀도는 보석(◆) 색으로, 개체 등급은 이름표로 보여요.\n야생·짝짓기: {wild}\n알 뽑기: {gacha}",
-  "guideRarityEffect": "희귀도가 높을수록 펫으로 장착했을 때 사냥 기여가 커지고({hunt}), 결투·대회의 체력·공격·방어가 올라가요(전설 {duel}). 정수로 바꿀 때 가치도 커지고, 부화·짝짓기 시간은 길어져요.",
+  "guideRarityEffect": "희귀도가 높을수록 펫으로 장착했을 때 사냥 기여가 커지고({hunt}), 결투·대회의 체력·공격·방어가 올라가요(전설 {duel}). 먹이기 재료로 쓰면 등급 양분도 더 많이 채우고, 부화·짝짓기 시간은 길어져요.",
   "guideRarityUp": "희귀도 올리기: 같은 종·같은 희귀도 곤충 {n}마리를 재료로 쓰면 한 단계 올라가요(전설까지). 키운 능력치는 그대로예요. 장착·부화 중·훈련·잠금 곤충과 이색·키운 곤충은 재료로 쓰지 않아요.",
   "guidePotionCost": "등급 올리기에 드는 그 종 정수: {costs}(일반→고급부터 차례로). 성장물약을 한 번에 {max}개까지 함께 쓰면 새로 굴린 능력치 품질에 1개당 +{bonus}점이 더해져요(100점까지).",
+  "guidePotionCostFeed": "등급 올리기에 드는 등급 양분: {costs}(일반→고급부터 차례로 · 남은 옛 정수를 먼저 써요). 성장물약을 한 번에 {max}개까지 함께 쓰면 새로 굴린 능력치 품질에 1개당 +{bonus}점이 더해져요(100점까지).",
   "guidePotionGet": "성장물약은 젤리 {jelly}개로 하루 {daily}개까지 살 수 있어요. 무료로는 정예({elite}), 보스 첫 처치({bossFirst}개), 보스 다시 잡기({bossChance}), 그날 첫 미션, 심연 {every}층마다({abyss}개)에서 얻어요. 정예·보스 확률 드롭은 하루 {cap}개까지이고, 채집가의 손길이 켜져 있으면 확률이 ×{mult}예요.",
   "guideZoneTitle": "사냥터 · 보스 · 난이도 · 심연",
   "guideZoneBody": "난이도(쉬움·보통·어려움·극한)마다 사냥터 {zones}개와 최종 보스가 있어요. 사냥터에서 몬스터 {kills}마리를 잡으면 보스 도전이 열리고, 보스를 잡으면 다음 사냥터로 가요. 사냥터를 처음 깨면 그 사냥터 {mins}분치 골드를 받아요.",
@@ -2584,12 +2869,12 @@
   "whatsNew25Fix": "왕충 선발대회 배너가 길어져 밀리던 것, 결투 무료 충전 버튼 크기, 설정 공략집 빨간 점이 잘리던 것을 고쳤어요",
   "whatsNew26Lab": "연구소가 생겼어요 — 사냥·육성·결투를 키우는 연구 29가지를 골드와 재료로 오래 연구해요",
   "whatsNew26Tabs": "하단 탭이 두 쪽이 됐어요 — ⇄ 버튼으로 장비·스킬·요정·연구소를 오가요",
-  "whatsNew26Pass": "새 상품: 연구 패스(앱을 꺼 둔 사이에도 연구 표본이 모이고 연구 시간 −15%)와 올인원 패스(패스 4종 묶음) · 곤충학자 패스의 방치 골드가 2배가 됐어요",
+  "whatsNew26Pass": "새 상품: 연구 패스(앱을 꺼 둔 사이에도 연구 샘플이 모이고 연구 시간 −15%)와 올인원 패스(패스 4종 묶음) · 곤충학자 패스의 방치 골드가 2배가 됐어요",
   "whatsNew26SexSize": "암컷 곤충이 암컷 그림과 암컷 크기로 보여요 — 결투 힘은 그대로예요",
   "whatsNew26Account": "계정: 아이폰에서도 구글로 로그인할 수 있어요 · 로그아웃하면 이 기기는 처음부터 시작해요(진행은 계정에 남아 다시 로그인하면 돌아와요)",
   "whatsNew27Arena": "결투 경기장이 판마다 바뀌어요 — 첫 판은 상대를 고를 때 보여 준 경기장, 다음 판부터는 앞 판과 다른 경기장이에요",
   "whatsNew27Research": "연구가 끝나면 칸에 '연구 완료' 버튼이 떠요 — 눌러서 받아야 레벨이 올라요",
-  "researchSamples": "연구 표본",
+  "researchSamples": "연구 샘플",
   "researchSlotEmpty": "비어 있음",
   "researchSlotOpensAt": "{tier}에서 열림",
   "researchSlotBuy": "칸 열기",
@@ -2609,7 +2894,7 @@
   "researchLockedReq": "{name} Lv{lv} 필요",
   "researchDoneToast": "{name} Lv{lv} 연구 완료!",
   "researchCostMaterials": "재료 각 {n}",
-  "researchHowToGet": "연구 표본은 정예·보스가 떨어뜨려요. 골드·재료 비용은 가 본 가장 높은 사냥터 기준이에요.",
+  "researchHowToGet": "연구 샘플은 정예·보스가 떨어뜨려요. 골드·재료 비용은 가 본 가장 높은 사냥터 기준이에요.",
   "researchUnitPp": "%p",
   "researchErrMaxLevel": "이미 최고 레벨이에요",
   "researchErrLocked": "앞 연구를 먼저 올려야 해요",
@@ -2621,7 +2906,7 @@
   "researchErrGeneric": "연구를 진행할 수 없어요",
   "notifResearchTitle": "연구 완료!",
   "notifResearchBody": "연구가 끝났어요. 연구소에서 다음 연구를 시작해 보세요.",
-  "researchPassHint": "연구 패스: 앱을 꺼도 표본이 모여요",
+  "researchPassHint": "연구 패스: 앱을 꺼도 샘플이 모여요",
   "researchPassHintGo": "상점",
   "passExpireTitle": "패스가 곧 끝나요",
   "passExpireBody": "{names} — {days}일 남았어요. 상점에서 연장할 수 있어요",
@@ -2652,16 +2937,471 @@
   "researchFxHuntCritDmg": "사냥 치명 피해",
   "researchFxHuntRegen": "사냥 체력 회복",
   "researchFxHuntEvade": "사냥 회피",
-  "researchFxHuntExp": "경험치 획득",
+  "researchFxHuntExp": "경험치 획득(방치 포함)",
   "researchFxSkillCooldown": "스킬 쿨타임",
   "researchFxForgeTime": "공방 등급업·초월 시간",
   "researchFxStarTime": "별 강화 시간",
   "researchFxPolishCost": "다듬기 비용",
   "researchFxTraitChance": "혈통 특성 열림 확률",
-  "researchFxPotionChance": "성장물약 드롭 확률",
+  "researchFxPotionChance": "성장물약 드롭 확률 · 10레벨마다 하루 한도 +1",
   "researchFxSalvageMat": "분해·방생 재료",
   "researchFxExchangeGain": "교환소 받는 양",
   "researchFxGiftGold": "선물·일일보상 골드·재료",
   "researchFxDuelCrit": "결투 치명 확률",
-  "researchFxDuelGrit": "탭 반격 문턱"
+  "researchFxDuelGrit": "탭 반격이 쉬워짐(문턱)",
+  "researchFxKillHeal": "처치 회복량",
+  "researchFxPetShare": "장착 펫 기여(공격·체력)",
+  "abyssSporesGot": "심연 포자 +{n}",
+  "researchTabAbyss": "심연",
+  "abyssSpores": "심연 포자",
+  "abyssLabInfo": "심연 포자는 이번 주에 처음 깬 층의 보스와, 10층마다 처음 닿을 때 나와요. 심연 연구의 효과는 심연 안에서만 붙어요.",
+  "abyssLabLocked": "극한 최종 보스를 잡아 심연을 열면 연구할 수 있어요.",
+  "abyssLabSlotTitle": "심연 연구 칸",
+  "abyssLabSlotEmpty": "비어 있어요 — 아래에서 연구를 고르세요",
+  "abyssLabNoSpores": "심연 포자가 모자라요",
+  "researchFxAbyssShortcut": "새 주 시작 층(지난주 최고 층 대비, 10층 단위)",
+  "researchFxAbyssFastFloor": "심연 보스 도전까지 처치 수",
+  "researchFxMutationTame": "주간 변이의 불리한 효과",
+  "researchFxCrystalBonus": "심연 결정 획득",
+  "researchFxSporeBonus": "심연 포자 획득",
+  "researchFxAbyssIdleGold": "심연 방치 골드",
+  "upgradeRecommend": "추천",
+  "upgradeFxHits": "몬스터 처치 {from}대 → {to}대",
+  "@upgradeFxHits": {
+    "placeholders": {
+      "from": {
+        "type": "String"
+      },
+      "to": {
+        "type": "String"
+      }
+    }
+  },
+  "upgradeFxBoss": "보스 약 {from} → {to}",
+  "@upgradeFxBoss": {
+    "placeholders": {
+      "from": {
+        "type": "String"
+      },
+      "to": {
+        "type": "String"
+      }
+    }
+  },
+  "upgradeFxBite": "한 대 맞으면 {from}% → {to}%",
+  "@upgradeFxBite": {
+    "placeholders": {
+      "from": {
+        "type": "String"
+      },
+      "to": {
+        "type": "String"
+      }
+    }
+  },
+  "upgradeFxGold": "골드 수입 +{from}% → +{to}%",
+  "@upgradeFxGold": {
+    "placeholders": {
+      "pct": {
+        "type": "String"
+      }
+    }
+  },
+  "upgradeFxXp": "경험치 +{from}% → +{to}%",
+  "@upgradeFxXp": {
+    "placeholders": {
+      "pct": {
+        "type": "String"
+      }
+    }
+  },
+  "upgradeFxBugs": "곤충 발견 +{from}% → +{to}%",
+  "@upgradeFxBugs": {
+    "placeholders": {
+      "pct": {
+        "type": "String"
+      }
+    }
+  },
+  "upgradeFxMats": "재료 +{from}% → +{to}%",
+  "@upgradeFxMats": {
+    "placeholders": {
+      "pct": {
+        "type": "String"
+      }
+    }
+  },
+  "upgradeFxSec": "{n}초",
+  "@upgradeFxSec": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
+  "upgradeFxMin": "{n}분",
+  "@upgradeFxMin": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
+  "upgradeAwakenNext": "각성 Lv.{level}",
+  "@upgradeAwakenNext": {
+    "placeholders": {
+      "level": {
+        "type": "String"
+      }
+    }
+  },
+  "upgradeAwakenToast": "각성! {name} +{n}레벨 덤",
+  "@upgradeAwakenToast": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "n": {
+        "type": "String"
+      }
+    }
+  },
+  "upgradeLuckyToast": "대성공! +{n}레벨 덤",
+  "@upgradeLuckyToast": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
+  "upgradeAwakenInfo": "각성: Lv.{levels}에 닿으면 레벨이 덤으로 붙어요.",
+  "@upgradeAwakenInfo": {
+    "placeholders": {
+      "levels": {
+        "type": "String"
+      }
+    }
+  },
+  "bossLostRecommend": "추천 강화: {name}",
+  "@bossLostRecommend": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "upgradeCapBreak": "한계 돌파",
+  "upgradeCapNeed": "심연 결정이 모자라요 ({have}/{need}) — 심연 10층마다 받아요",
+  "@upgradeCapNeed": {
+    "placeholders": {
+      "have": {
+        "type": "String"
+      },
+      "need": {
+        "type": "String"
+      }
+    }
+  },
+  "upgradeCapOpened": "{name} 상한 +{n}레벨!",
+  "@upgradeCapOpened": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "n": {
+        "type": "String"
+      }
+    }
+  },
+  "abyssCrystalsGot": "심연 결정 +{n}",
+  "@abyssCrystalsGot": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
+  "abyssMutationTitle": "이번 주 심연: {name}",
+  "@abyssMutationTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "abyssImprintTitle": "심연 각인",
+  "abyssImprintBody": "심연 10층마다 받는 결정으로 영구 능력치를 올려요. 강화를 끝까지 찍은 줄은 결정으로 한계 돌파도 할 수 있어요.",
+  "abyssCrystalsHave": "보유 💠{n}",
+  "@abyssCrystalsHave": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
+  "abyssImprintLevel": "Lv.{level} (+{pct}%)",
+  "@abyssImprintLevel": {
+    "placeholders": {
+      "level": {
+        "type": "String"
+      },
+      "pct": {
+        "type": "String"
+      }
+    }
+  },
+  "weekendEventBar": "🎉 {name} · {desc} · {left} 남음",
+  "@weekendEventBar": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "desc": {
+        "type": "String"
+      },
+      "left": {
+        "type": "String"
+      }
+    }
+  },
+  "weekendHours": "{n}시간",
+  "@weekendHours": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
+  "achievementsTitle": "업적 · 칭호",
+  "achievementsBody": "달성한 업적을 누르면 칭호로 달아요. 칭호는 상대 프로필에 보여요.",
+  "achievementsWearing": "다는 중",
+  "sizeRankButton": "크기 순위",
+  "sizeRankTitle": "{name} 크기 순위",
+  "@sizeRankTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "sizeRankEmpty": "아직 기록이 없어요. 가장 큰 개체를 잡아 1위에 올라 보세요!",
+  "sizeRankOffline": "순위를 불러오지 못했어요. 연결을 확인해 주세요.",
+  "sizeRankMine": "내 순위 {rank}위 · {size}mm",
+  "@sizeRankMine": {
+    "placeholders": {
+      "rank": {
+        "type": "String"
+      },
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "practiceDuel": "연습 결투",
+  "practiceOffline": "연습 결투는 서버에 연결돼 있을 때만 할 수 있어요.",
+  "practiceCooldown": "연습 결투는 잠시 뒤에 다시 할 수 있어요.",
+  "practiceFailed": "상대의 방어팀을 불러오지 못했어요.",
+  "kotkTitle": "왕중왕전",
+  "kotkRulesTitle": "하드모드 규칙",
+  "kotkEntryTitle": "내 참가 곤충",
+  "leaderboardLoadFail": "순위를 불러오지 못했어요. 잠시 뒤 다시 시도해 주세요.",
+  "kotkMinNote": "참가 {n}명 이상인 주에만 젤리·뱃지·왕관을 줘요(그보다 적으면 재료만).",
+  "@kotkMinNote": {"placeholders":{"n":{"type":"String"}}},
+  "kotkPendingNote": "결과는 월요일 09시에 확정돼요(표본·보상 반영).",
+  "kotkMinResult": "이번 주는 참가가 {n}명보다 적어 재료만 받았어요.",
+  "@kotkMinResult": {"placeholders":{"n":{"type":"String"}}},
+  "notifKotkTitle": "왕중왕전 마감 임박",
+  "notifKotkBody": "이번 주 왕중왕전에 아직 참가하지 않았어요. 내일 09시에 마감돼요.",
+  "weeklyTitle": "지난주 기록",
+  "weeklySubtitle": "새 주가 시작됐어요!",
+  "weeklyLevels": "강화 {n}레벨 올렸어요",
+  "@weeklyLevels": {"placeholders":{"n":{"type":"String"}}},
+  "weeklyLucky": "강화 대성공 {n}번",
+  "@weeklyLucky": {"placeholders":{"n":{"type":"String"}}},
+  "weeklyAwaken": "각성 {n}번",
+  "@weeklyAwaken": {"placeholders":{"n":{"type":"String"}}},
+  "weeklyAbyss": "심연 최고 {n}층",
+  "@weeklyAbyss": {"placeholders":{"n":{"type":"String"}}},
+  "kotkRewardNone": "보상 없음",
+  "kotkWithdrawn": "참가를 취소했어요",
+  "kotkSpecimenOpen": "표본함 보기",
+  "kotkHallIn": "명예의 전당에 올랐어요!",
+  "kotkPetWarn": "지금 펫으로 장착 중이에요 — 지면 펫에서도 빠져요.",
+  "beginnerHatchTag": "신규 혜택 {left}번 남음 · 최대 {min}분",
+  "@beginnerHatchTag": {"placeholders":{"left":{"type":"String"},"min":{"type":"String"}}},
+  "badgeKotk": "제{round}회 왕중왕",
+  "@badgeKotk": {"placeholders":{"round":{"type":"String"}}},
+  "kotkRound": "제{n}회",
+  "@kotkRound": {"placeholders":{"n":{"type":"String"}}},
+  "kotkPreparing": "준비 중",
+  "kotkPreparingBody": "제1회 왕중왕전은 {m1}월 {d1}일(월) 09시부터 참가를 받고, {m2}월 {d2}일(일) 09시에 결과가 나와요.",
+  "@kotkPreparingBody": {"placeholders":{"m1":{"type":"String"},"d1":{"type":"String"},"m2":{"type":"String"},"d2":{"type":"String"}}},
+  "kotkRewardsTitle": "성적 보상",
+  "kotkRewardJelly": "젤리 {n}",
+  "@kotkRewardJelly": {"placeholders":{"n":{"type":"String"}}},
+  "kotkRewardPotion": "성장물약 {n}",
+  "@kotkRewardPotion": {"placeholders":{"n":{"type":"String"}}},
+  "kotkRewardFossil": "화석 {n}",
+  "@kotkRewardFossil": {"placeholders":{"n":{"type":"String"}}},
+  "kotkRewardElement": "오행석 {n}",
+  "@kotkRewardElement": {"placeholders":{"n":{"type":"String"}}},
+  "kotkRewardTemper": "기질석 {n}",
+  "@kotkRewardTemper": {"placeholders":{"n":{"type":"String"}}},
+  "kotkRewardChamp": "우승 곤충에 황금 왕관 · 대표 뱃지",
+  "kotkResultTitle": "왕중왕전 결과",
+  "kotkResultNone": "대진(상위 32마리)에 오르지 못했어요. 곤충은 그대로예요.",
+  "kotkResultRetired": "진 곤충은 표본이 되어 표본함으로 갔어요.",
+  "kotkResultChamp": "우승 곤충에 황금 왕관이 붙었어요!",
+  "kotkPreparingErr": "아직 준비 중이에요. 첫 회차부터 참가할 수 있어요.",
+  "kotkChampMark": "왕중왕",
+  "kotkRules": "주마다 곤충 1마리로 참가해요. 일요일 09시에 접수가 닫히면 전투력 상위 32마리가 토너먼트를 치러요(한 경기 = 2판 먼저 이기기).\n우승하지 못한 곤충(준우승 포함)은 표본이 되어 결투·대회·펫·짝짓기·먹이에 다시 쓸 수 없어요 — 진 곤충은 소모돼요(채집함 칸은 차지하지 않아요). 대진에 못 오르면 그대로예요.\n결과는 일요일 09시에 나오고, 운영 확인을 거쳐 월요일 09시에 확정돼요(표본·보상).\n16강 이상은 명예의 전당에 남아요.",
+  "kotkOpen": "접수 중 · 일요일 09시 마감",
+  "kotkClosedNow": "이번 주 접수가 끝났어요",
+  "kotkCount": "참가 {n}명 · 전투력 상위 {max}마리가 대진에 올라요",
+  "@kotkCount": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      },
+      "max": {
+        "type": "String"
+      }
+    }
+  },
+  "kotkMine": "내 참가: {name}",
+  "@kotkMine": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "kotkEnter": "참가하기",
+  "kotkChange": "곤충 바꾸기",
+  "kotkWithdraw": "참가 취소",
+  "kotkPickTitle": "참가할 곤충",
+  "kotkConfirmTitle": "정말 참가할까요?",
+  "kotkConfirmBody": "참가 곤충: {name}\n우승하지 못하면(준우승 포함) 이 곤충은 표본이 되어 결투·대회·펫·짝짓기·먹이에 다시 쓸 수 없어요. 되돌릴 수 없어요.\n대진(상위 32마리)에 못 오르면 그대로예요.",
+  "@kotkConfirmBody": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "kotkConfirmGo": "참가",
+  "kotkEntered": "왕중왕전에 참가했어요!",
+  "kotkFailed": "참가하지 못했어요. 잠시 뒤 다시 해 주세요.",
+  "kotkNoAdult": "참가할 수 있는 성충이 없어요.",
+  "kotkRetiredBug": "표본이 된 곤충은 다시 쓸 수 없어요.",
+  "kotkThisWeek": "이번 주 결과",
+  "kotkLastWeek": "지난주 결과",
+  "kotkBracket": "대진표 보기",
+  "kotkBye": "부전승",
+  "kotkMyPlace": "내 성적: {place}",
+  "@kotkMyPlace": {
+    "placeholders": {
+      "place": {
+        "type": "String"
+      }
+    }
+  },
+  "kotkPlace1": "우승",
+  "kotkPlace2": "준우승",
+  "kotkPlaceN": "{n}강",
+  "@kotkPlaceN": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
+  "kotkFinal": "결승",
+  "kotkHall": "명예의 전당 (16강 이상)",
+  "kotkHallEmpty": "아직 전시된 표본이 없어요.",
+  "kotkOffline": "왕중왕전을 불러오지 못했어요. 연결을 확인해 주세요.",
+  "kotkResultToast": "왕중왕전 결과: {place}",
+  "@kotkResultToast": {
+    "placeholders": {
+      "place": {
+        "type": "String"
+      }
+    }
+  },
+  "specimenBoxTitle": "표본함",
+  "specimenBoxBody": "왕중왕전에서 진 곤충이 표본으로 잠들어 있어요. 채집함 칸을 차지하지 않고, 어디에도 쓸 수 없어요.",
+  "specimenBoxEmpty": "아직 표본이 없어요.",
+  "firstFreeInstant": "첫 1회 무료",
+  "growHowTitle": "강해지는 법",
+  "growHowBody": "지금 힘으로는 이 보스를 잡기 어려워요(약 {time}). 아래를 챙기면 훨씬 빨라져요.",
+  "growHowBuff": "버프 켜기 — 골드·공격이 크게 올라요",
+  "growHowMail": "편지함 — 선물·일일 보상 받기",
+  "growHowUpgrade": "추천 강화: {stat}",
+  "growHowFight": "그래도 도전",
+  "giftArrivedToast": "🎁 깜짝 선물이 도착했어요! 3시간 안에 편지함에서 받으세요",
+  "giftExpiringToast": "🎁 깜짝 선물이 {min}분 뒤에 사라져요 — 편지함에서 받으세요",
+  "tipPetTitle": "펫을 장착해 보세요",
+  "tipPetBody": "채집함에서 곤충을 펫으로 장착하면 사냥할 때 함께 싸워서 공격·체력이 올라요. 알은 부화기에 넣어 키워요.",
+  "tipGearTitle": "장비를 만들어 보세요",
+  "tipGearBody": "사냥하며 모은 화석으로 장비 탭에서 장비를 제련해 끼면 공격·체력이 오래도록 올라요.",
+  "tipGo": "바로 가기",
+  "tourUpgrades": "여기서 골드로 능력을 강화해요. \"추천\"이 붙은 줄부터 사면 가장 빨리 강해져요. 꾹 누르면 연속으로 사요.",
+  "tourStage": "지금 있는 사냥터예요. 몬스터 100마리를 잡으면 보스에 도전할 수 있고, 보스를 잡으면 다음 사냥터가 열려요.",
+  "tourBuffs": "버프예요. 켜 두면 골드·공격이 크게 올라요 — 무료로 켤 수 있으니 꼭 켜 두세요.",
+  "tourMail": "편지함이에요. 점심·저녁 일일 보상과 깜짝 선물이 여기로 와요. 선물은 3시간 안에 받아야 해요.",
+  "tourMission": "미션이에요. 다 채우면 눌러서 보상을 받아요.",
+  "tourStorage": "채집함 — 잡은 곤충이 모여요. 알을 부화시키고, 곤충을 펫으로 장착하면 함께 싸워요.",
+  "tourBattle": "결투 — 키운 곤충 3마리로 다른 사람과 겨뤄요.",
+  "tourShop": "상점 — 젤리·패키지·곤충 알 뽑기가 있어요.",
+  "tourSwitch": "누르면 장비·스킬·요정·연구소 탭으로 바뀌어요.",
+  "tourNext": "다음",
+  "tourDone": "시작하기",
+  "tourSkip": "건너뛰기",
+  "missionGuideHunt": "가만히 두면 캐릭터가 몬스터를 잡아요. 화면을 톡톡 누르면 더 빨라요.",
+  "missionGuideUpgrade": "여기 강화 버튼을 누르면 채워져요. \"추천\"이 붙은 줄부터 사 보세요.",
+  "missionGuideForge": "모루를 누르면 화석 1개로 장비를 한 번 제련해요. 제련할 때마다 채워져요.",
+  "missionGuideBoss": "몬스터 100마리를 잡으면 여기서 보스에 도전할 수 있어요.",
+  "upgradeFxSurvive": "몬스터에게 {from}대 버텨요 → {to}대",
+  "tabTourEquipScene": "캐릭터가 야생 곤충을 쫓아다니는 채집 놀이 화면이에요. 기회가 오면 눌러서 잡을 수 있어요.",
+  "tabTourEquipStats": "장비까지 더한 지금 능력치예요. 장비를 바꾸면 여기 숫자가 바로 바뀌어요.",
+  "tabTourEquipGrid": "장비 칸이에요. 칸을 누르면 지금 낀 장비와 능력치를 보고 바꿀 수 있어요.",
+  "tabTourEquipAnvil": "모루를 누르면 화석 1개로 장비를 하나 만들어요. 만든 장비는 위에 쌓이고, 눌러서 끼거나 팔아요.",
+  "tabTourEquipGrade": "공방 등급을 올리면 더 좋은 등급의 장비가 나와요. 골드와 시간이 들어요.",
+  "tabTourEquipFilter": "필터 — 자동 제련 때 원하는 능력치·등급만 남기고 나머지는 저절로 팔아요.",
+  "tabTourEquipRush": "가속 — 젤리로 잠시 동안 제련이 빨라져요.",
+  "tabTourEquipAuto": "자동 — 켜 두면 화석이 있는 동안 저절로 제련해요.",
+  "tabTourStorageDex": "도감 — 지금까지 잡은 곤충 종류예요. 종류를 모으면 보상을 받아요.",
+  "tabTourStorageMats": "가진 재료예요. 강화·훈련·돌파 같은 곳에 써요.",
+  "tabTourStorageCap": "채집함 칸이에요. 가득 차면 새 곤충이 들어오지 않아요 — 정리하거나 젤리로 늘려요.",
+  "tabTourStoragePets": "장착한 펫이에요. 곤충을 펫으로 끼우면 사냥을 함께 하며 공격·체력을 올려 줘요.",
+  "tabTourStorageTools": "정리 도구 — \"받을 희귀도\"로 낮은 곤충은 재료로 바로 바꾸고, \"자동 분해\"로 한 번에 정리해요.",
+  "tabTourStorageGrid": "잡은 곤충이에요. 누르면 펫 장착, 같은 종 먹이기(희귀도 올리기), 분해를 할 수 있어요.",
+  "tabTourStorageBreed": "짝짓기 — 같은 종 수컷·암컷 성충으로 알을 얻어요. 부모의 속성·기질을 물려받아요.",
+  "tabTourStorageHatch": "부화기 — 알을 넣어 부화시켜요. 다 되면 눌러서 받아요.",
+  "tabTourBattleTicket": "결투 티켓이에요. 결투 한 판에 1장 — 시간이 지나면 차고, 하루 몇 번은 무료로 충전해요.",
+  "tabTourBattleSquad": "출정 곤충 3칸이에요. 성충을 넣어 팀을 짜요 — 순서대로 1·2·3판에 나가요.",
+  "tabTourBattleStart": "전투 시작 — 같은 리그에서 상대를 골라 결투해요. 이기면 점수를 얻어요.",
+  "tabTourBattleRecovery": "회복실 — 결투에서 다친 곤충을 쉬게 해요(젤리로 바로 회복).",
+  "tabTourBattleTraining": "훈련소 — 키운 만큼 생기는 훈련 포인트를 공격·방어·체력 등에 골라 찍어요.",
+  "tabTourBattleBoard": "리그 순위표 — 매주 월요일에 새로 시작해요. 위쪽 20%는 올라가고 아래쪽 20%는 내려가요.",
+  "tabTourShopTop": "추천 상품이에요. 처음 사는 젤리 묶음은 2배로 받아요.",
+  "tabTourShopGacha": "알 뽑기 — 젤리로 곤충 알을 뽑아요. 높은 등급이 잘 나오고, 여러 번 뽑으면 천장이 있어요.",
+  "tabTourShopExchange": "교환소 — 젤리를 골드·재료로 바꿔요.",
+  "tabTourSkillGacha": "스킬 뽑기 — 스킬 조각을 얻어요. 하루 한 번은 무료예요.",
+  "tabTourSkillSweep": "소탕 — 잡아 본 보스의 조각을 바로 받아요. 하루 3번 무료.",
+  "tabTourSkillGrade": "승급 — 남는 조각 10개를 한 등급 위 만능 조각 1개로 바꿔요.",
+  "tabTourSkillShards": "가진 스킬 조각이에요. 스킬을 열고 키우는 데 써요.",
+  "tabTourSkillSlots": "장착 칸이에요. 처음엔 2칸이고, 새 난이도에 갈 때마다 늘어나요.",
+  "tabTourSkillList": "스킬 목록 — 눌러서 열고, 키우고, 장착해요. 장착하면 사냥 중에 저절로 써요.",
+  "tabTourFairyCompanion": "동행 요정이에요. 데리고 다니는 요정의 효과가 사냥에 붙어요.",
+  "tabTourFairyNest": "둥지 — 요정 알을 넣어 부화시켜요.",
+  "tabTourFairyGacha": "요정 알 뽑기 — 젤리로 요정 알을 뽑아요.",
+  "tabTourFairyDex": "요정 도감 — 모은 요정 종류와 보상이에요.",
+  "tabTourFairyFeed": "먹이기 — 같은 종류 요정을 먹여 등급을 올려요.",
+  "tabTourFairyRelease": "분해 — 필요 없는 요정을 요정 가루로 바꿔요. 가루로 요정 레벨을 올려요.",
+  "tabTourResearchCurrency": "연구에 드는 재료예요. 연구 샘플은 보스·정예를 잡으면 모여요.",
+  "tabTourResearchSlots": "연구 칸이에요. 연구를 넣으면 시간이 지나 끝나고, 다 되면 눌러서 받아요.",
+  "tabTourResearchTabs": "연구 분야예요 — 사냥·육성·결투·장비·경제. 눌러서 분야를 바꿔요.",
+  "tabTourResearchTree": "연구 목록 — 카드를 눌러 연구를 시작하거나 레벨을 올려요. 연구는 영구히 남아요.",
+  "tabTourResearchAbyss": "심연 — 극한을 깨면 열리는 심연 전용 연구예요. 심연 포자로 해요."
 }

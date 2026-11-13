@@ -1940,6 +1940,66 @@ void main() {
         expect(r.extra['clamped'], isFalse);
       });
 
+      // 요정 먹이기(2026-11-09) — 기존 요정의 등급·양분 상승은 사라진 같은 종류 요정의 채우는 양만큼만.
+      test('먹이기는 통과 · 재료 없이 등급만 올리면 저장본 · 구버전 앱이 떨군 양분은 지킨다', () {
+        expect(fc.gaugeOn, isTrue);
+        final before = withFairy(
+          FairyState(
+            fairies: [for (var i = 1; i <= 4; i++) fy(i, FairyGrade.common)],
+            seq: 4,
+          ),
+        );
+        final fed = feedFairy(before.fairy, fc, 'f1', [
+          'f2',
+          'f3',
+          'f4',
+        ]).state!;
+        final r = actions.mergeSave(
+          before,
+          before.copyWith(fairy: fed).toJson(),
+        );
+        expect(r.save!.fairy.fairyById('f1')!.grade, FairyGrade.rare);
+        expect(r.save!.fairy.fairyById('f1')!.gauge, 4);
+        // 위조: 재료는 그대로인데 f1 만 신화로.
+        final forged = before.fairy.copyWith(
+          fairies: [
+            fy(1, FairyGrade.mythic),
+            for (var i = 2; i <= 4; i++) fy(i, FairyGrade.common),
+          ],
+        );
+        final r2 = actions.mergeSave(
+          before,
+          before.copyWith(fairy: forged).toJson(),
+        );
+        expect(r2.save!.fairy.fairyById('f1')!.grade, FairyGrade.common);
+        // 구버전 앱(gg 모름) — 양분이 빠진 업로드에도 저장본 양분.
+        final s2 = withFairy(
+          FairyState(
+            fairies: [
+              Fairy(
+                id: 'f1',
+                kind: kind,
+                grade: FairyGrade.rare,
+                sub: sub,
+                gauge: 4,
+              ),
+            ],
+            seq: 1,
+          ),
+        );
+        final old =
+            s2
+                .copyWith(
+                  fairy: s2.fairy.copyWith(fairies: [fy(1, FairyGrade.rare)]),
+                )
+                .toJson()
+              ..['feat'] = 29;
+        expect(
+          actions.mergeSave(s2, old).save!.fairy.fairyById('f1')!.gauge,
+          4,
+        );
+      });
+
       // 재굴림(2026-10-04, 조정안 C) — 서버가 굴리고, 업로드로는 대기 결과·횟수를 못 바꾼다.
       test('재굴림: 젤리를 쓰고 대기 결과를 적는다 · 고르면 바뀐다', () {
         final before = withFairy(

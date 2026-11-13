@@ -9,9 +9,11 @@ import '../../domain/red_dots.dart';
 import '../../ui/red_dot.dart';
 import '../../ui/sheet_close.dart';
 import '../../ui/toast.dart';
+import 'specimen_box.dart';
 import '../../data/game_data.dart';
 import '../../domain/audio_service.dart';
 import '../../domain/bug_auto_filter.dart';
+import '../../domain/play_prefs.dart';
 import '../../domain/providers.dart';
 import '../../domain/save_controller.dart';
 import 'package:core_save/core_save.dart';
@@ -33,6 +35,7 @@ import 'grade_panel.dart';
 import 'hatch_reveal.dart';
 import 'passive_panel.dart';
 import '../../ui/colors.dart';
+import '../../ui/tour.dart';
 
 const _honey = kHoney;
 
@@ -181,6 +184,7 @@ class StorageScreen extends ConsumerWidget {
           // 같은 화면 계열에 둔다(탭을 하나 더 늘리면 하단바가 6개가 된다).
           // 애셋(ui/dex.webp)이 들어오면 자동으로 그림으로 바뀐다.
           IconButton(
+            key: TourKeys.named('storage.dex'),
             tooltip: l.dexTitle,
             // 받을 마일스톤 보상이 있으면 빨간 점(2026-10-19).
             icon: RedDotBadge(
@@ -196,22 +200,49 @@ class StorageScreen extends ConsumerWidget {
               context,
             ).push(MaterialPageRoute<void>(builder: (_) => const DexScreen())),
           ),
+          // 표본함(2026-11-12 사장님: 채집함 머리 줄 → 도감 옆). 왕중왕전에서 진 곤충 진열장.
+          IconButton(
+            tooltip: l.specimenBoxTitle,
+            icon: Badge(
+              isLabelVisible: save.specimenCount > 0,
+              label: Text('${save.specimenCount}'),
+              child: specimenBoxIcon(size: 26),
+            ),
+            onPressed: () => showSpecimenBox(context),
+          ),
         ],
       ),
       body: Column(
         children: [
           // 재료는 **칸 수 바보다 위**에 둔다 — 강화·제작에 쓸 재고를 가장 먼저
           // 확인하는 정보라 화면 중간에 있으면 눈에 안 들어온다.
-          _materialsStrip(context, l, save),
-          _capacityBar(context, ref, data, l, save),
-          _equipStrip(context, ref, data, l, save),
+          KeyedSubtree(
+            key: TourKeys.named('storage.mats'),
+            child: _materialsStrip(context, l, save),
+          ),
+          KeyedSubtree(
+            key: TourKeys.named('storage.cap'),
+            child: _capacityBar(context, ref, data, l, save),
+          ),
+          KeyedSubtree(
+            key: TourKeys.named('storage.pets'),
+            child: _equipStrip(context, ref, data, l, save),
+          ),
           // 정리 도구 — 장착 펫 **바로 아래**. 왼쪽은 무엇을 받을지(필터),
           // 오른쪽은 이미 가진 것을 어떻게 정리할지(합성·분해)로 나눈다.
-          _toolBar(context, ref, data, l, save),
+          KeyedSubtree(
+            key: TourKeys.named('storage.tools'),
+            child: _toolBar(context, ref, data, l, save),
+          ),
           const Divider(height: 1, color: Color(0x22FFFFFF)),
           // 보기 거르기 — 보이는 목록만 좁힌다(세이브는 그대로).
           if (save.bugs.isNotEmpty) _viewFilterBar(context, ref, data, l, save),
-          Expanded(child: SafeGrid(child: _grid(context, ref, data, l, save))),
+          Expanded(
+            child: KeyedSubtree(
+              key: TourKeys.named('storage.grid'),
+              child: SafeGrid(child: _grid(context, ref, data, l, save)),
+            ),
+          ),
           _bottomBar(context, ref, data, l, save),
         ],
       ),
@@ -233,9 +264,19 @@ class StorageScreen extends ConsumerWidget {
         padding: const EdgeInsets.fromLTRB(12, 6, 12, 8),
         child: Row(
           children: [
-            Expanded(child: _breedingBar(context, ref, data, l, save)),
+            Expanded(
+              child: KeyedSubtree(
+                key: TourKeys.named('storage.breed'),
+                child: _breedingBar(context, ref, data, l, save),
+              ),
+            ),
             const SizedBox(width: 8),
-            Expanded(child: _incubatorBar(context, ref, data, l, save)),
+            Expanded(
+              child: KeyedSubtree(
+                key: TourKeys.named('storage.hatch'),
+                child: _incubatorBar(context, ref, data, l, save),
+              ),
+            ),
           ],
         ),
       ),
@@ -254,7 +295,7 @@ class StorageScreen extends ConsumerWidget {
   ) {
     final cfg = data.petConfig;
     if (cfg == null) return const SizedBox.shrink();
-    final used = save.bugs.length;
+    final used = save.storageUsed; // 표본(왕중왕전)은 칸 밖
     final cap = save.storageCapacity;
     final full = save.storageFull;
     final atMax = cap >= cfg.storageSlotsMax;
@@ -412,7 +453,10 @@ class StorageScreen extends ConsumerWidget {
           ),
           const SizedBox(width: 8),
           // 개체 등급이 켜지면 합성(같은 종 3마리 → +1)은 등급 올리기로 바뀐다 — 그 자리에 정수 보관함.
-          if (individualGradeOn(data))
+          // 정수를 먹이기에 흡수한 뒤(2026-11-09)엔 **옛 정수가 남은 유저에게만** 보인다 — 새 유저에겐 빈 보관함이 헷갈린다.
+          if (essenceAbsorbed(data) && !save.essence.values.any((v) => v > 0))
+            const SizedBox.shrink()
+          else if (individualGradeOn(data))
             _toolButton(
               label: l.igVaultButton,
               asset: 'assets/images/ui/icon/essence.webp',
@@ -693,7 +737,7 @@ class StorageScreen extends ConsumerWidget {
       ),
       actions: [
         gameDialogButton(l.actionClose, () => Navigator.pop(ctx, false)),
-        if (gradeOn)
+        if (gradeOn && !essenceAbsorbed(data))
           gameDialogButton(
             l.igBulkEssence,
             () => Navigator.pop(ctx, 'essence'),
@@ -716,11 +760,17 @@ class StorageScreen extends ConsumerWidget {
       filter: ref.read(autoReleaseFilterProvider),
     );
     if (!ctx.mounted) return;
-    _snack(
+    if (done.released == 0) {
+      _snack(ctx, l.autoReleaseNone);
+      return;
+    }
+    // 받은 재료를 아이콘과 함께 — 닫기를 눌러야 닫힌다(2026-11-12 사장님, 한 마리 분해와 같은 창).
+    await showRewardPopup(
       ctx,
-      done.released == 0
-          ? l.autoReleaseNone
-          : l.autoReleaseDone(done.released, done.materials),
+      title: l.autoReleaseTitle,
+      subtitle: l.autoReleaseDoneCount(done.released),
+      iconWidget: dialogAsset('assets/images/ui/auto_release.webp'),
+      materials: done.byKind,
     );
   }
 
@@ -822,8 +872,8 @@ class StorageScreen extends ConsumerWidget {
             )
           else
             FutureBuilder<({String? summary, List<String> consumed})>(
-              // 필터가 바뀌면 다시 계산한다(키가 없으면 옛 결과가 남는다).
-              key: ValueKey('${filter.grades.length}_${filter.maxPotential}'),
+              // 키를 두지 않는다 — 필터가 바뀌면 future 가 새로 와서 다시 계산하고, 그동안은 **이전 결과를 그대로** 보인다.
+              // 키를 바꾸던 시절엔 누를 때마다 로딩 동그라미(높이 40)로 접혔다 펴져 창이 반짝였다(2026-11-12 사장님).
               future: preview(filter),
               builder: (context, snap) {
                 if (!snap.hasData) {
@@ -991,6 +1041,8 @@ class StorageScreen extends ConsumerWidget {
     final cfg = data.petConfig;
     final list = save.bugs.where((b) {
       if (b.sex != sex) return false;
+      // 표본(왕중왕전)은 짝짓기에 못 쓴다.
+      if (save.retiredBugs.contains(b.id)) return false;
       final st = cfg == null
           ? b.stage
           : effectiveStage(b.stage, b.stageSince, now, cfg);
@@ -1171,8 +1223,9 @@ class StorageScreen extends ConsumerWidget {
     final fill = ready
         ? 1.0
         : (total > 0 ? (1 - remaining.inSeconds / total).clamp(0.0, 1.0) : 1.0);
-    final jelly = cfg.breedingJelly(remaining);
     final saveNow = r.watch(saveControllerProvider).requireValue;
+    // 처음 써 보는 즉시 산란은 무료(2026-11-12).
+    final jelly = firstFreeCost(saveNow, 'breed', cfg.breedingJelly(remaining));
     final storageFull = saveNow.storageFull;
     return _sectionBox(
       child: Row(
@@ -1268,14 +1321,16 @@ class StorageScreen extends ConsumerWidget {
                     if (ctx.mounted) _snack(ctx, l.breedingGotEgg);
                   },
                   style: _pillStyle(const Color(0xFF7E57C2)),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      jellyIcon(size: 13),
-                      const SizedBox(width: 3),
-                      Text('$jelly'),
-                    ],
-                  ),
+                  child: jelly == 0
+                      ? _pillText(l.firstFreeInstant)
+                      : Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            jellyIcon(size: 13),
+                            const SizedBox(width: 3),
+                            Text('$jelly'),
+                          ],
+                        ),
                 ),
         ],
       ),
@@ -2188,7 +2243,8 @@ class StorageScreen extends ConsumerWidget {
     String bugId,
     Duration rem,
   ) {
-    final cost = cfg.incubateJelly(rem);
+    // 처음 써 보는 즉시 부화는 무료(2026-11-12).
+    final cost = firstFreeCost(save, 'hatch', cfg.incubateJelly(rem));
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -2320,13 +2376,13 @@ class StorageScreen extends ConsumerWidget {
           },
         );
       }
-      final cost = cfg.incubateJelly(rem);
+      final cost = firstFreeCost(save, 'hatch', cfg.incubateJelly(rem));
       return btn(
         key: const ValueKey('eggIncubatorHatching'),
         label: l.incubatorHatching(_remainLabel(l, rem)),
         bg: const Color(0xFF7E57C2),
-        lead: jellyIcon(size: 12),
-        sub: '$cost · ${l.incubatorInstant}',
+        lead: cost > 0 ? jellyIcon(size: 12) : null,
+        sub: cost > 0 ? '$cost · ${l.incubatorInstant}' : l.firstFreeInstant,
         onTap: () => _instantHatch(ctx, r, l, bug.id, cost),
       );
     }
@@ -2339,6 +2395,15 @@ class StorageScreen extends ConsumerWidget {
             Duration(seconds: _incubateSeconds(data, save, bug, sp)),
           ),
         ),
+        // 신규 부화 단축이 남아 있으면 보이게(2026-11-12 점검 — 6번째에 갑자기 5시간이 되면 고장으로 읽혔다).
+        sub:
+            save.beginnerHatches < cfg.beginnerHatchCount &&
+                cfg.beginnerHatchMaxSec > 0
+            ? l.beginnerHatchTag(
+                '${cfg.beginnerHatchCount - save.beginnerHatches}',
+                '${cfg.beginnerHatchMaxSec ~/ 60}',
+              )
+            : null,
         bg: const Color(0xFF2E6DA4),
         onTap: place,
       );
@@ -2408,10 +2473,9 @@ class StorageScreen extends ConsumerWidget {
           Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              jellyIcon(size: 12),
-              const SizedBox(width: 3),
+              if (cost > 0) ...[jellyIcon(size: 12), const SizedBox(width: 3)],
               Text(
-                '$cost',
+                cost > 0 ? '$cost' : l.firstFreeInstant,
                 style: const TextStyle(
                   fontWeight: FontWeight.w900,
                   fontSize: 11.5,
@@ -2873,7 +2937,10 @@ class StorageScreen extends ConsumerWidget {
     DateTime now,
   ) {
     final cfg = data.petConfig;
-    final list = save.bugs.map((b) {
+    // 표본(왕중왕전)은 표본함에 따로 — 채집함 목록에 섞지 않는다(2026-11-10).
+    final list = save.bugs.where((b) => !save.retiredBugs.contains(b.id)).map((
+      b,
+    ) {
       final st = cfg == null
           ? b.stage
           : effectiveStage(b.stage, b.stageSince, now, cfg);
@@ -3020,7 +3087,9 @@ class StorageScreen extends ConsumerWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Text(
-            l.rarityAutoBody('$ups', '$fodder'),
+            data.petConfig?.bugRarity.worthOn == true
+                ? l.rarityAutoFeedBody('$ups', '$fodder')
+                : l.rarityAutoBody('$ups', '$fodder'),
             textAlign: TextAlign.center,
             style: const TextStyle(
               color: Colors.white,
@@ -3110,10 +3179,11 @@ class StorageScreen extends ConsumerWidget {
         .autoRarityUpBugs();
     if (!context.mounted) return;
     if (!r.isOk) {
-      showCenterToast(
-        context,
-        r.error == 'none' ? l.rarityAutoNone : l.igGradeFailed,
-      );
+      showCenterToast(context, switch (r.error) {
+        'none' => l.rarityAutoNone,
+        'offline' => l.rarityNeedOnline,
+        _ => l.igGradeFailed,
+      });
       return;
     }
     AudioService.instance.sfxLevelUp();
@@ -3141,6 +3211,7 @@ class StorageScreen extends ConsumerWidget {
     final cfg = data.petConfig;
     final ready = _rarityReadyIds(data, save);
     final shown = save.bugs.where((b) {
+      if (save.retiredBugs.contains(b.id)) return false;
       final st = cfg == null
           ? b.stage
           : effectiveStage(b.stage, b.stageSince, now, cfg);
@@ -3233,7 +3304,7 @@ class StorageScreen extends ConsumerWidget {
                     ),
                   ),
                   Text(
-                    l.storageViewCount('$shown', '${save.bugs.length}'),
+                    l.storageViewCount('$shown', '${save.storageUsed}'),
                     style: const TextStyle(
                       color: Color(0x99FFFFFF),
                       fontSize: 11,
@@ -3660,6 +3731,27 @@ class StorageScreen extends ConsumerWidget {
                       ),
                     ),
                   ),
+                  // 왕중왕전 우승 곤충(2026-11-12) — 아래 가운데 황금 왕관.
+                  if (ref
+                      .read(saveControllerProvider)
+                      .requireValue
+                      .kotkChampBugs
+                      .contains(bug.id))
+                    Positioned(
+                      bottom: 0,
+                      child: Tooltip(
+                        message: AppLocalizations.of(context).kotkChampMark,
+                        child: rankImage(
+                          'crown',
+                          size: 18,
+                          fallback: const Icon(
+                            Icons.emoji_events_rounded,
+                            size: 16,
+                            color: Color(0xFFFFD977),
+                          ),
+                        ),
+                      ),
+                    ),
                   if (equipped)
                     Positioned(
                       // 음수 좌표는 Stack 이 잘랐다(2026-10-25 점검).
@@ -3952,7 +4044,11 @@ class StorageScreen extends ConsumerWidget {
           ),
         );
       }
-      final pb = computePetBonus(pets, cfg);
+      final pb = computePetBonus(
+        pets,
+        cfg,
+        share: researchPetShareMult(data.researchFx(save.researchLevels)),
+      );
       atkPct = ((pb.attackMult - 1) * 100).toStringAsFixed(0);
       hpPct = ((pb.hpMult - 1) * 100).toStringAsFixed(0);
     }
@@ -4277,15 +4373,20 @@ class StorageScreen extends ConsumerWidget {
     final cfg = data.petConfig!;
     // 부화 시간은 곤충 희귀도(1.0.22 — 꺼져 있으면 종 희귀도). 컨트롤러 `placeInIncubator` 와 같은 값.
     final g = bugRarityOf(data, bug, sp);
-    return researchScaledSeconds(
-      data.iapConfig?.skinnedIncubateSeconds(
+    // 신규 부화 단축(2026-11-12) — 컨트롤러 `placeInIncubator` 와 같은 함수.
+    return beginnerHatchSeconds(
+      save,
+      cfg,
+      researchScaledSeconds(
+        data.iapConfig?.skinnedIncubateSeconds(
+              cfg.incubateDuration(g),
+              save.ownedSkins,
+              sp.id,
+            ) ??
             cfg.incubateDuration(g),
-            save.ownedSkins,
-            sp.id,
-          ) ??
-          cfg.incubateDuration(g),
-      data.researchFx(save.researchLevels),
-      ResearchEffect.hatchTime,
+        data.researchFx(save.researchLevels),
+        ResearchEffect.hatchTime,
+      ),
     );
   }
 
@@ -4478,15 +4579,6 @@ class StorageScreen extends ConsumerWidget {
                     trainLv: trainedPointsOf(save, bug.id),
                     hideStats: isEgg,
                   ),
-                  if (gradeOn) ...[
-                    const SizedBox(height: 6),
-                    gradeQualityCard(l, species, bug, hidden: isEgg),
-                  ],
-                  // 펫 패시브 v2(2026-10-14) — 개체마다 다른 패시브. 알은 종류만(크기는 부화 뒤).
-                  if (petCfg != null) ...[
-                    const SizedBox(height: 6),
-                    petPassiveCard(ctx, r, data, bug, isEgg: isEgg),
-                  ],
                   const SizedBox(height: 6),
                   if (petCfg != null)
                     _injuryCard(ctx, r, petCfg, save, bug, now),
@@ -4504,12 +4596,6 @@ class StorageScreen extends ConsumerWidget {
                         (data.battleConfig ?? const BattleConfig()).training,
                       ),
                     ),
-                  if (petCfg != null && effStage == LifeStage.adult) ...[
-                    const SizedBox(height: 6),
-                    _trainRow(ctx, r, petCfg, save, bug, now),
-                    const SizedBox(height: 6),
-                    _trainPointsRow(ctx, data, save, bug),
-                  ],
                   if (petCfg != null &&
                       (effStage == LifeStage.larva ||
                           effStage == LifeStage.pupa)) ...[
@@ -4525,14 +4611,56 @@ class StorageScreen extends ConsumerWidget {
                       now,
                     ),
                   ],
-                  // 개체 등급이 켜지면 합성은 등급 올리기·정수로 바뀐다.
-                  if (petCfg != null && gradeOn) ...[
+                  // 수련·돌파는 접지 않는다 — 펫 성장의 주된 골드 소비처이고, 돌파 완료 빨간 점이 이 줄의
+                  // 받기 버튼을 가리킨다(접으면 점을 따라와도 버튼이 안 보였다, 2026-11-09 검토).
+                  if (petCfg != null && effStage == LifeStage.adult) ...[
                     const SizedBox(height: 6),
-                    gradeActionsCard(ctx, r, data, save, bug),
-                  ] else if (petCfg != null) ...[
-                    const SizedBox(height: 6),
-                    _synthRow(ctx, r, petCfg, save, bug),
+                    _trainRow(ctx, r, petCfg, save, bug, now),
                   ],
+                  // 성장·능력치 자세히(2026-11-09) — 품질·패시브·훈련 포인트·등급 올리기를 한데 접는다
+                  // ([bugDetailMoreDefault]: 쉬움 사냥터 3 전엔 접힘 · 그 뒤·기존 유저는 펼침 · 고른 값은 기억).
+                  ValueListenableBuilder<bool?>(
+                    valueListenable: PlayPrefs.instance.bugDetailMore,
+                    builder: (ctx, chosen, _) {
+                      final more =
+                          chosen ??
+                          bugDetailMoreDefault(
+                            topTier: save.topTier,
+                            bestStage: save.bestStage,
+                          );
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          const SizedBox(height: 6),
+                          _detailMoreToggle(l, more),
+                          if (more) ...[
+                            if (gradeOn) ...[
+                              const SizedBox(height: 6),
+                              gradeQualityCard(l, species, bug, hidden: isEgg),
+                            ],
+                            // 펫 패시브 v2(2026-10-14) — 개체마다 다른 패시브. 알은 종류만(크기는 부화 뒤).
+                            if (petCfg != null) ...[
+                              const SizedBox(height: 6),
+                              petPassiveCard(ctx, r, data, bug, isEgg: isEgg),
+                            ],
+                            if (petCfg != null &&
+                                effStage == LifeStage.adult) ...[
+                              const SizedBox(height: 6),
+                              _trainPointsRow(ctx, data, save, bug),
+                            ],
+                            // 개체 등급이 켜지면 합성은 등급 올리기·정수로 바뀐다.
+                            if (petCfg != null && gradeOn) ...[
+                              const SizedBox(height: 6),
+                              gradeActionsCard(ctx, r, data, save, bug),
+                            ] else if (petCfg != null) ...[
+                              const SizedBox(height: 6),
+                              _synthRow(ctx, r, petCfg, save, bug),
+                            ],
+                          ],
+                        ],
+                      );
+                    },
+                  ),
                   // 부위 강화는 훈련 v2 에서 훈련 포인트로 흡수됐다(2026-10-08 사장님 — 채집함에서는 아예 뺀다).
                   const SizedBox(height: 12),
                   // 하단 액션: 장착이면 '해제' 단독, 아니면 '장착 + 분해'
@@ -4570,9 +4698,19 @@ class StorageScreen extends ConsumerWidget {
                                       now,
                                     )
                                   : FilledButton.icon(
-                                      onPressed: () => r
-                                          .read(saveControllerProvider.notifier)
-                                          .equipBug(bug.id),
+                                      // 왕중왕전 표본(2026-11-10 사장님 확정)은 펫으로도 못 단다 — 진 곤충은 소모된다.
+                                      onPressed:
+                                          save.retiredBugs.contains(bug.id)
+                                          ? () => showCenterToast(
+                                              ctx,
+                                              l.kotkRetiredBug,
+                                            )
+                                          : () => r
+                                                .read(
+                                                  saveControllerProvider
+                                                      .notifier,
+                                                )
+                                                .equipBug(bug.id),
                                       icon: const Icon(Icons.pets, size: 18),
                                       label: Text(l.equipAction),
                                       style: FilledButton.styleFrom(
@@ -4608,6 +4746,8 @@ class StorageScreen extends ConsumerWidget {
                                           final essence =
                                               gradeOn &&
                                                   petCfg != null &&
+                                                  // 정수 흡수(2026-11-09) 뒤엔 정수라는 대안이 없다.
+                                                  !essenceAbsorbed(data) &&
                                                   !save.pinnedBugIds.contains(
                                                     bug.id,
                                                   )
@@ -4743,15 +4883,26 @@ class StorageScreen extends ConsumerWidget {
                                           host,
                                           title: l.disassembleSnack,
                                           icon: Icons.call_split,
+                                          iconWidget: gameIcon(
+                                            'disassemble',
+                                            size: 30,
+                                            fallback: Icons.call_split,
+                                          ),
                                           materials: gained,
                                         );
                                       },
-                                icon: Icon(
-                                  hatching
-                                      ? Icons.hourglass_bottom_rounded
-                                      : Icons.call_split,
-                                  size: 18,
-                                ),
+                                icon: hatching
+                                    ? const Icon(
+                                        Icons.hourglass_bottom_rounded,
+                                        size: 18,
+                                      )
+                                    // 그림 `ui/icon/disassemble.webp`(없으면 갈래 아이콘).
+                                    : gameIcon(
+                                        'disassemble',
+                                        size: 20,
+                                        fallback: Icons.call_split,
+                                        color: const Color(0xFFEF9A9A),
+                                      ),
                                 label: Text(
                                   hatching
                                       ? l.incubatingLabel
@@ -4845,6 +4996,38 @@ class StorageScreen extends ConsumerWidget {
       borderRadius: BorderRadius.circular(10),
     ),
     child: child,
+  );
+
+  /// "성장·능력치 자세히" 펼치기·접기 줄(2026-11-09) — 누른 값은 기기에 기억한다([PlayPrefs.bugDetailMore]).
+  Widget _detailMoreToggle(AppLocalizations l, bool more) => InkWell(
+    borderRadius: BorderRadius.circular(10),
+    onTap: () => PlayPrefs.instance.setBugDetailMore(!more),
+    child: Container(
+      constraints: const BoxConstraints(minHeight: 44),
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      decoration: BoxDecoration(
+        color: const Color(0x1AFFFFFF),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              more ? l.bugDetailLess : l.bugDetailMore,
+              style: const TextStyle(
+                color: kHoney,
+                fontSize: 13,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ),
+          Icon(
+            more ? Icons.expand_less_rounded : Icons.expand_more_rounded,
+            color: kHoney,
+          ),
+        ],
+      ),
+    ),
   );
 
   /// 부상 회복 카드: 회복 중일 때만 표시(남은 시간 + 젤리 즉시회복).
@@ -5128,7 +5311,12 @@ class StorageScreen extends ConsumerWidget {
     if (ends != null) {
       final rem = ends.difference(now);
       final done = rem <= Duration.zero;
-      final jellyCost = cfg.breakthroughJelly(rem);
+      // 처음 써 보는 즉시 돌파는 무료(2026-11-12).
+      final jellyCost = firstFreeCost(
+        save,
+        'breakthrough',
+        cfg.breakthroughJelly(rem),
+      );
       return _sectionBox(
         child: Row(
           children: [
@@ -5192,7 +5380,11 @@ class StorageScreen extends ConsumerWidget {
                       fallback: Icons.bolt,
                       color: Colors.white,
                     ),
-                    label: Text(l.breakthroughInstant(jellyCost)),
+                    label: Text(
+                      jellyCost == 0
+                          ? l.firstFreeInstant
+                          : l.breakthroughInstant(jellyCost),
+                    ),
                     style: _pillStyle(const Color(0xFF2E6DA4)),
                   ),
           ],
@@ -5770,6 +5962,8 @@ Widget _rarityUpButton(
 ) {
   final l = AppLocalizations.of(ctx);
   final pet = data.petConfig!;
+  // 곤충 양분 게이지(2026-11-09) — 켜져 있으면 3마리 규칙 대신 게이지 버튼.
+  if (pet.bugRarity.worthOn) return _rarityFeedButton(ctx, r, data, bug, sp);
   final save = r.watch(saveControllerProvider).requireValue;
   final cur = bugRarityOf(data, bug, sp);
   final need = pet.bugRarity.upFodder;
@@ -5865,6 +6059,8 @@ Widget _rarityUpButton(
       if (res.isOk) {
         AudioService.instance.sfxRare();
         showCenterToast(ctx, l.rarityUpDone(gradeLabel(l, next)));
+      } else if (res.error == 'offline') {
+        showCenterToast(ctx, l.rarityNeedOnline);
       } else if (res.error == 'no_fodder') {
         // 창을 연 사이 재료가 바뀌었을 수 있다 — 지금 개수를 다시 센다.
         final now = rarityUpFodder(
@@ -5894,6 +6090,195 @@ Widget _rarityUpButton(
           fontSize: 11.5,
           fontWeight: FontWeight.w800,
         ),
+      ),
+    ),
+  );
+}
+
+/// 곤충 양분 게이지 버튼(2026-11-09 사장님 확정) — "양분 12 / 16" + 막대. 누르면 다음 단계까지·전부 먹이기를 고른다.
+/// 재료는 core_save `rarityFeedPlan`(같은 종 · 이 곤충 이하 희귀도 · 가치 작은 것부터) — 사라질 곤충을 먼저 보여 준다.
+Widget _rarityFeedButton(
+  BuildContext ctx,
+  WidgetRef r,
+  GameData data,
+  IndividualBug bug,
+  Species sp,
+) {
+  final l = AppLocalizations.of(ctx);
+  final pet = data.petConfig!;
+  final cfg = pet.bugRarity;
+  final save = r.watch(saveControllerProvider).requireValue;
+  final cur = bugRarityOf(data, bug, sp);
+  final maxed = cur == Grade.legendary;
+  final worth = bugRarityWorth(bug, cfg);
+  final next = maxed ? cur : Grade.values[cur.index + 1];
+  final goal = cfg.worthOfRarity(next);
+  final toNext = maxed
+      ? const <IndividualBug>[]
+      : rarityFeedPlan(save, bug, pet, data.speciesById, toNext: true);
+  final ready = toNext.isNotEmpty;
+  final base = cfg.worthOfRarity(cur);
+  final frac = maxed || goal <= base
+      ? 1.0
+      : ((worth - base) / (goal - base)).clamp(0.0, 1.0);
+  return InkWell(
+    key: const ValueKey('rarityUpBtn'),
+    borderRadius: BorderRadius.circular(10),
+    onTap: () async {
+      // 전설 희귀도라도 정수 흡수(2026-11-09) 뒤엔 등급 양분을 위해 먹인다.
+      if (maxed && !essenceAbsorbed(data)) {
+        showCenterToast(ctx, l.rarityUpMax);
+        return;
+      }
+      final all = rarityFeedPlan(
+        save,
+        bug,
+        pet,
+        data.speciesById,
+        toNext: false,
+      );
+      if (all.isEmpty) {
+        showCenterToast(ctx, l.rarityFeedNone);
+        return;
+      }
+      int sum(List<IndividualBug> xs) =>
+          xs.fold(worth, (a, f) => a + bugFeedValue(f, cfg));
+      final allTo = cfg.rarityForWorth(sum(all));
+      final locale = Localizations.localeOf(ctx).languageCode;
+      final go = await showGameDialog<bool>(
+        ctx,
+        title: l.rarityFeedTitle,
+        icon: Icons.auto_awesome_rounded,
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              l.rarityFeedBody,
+              style: const TextStyle(
+                color: Color(0xDDFFFFFF),
+                fontSize: 13,
+                height: 1.45,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              l.rarityFeedGauge(worth, goal, gradeLabel(l, next)),
+              style: const TextStyle(
+                color: Color(0xFFFFD27A),
+                fontSize: 13,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              l.rarityUpFodderHead,
+              style: const TextStyle(color: Color(0x99FFFFFF), fontSize: 11.5),
+            ),
+            // 전부 먹이기 기준으로 보여 준다(다음 단계까지는 이 목록의 앞쪽 [toNext] 마리).
+            for (final f in all.take(12))
+              Padding(
+                padding: const EdgeInsets.only(top: 3),
+                child: Text(
+                  '${sp.name.resolve(locale)} · '
+                  '${gradeLabel(l, bugRarityOf(data, f, sp))} · '
+                  '+${bugFeedValue(f, cfg)}',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(color: Colors.white, fontSize: 12),
+                ),
+              ),
+            if (all.length > 12)
+              Text(
+                '… +${all.length - 12}',
+                style: const TextStyle(color: Color(0x99FFFFFF), fontSize: 12),
+              ),
+            const SizedBox(height: 6),
+            Text(
+              l.rarityFeedNote,
+              style: const TextStyle(color: Color(0x99FFFFFF), fontSize: 11),
+            ),
+          ],
+        ),
+        actions: [
+          gameDialogButton(
+            l.actionClose,
+            () => Navigator.pop(ctx),
+            primary: false,
+          ),
+          if (ready)
+            gameDialogButton(
+              l.rarityFeedToNext(toNext.length, gradeLabel(l, next)),
+              () => Navigator.pop(ctx, true),
+              primary: false,
+            ),
+          gameDialogButton(
+            l.rarityFeedAll(all.length, gradeLabel(l, allTo)),
+            () => Navigator.pop(ctx, false),
+          ),
+        ],
+      );
+      if (go == null || !ctx.mounted) return;
+      final res = await r
+          .read(saveControllerProvider.notifier)
+          .rarityFeedBug(bug.id, toNext: go);
+      if (!ctx.mounted) return;
+      if (!res.isOk) {
+        showCenterToast(
+          ctx,
+          res.error == 'offline' ? l.rarityNeedOnline : l.igGradeFailed,
+        );
+        return;
+      }
+      final to = Grade.fromKeyOrNull(res.extra['to'] as String? ?? '') ?? cur;
+      final gradeGot = res.extra['grade'] as int? ?? 0;
+      if (to.index > cur.index) {
+        AudioService.instance.sfxRare();
+        showCenterToast(ctx, l.rarityUpDone(gradeLabel(l, to)));
+      } else if (maxed) {
+        showCenterToast(ctx, l.rarityFeedGrade(gradeGot));
+      } else {
+        final w = res.extra['worth'] as int? ?? worth;
+        showCenterToast(ctx, l.rarityFeedStored(w, goal));
+      }
+    },
+    child: Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: ready ? const Color(0x33EBA52F) : const Color(0x22FFFFFF),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(
+          color: ready ? const Color(0xFFEBA52F) : const Color(0x44FFFFFF),
+        ),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            maxed ? l.rarityUpMax : l.rarityWorthBtn(worth, goal),
+            style: TextStyle(
+              color: ready ? const Color(0xFFFFD27A) : const Color(0xAAFFFFFF),
+              fontSize: 11.5,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          if (!maxed) ...[
+            const SizedBox(height: 3),
+            SizedBox(
+              width: 96,
+              height: 4,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(2),
+                child: LinearProgressIndicator(
+                  value: frac,
+                  backgroundColor: const Color(0x33FFFFFF),
+                  color: const Color(0xFFEBA52F),
+                ),
+              ),
+            ),
+          ],
+        ],
       ),
     ),
   );

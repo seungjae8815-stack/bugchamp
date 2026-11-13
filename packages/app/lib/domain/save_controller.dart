@@ -27,6 +27,8 @@ import '../data/save_repository.dart';
 import 'bug_auto_filter.dart';
 import 'gather_service.dart';
 import 'combat_power.dart';
+import 'discovery.dart';
+import 'funnel_log.dart';
 import 'guild_service.dart';
 import 'game_server.dart';
 import 'providers.dart';
@@ -210,11 +212,19 @@ enum TicketCharge {
   failed,
 }
 
+/// 강화 대성공 판정 seed([upgradeLuckyAt]) — 계정(세이브 생성 시각)과 난이도마다 다르다.
+/// 난이도마다 강화가 초기화되므로 같은 레벨이 늘 같은 자리에서 터지지 않게 난이도를 섞는다.
+int upgradeLuckySeed(SaveGame s) =>
+    (s.createdAt.millisecondsSinceEpoch ~/ 1000) ^ (s.difficultyTier * 7919);
+
 /// 세이브 상태를 보유·변경하는 Riverpod 컨트롤러.
 /// 변경 액션은 상태를 갱신하고 즉시 저장소에 반영(자동 저장)한다.
 class SaveController extends AsyncNotifier<SaveGame> {
   /// 결제 혜택 일일 젤리 수령 기록용 키(dailyClaims 재사용 — 세이브 필드 추가 없이).
   static const _iapDailyKey = '_iapDaily';
+
+  /// 서버 세이브 채택 중 — 이번 저장의 도감 변화는 발견 연출로 보내지 않는다([DiscoveryFeed]).
+  bool _quietDiscoveries = false;
 
   /// 성장 패스 오늘 몫을 준 사본(없거나 이미 받았으면 그대로).
   SaveGame _claimGrowthDaily(SaveGame save, GameData data) {
@@ -436,7 +446,12 @@ class SaveController extends AsyncNotifier<SaveGame> {
     // 심연 층은 **주간**이다(결투 시즌과 같은 경계) — 주가 바뀌었으면 1층부터(A안).
     // 한 번이라도 심연에 들어가 본 세이브만(주 기록이 없으면 들어갈 때 정한다).
     if (battleCfg != null && save.abyssWeek != null) {
-      save = applyAbyssWeek(save, abyssWeekId(now, battleCfg));
+      save = applyAbyssWeek(
+        save,
+        abyssWeekId(now, battleCfg),
+        run: data.runConfig,
+        lab: data.researchConfig,
+      );
     }
 
     return save;
@@ -496,8 +511,11 @@ class SaveController extends AsyncNotifier<SaveGame> {
     final guildGold = kGuildOpen
         ? 1 + (GuildBuffCache.bonus['gold'] ?? 0)
         : 1.0;
+    // 심연 휴식(심연 연구, 2026-11-12) — 심연 안에서 방치한 골드만(서버 정산과 같은 함수).
     final goldMult =
-        (passOn ? (iap?.passIdleGoldMult ?? 1.2) : 1.0) * guildGold;
+        (passOn ? (iap?.passIdleGoldMult ?? 1.2) : 1.0) *
+        guildGold *
+        abyssIdleGoldMult(save, data.researchConfig);
     // 방치 중 처치 수 — 사냥터 게이지와 **곤충·재료 드롭**이 같은 값을 쓴다.
     final clears = actual.clears;
     // 곤충·재료 드롭(2026-10-04) — 처치마다 온라인과 같은 규칙으로 굴린다. 서버 `/sync` 와 같은 함수.
@@ -704,6 +722,16 @@ class SaveController extends AsyncNotifier<SaveGame> {
   void consumePvpRankReward() => pendingPvpRankReward = null;
   void consumeAbyssRankReward() => pendingAbyssRankReward = null;
 
+  /// 왕중왕전 결과(2026-11-12) — 서버가 반영한 성적(1·2·4·8·16·32, 0 = 대진 밖). 앱 셸이 한 번 띄운다.
+  int? pendingKotkPlace;
+
+  /// 그 결과의 참가 곤충 id(팝업에 그림·이름).
+  String? pendingKotkBug;
+
+  /// 그 주 참가자 수(서버 `kotkN`) — 최소 인원 미만이면 젤리·왕관 없이 재료만.
+  int? pendingKotkN;
+  void consumeKotkPlace() => pendingKotkPlace = null;
+
   /// 다음 난이도 회차로 진입한다 — **성장 축을 리셋하고 자산은 남긴다**
   /// (프레스티지, `docs/design_difficulty_loop.md`).
   ///
@@ -795,7 +823,14 @@ class SaveController extends AsyncNotifier<SaveGame> {
     );
     // 연구소 — 끝난 연구는 자동으로 받지 않는다(2026-10-26 — 칸의 "연구 완료" 버튼, [claimResearchNow]).
     final stamped = trained.copyWith(lastSeen: now, saveRev: save.saveRev + 1);
+    // 새 곤충 발견 연출(2026-11-09) — 직전 상태의 도감과 비교한다. 서버 세이브 채택은 조용히([_quietDiscoveries]).
+    final beforeDex = state.value?.dex;
+    if (beforeDex != null && !_quietDiscoveries) {
+      DiscoveryFeed.instance.addAll(dexDiscoveries(beforeDex, stamped.dex));
+    }
     state = AsyncData(stamped);
+    // 신규 유저 이정표(2026-11-09) — 저장 경로 하나에서 보므로 빠지는 길이 없다. 기다리지 않는다.
+    unawaited(FunnelLog.instance.observe(stamped));
     await _repo.save(stamped);
   }
 
@@ -950,6 +985,30 @@ class SaveController extends AsyncNotifier<SaveGame> {
     return null;
   }
 
+  /// 심연 연구 시작(전용 1칸 · 포자). 성공하면 null, 실패하면 [startAbyssLab] 사유 키.
+  Future<String?> startAbyssLabNow(String id) async {
+    final cfg = ref.read(gameDataProvider).value?.researchConfig;
+    if (cfg == null) return 'unknown_research';
+    final r = startAbyssLab(
+      state.requireValue,
+      cfg,
+      id,
+      ref.read(clockProvider).now().toUtc(),
+    );
+    if (r.save == null) return r.error;
+    await _commit(r.save!);
+    return null;
+  }
+
+  /// 끝난 심연 연구를 받는다. 안 끝났거나 없으면 false.
+  Future<bool> claimAbyssLabNow() async {
+    final s = state.requireValue;
+    final next = claimAbyssLab(s, ref.read(clockProvider).now().toUtc());
+    if (identical(next, s)) return false;
+    await _commit(next);
+    return true;
+  }
+
   /// 진행 중 공방 초월을 젤리로 즉시 끝낸다(값표는 공방 등급업과 같다). 실패 이유: `none` · `not_enough_jelly`.
   Future<String?> rushForgeTranscend() async {
     final forge = ref.read(gameDataProvider).value?.forgeConfig;
@@ -1086,7 +1145,13 @@ class SaveController extends AsyncNotifier<SaveGame> {
   bool get bossUnlocked {
     final run = ref.read(gameDataProvider).value?.runConfig;
     if (run == null || !run.zoneMode) return true;
-    return state.requireValue.zoneKills >= run.bossUnlockKills;
+    final s = state.requireValue;
+    return s.zoneKills >=
+        bossUnlockKillsFor(
+          s,
+          run,
+          ref.read(gameDataProvider).requireValue.researchConfig,
+        );
   }
 
   /// 마지막 [advanceZone] 에서 떨어진 요정 알 등급(화면 알림용). 없으면 빈 목록.
@@ -1257,7 +1322,14 @@ class SaveController extends AsyncNotifier<SaveGame> {
     if (run == null) return;
     final s = state.requireValue;
     if (!s.abyssUnlocked) return;
-    await _commit(enterAbyss(s, run, _abyssWeekNow()));
+    await _commit(
+      enterAbyss(
+        s,
+        run,
+        _abyssWeekNow(),
+        lab: ref.read(gameDataProvider).requireValue.researchConfig,
+      ),
+    );
   }
 
   /// 심연 보스에게 넣은 피해 비율 기록(주간 순위 동률 판정). 바뀔 때만 저장한다.
@@ -1273,7 +1345,16 @@ class SaveController extends AsyncNotifier<SaveGame> {
   }
 
   /// 층 보스 처치 → 다음 층(+ 10층마다 첫 도달 보상). 주가 바뀌었으면 1층으로만 돌린다.
-  Future<({bool milestone, int floor, Map<String, int> shards, int fossil})>
+  Future<
+    ({
+      bool milestone,
+      int floor,
+      Map<String, int> shards,
+      int fossil,
+      int crystals,
+      int spores,
+    })
+  >
   clearAbyssFloorNow({math.Random? rng}) async {
     final data = ref.read(gameDataProvider).requireValue;
     final run = data.runConfig;
@@ -1284,17 +1365,26 @@ class SaveController extends AsyncNotifier<SaveGame> {
         floor: s0.abyssFloor,
         shards: const <String, int>{},
         fossil: 0,
+        crystals: 0,
+        spores: 0,
       );
     }
     final week = _abyssWeekNow();
     if (s0.abyssWeek != week) {
-      final reset = applyAbyssWeek(s0, week);
+      final reset = applyAbyssWeek(
+        s0,
+        week,
+        run: run,
+        lab: data.researchConfig,
+      );
       await _commit(reset);
       return (
         milestone: false,
         floor: reset.abyssFloor,
         shards: const <String, int>{},
         fossil: 0,
+        crystals: 0,
+        spores: 0,
       );
     }
     final r = clearAbyssFloor(
@@ -1302,6 +1392,7 @@ class SaveController extends AsyncNotifier<SaveGame> {
       run,
       skill: data.skillConfig,
       rng: rng ?? math.Random(),
+      lab: data.researchConfig,
     );
     // 결투석 — 10층마다 **첫 도달**(역대 최고 기준, 화석·조각과 같은 판정)에 오행 2 · 기질 1.
     var saved = r.save;
@@ -1325,6 +1416,8 @@ class SaveController extends AsyncNotifier<SaveGame> {
       floor: r.save.abyssFloor,
       shards: r.shards,
       fossil: r.fossil,
+      crystals: r.crystals,
+      spores: r.spores,
     );
   }
 
@@ -1375,19 +1468,28 @@ class SaveController extends AsyncNotifier<SaveGame> {
     return out;
   }
 
-  /// 업그레이드를 최대 [count] 레벨까지 구매(골드 되는 만큼). 구매한 레벨 수 반환.
+  /// 업그레이드를 최대 [count] 레벨까지 구매(골드 되는 만큼).
+  /// 오른 레벨 수(`levels`, 대성공 덤 포함) · 대성공 횟수(`lucky`) · 새로 닿은 각성 수(`awakened`)를 돌려준다.
   ///
   /// **기기 권위** — 즉시 로컬 반영(버튼 딜레이 없음). 세이브는 주기 업로드.
-  Future<int> buyUpgrade(UpgradeKind kind, {int count = 1}) async {
+  Future<({int levels, int lucky, int awakened})> buyUpgrade(
+    UpgradeKind kind, {
+    int count = 1,
+  }) async {
+    const none = (levels: 0, lucky: 0, awakened: 0);
     final config = ref.read(gameDataProvider).requireValue.runConfig;
-    if (config == null) return 0;
+    if (config == null) return none;
     final s = state.requireValue;
-    final spec = config.upgrade(kind);
+    // 심연 결정으로 연 상한 돌파까지(2026-11-10).
+    final spec = upgradeSpecOf(config, s, kind);
     final matKind = spec.materialKind;
-    var level = s.upgradeLevel(kind);
+    final start = s.upgradeLevel(kind);
+    var level = start;
     var gold = s.gold;
     final mats = Map<MaterialKind, int>.from(s.materials);
     var bought = 0;
+    var lucky = 0;
+    final seed = upgradeLuckySeed(s);
     for (var i = 0; i < count; i++) {
       // 상한(§6 `maxLevel`). 여기서 막아야 한다 — 화면만 막으면 연타·구버전
       // 앱이 그대로 넘긴다.
@@ -1401,10 +1503,12 @@ class SaveController extends AsyncNotifier<SaveGame> {
       if (matKind != null && matCost > 0) {
         mats[matKind] = (mats[matKind] ?? 0) - matCost;
       }
-      level++;
+      final next = upgradeLevelAfterBuy(config, spec, seed: seed, level: level);
+      if (next > level + 1) lucky++;
+      level = next;
       bought++;
     }
-    if (bought == 0) return 0;
+    if (bought == 0) return none;
     final levels = Map<UpgradeKind, int>.from(s.upgradeLevels)..[kind] = level;
     await _commit(
       s.copyWith(
@@ -1414,11 +1518,43 @@ class SaveController extends AsyncNotifier<SaveGame> {
         missionProgress: _bumpMissions(
           s.missionProgress,
           MissionType.buyUpgrades,
-          bought,
+          level - start,
         ),
       ),
     );
-    return bought;
+    return (
+      levels: level - start,
+      lucky: lucky,
+      // 원래 상한 너머 각성은 없다(`awakenLevelsAt` 과 같은 기준).
+      awakened: spec.awakenAt
+          .where(
+            (a) =>
+                a > start &&
+                a <= level &&
+                (spec.maxLevel == null || a <= spec.maxLevel!),
+          )
+          .length,
+    );
+  }
+
+  /// 심연 결정으로 강화 [kind] 의 상한을 한 단계 연다(2026-11-10). 못 열면 false(대상 아님·다 엶·결정 부족).
+  Future<bool> openUpgradeCap(UpgradeKind kind) async {
+    final run = ref.read(gameDataProvider).requireValue.runConfig;
+    if (run == null) return false;
+    final next = buyUpgradeCapStep(state.requireValue, run, kind);
+    if (next == null) return false;
+    await _commit(next);
+    return true;
+  }
+
+  /// 심연 결정으로 각인 [key] 를 한 레벨 올린다(2026-11-10). 못 올리면 false.
+  Future<bool> buyAbyssImprintNow(String key) async {
+    final run = ref.read(gameDataProvider).requireValue.runConfig;
+    if (run == null) return false;
+    final next = buyAbyssImprint(state.requireValue, run, key);
+    if (next == null) return false;
+    await _commit(next);
+    return true;
   }
 
   /// 미션 [def] 의 **지금 보상**(화면 표시·수령이 같은 값). 젤리는 [MaterialKind.jelly] 로 담는다.
@@ -1548,6 +1684,30 @@ class SaveController extends AsyncNotifier<SaveGame> {
     final s = state.requireValue;
     if (s.avatar == id) return;
     await _commit(s.copyWith(avatar: id));
+  }
+
+  /// 왕중왕전 참가 상태를 서버 응답으로 맞춘다(2026-11-10) — 서버 소유 필드라 화면(재료 잠금·표시)용 사본이다.
+  Future<void> adoptKotkEntry({String? week, String? bugId}) async {
+    final s = state.requireValue;
+    await _commit(
+      week == null || bugId == null
+          ? s.copyWith(clearKotkEntry: true)
+          : s.copyWith(kotkEntryWeek: week, kotkEntryBug: bugId),
+    );
+  }
+
+  /// 칭호를 단다(null 이면 뗀다, 2026-11-10). 달성하지 않은 업적이면 그대로.
+  Future<void> setTitle(String? id) async {
+    final data = ref.read(gameDataProvider).requireValue;
+    final run = data.runConfig;
+    if (run == null) return;
+    final next = setAchievementTitle(
+      state.requireValue,
+      run,
+      id,
+      conquerLevel: data.dexConfig?.conquerLevel ?? 1,
+    );
+    if (next != null) await _commit(next);
   }
 
   /// 진행 중인 미션을 보상 없이 다음 미션으로 바꾼다(젤리 `swapJelly`, 깰 수 없는 미션은 무료).
@@ -1680,6 +1840,9 @@ class SaveController extends AsyncNotifier<SaveGame> {
     // 연구소 "선물 감각"(`giftGold`) — 골드·재료 × (1 + v). 젤리는 그대로(§2.6). 서버 `_capGift` 가 같은 배율로 자른다.
     final fx = data?.researchFx(s.researchLevels) ?? ResearchEffects.none;
     int up(int v) => giftAmountScaled(v, fx);
+    // 재료는 사냥 분치의 일부만(gifts.json `huntMaterialShare`, 2026-11-12).
+    final huntMats = ((hunt?.materialsEach ?? 0) * cfg.huntMaterialShare)
+        .round();
     final gift = GiftMail(
       id: _devUuid.v4(),
       expiry: now.add(Duration(hours: cfg.expiryHours)),
@@ -1698,9 +1861,9 @@ class SaveController extends AsyncNotifier<SaveGame> {
               ),
       ),
       jelly: t.jelly,
-      chitin: up(math.max(t.chitin, hunt?.materialsEach ?? 0)),
-      mineral: up(math.max(t.mineral, hunt?.materialsEach ?? 0)),
-      sap: up(math.max(t.sap, hunt?.materialsEach ?? 0)),
+      chitin: up(math.max(t.chitin, huntMats)),
+      mineral: up(math.max(t.mineral, huntMats)),
+      sap: up(math.max(t.sap, huntMats)),
       minutes: hunt == null ? 0 : t.huntMinutes,
     );
     await _commit(s.copyWith(gifts: [...alive, gift], nextGiftAt: reschedule));
@@ -2581,7 +2744,13 @@ class SaveController extends AsyncNotifier<SaveGame> {
     // 다음 실행의 동점 판정([SaveGame.saveRev])이 거꾸로 간다.
     final localRev = state.value?.saveRev ?? 0;
     if (localRev > save.saveRev) save = save.copyWith(saveRev: localRev);
-    await _commit(save);
+    // 다른 기기에서 모은 곤충은 "새로 만난" 것이 아니다 — 발견 연출을 띄우지 않는다.
+    _quietDiscoveries = true;
+    try {
+      await _commit(save);
+    } finally {
+      _quietDiscoveries = false;
+    }
   }
 
   /// 채팅 사용자 차단/해제(로컬). 차단하면 그 사람 메시지가 보이지 않는다.
@@ -2641,7 +2810,15 @@ class SaveController extends AsyncNotifier<SaveGame> {
       gold: up(math.max(reward.gold, hunt.gold)),
       materials: {
         for (final k in kBreakthroughMaterials)
-          k: up(math.max(reward.materials[k] ?? 0, hunt.materialsEach)),
+          // 재료는 사냥 분치의 일부만(daily.json `huntMaterialShare`, 2026-11-12).
+          k: up(
+            math.max(
+              reward.materials[k] ?? 0,
+              (hunt.materialsEach *
+                      (data.dailyConfig?.huntMaterialShare ?? 1.0))
+                  .round(),
+            ),
+          ),
         if (reward.jelly > 0) MaterialKind.jelly: reward.jelly,
       },
     );
@@ -2706,7 +2883,12 @@ class SaveController extends AsyncNotifier<SaveGame> {
       maxTierReached: math.max(state.requireValue.maxTierReached, tier),
     );
     s = unlockAbyss(s);
-    s = enterAbyss(s, run, _abyssWeekNow());
+    s = enterAbyss(
+      s,
+      run,
+      _abyssWeekNow(),
+      lab: ref.read(gameDataProvider).requireValue.researchConfig,
+    );
     await _commit(s);
   }
 
@@ -3595,7 +3777,11 @@ class SaveController extends AsyncNotifier<SaveGame> {
     if (endsAt == null) return false;
     final bugs = List<IndividualBug>.from(s.bugs);
     if (viaJelly) {
-      final cost = cfg.breakthroughJelly(endsAt.difference(now));
+      final cost = firstFreeCost(
+        s,
+        'breakthrough',
+        cfg.breakthroughJelly(endsAt.difference(now)),
+      );
       final have = s.materials[MaterialKind.jelly] ?? 0;
       if (have < cost) return false;
       final mats = Map<MaterialKind, int>.from(s.materials)
@@ -3604,7 +3790,9 @@ class SaveController extends AsyncNotifier<SaveGame> {
         breakthroughTier: bug.breakthroughTier + 1,
         clearBreakthrough: true,
       );
-      await _commit(s.copyWith(bugs: bugs, materials: mats));
+      await _commit(
+        markFirstFree(s, 'breakthrough').copyWith(bugs: bugs, materials: mats),
+      );
     } else {
       if (now.isBefore(endsAt)) return false; // 아직 안 끝남
       bugs[idx] = bug.copyWith(
@@ -3645,9 +3833,18 @@ class SaveController extends AsyncNotifier<SaveGame> {
       data.researchFx(s.researchLevels),
       ResearchEffect.hatchTime,
     );
-    final endsAt = now.add(Duration(seconds: sec));
+    // 신규 부화 단축(2026-11-12) — 계정의 처음 몇 번은 짧게(화면 시간 표시와 같은 함수).
+    final capped = beginnerHatchSeconds(s, cfg, sec);
+    final endsAt = now.add(Duration(seconds: capped));
     final inc = Map<String, DateTime>.from(s.incubating)..[bugId] = endsAt;
-    await _commit(s.copyWith(incubating: inc));
+    await _commit(
+      s.copyWith(
+        incubating: inc,
+        beginnerHatches: s.beginnerHatches < cfg.beginnerHatchCount
+            ? s.beginnerHatches + 1
+            : null,
+      ),
+    );
     return true;
   }
 
@@ -3677,7 +3874,7 @@ class SaveController extends AsyncNotifier<SaveGame> {
       return (bugs: const <IndividualBug>[], error: 'off');
     }
     var s = state.requireValue;
-    if (s.storageCapacity - s.bugs.length < count) {
+    if (s.storageCapacity - s.storageUsed < count) {
       return (bugs: const <IndividualBug>[], error: 'storage_full');
     }
     if (s.materialCount(MaterialKind.jelly) < cfg.gachaJellyCost * count) {
@@ -3852,13 +4049,16 @@ class SaveController extends AsyncNotifier<SaveGame> {
     final now = ref.read(clockProvider).now().toUtc();
     final rem = endsAt.difference(now);
     if (rem <= Duration.zero) return true; // 이미 완료 — 수령만 하면 된다
-    final cost = cfg.incubateJelly(rem);
+    // 처음 써 보는 즉시 부화는 무료(2026-11-12, core_save `firstFreeCost`).
+    final cost = firstFreeCost(s, 'hatch', cfg.incubateJelly(rem));
     if (s.materialCount(MaterialKind.jelly) < cost) return false;
 
     final mats = Map<MaterialKind, int>.from(s.materials);
     mats[MaterialKind.jelly] = (mats[MaterialKind.jelly] ?? 0) - cost;
     final inc = Map<String, DateTime>.from(s.incubating)..[bugId] = now;
-    await _commit(s.copyWith(materials: mats, incubating: inc));
+    await _commit(
+      markFirstFree(s, 'hatch').copyWith(materials: mats, incubating: inc),
+    );
     // 젤리로 당긴 부화는 길드전 점수에 안 센다(수령 때 확인).
     GuildWarTally.rushed.add(bugId);
     return true;
@@ -4658,6 +4858,30 @@ class SaveController extends AsyncNotifier<SaveGame> {
   Future<FairyOp> fairyMerge(List<String> ids, {math.Random? rng}) =>
       _fairyOp((f, cfg, _) => mergeFairies(f, cfg, ids, rng ?? math.Random()));
 
+  /// 요정 먹이기(2026-11-09) — [toNext] 면 다음 등급까지, 아니면 신화에 닿을 만큼까지. 재료는 core_save `fairyFeedPlan`.
+  /// 먹이기 **직전에 세이브를 서버에 올린다**(곤충 먹이기와 같은 이유 — 서버가 모르는 요정을 먹이면 재료만 잃는다).
+  Future<FairyOp> fairyFeed(String targetId, {required bool toNext}) async {
+    if (!await _syncBeforeRarityUp()) return const FairyOp.fail('offline');
+    return _fairyOp((f, cfg, _) {
+      final t = f.fairyById(targetId);
+      if (t == null) return const FairyOp.fail('no_fairy');
+      final plan = fairyFeedPlan(f, cfg, t, toNext: toNext);
+      if (plan.isEmpty) return const FairyOp.fail('no_fodder');
+      return feedFairy(f, cfg, targetId, [for (final x in plan) x.id]);
+    });
+  }
+
+  /// 요정 자동 먹이기 — [dryRun] 이면 저장하지 않고 예상만(실행 전 확인, §2.7).
+  Future<FairyOp> fairyAutoFeed({bool dryRun = false}) async {
+    final cfg = ref.read(gameDataProvider).value?.fairyConfig;
+    if (cfg == null) return const FairyOp.fail('off');
+    if (dryRun) {
+      return autoFeedFairies(state.requireValue.fairy, cfg, dryRun: true);
+    }
+    if (!await _syncBeforeRarityUp()) return const FairyOp.fail('offline');
+    return _fairyOp((f, cfg, _) => autoFeedFairies(f, cfg));
+  }
+
   /// 자동 합성 — [dryRun] 이면 저장하지 않고 예상만(실행 전 확인, §2.7).
   /// 결과를 새로 굴리므로 예상은 **수(몇 마리를 써서 몇 마리)** 만 믿을 수 있다.
   Future<FairyOp> fairyAutoMerge({bool dryRun = false}) async {
@@ -4920,6 +5144,10 @@ class SaveController extends AsyncNotifier<SaveGame> {
     final now = ref.read(clockProvider).now().toUtc();
     final s = state.requireValue;
     if (s.breeding.length >= s.breedingCapacity) return false;
+    // 왕중왕전 표본(2026-11-10)은 짝짓기에 못 쓴다.
+    if (s.retiredBugs.contains(motherId) || s.retiredBugs.contains(fatherId)) {
+      return false;
+    }
     final mother = s.bugs.cast<IndividualBug?>().firstWhere(
       (b) => b!.id == motherId,
       orElse: () => null,
@@ -5022,13 +5250,20 @@ class SaveController extends AsyncNotifier<SaveGame> {
     final sp = data.speciesById[slot.speciesId];
     if (sp == null) return false;
     var mats = s.materials;
+    var usedFree = false;
     if (viaJelly) {
       if (now.isBefore(slot.endsAt)) {
-        final cost = cfg.breedingJelly(slot.endsAt.difference(now));
+        // 처음 써 보는 즉시 산란은 무료(2026-11-12).
+        final cost = firstFreeCost(
+          s,
+          'breed',
+          cfg.breedingJelly(slot.endsAt.difference(now)),
+        );
         final have = s.materials[MaterialKind.jelly] ?? 0;
         if (have < cost) return false;
         mats = Map<MaterialKind, int>.from(s.materials)
           ..[MaterialKind.jelly] = have - cost;
+        usedFree = true;
       }
     } else if (now.isBefore(slot.endsAt)) {
       return false; // 아직 산란 중
@@ -5049,7 +5284,11 @@ class SaveController extends AsyncNotifier<SaveGame> {
         .copyWith(stageSince: now);
     final breeding = List<BreedingSlot>.from(s.breeding)..removeAt(idx);
     await _commit(
-      s.copyWith(bugs: [...s.bugs, egg], breeding: breeding, materials: mats),
+      (usedFree ? markFirstFree(s, 'breed') : s).copyWith(
+        bugs: [...s.bugs, egg],
+        breeding: breeding,
+        materials: mats,
+      ),
     );
     return true;
   }
@@ -5085,6 +5324,7 @@ class SaveController extends AsyncNotifier<SaveGame> {
       s.dexConqueredWith(cfg.conquerLevel),
       s.claimedDex,
       bosses: collectedBossCount,
+      variants: s.dexVariants,
     );
     if (claimable.isEmpty) return const [];
 
@@ -5450,11 +5690,21 @@ class SaveController extends AsyncNotifier<SaveGame> {
   /// 젤리를 붙이지 않는다**(§2.6). 자동 방생이 재료만 주는 것과 같은 이유다.
   ///
   /// [dryRun] 이면 세이브를 건드리지 않고 예상 결과만 돌려준다.
-  Future<({int released, int materials, List<String> consumed})> autoRelease({
-    bool dryRun = false,
-    BugAutoFilter? filter,
-  }) async {
-    const empty = (released: 0, materials: 0, consumed: <String>[]);
+  Future<
+    ({
+      int released,
+      int materials,
+      List<String> consumed,
+      Map<MaterialKind, int> byKind,
+    })
+  >
+  autoRelease({bool dryRun = false, BugAutoFilter? filter}) async {
+    const empty = (
+      released: 0,
+      materials: 0,
+      consumed: <String>[],
+      byKind: <MaterialKind, int>{},
+    );
     final data = ref.read(gameDataProvider).requireValue;
     final cfg = data.petConfig;
     if (cfg == null) return empty;
@@ -5487,16 +5737,21 @@ class SaveController extends AsyncNotifier<SaveGame> {
     }
     if (targets.isEmpty) return empty;
 
-    final result = (
-      released: targets.length,
-      materials: gain,
-      consumed: [for (final b in targets) b.id],
-    );
-    if (dryRun) return result;
+    final consumed = [for (final b in targets) b.id];
+    // 미리보기는 종류를 아직 안 굴려 합계만 — 종류별 수량은 실제 분해 뒤에만 있다.
+    if (dryRun) {
+      return (
+        released: targets.length,
+        materials: gain,
+        consumed: consumed,
+        byKind: const <MaterialKind, int>{},
+      );
+    }
 
     // 재료 종류는 개체마다 하나씩 굴린다 — 수동 분해·자동 방생과 같은 규칙이라
     // "어느 경로로 없애는 게 이득"이라는 이상한 최적 전략이 생기지 않는다.
     final mats = Map<MaterialKind, int>.from(s.materials);
+    final byKind = <MaterialKind, int>{};
     final rng = math.Random();
     for (final b in targets) {
       final grade = _rarityOf(b)!;
@@ -5516,14 +5771,20 @@ class SaveController extends AsyncNotifier<SaveGame> {
       if (amount <= 0) continue;
       final kind = kRegularMaterials[rng.nextInt(kRegularMaterials.length)];
       mats[kind] = (mats[kind] ?? 0) + amount;
+      byKind[kind] = (byKind[kind] ?? 0) + amount;
     }
-    final gone = result.consumed.toSet();
+    final gone = consumed.toSet();
     final bugs = [
       for (final b in s.bugs)
         if (!gone.contains(b.id)) b,
     ];
     await _commit(s.copyWith(bugs: bugs, materials: mats));
-    return result;
+    return (
+      released: targets.length,
+      materials: gain,
+      consumed: consumed,
+      byKind: byKind,
+    );
   }
 
   /// [target] 종으로 **실제로 재료가 되는** 같은 종 개체 수.
@@ -5586,7 +5847,36 @@ class SaveController extends AsyncNotifier<SaveGame> {
     final data = ref.read(gameDataProvider).requireValue;
     final pet = data.petConfig;
     if (pet == null) return const GradeOp.fail('off');
+    if (!await _syncBeforeRarityUp()) return const GradeOp.fail('offline');
     final r = rarityUp(state.requireValue, id, pet, data.speciesById);
+    if (r.isOk) await _commit(r.save!);
+    return r;
+  }
+
+  /// 곤충 양분 게이지(2026-11-09) — [id] 에 [toNext] 면 다음 희귀도까지, 아니면 전설에 닿을 만큼까지 먹인다.
+  /// 재료는 core_save `rarityFeedPlan`(같은 종 · 목표 이하 희귀도 · 가치 작은 것부터 — 화면 미리보기와 같은 함수).
+  Future<GradeOp> rarityFeedBug(String id, {required bool toNext}) async {
+    final data = ref.read(gameDataProvider).requireValue;
+    final pet = data.petConfig;
+    if (pet == null) return const GradeOp.fail('off');
+    if (!await _syncBeforeRarityUp()) return const GradeOp.fail('offline');
+    final s = state.requireValue;
+    final i = s.bugs.indexWhere((b) => b.id == id);
+    if (i < 0) return const GradeOp.fail('no_bug');
+    final plan = rarityFeedPlan(
+      s,
+      s.bugs[i],
+      pet,
+      data.speciesById,
+      toNext: toNext,
+    );
+    final r = rarityFeed(
+      s,
+      id,
+      [for (final f in plan) f.id],
+      pet,
+      data.speciesById,
+    );
     if (r.isOk) await _commit(r.save!);
     return r;
   }
@@ -5596,10 +5886,19 @@ class SaveController extends AsyncNotifier<SaveGame> {
     final data = ref.read(gameDataProvider).requireValue;
     final pet = data.petConfig;
     if (pet == null) return const GradeOp.fail('off');
+    if (!await _syncBeforeRarityUp()) return const GradeOp.fail('offline');
     final r = autoRarityUp(state.requireValue, pet, data.speciesById);
     if (r.isOk) await _commit(r.save!);
     return r;
   }
+
+  /// 희귀도 올리기·먹이기 **전에** 지금 세이브를 서버에 올린다(2026-11-09 검토). 서버는 "이번 업로드에서 사라진 곤충"만
+  /// 재료로 세는데, 서버가 아직 모르는 곤충(연결이 끊긴 채 부화시킨 것)을 먹이면 그 재료를 못 세어 희귀도만 되돌리고
+  /// 재료는 잃었다. 먼저 올리면 재료가 모두 저장본에 있다. 올리지 못하면 먹이지 않는다. 서버 없는 빌드는 그대로 통과.
+  Future<bool> _syncBeforeRarityUp() => flushSaveBeforeServerAction(
+    ref.read(gameServerProvider),
+    () => latestSave,
+  );
 
   Future<GradeOp> gradeUpBug(String id, {int potions = 0}) async {
     final data = ref.read(gameDataProvider).requireValue;
@@ -5743,6 +6042,8 @@ class SaveController extends AsyncNotifier<SaveGame> {
     final s = state.requireValue;
     if (s.isEquipped(bugId)) return;
     if (s.equippedBugIds.length >= maxEquip) return;
+    // 왕중왕전 표본(2026-11-10 사장님 확정)은 펫으로도 못 단다.
+    if (s.retiredBugs.contains(bugId)) return;
     final bug = s.bugs.where((b) => b.id == bugId).firstOrNull;
     if (bug == null) return;
     // 알은 장착하지 않는다(2026-10-14 사장님 확정 — 알 능력치를 숨기므로 펫 효과도 부화 뒤에).

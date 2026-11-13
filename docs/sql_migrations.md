@@ -40,6 +40,11 @@ Supabase 스키마 변경 SQL 의 **적용 여부**를 기록한다.
 | `_sql_20261015_daily_stats_real_users.sql` | 텔레그램 일일 리포트 — `bugchamp_daily_stats` 활동을 `saves.updated_at` 대신 세이브 `lastSeen` 기준으로(월간 812 → 실제 289) · 새 키 `real_dau/wau/mau`·`real_users`(닉네임+레벨5↑)·`payers`·`new_named_today` · `retained` 는 진짜 이용자만. 함수 본문만 교체, 데이터 변경 없음. 리포트 함수(daily-report)는 새 키가 없으면 옛 모양 | ✅ 적용 2026-10-15 (real_users 308 · mau 290 · real_mau 164 · payers 7) |
 | `_sql_20261017_event_score_fix.sql` | 왕충 선발대회 2회차(2026-1005) 운영 보정 — 세계최고채집가 84웨이브 · 84,405점(사장님 지시). 원래 값은 ① 조회 결과를 파일 머리말에 적는다 | 대기 |
 | `_sql_20261017_daily_stats_real_new.sql` | 텔레그램 일일 리포트 — 신규·D1 을 '진짜 신규'(레벨 3 이상까지 간 계정)로도 센다. 새 키 `new_real_today`·`d1_new_real`·`d1_returned_real`(10-16 신규 19명 중 실제 7~8명 — 구글 출시 전 자동 테스트 로봇·첫 실행 중복 익명 계정). 함수 본문만 교체, 데이터 변경 없음. 리포트 함수는 새 키가 없으면 지금 모양 | ✅ 적용 2026-10-17 (new_real_today 6 · 설치 20 · D1 Lv3↑ 9명 중 3명) · 함수는 대시보드에서 직접 배포 |
+| `_sql_20261109_funnel_events.sql` | 신규 유저 이정표 기록(1.0.28) — 새 테이블 `funnel_events`(계정당 이정표 하나에 한 줄 · 자기 줄만 넣기 RLS · 이름 목록 check). 앱 `domain/funnel_log.dart` 의 `kFunnelEvents` 와 같아야 한다. 1.0.28 출시 **전에** 돌린다(안 돌려도 게임 영향 없음 — 기록만 실패) | 대기 |
+| `_sql_20261110_species_size_rank.sql` | 종별 최대 크기 순위(1.0.28) — 새 테이블 `species_size_records` + RPC `size_submit`·`size_top`·`size_rank_of`(서버 전용, RLS 정책 없음). 서버 재배포 **전에** 돌린다(안 돌리면 크기 순위 창이 비고 기록 실패 로그만 남는다) | 대기 |
+| `_sql_20261110_kotk_entries.sql` | 왕중왕전 참가 기록(1.0.28) — 새 테이블 `kotk_entries`(주·유저마다 곤충 1마리 스냅샷, 서버 전용, RLS 정책 없음). 대진·결과·명예의 전당은 서버가 이 표로 다시 계산한다. 서버 재배포 **전에** 돌린다 | 대기 |
+| `_sql_20261112_rank_active.sql` | 랭킹 화면(`leaderboard_top` — 심연·레벨·진행도 탭)에서 최근 **7일** 동안 서버 세이브 저장(`saves.updated_at`)이 없는 계정을 뺀다(돌아오면 다음 저장에 다시 보임). create or replace — 인자·반환·권한 그대로, rank_hidden 유지. 데이터 변경 없음. 앱·서버 배포와 무관(언제 돌려도 됨). 적용 전 937명 → 195명(742명 숨김) | ✅ 적용 2026-11-12 (`lim, sort` 판에 7일 조건 확인 · 인자 하나짜리 옛 `leaderboard_top(lim)` 은 앱이 안 부름 — 그대로 둠) |
+| `_sql_20261112_kotk_results.sql` | 왕중왕전 확정 결과(1.0.28 출시 전 점검) — 새 테이블 `kotk_results`(주마다 처음 계산한 대진·순위, 서버 전용) + `kotk_entries`·`species_size_records` 의 anon·authenticated 권한 거두기. 없어도 서버는 다시 계산만 한다(깨지지 않음). 서버 재배포 **전에** 돌린다 | 대기 |
 
 > `미확인` = 이 대장을 만들기(2026-09-08) 전에 있던 파일이라 적용 여부를 알 수 없다.
 > 다음에 각 파일을 다룰 때 확인해서 `적용` / `대기` / `폐기` 로 바꾼다.

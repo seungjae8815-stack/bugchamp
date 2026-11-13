@@ -84,7 +84,8 @@ double skillCooldownMult(
     gearCut.clamp(0.0, c.skillCooldownBudgetGear) -
     researchSkillCooldownCut(research, budget: c.skillCooldownBudgetResearch);
 
-/// 방치(오프라인) 정산용 — **골드·찾기만** 곱한다(앱 `_applyOffline` · 서버 `sync` 공용).
+/// 방치(오프라인) 정산용 — **골드·찾기·경험치** 곱한다(앱 `_applyOffline` · 서버 `sync` 공용).
+/// 경험치(성장 본능)는 2026-11-12 점검에서 넣었다 — 설명은 "경험치 +30%"인데 온라인에만 붙었다(처치 속도는 안 바꾼다).
 ///
 /// 방치 정산은 강화만 아는 맨몸 능력치(`deriveStats`)로 잰다 — 펫·장비·스킬도 안 들어간다.
 /// 공격·체력을 여기 넣으면 연구만 방치 처치 속도를 올리는 셈이라 넣지 않고,
@@ -92,7 +93,8 @@ double skillCooldownMult(
 CharacterStats applyResearchIdleStats(CharacterStats s, ResearchEffects e) {
   final gold = e.of(ResearchEffect.gold);
   final find = e.of(ResearchEffect.find);
-  if (gold == 0 && find == 0) return s;
+  final xp = e.of(ResearchEffect.huntExp);
+  if (gold == 0 && find == 0 && xp == 0) return s;
   return CharacterStats(
     attack: s.attack,
     attackSpeed: s.attackSpeed,
@@ -103,13 +105,21 @@ CharacterStats applyResearchIdleStats(CharacterStats s, ResearchEffects e) {
     maxHp: s.maxHp,
     defense: s.defense,
     hpRegen: s.hpRegen,
-    xpMultiplier: s.xpMultiplier,
+    xpMultiplier: s.xpMultiplier * (1 + xp),
     bugFind: s.bugFind * (1 + find),
     materialFind: s.materialFind * (1 + find),
     evade: s.evade,
     boostBonus: s.boostBonus,
   );
 }
+
+/// 처치 회복 배율(연구 "처치 회복", 2026-11-12) — 처치 회복량 × (1 + v). 앱 사냥·시뮬 공용.
+double researchKillHealMult(ResearchEffects e) =>
+    1 + e.of(ResearchEffect.killHeal);
+
+/// 펫 기여 배율(연구 "펫 교감", 2026-11-12) — 장착 펫이 더하는 공격·체력 몫 × (1 + v)([computePetBonus] 의 `share`).
+double researchPetShareMult(ResearchEffects e) =>
+    1 + e.of(ResearchEffect.petShare);
 
 /// 방치 효율 = [base](run_config `offlineEfficiency`) × (1 + 방치 효율 연구) — 곤충학자 패스 골드 배율과도 곱(설계 §8).
 double researchOfflineEfficiency(double base, ResearchEffects e) =>

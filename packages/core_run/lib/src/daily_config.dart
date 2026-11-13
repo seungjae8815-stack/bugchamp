@@ -56,15 +56,20 @@ class DailyReward {
 /// 일일 보상 설정 전체 (assets/data/daily.json 에서 로드).
 @immutable
 class DailyConfig {
-  const DailyConfig({required this.rewards});
+  const DailyConfig({required this.rewards, this.huntMaterialShare = 1.0});
 
   final List<DailyReward> rewards;
+
+  /// 사냥 분치 보상의 **재료 몫 비율**(2026-11-12 사장님 확정 1/3) — 골드는 그대로, 재료만 이 비율로 준다.
+  /// 쉬움 5일 시뮬에서 재료를 1,826억 벌고 85만만 썼다(강화 50레벨까지 재료 0 — 쓸 데가 없었다). 1 이면 예전.
+  final double huntMaterialShare;
 
   factory DailyConfig.fromJson(Map<String, dynamic> json) => DailyConfig(
     rewards: (json['rewards'] as List)
         .cast<Map<String, dynamic>>()
         .map(DailyReward.fromJson)
         .toList(),
+    huntMaterialShare: (json['huntMaterialShare'] as num?)?.toDouble() ?? 1.0,
   );
 }
 

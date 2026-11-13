@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:core_models/core_models.dart';
 import 'package:core_run/core_run.dart';
 
+import 'abyss_progress.dart' show upgradeSpecOf;
 import 'save_game.dart';
 
 /// 순차 미션 규칙(2026-10-10) — 진행 중인 미션의 **실제 목표**와 **교체**.
@@ -13,7 +14,8 @@ import 'save_game.dart';
 int upgradeLevelsLeft(SaveGame s, RunConfig run) {
   var left = 0;
   for (final e in run.upgrades.entries) {
-    final max = e.value.maxLevel;
+    // 심연 결정으로 연 상한 돌파까지(2026-11-10).
+    final max = upgradeSpecOf(run, s, e.key).capLevel;
     if (max == null) return 1 << 30;
     left += math.max(0, max - s.upgradeLevel(e.key));
   }

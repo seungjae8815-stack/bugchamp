@@ -1,3 +1,4 @@
+import 'package:core_run/core_run.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -14,12 +15,43 @@ class PlayPrefs {
 
   static const _kAutoBoss = 'play.autoBoss';
   static const _kBossIntro = 'play.bossIntroSeen';
+  static const _kDailyAuto = 'play.dailyAutoShown';
+  static const _kBuffSheet = 'play.buffSheetSeen';
+  static const _kBugDetailMore = 'play.bugDetailMore';
+  static const _kTipPet = 'play.tipPetShown';
+  static const _kTipGear = 'play.tipGearShown';
+  static const _kTour = 'play.tourDone';
+  static const _kTourNew = 'play.tourEligible';
+  static const _kTabTours = 'play.tabToursSeen';
 
   /// 게이지(100마리)가 차면 자동으로 보스에 도전한다. 기본 켬.
   final ValueNotifier<bool> autoBoss = ValueNotifier(true);
 
   /// 처음 게이지가 찼을 때의 안내 팝업을 이미 보여 줬는가.
   bool bossIntroSeen = false;
+
+  /// 일일보상 창을 마지막으로 저절로 띄운 시간대([dailyAutoOpenKey] 값). 시간대마다 한 번만 띄운다.
+  String? dailyAutoShown;
+
+  /// 버프 창을 한 번이라도 열어 봤는가 — 그 뒤엔 꺼진 버프에 빨간 점을 달지 않는다(맥동만).
+  bool buffSheetSeen = false;
+
+  /// 펫·장비 첫 안내(사냥터 2 부터, 한 번씩)를 이미 띄웠는가.
+  bool tipPetShown = false;
+  bool tipGearShown = false;
+
+  /// 첫 실행 화면 둘러보기(튜토리얼)를 끝냈거나 건너뛰었는가.
+  bool tourDone = false;
+
+  /// 첫 실행 둘러보기를 실제로 본 기기(새 계정) — 탭 첫 방문 안내는 이 기기에만 띄운다(기존 유저 귀찮지 않게).
+  bool tourEligible = false;
+
+  /// 탭 첫 방문 안내를 본 탭 번호.
+  Set<int> tabToursSeen = {};
+
+  /// 곤충 상세의 "성장·능력치 자세히"를 펼쳐 둘지 — 유저가 고른 적 없으면 null(진행도로 정한다,
+  /// [bugDetailMoreDefault]). 한 번 펼치거나 접으면 그 선택을 기억한다.
+  final ValueNotifier<bool?> bugDetailMore = ValueNotifier(null);
 
   /// [load] 가 끝났는가 — 끝나기 전엔 자동 도전·안내를 걸지 않는다
   /// (기본값으로 먼저 돌면 이미 본 안내가 다시 뜨거나, 끈 자동 도전이 한 번 돈다).
@@ -32,6 +64,17 @@ class PlayPrefs {
       final p = _prefs = await SharedPreferences.getInstance();
       autoBoss.value = p.getBool(_kAutoBoss) ?? true;
       bossIntroSeen = p.getBool(_kBossIntro) ?? false;
+      dailyAutoShown = p.getString(_kDailyAuto);
+      buffSheetSeen = p.getBool(_kBuffSheet) ?? false;
+      bugDetailMore.value = p.getBool(_kBugDetailMore);
+      tipPetShown = p.getBool(_kTipPet) ?? false;
+      tipGearShown = p.getBool(_kTipGear) ?? false;
+      tourDone = p.getBool(_kTour) ?? false;
+      tourEligible = p.getBool(_kTourNew) ?? false;
+      tabToursSeen = {
+        for (final v in p.getStringList(_kTabTours) ?? const <String>[])
+          ?int.tryParse(v),
+      };
     } catch (e) {
       debugPrint('PlayPrefs.load 실패(기본값 사용): $e');
     }
@@ -48,14 +91,91 @@ class PlayPrefs {
     await _prefs?.setBool(_kBossIntro, true);
   }
 
+  Future<void> markDailyAutoShown(String key) async {
+    dailyAutoShown = key;
+    await _prefs?.setString(_kDailyAuto, key);
+  }
+
+  Future<void> markBuffSheetSeen() async {
+    buffSheetSeen = true;
+    await _prefs?.setBool(_kBuffSheet, true);
+  }
+
+  Future<void> markTipPetShown() async {
+    tipPetShown = true;
+    await _prefs?.setBool(_kTipPet, true);
+  }
+
+  Future<void> markTipGearShown() async {
+    tipGearShown = true;
+    await _prefs?.setBool(_kTipGear, true);
+  }
+
+  Future<void> markTourDone() async {
+    tourDone = true;
+    await _prefs?.setBool(_kTour, true);
+  }
+
+  Future<void> markTourEligible() async {
+    tourEligible = true;
+    await _prefs?.setBool(_kTourNew, true);
+  }
+
+  Future<void> markTabTourSeen(int tab) async {
+    tabToursSeen = {...tabToursSeen, tab};
+    await _prefs?.setStringList(_kTabTours, [
+      for (final t in tabToursSeen) '$t',
+    ]);
+  }
+
+  Future<void> setBugDetailMore(bool v) async {
+    bugDetailMore.value = v;
+    await _prefs?.setBool(_kBugDetailMore, v);
+  }
+
   /// 테스트용 — 싱글턴을 처음 상태로.
   @visibleForTesting
   void resetForTest() {
     autoBoss.value = true;
     bossIntroSeen = false;
+    dailyAutoShown = null;
+    buffSheetSeen = false;
+    bugDetailMore.value = null;
+    tipPetShown = false;
+    tipGearShown = false;
+    tourDone = false;
+    tourEligible = false;
+    tabToursSeen = {};
     loaded = false;
     _prefs = null;
   }
+}
+
+/// 일일보상 창을 저절로 띄울 시간대 열쇠(`날짜:보상id`) — 띄울 것이 없으면 null(2026-11-09 사장님 확정).
+///
+/// 일일보상(점심·저녁 사냥 분치)이 하루 골드의 대부분인데 우편 아이콘 안에만 있어서, 운영 DB 상
+/// 쉬움 사냥터 1 유저의 73% 가 한 번도 받지 않았다(받는 유저와 진행 속도가 약 6배 갈렸다).
+/// 열쇠는 **지금 열린 가장 늦은 시간대**(받았는지와 무관)다 — 그래야 저녁 창에서 저녁만 받고 닫아도
+/// 열쇠가 점심으로 바뀌어 다시 뜨지 않는다(2026-11-09 검토). 열린 시간대 중 안 받은 것이 하나라도 있을 때만
+/// 띄우고, 이미 띄운 열쇠([lastShown])면 다시 띄우지 않는다 — 닫고 안 받아도 그 시간대에는 한 번뿐.
+/// 날짜·시각은 수령 판정([dailyDateKey])과 같은 기기 시각.
+String? dailyAutoOpenKey(
+  DailyConfig daily,
+  Map<String, String> claims,
+  DateTime localNow,
+  String? lastShown,
+) {
+  final today = dailyDateKey(localNow);
+  DailyReward? latest;
+  var unclaimed = false;
+  for (final rw in daily.rewards) {
+    if (localNow.hour < rw.hour) continue;
+    if (latest == null || rw.hour >= latest.hour) latest = rw;
+    if (claims[rw.id] != today) unclaimed = true;
+  }
+  if (latest == null || !unclaimed) return null;
+  final key = '$today:${latest.id}';
+  return key == lastShown ? null : key;
 }
 
 /// 보스 자동 도전 카운트다운.
@@ -138,3 +258,11 @@ class AutoBossFailGuard {
   /// 보스를 잡았다(직접·자동 모두) — 다시 자동으로 도전한다.
   void recordWin() => _fails = 0;
 }
+
+/// 곤충 상세의 "성장·능력치 자세히"를 처음에 펼쳐 둘지(2026-11-09 사장님 확정) — 유저가 고른 적 없을 때.
+///
+/// 상세 시트에 카드·버튼이 약 20개였고(품질 9칸·패시브·훈련·등급 올리기), 쉬움 사냥터 1~3 유저 대부분이
+/// 그 단계에서 떠났다. 그래서 **쉬움 사냥터 3 전**에는 접어 두고 "이 곤충이 나에게 무엇을 해 주나"만 보인다.
+/// 사냥터 3 이상·보통 이상 유저(기존 유저 대부분)는 예전처럼 펼친 채다 — 손에 익은 화면을 바꾸지 않는다.
+bool bugDetailMoreDefault({required int topTier, required int bestStage}) =>
+    topTier > 0 || bestStage >= 201;

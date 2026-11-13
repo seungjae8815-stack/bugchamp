@@ -82,6 +82,7 @@ class BattleConfig {
     this.seasonResetFactor = 0.5,
     this.seasonRewardMult = 3.0,
     this.seasonRankRewards = const [],
+    this.kotk = const KotkConfig(),
     this.leagueRankRewards = const {},
     this.leaguePromotePct = 0.2,
     this.leagueDemotePct = 0.2,
@@ -160,6 +161,9 @@ class BattleConfig {
   /// 젤리는 여기서만 나간다 — 리그 등급 보상은 골드만이다. 등급 보상에 젤리를
   /// 두면 다이아에 오른 사람 전원이 매주 받아 넓게 퍼지지만, 순위는 10명뿐이다.
   final List<SeasonRankReward> seasonRankRewards;
+
+  /// 왕중왕전 회차·보상(`battle.json → kotk`, 2026-11-12).
+  final KotkConfig kotk;
 
   /// 결투(곤충 배틀 스타디움) 물리·규칙 수치 원본(`battle.json → duel`).
   ///
@@ -524,8 +528,88 @@ class BattleConfig {
           ((json['scout'] as Map<String, dynamic>?)?['refreshDailyMax'] as num?)
               ?.toInt() ??
           30,
+      kotk: json['kotk'] is Map
+          ? KotkConfig.fromJson(Map<String, dynamic>.from(json['kotk'] as Map))
+          : const KotkConfig(),
     );
   }
+}
+
+/// 왕중왕전 회차·성적 보상(2026-11-12 사장님 확정, `battle.json → kotk`).
+///
+/// 회차 = 결투 시즌 주(주 id = 시즌 시작 날짜). [firstWeek] 주가 제1회 — 그 전 주는 **준비 중**(참가를 받지 않는다).
+/// 비어 있으면 회차 구분 없이 늘 열린다(옛 동작).
+@immutable
+class KotkConfig {
+  const KotkConfig({
+    this.firstWeek = '',
+    this.rewards = const [],
+    this.minEntrants = 0,
+  });
+
+  /// 그 주 참가자가 이 수 미만이면 젤리·뱃지·왕관 없이 재료만(2026-11-12 사장님 확정 — 혼자 참가하면 경기 없이 우승).
+  final int minEntrants;
+
+  /// 제1회 주 id(`2026-11-16` — 그 주 일요일 09시에 결과).
+  final String firstWeek;
+
+  /// 성적 보상 — 위에서부터 [KotkReward.maxPlace] 이하인 첫 구간 하나.
+  final List<KotkReward> rewards;
+
+  /// [week] 의 회차(1부터). 준비 중이면 null. [firstWeek] 가 없으면 늘 1.
+  int? roundOf(String week) {
+    if (firstWeek.isEmpty) return 1;
+    if (week.compareTo(firstWeek) < 0) return null;
+    final a = DateTime.tryParse(firstWeek), b = DateTime.tryParse(week);
+    if (a == null || b == null) return null;
+    return b.difference(a).inDays ~/ 7 + 1;
+  }
+
+  /// [placement](1 우승 · 2 준우승 · 4 · 8 · 16 · 32)의 보상. 없으면 null.
+  KotkReward? rewardFor(int placement) {
+    for (final r in rewards) {
+      if (placement <= r.maxPlace) return r;
+    }
+    return null;
+  }
+
+  factory KotkConfig.fromJson(Map<String, dynamic> json) => KotkConfig(
+    firstWeek: json['firstWeek'] as String? ?? '',
+    minEntrants: (json['minEntrants'] as num?)?.toInt() ?? 0,
+    rewards: [
+      for (final r in (json['rewards'] as List? ?? const []))
+        if (r is Map) KotkReward.fromJson(Map<String, dynamic>.from(r)),
+    ]..sort((a, b) => a.maxPlace.compareTo(b.maxPlace)),
+  );
+}
+
+/// 왕중왕전 성적 보상 한 구간.
+@immutable
+class KotkReward {
+  const KotkReward({
+    required this.maxPlace,
+    this.jelly = 0,
+    this.potions = 0,
+    this.fossil = 0,
+    this.elementStones = 0,
+    this.temperamentStones = 0,
+  });
+
+  final int maxPlace;
+  final int jelly;
+  final int potions;
+  final int fossil;
+  final int elementStones;
+  final int temperamentStones;
+
+  factory KotkReward.fromJson(Map<String, dynamic> j) => KotkReward(
+    maxPlace: (j['maxPlace'] as num?)?.toInt() ?? 0,
+    jelly: (j['jelly'] as num?)?.toInt() ?? 0,
+    potions: (j['potions'] as num?)?.toInt() ?? 0,
+    fossil: (j['fossil'] as num?)?.toInt() ?? 0,
+    elementStones: (j['elementStones'] as num?)?.toInt() ?? 0,
+    temperamentStones: (j['temperamentStones'] as num?)?.toInt() ?? 0,
+  );
 }
 
 /// [now] 가 속한 시즌의 **시작 시각**(가장 최근 리셋 시점, UTC).

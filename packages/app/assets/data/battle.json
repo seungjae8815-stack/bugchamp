@@ -299,5 +299,18 @@
   "refillDailyLimit": 3,
   "_refillComment": "젤리 충전 하루 3회(2026-10-02 사장님 확정 · 출시 점검): 상한이 없으면 젤리를 산 만큼 판수를 사서 리그 순위 젤리로 이어졌다(§2.7 티켓 · §2.8 결투 결제 금지). 서버가 셈(adUseCounts 의 pvpRefill · 서버 소유).",
   "_adComment": "광고 없는 운영(2026-08-18): adGrant/adDailyLimit 는 이제 '무료 충전' 버튼이다. 광고 시청 30초가 비용이던 시절의 30회를 그대로 두면 공짜 무제한이 되므로 5회로 줄였고, 그래도 하루 15장은 후해서 3회(+9장)로 다시 줄였다(2026-08-31). 서버도 이 파일을 읽는다 — 바꾸면 재배포."
+ },
+ "kotk": {
+  "_comment": "왕중왕전 회차·성적 보상(2026-11-12 사장님 확정). 회차 = 결투 시즌 주(주 id = 시즌 시작 월요일 날짜), firstWeek 주가 제1회(2026-11-22 일 09시 결과) — 그 전 주는 준비 중(참가 안 받음). 보상은 위에서부터 maxPlace 이하인 첫 구간 하나(1 우승 · 2 준우승 · 4 4강 · 8 8강 · 16 16강). 젤리는 상위 4명뿐(우승 50 · 준우승 30 · 4강 10 — 주 1회 유한 통로, jelly_sim 에 줄이 있다). 지면 곤충이 표본으로 소모되는 하드모드라 재료(성장물약·화석·결투석)를 함께 준다. 우승 곤충엔 황금 왕관(ktC) + 대표 뱃지 kotk:회차.",
+  "firstWeek": "2026-11-16",
+  "_minEntrantsComment": "그 주 참가자가 이 수 미만이면 젤리·뱃지·왕관 없이 재료만(2026-11-12 사장님 확정 — 혼자 참가하면 경기 없이 우승, 2~3명이면 부계정으로 매주 젤리). 결투 리그의 rankRewardMinPeople 과 같은 생각.",
+  "minEntrants": 8,
+  "rewards": [
+   {"maxPlace": 1, "jelly": 50, "potions": 10, "fossil": 3000, "elementStones": 2, "temperamentStones": 2},
+   {"maxPlace": 2, "jelly": 30, "potions": 6, "fossil": 2000, "elementStones": 1, "temperamentStones": 1},
+   {"maxPlace": 4, "jelly": 10, "potions": 4, "fossil": 1000, "elementStones": 1},
+   {"maxPlace": 8, "potions": 2, "fossil": 500},
+   {"maxPlace": 16, "potions": 1, "fossil": 300}
+  ]
  }
 }

@@ -4,6 +4,8 @@ import 'package:core_models/core_models.dart';
 import 'package:meta/meta.dart';
 
 import 'abyss_config.dart';
+import 'achievement_config.dart';
+import 'weekend_event.dart';
 import 'enums.dart';
 import 'monster_config.dart';
 
@@ -21,7 +23,40 @@ class UpgradeSpec {
     this.materialCostGrowth = 1.0,
     this.valueGrowth,
     this.maxLevel,
+    this.awakenAt = const [],
+    this.awakenBonus = const [],
+    this.capBonus = 0,
+    this.materialFreeLevels = 0,
   });
+
+  /// 이 레벨 **미만**은 재료 없이 골드로만 산다(2026-11-12 사장님 확정, `run_config.json → upgradeMaterialFreeLevels`).
+  /// 처음 키울 때 재료 수급이 느려 강화가 멈췄다. 난이도마다 강화가 초기화되므로 새 난이도에서도 같다.
+  final int materialFreeLevels;
+
+  /// 각성 레벨(2026-11-10 사장님 확정, `run_config.json → upgradeAwaken`). 이 레벨에 닿으면
+  /// [awakenBonus] 같은 자리의 레벨 수만큼 값이 덤으로 붙는다 — 줄마다 다음 목표가 보이게.
+  /// 강화 예산에 딱 맞춘 줄(치명·회피)은 넘친 몫이 헛돌아서 `exclude` 로 뺀다.
+  final List<int> awakenAt;
+  final List<int> awakenBonus;
+
+  /// [level] 까지 받은 각성 덤 레벨 합 — **원래 상한([maxLevel]) 안의 각성만**(2026-11-12 점검: 상한 돌파로 150·200 을
+  /// 넘으면 값이 살짝 뛰고 "각성" 알림이 떴는데, 화면의 다음 각성([nextAwakenAt])은 상한 너머를 안 보여 서로 어긋났다).
+  int awakenLevelsAt(int level) {
+    var n = 0;
+    for (var i = 0; i < awakenAt.length && i < awakenBonus.length; i++) {
+      if (maxLevel != null && awakenAt[i] > maxLevel!) continue;
+      if (level >= awakenAt[i]) n += awakenBonus[i];
+    }
+    return n;
+  }
+
+  /// [level] 다음 각성 레벨(없으면 null) — 상한 너머 각성은 없다.
+  int? nextAwakenAt(int level) {
+    for (final a in awakenAt) {
+      if (a > level && (maxLevel == null || a <= maxLevel!)) return a;
+    }
+    return null;
+  }
 
   /// 살 수 있는 최대 레벨. **null 이면 무제한**(구버전 JSON 호환).
   ///
@@ -36,8 +71,35 @@ class UpgradeSpec {
   /// 끌고 간다. 그 구간이 너무 길면 벽이 된다.
   final int? maxLevel;
 
+  /// 심연 결정으로 연 **상한 돌파** 레벨(2026-11-10 사장님 확정, `abyss.capBreak`) — 세이브마다 다르다.
+  /// 값 곡선([valueAt]·각성 배율)은 [maxLevel] 기준 그대로이고, 사는 상한만 늘린다.
+  final int capBonus;
+
+  /// 실제로 살 수 있는 상한([maxLevel] + [capBonus]). null 이면 무제한.
+  int? get capLevel => maxLevel == null ? null : maxLevel! + capBonus;
+
   /// [level] 에서 더 살 수 있나.
-  bool canBuyAt(int level) => maxLevel == null || level < maxLevel!;
+  bool canBuyAt(int level) => capLevel == null || level < capLevel!;
+
+  /// 상한 돌파 [bonus] 레벨을 연 사본.
+  UpgradeSpec withCapBonus(int bonus) => bonus == capBonus
+      ? this
+      : UpgradeSpec(
+          kind: kind,
+          baseCost: baseCost,
+          costGrowth: costGrowth,
+          baseValue: baseValue,
+          perLevel: perLevel,
+          materialKind: materialKind,
+          materialBaseCost: materialBaseCost,
+          materialCostGrowth: materialCostGrowth,
+          valueGrowth: valueGrowth,
+          maxLevel: maxLevel,
+          awakenAt: awakenAt,
+          awakenBonus: awakenBonus,
+          capBonus: bonus,
+          materialFreeLevels: materialFreeLevels,
+        );
 
   final UpgradeKind kind;
   final double baseCost;
@@ -62,24 +124,56 @@ class UpgradeSpec {
   final double? valueGrowth;
 
   /// 레벨 [level] 에서의 스탯 값.
-  double valueAt(int level) => valueGrowth == null
-      ? baseValue + perLevel * level
-      : baseValue * math.pow(valueGrowth!, level);
+  ///
+  /// 각성(2026-11-10): 각성 덤 레벨([awakenLevelsAt])을 더한 레벨의 값이다. 덤은 **레벨당 몫에서 옮겨 온 것**이라
+  /// 최대 레벨의 값은 각성이 없을 때와 같다 — 그냥 얹으면 강화 5종이 서로 곱해져 73일이 41일이 됐다.
+  /// 그리고 **각성이 없을 때의 값보다 낮아지지 않는다** — 옮기기만 하면 각성 직전 레벨이 예전보다
+  /// 최대 2%(Lv.5~9 는 9%) 낮아져 업데이트 직후 "약해졌다"가 된다.
+  double valueAt(int level) {
+    final top = maxLevel;
+    final total = top == null ? 0 : awakenLevelsAt(top);
+    if (total == 0) return _curve(level.toDouble());
+    final moved = _curve(
+      (level + awakenLevelsAt(level)) * top! / (top + total),
+    );
+    return math.max(_curve(level.toDouble()), moved);
+  }
 
-  factory UpgradeSpec.fromJson(Map<String, dynamic> json) => UpgradeSpec(
-    kind: UpgradeKind.fromKey(json['kind'] as String),
-    baseCost: (json['baseCost'] as num).toDouble(),
-    costGrowth: (json['costGrowth'] as num).toDouble(),
-    baseValue: (json['baseValue'] as num).toDouble(),
-    perLevel: (json['perLevel'] as num).toDouble(),
-    materialKind: json['materialKind'] != null
-        ? MaterialKind.fromKey(json['materialKind'] as String)
-        : null,
-    maxLevel: (json['maxLevel'] as num?)?.toInt(),
-    materialBaseCost: (json['materialBaseCost'] as num?)?.toDouble() ?? 0,
-    materialCostGrowth: (json['materialCostGrowth'] as num?)?.toDouble() ?? 1.0,
-    valueGrowth: (json['valueGrowth'] as num?)?.toDouble(),
-  );
+  double _curve(double l) => valueGrowth == null
+      ? baseValue + perLevel * l
+      : baseValue * math.pow(valueGrowth!, l);
+
+  /// [awaken] = `run_config.json → upgradeAwaken`(levels·bonus·exclude). 없으면 각성 없음.
+  factory UpgradeSpec.fromJson(
+    Map<String, dynamic> json, {
+    Map<String, dynamic>? awaken,
+    int materialFreeLevels = 0,
+  }) {
+    final on =
+        awaken != null &&
+        !((awaken['exclude'] as List?) ?? const []).contains(json['kind']);
+    List<int> ints(String k) => [
+      for (final x in (awaken?[k] as List?) ?? const []) (x as num).toInt(),
+    ];
+    return UpgradeSpec(
+      materialFreeLevels: materialFreeLevels,
+      awakenAt: on ? ints('levels') : const [],
+      awakenBonus: on ? ints('bonus') : const [],
+      kind: UpgradeKind.fromKey(json['kind'] as String),
+      baseCost: (json['baseCost'] as num).toDouble(),
+      costGrowth: (json['costGrowth'] as num).toDouble(),
+      baseValue: (json['baseValue'] as num).toDouble(),
+      perLevel: (json['perLevel'] as num).toDouble(),
+      materialKind: json['materialKind'] != null
+          ? MaterialKind.fromKey(json['materialKind'] as String)
+          : null,
+      maxLevel: (json['maxLevel'] as num?)?.toInt(),
+      materialBaseCost: (json['materialBaseCost'] as num?)?.toDouble() ?? 0,
+      materialCostGrowth:
+          (json['materialCostGrowth'] as num?)?.toDouble() ?? 1.0,
+      valueGrowth: (json['valueGrowth'] as num?)?.toDouble(),
+    );
+  }
 }
 
 /// 한 난이도의 사냥터 표(`run_config.json → zoneTiers[회차]`). index = 사냥터-1.
@@ -236,6 +330,7 @@ class RunConfig {
     this.boostMultMax = 5.0,
     this.critChanceMax = 0.85,
     this.critBudgetUpgrade = 1.0,
+    this.upgradeLuckyChance = 0,
     this.critBudgetGear = 1.0,
     this.critBudgetOther = 1.0,
     this.evadeMax = 0.6,
@@ -278,6 +373,8 @@ class RunConfig {
     this.zoneBossHp = const [],
     this.zoneTiers = const [],
     this.abyss = const AbyssConfig(),
+    this.weekendEvents = const WeekendEventConfig(),
+    this.achievements = const [],
     this.endParkedRewardMult = 1.0,
     this.rarePityKills = 0,
     this.dropGradeWeights = const {},
@@ -435,6 +532,10 @@ class RunConfig {
   /// 넘지 않게. 예전엔 강화만으로 100%, 장비 한 부위가 67% 라 두 부위면 끝이었다.
   /// 그러면 나머지 출처는 전부 죽은 투자가 된다. 1.0 = 예산 없음(예전 동작).
   final double critBudgetUpgrade;
+
+  /// 강화 대성공 확률(2026-11-10 사장님 확정, `upgradeLucky.chance`) — 한 레벨을 살 때 이 확률로 1레벨 덤.
+  /// 판정은 [upgradeLuckyAt](계정·레벨마다 정해진 값 — 다시 굴릴 수 없다). 0 = 끔.
+  final double upgradeLuckyChance;
   final double critBudgetGear;
   final double critBudgetOther;
 
@@ -638,6 +739,12 @@ class RunConfig {
   /// 심연(극한 이후 무한 층) 수치 — `run_config.json → abyss`.
   final AbyssConfig abyss;
 
+  /// 주말 이벤트 사냥터(2026-11-10) — 토요일 0시부터 온라인 사냥 보상 배율.
+  final WeekendEventConfig weekendEvents;
+
+  /// 업적 · 칭호(2026-11-10) — 보상은 칭호만.
+  final List<AchievementDef> achievements;
+
   /// 회차 [tier] 의 표. 없으면 null.
   ZoneTierTable? zoneTier(int tier) =>
       tier >= 0 && tier < zoneTiers.length ? zoneTiers[tier] : null;
@@ -807,7 +914,14 @@ class RunConfig {
   factory RunConfig.fromJson(Map<String, dynamic> json) {
     final upgradeList = (json['upgrades'] as List)
         .cast<Map<String, dynamic>>()
-        .map(UpgradeSpec.fromJson);
+        .map(
+          (j) => UpgradeSpec.fromJson(
+            j,
+            awaken: json['upgradeAwaken'] as Map<String, dynamic>?,
+            materialFreeLevels:
+                (json['upgradeMaterialFreeLevels'] as num?)?.toInt() ?? 0,
+          ),
+        );
     return RunConfig(
       hpBase: (json['hpBase'] as num).toDouble(),
       onlineGoldBonus: (json['onlineGoldBonus'] as num?)?.toDouble() ?? 0,
@@ -875,6 +989,10 @@ class RunConfig {
       boostMultMax: (json['boostMultMax'] as num?)?.toDouble() ?? 5.0,
       critChanceMax: (json['critChanceMax'] as num?)?.toDouble() ?? 0.85,
       critBudgetUpgrade: (json['critBudgetUpgrade'] as num?)?.toDouble() ?? 1.0,
+      upgradeLuckyChance:
+          ((json['upgradeLucky'] as Map<String, dynamic>?)?['chance'] as num?)
+              ?.toDouble() ??
+          0,
       critBudgetGear: (json['critBudgetGear'] as num?)?.toDouble() ?? 1.0,
       critBudgetOther: (json['critBudgetOther'] as num?)?.toDouble() ?? 1.0,
       evadeMax: (json['evadeMax'] as num?)?.toDouble() ?? 0.6,
@@ -951,6 +1069,13 @@ class RunConfig {
           ZoneTierTable.fromJson(t as Map<String, dynamic>),
       ],
       abyss: AbyssConfig.fromJson(json['abyss'] as Map<String, dynamic>?),
+      achievements: [
+        for (final a in (json['achievements'] as List? ?? const []))
+          AchievementDef.fromJson(a as Map<String, dynamic>),
+      ],
+      weekendEvents: WeekendEventConfig.fromJson(
+        json['weekendEvents'] as Map<String, dynamic>?,
+      ),
       worldGoldMult: (json['worldGoldMult'] as num?)?.toDouble() ?? 1.0,
       worldBossHpMult: (json['worldBossHpMult'] as num?)?.toDouble() ?? 1.0,
       monsters: {

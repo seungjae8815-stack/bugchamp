@@ -297,10 +297,20 @@ class ServerSaveUploader {
                 badged ||
                 pvpRank is Map ||
                 leagueResult is Map ||
-                abyssRank is Map) &&
+                abyssRank is Map ||
+                // 왕중왕전 결과(2026-11-10) — 진 곤충이 표본이 됐다(주 1회).
+                data?['kotk'] is num) &&
             res.save != null) {
+          // 왕중왕전 결과 팝업에 보일 곤충 — 채택하면 참가 기록(ktE)이 비므로 그 전에 적어 둔다.
+          final kotkBug = _ref.read(saveControllerProvider).value?.kotkEntryBug;
           await ctrl.adoptServerSave(res.save!);
           _lastUploaded = jsonEncode(res.save);
+          final kotkPlace = data?['kotk'];
+          if (kotkPlace is num) {
+            ctrl.pendingKotkPlace = kotkPlace.toInt();
+            ctrl.pendingKotkBug = kotkBug;
+            ctrl.pendingKotkN = (data?['kotkN'] as num?)?.toInt();
+          }
           // 대회 회차 보상 — 서버가 지급했다. 회차당 1회다.
           final reward = data?['eventReward'];
           if (reward is Map) {
@@ -337,6 +347,9 @@ class ServerSaveUploader {
         // 다른 기기가 나중에 켜졌다 — 화면이 "다른 기기에서 접속 중"으로 덮는다.
         // 연결은 멀쩡하니 끊김으로 세지 않는다.
         return;
+      } else if (await _adoptIfStale(res, ctrl)) {
+        // 이 기기 세이브가 낡았다(다른 기기가 그 뒤에 더 저장했다) — 서버 것을 받았다.
+        _lastUploaded = jsonEncode(res.errorData['save']);
       } else if (res.status == 409) {
         // 서버에 저장본이 없다 → 최초 이관(부트스트랩)이 먼저.
         final boot = await server.bootstrap(json);
@@ -424,6 +437,19 @@ class ServerSaveUploader {
   }
 }
 
+/// 업로드가 낡은 기기 세이브라 거절됐으면([isStaleSave]) 함께 온 서버 저장본을 채택한다. 채택했으면 true.
+///
+/// 2026-11-12: 낡은 기기의 업로드를 서버가 받아 주던 시절, 그 세이브가 최신 진행을 덮었고 진짜 기기의 다음
+/// 업로드가 "갑자기 늘었다"로 잘렸다(골드 48조). 이제 서버가 거절하고 저장본을 돌려주면 이 기기가 그걸 받는다.
+Future<bool> _adoptIfStale(ServerResult res, SaveController ctrl) async {
+  if (!isStaleSave(res)) return false;
+  final fresh = res.errorData['save'];
+  if (fresh is! Map<String, dynamic>) return false;
+  debugPrint('[save] 이 기기 세이브가 낡았다 — 서버 저장본을 받는다');
+  await ctrl.adoptServerSave(fresh);
+  return true;
+}
+
 /// 지금 즉시 서버에 올린다(60초 주기 업로드를 기다리지 않는다).
 ///
 /// **다음 실행에서 서버 세이브에 덮이면 안 되는 변경** 직후에 부른다.
@@ -459,6 +485,9 @@ Future<bool> flushSaveBeforeServerAction(
     final json = save.toJson();
     final res = await server.uploadSave(json);
     if (res.isOk) return true;
+    // 이 기기 세이브가 낡았다 — 이번 행동은 하지 않는다(낡은 화면에서 고른 행동이다).
+    // 서버 세이브 채택은 주기 업로드([ServerSaveUploader])가 같은 응답을 받아 한다.
+    if (isStaleSave(res)) return false;
     // 저장본이 없다 = 최초 이관이 먼저. 다른 기기에 밀려난 409 는 아니다.
     if (res.status == 409 && !isSessionTaken(res)) {
       return (await server.bootstrap(json)).isOk;

@@ -274,6 +274,7 @@ void main() {
 
   Handler handler({
     VerifyVerdict verdict = VerifyVerdict.valid,
+    String? purchaseKey,
     Map<String, List<Map<String, dynamic>>> defenders = const {},
     bool serverHasSave = true,
     SaveGame? save,
@@ -308,7 +309,7 @@ void main() {
       jwtVerifier: verifierFor(signingKey),
       gameConfig: gameConfig,
       speciesById: {'a': species},
-      receiptVerifier: FixedVerifier(verdict),
+      receiptVerifier: FixedVerifier(verdict, purchaseKey: purchaseKey),
       clock: () => _t,
       guildStore: guildStore ?? MemoryGuildStore(clock: () => _t),
       guildMissionStore: guildMissionStore ?? MemoryGuildMissionStore(),
@@ -382,6 +383,37 @@ void main() {
       );
       expect(saved.materialCount(MaterialKind.jelly), greaterThan(0));
       expect(saved.redeemedPurchases, contains('tok-1'));
+    });
+
+    // 2026-11-09: iOS 영수증 문자열은 갱신마다 바뀐다 — 검증 함수가 준 거래 키로 지급 기록을 남겨야
+    // 같은 거래를 새 영수증으로 다시 내도 한 번만 받는다.
+    test('iOS 같은 거래를 다른 영수증 문자열로 다시 내도 한 번만 지급된다', () async {
+      final h = handler(purchaseKey: 'ios:T1');
+      final r1 = await post(h, '/purchase', {
+        'productId': 'jelly_m',
+        'purchaseToken': 'receipt-A',
+        'transactionId': 'T1',
+      }, token: makeToken());
+      expect(r1.statusCode, 200);
+      final first = SaveGame.fromJson(
+        fake.lastSaved!['data'] as Map<String, dynamic>,
+      );
+      expect(first.redeemedPurchases, contains('ios:T1'));
+      expect(first.redeemedPurchases, isNot(contains('receipt-A')));
+      fake.saves['user-1'] = first.toJson();
+      final r2 = await post(h, '/purchase', {
+        'productId': 'jelly_m',
+        'purchaseToken': 'receipt-B',
+        'transactionId': 'T1',
+      }, token: makeToken());
+      expect(r2.statusCode, 200);
+      final body = jsonDecode(await r2.readAsString()) as Map<String, dynamic>;
+      expect(body['alreadyGranted'], isTrue);
+      final second = SaveGame.fromJson(body['save'] as Map<String, dynamic>);
+      expect(
+        second.materialCount(MaterialKind.jelly),
+        first.materialCount(MaterialKind.jelly),
+      );
     });
 
     test('없는 상품 id 로는 재화를 만들 수 없다', () async {
@@ -1250,6 +1282,49 @@ void main() {
       expect(res.statusCode, 200);
       expect(savedNow().gold, 999);
       expect(savedNow().activeSession, tablet);
+    });
+
+    // 2026-11-12 — 낡은 기기 세이브가 최신 저장본을 덮고, 진짜 기기의 다음 업로드가 골드 +48조로 잘렸다.
+    test('저장 횟수가 저장본보다 낮은 업로드는 거절하고 저장본을 돌려준다', () async {
+      final stored = mySave.copyWith(activeSession: phone, saveRev: 500);
+      final res = await post(handler(save: stored), '/save', {
+        'save': mySave.copyWith(gold: 1, saveRev: 400).toJson(),
+        'session': phone,
+      }, token: makeToken());
+      expect(res.statusCode, 409);
+      final body = jsonDecode(await res.readAsString()) as Map;
+      expect(body['error'], 'stale_save');
+      expect((body['save'] as Map)['rev'], 500);
+      expect(fake.lastSaved, isNull);
+    });
+
+    test('낡은 업로드라도 구버전 앱(feat 29)에는 "다른 기기에서 접속 중"으로 답한다', () async {
+      final old = mySave.copyWith(gold: 1, saveRev: 400).toJson()
+        ..['feat'] = 29;
+      final res = await post(
+        handler(save: mySave.copyWith(activeSession: phone, saveRev: 500)),
+        '/save',
+        {'save': old, 'session': phone},
+        token: makeToken(),
+      );
+      expect(res.statusCode, 409);
+      expect(jsonDecode(await res.readAsString())['error'], 'session_taken');
+      expect(fake.lastSaved, isNull);
+    });
+
+    test('저장 횟수가 같거나 높으면 통과 · 횟수를 안 보내는 구버전도 통과', () async {
+      final stored = mySave.copyWith(activeSession: phone, saveRev: 500);
+      final same = await post(handler(save: stored), '/save', {
+        'save': mySave.copyWith(gold: 999, saveRev: 500).toJson(),
+        'session': phone,
+      }, token: makeToken());
+      expect(same.statusCode, 200);
+      final noRev = mySave.copyWith(gold: 999).toJson()..remove('rev');
+      final legacy = await post(handler(save: stored), '/save', {
+        'save': noRev,
+        'session': phone,
+      }, token: makeToken());
+      expect(legacy.statusCode, 200);
     });
 
     // 2026-10-18 — 강제 업데이트 뒤에도 켜 둔 1.0.21 앱이 몇 시간씩 올렸다(정수 잘림).

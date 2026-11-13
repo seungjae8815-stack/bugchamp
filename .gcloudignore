@@ -1,0 +1,20 @@
+# `gcloud run deploy --source .` 가 올리는 파일 — 서버 이미지(Dockerfile)가 쓰는 것만(2026-11-12).
+# 예전엔 이 파일이 없어 .gitignore 로만 걸러 저장소 전체를 묶었고, 앱 빌드가 잡고 있던 파일에서
+# "Permission denied" 로 배포가 죽었다. Dockerfile 의 COPY 를 바꾸면 여기도 같이 고친다.
+/*
+!/Dockerfile
+!/packages/
+/packages/*
+!/packages/core_models/
+!/packages/core_run/
+!/packages/core_battle/
+!/packages/core_save/
+!/packages/server/
+!/packages/app/
+/packages/app/*
+!/packages/app/assets/
+/packages/app/assets/*
+!/packages/app/assets/data/
+**/.dart_tool/
+**/build/
+**/tool/

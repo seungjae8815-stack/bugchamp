@@ -182,6 +182,8 @@ void main() {
     // 사라지는 건 아무것도 투자하지 않은 'plain' 하나뿐이다.
     expect(r.released, 1);
     expect(r.consumed, ['plain']);
+    // 완료 안내에 보이는 종류별 수량 — 합이 총 재료 수와 같다.
+    expect(r.byKind.values.fold<int>(0, (a, b) => a + b), r.materials);
     final s = c.read(saveControllerProvider).requireValue;
     expect(s.bugs.length, 5);
     expect(s.bugs.any((b) => b.id == 'plain'), isFalse);

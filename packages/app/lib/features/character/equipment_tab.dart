@@ -15,6 +15,7 @@ import 'equip_widgets.dart';
 import 'polish_dialog.dart';
 import 'forge_panel.dart';
 import '../../ui/colors.dart';
+import '../../ui/tour.dart';
 
 const _honey = kHoney;
 
@@ -73,10 +74,16 @@ class _EquipmentTabState extends ConsumerState<EquipmentTab> {
                   children: [
                     SizedBox(
                       height: (c.maxHeight * 0.19).clamp(84.0, 132.0),
-                      child: CharacterScene(save: save),
+                      child: KeyedSubtree(
+                        key: TourKeys.named('equip.scene'),
+                        child: CharacterScene(save: save),
+                      ),
                     ),
                     const SizedBox(height: 8),
-                    _StatsPanel(save: save),
+                    KeyedSubtree(
+                      key: TourKeys.named('equip.stats'),
+                      child: _StatsPanel(save: save),
+                    ),
                     const SizedBox(height: 8),
                     if (items != null) ...[
                       // 남는 높이를 전부 장비 칸이 가져간다 — 칸 모양은 자기가
@@ -86,7 +93,10 @@ class _EquipmentTabState extends ConsumerState<EquipmentTab> {
                         child: LayoutBuilder(
                           builder: (context, g) {
                             _onGridHeight(g.maxHeight);
-                            return _EquipGrid(save: save, config: items);
+                            return KeyedSubtree(
+                              key: TourKeys.named('equip.grid'),
+                              child: _EquipGrid(save: save, config: items),
+                            );
                           },
                         ),
                       ),
@@ -258,7 +268,11 @@ class _PetsPanel extends ConsumerWidget {
           ),
         );
       }
-      final pb = computePetBonus(pets, cfg);
+      final pb = computePetBonus(
+        pets,
+        cfg,
+        share: researchPetShareMult(data!.researchFx(save.researchLevels)),
+      );
       atk = ((pb.attackMult - 1) * 100).toStringAsFixed(0);
       hp = ((pb.hpMult - 1) * 100).toStringAsFixed(0);
     }

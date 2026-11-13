@@ -178,20 +178,19 @@ void main() {
     );
   });
 
-  test('사냥 능력치 — 연구 치명 피해·재생·경험치 곱 · 회피 %p(연구 몫 0.2)', () {
+  test('사냥 능력치 — 연구 치명 피해·경험치 곱 · 회피 %p(연구 몫 0.2)', () {
     final data = _data(research: true);
     final save = SaveGame.initial(createdAt: t0);
     final ids = {
       for (final d in data.researchConfig!.defs)
         if (const {
           ResearchEffect.huntCritDmg,
-          ResearchEffect.huntRegen,
           ResearchEffect.huntExp,
           ResearchEffect.huntEvade,
         }.contains(d.effect))
           d.id: d.maxLevel,
     };
-    expect(ids.length, 4);
+    expect(ids.length, 3);
     final fx = researchEffects(data.researchConfig!, ids);
     final none = huntStatsUncapped(save, data, t0, guildBonus: const {});
     final up = huntStatsUncapped(
@@ -203,10 +202,6 @@ void main() {
     expect(
       up.critDamage / none.critDamage,
       closeTo(1 + fx.of(ResearchEffect.huntCritDmg), 1e-9),
-    );
-    expect(
-      up.hpRegen / none.hpRegen,
-      closeTo(1 + fx.of(ResearchEffect.huntRegen), 1e-9),
     );
     expect(
       up.xpMultiplier / none.xpMultiplier,

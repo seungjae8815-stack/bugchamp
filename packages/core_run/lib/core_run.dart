@@ -4,6 +4,8 @@
 library;
 
 export 'src/abyss_config.dart';
+export 'src/weekend_event.dart';
+export 'src/achievement_config.dart';
 export 'src/battle_config.dart';
 export 'src/chapter_reward.dart';
 export 'src/jelly_cost.dart';

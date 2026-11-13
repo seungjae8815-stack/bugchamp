@@ -380,10 +380,16 @@
     }
   },
   "offlineTitle": "Welcome back!",
-  "offlineBugsBlocked": "Your storage was full —\n{count, plural, =1{1 egg was} other{{count} eggs were}} not collected",
+  "offlineBugsBlocked": "No room left —\nyou missed {count, plural, =1{1 egg} other{{count} eggs}}",
   "fairyRerollPending": "Pick reroll result",
   "offlineBugs": "🥚 Collected {count, plural, =1{1 bug egg} other{{count} bug eggs}}",
-  "@offlineBugs": {"placeholders": {"count": {"type": "int"}}},
+  "@offlineBugs": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "offlineElapsed": "Idle rewards earned over {time}",
   "@offlineElapsed": {
     "placeholders": {
@@ -398,50 +404,155 @@
   "offlineColNoBuffWould": "Without buffs",
   "offlineColBuffGot": "Got with buffs",
   "offlineApprox": "~{value}",
-  "@offlineApprox": {"placeholders": {"value": {"type": "String"}}},
+  "@offlineApprox": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
   "offlineRowEggs": "Bug eggs",
   "offlineRowMaterials": "Materials",
   "offlineRowFairyStone": "Attribute Stone",
   "offlineRowDuelStone": "Duel stone",
   "offlineRowPotion": "Growth potion",
   "buffWaitTitle": "Activating {name}…",
-  "@buffWaitTitle": {"placeholders": {"name": {"type": "String"}}},
+  "@buffWaitTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "buffWaitHint": "Wait until the end to turn it on for free.\nClosing this or leaving the app cancels it.",
   "buffWaitJelly": "Turn on now for {cost} jelly",
-  "@buffWaitJelly": {"placeholders": {"cost": {"type": "int"}}},
+  "@buffWaitJelly": {
+    "placeholders": {
+      "cost": {
+        "type": "int"
+      }
+    }
+  },
   "offlineRareBuffOnly": "Buff only",
   "offlineRareNote": "Attribute stones, duel stones and growth potions drop while idle only with Gatherer's Touch on · a day = {hours} idle hours",
-  "@offlineRareNote": {"placeholders": {"hours": {"type": "int"}}},
+  "@offlineRareNote": {
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      }
+    }
+  },
   "offlineRareDaily": "~{count}/day",
-  "@offlineRareDaily": {"placeholders": {"count": {"type": "String"}}},
+  "@offlineRareDaily": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
   "offlineXpLabel": "XP",
   "offlineRareLine": "✨ From elites: {items}",
-  "@offlineRareLine": {"placeholders": {"items": {"type": "String"}}},
+  "@offlineRareLine": {
+    "placeholders": {
+      "items": {
+        "type": "String"
+      }
+    }
+  },
   "offlineRareFairyStone": "Attribute Stone {count}",
-  "@offlineRareFairyStone": {"placeholders": {"count": {"type": "int"}}},
+  "@offlineRareFairyStone": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "offlineRareDuelStone": "Duel stone {count}",
-  "@offlineRareDuelStone": {"placeholders": {"count": {"type": "int"}}},
+  "@offlineRareDuelStone": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "offlineRarePotion": "Growth potion {count}",
-  "@offlineRarePotion": {"placeholders": {"count": {"type": "int"}}},
+  "@offlineRarePotion": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "offlineBuffBonusTitle": "Extra from your buffs",
   "offlineBuffMissedTitle": "With buffs on, you'd have earned more",
   "offlineBuffMissedButton": "Turn on buffs",
   "offlineGainGold": "Gold +{amount}",
-  "@offlineGainGold": {"placeholders": {"amount": {"type": "String"}}},
+  "@offlineGainGold": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
   "offlineGainXp": "XP +{amount}",
-  "@offlineGainXp": {"placeholders": {"amount": {"type": "String"}}},
+  "@offlineGainXp": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
   "offlineGainMaterials": "Materials ~+{count}",
-  "@offlineGainMaterials": {"placeholders": {"count": {"type": "String"}}},
+  "@offlineGainMaterials": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
   "offlineGainBugs": "~{count} bugs",
-  "@offlineGainBugs": {"placeholders": {"count": {"type": "int"}}},
+  "@offlineGainBugs": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "offlineGainBugsRare": "~{count} bugs (~{rare} Rare+)",
-  "@offlineGainBugsRare": {"placeholders": {"count": {"type": "int"}, "rare": {"type": "int"}}},
+  "@offlineGainBugsRare": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "rare": {
+        "type": "int"
+      }
+    }
+  },
   "offlineGainFairyStones": "Attribute Stones ~+{count}",
-  "@offlineGainFairyStones": {"placeholders": {"count": {"type": "int"}}},
+  "@offlineGainFairyStones": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "offlineGainDuelStones": "Duel stones ~+{count}",
-  "@offlineGainDuelStones": {"placeholders": {"count": {"type": "int"}}},
+  "@offlineGainDuelStones": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "offlineGainPotions": "Growth potions ~+{count}",
-  "@offlineGainPotions": {"placeholders": {"count": {"type": "int"}}},
+  "@offlineGainPotions": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "durationHm": "{h}h {m}m",
   "durationH": "{h}h",
   "@durationH": {
@@ -577,6 +688,13 @@
     }
   },
   "whatsNewOk": "OK",
+  "whatsNew28Kotk": "King of Kings — a weekly hard-mode tournament with one bug (home banner). Win for jelly, materials and a golden crown; any other bug becomes a specimen",
+  "whatsNew28Feed": "Feeding — feed bugs of the same species or fairies of the same kind to fill nutrients and raise rarity or grade (essence conversion is now part of feeding)",
+  "whatsNew28Upgrade": "Upgrades — awakening (bonus levels at set levels), lucky upgrades, effect preview and picks · gold only up to Lv.50",
+  "whatsNew28Abyss": "Abyss — weekly mutations · abyss crystals for imprints and upgrade cap breaks · abyss spores for the Lab's new Abyss research",
+  "whatsNew28Fun": "Weekend events · achievements and titles · size ranking per species · practice duels from the leaderboard · Specimen Case (next to the Dex)",
+  "whatsNew28Shop": "Each jelly pack gives double on first purchase · instant hatch, lay and breakthrough are free the first time · your first 5 hatches take at most 5 min",
+  "whatsNew28Dex": "Dex jelly is now 10 for completing each of discovery, conquest, variants and boss collection (gold and fossils from earlier milestones stay)",
   "whatsNewAvatar": "Profile pictures — tap your portrait (top-left), then the picture on your card, and pick from 21 (shown in chat, rankings, duels, contests)",
   "whatsNewDuelPower": "Duel combat power now reflects every stat — real win chances",
   "whatsNewPolish": "Gear refining — pick the option type and keep the old or new value",
@@ -775,7 +893,19 @@
   "eventFlyerRule2": "Enemy elements change every wave — waves your bug is weak to are the hard ones",
   "eventFlyerRule3": "Your bug gets injured and must rest in the recovery room — jelly heals it instantly",
   "eventFlyerRule4": "You get {daily} tickets every morning, and can top up with {jelly} jelly each, up to {extra} more per day",
-  "@eventFlyerRule4": {"placeholders": {"daily": {"type": "int"}, "jelly": {"type": "int"}, "extra": {"type": "int"}}},
+  "@eventFlyerRule4": {
+    "placeholders": {
+      "daily": {
+        "type": "int"
+      },
+      "jelly": {
+        "type": "int"
+      },
+      "extra": {
+        "type": "int"
+      }
+    }
+  },
   "eventFlyerLogin": "Sign in to appear in the ranking (guests can still play)",
   "eventTitle": "Bug King Trials",
   "eventBanner": "Bug King Trials · {n} tickets",
@@ -785,7 +915,13 @@
   "eventBugUnavailable": "That bug can't enter — please pick another one",
   "injuryHealConfirmTitle": "Heal now",
   "injuryHealConfirm": "Spend {n} Jelly to heal now?",
-  "@injuryHealConfirm": {"placeholders": {"n": {"type": "int"}}},
+  "@injuryHealConfirm": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
   "trainingInstantTitle": "Finish training now",
   "squadTrainingBadge": "Training",
   "eventNeedServer": "The contest needs an online connection",
@@ -873,6 +1009,11 @@
   "autoReleaseHint": "Releases every bug matching the filter at once and turns it into materials. Equipped, incubating and trained bugs (training, breakthrough, enhancement) are never touched.",
   "autoReleaseNone": "No bugs match the filter",
   "autoReleaseDone": "Released {count} bugs for {mats} materials",
+  "autoReleaseDoneCount": "Dismantled {count}",
+  "@autoReleaseDoneCount": {
+    "description": "자동 분해 결과 창 부제목 — 아래에 받은 재료가 아이콘과 함께 나온다",
+    "placeholders": {"count": {"type": "int"}}
+  },
   "autoReleasePreview": "{count} bugs will be released for {mats} materials",
   "autoReleaseRun": "Release",
   "autoFilterGrades": "Target grades",
@@ -964,7 +1105,12 @@
   "roadmapFinalBoss": "Final boss",
   "roadmapEnter": "Resume",
   "roadmapReplay": "Replay",
-  "chapterClearTitle": "Chapter cleared! 🎉",
+  "chapterClearTitle": "Zone cleared! 🎉",
+  "chapterClearZoneMsg": "Zone {zone} boss {boss} defeated! The next zone is open.",
+  "@chapterClearZoneMsg": {
+    "description": "사냥터 1~10 클리어 창(마지막 사냥터는 chapterClearMsg — 난이도 정복)",
+    "placeholders": {"zone": {"type": "int"}, "boss": {"type": "String"}}
+  },
   "chapterClearMsg": "Conquered {difficulty}! Final boss {boss} defeated!",
   "@chapterClearMsg": {
     "placeholders": {
@@ -1120,7 +1266,13 @@
   "stageMolting": "Molting",
   "stageAdult": "Adult",
   "bugDuelPower": "Duel power {power}",
-  "@bugDuelPower": {"placeholders": {"power": {"type": "String"}}},
+  "@bugDuelPower": {
+    "placeholders": {
+      "power": {
+        "type": "String"
+      }
+    }
+  },
   "evolveTitle": "Evolve",
   "evolveNext": "{time} to {next}",
   "@evolveNext": {
@@ -1302,13 +1454,31 @@
   "incubatingLabel": "Incubating",
   "hatchRevealGreat": "Excellent stats!",
   "hatchRevealAvg": "Stat average {avg}",
-  "@hatchRevealAvg": {"placeholders": {"avg": {"type": "String"}}},
+  "@hatchRevealAvg": {
+    "placeholders": {
+      "avg": {
+        "type": "String"
+      }
+    }
+  },
   "hatchRevealOk": "OK",
   "hatchRevealNext": "Next ({n} left)",
-  "@hatchRevealNext": {"placeholders": {"n": {"type": "String"}}},
+  "@hatchRevealNext": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
   "hatchRevealSkipAll": "Skip all",
   "hatchRevealGreatEssenceWarn": "This bug has excellent stats (average {avg}).\nConvert it to essence anyway?",
-  "@hatchRevealGreatEssenceWarn": {"placeholders": {"avg": {"type": "String"}}},
+  "@hatchRevealGreatEssenceWarn": {
+    "placeholders": {
+      "avg": {
+        "type": "String"
+      }
+    }
+  },
   "hatchRevealTitle": "Hatched!",
   "disassembleSnack": "Disassembled",
   "disassembleEquipped": "Equipped bugs cannot be disassembled",
@@ -1441,9 +1611,21 @@
     }
   },
   "badgeSilver": "R{round} 2nd",
-  "@badgeSilver": {"placeholders": {"round": {"type": "int"}}},
+  "@badgeSilver": {
+    "placeholders": {
+      "round": {
+        "type": "int"
+      }
+    }
+  },
   "badgeBronze": "R{round} 3rd",
-  "@badgeBronze": {"placeholders": {"round": {"type": "int"}}},
+  "@badgeBronze": {
+    "placeholders": {
+      "round": {
+        "type": "int"
+      }
+    }
+  },
   "badgeFinalist": "R{round} Finalist",
   "@badgeFinalist": {
     "placeholders": {
@@ -1636,6 +1818,240 @@
   },
   "nicknameRequiredTitle": "Choose a nickname",
   "nicknameRequiredBody": "This is the name other collectors will see. You only set it once.",
+  "nicknameSuggestPrefix": "Bug",
+  "nicknameSuggestedNote": "We picked a name for you. Keep it or type your own.",
+  "bugDetailMore": "Growth & stats details",
+  "bugDetailLess": "Show less",
+  "storeFirstBonus": "First purchase 2x! +{n} bonus jelly",
+  "@storeFirstBonus": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "jellyShortHave": "You have {n} jelly",
+  "@jellyShortHave": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "jellyShortFirstBonus": "Jelly packs are 2x on your first purchase!",
+  "discoveryNewTitle": "New bug discovered!",
+  "discoveryVariantTitle": "Rare color found!",
+  "discoveryVariantNote": "A very rare, differently colored bug!",
+  "discoveryDexProgress": "Bugdex {n} / {total}",
+  "@discoveryDexProgress": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "discoveryOk": "Nice!",
+  "rarityAutoFeedBody": "Feeds bugs of the same species to raise rarity (lower-rarity bugs fill less).\nRarity ups: {ups} · bugs used as material: {fodder}",
+  "@rarityAutoFeedBody": {
+    "placeholders": {
+      "ups": {
+        "type": "String"
+      },
+      "fodder": {
+        "type": "String"
+      }
+    }
+  },
+  "guideRarityFeed": "Rarity up: feeding bugs of the same species fills nutrients. Lower-rarity bugs fill a little (Common {common}), higher-rarity bugs fill a lot (Epic {epic}), and Legendary needs {legend}. Bugs rarer than this one, and protected or invested bugs, are never fed. Trained stats stay.",
+  "@guideRarityFeed": {
+    "placeholders": {
+      "common": {
+        "type": "String"
+      },
+      "epic": {
+        "type": "String"
+      },
+      "legend": {
+        "type": "String"
+      }
+    }
+  },
+  "rarityWorthBtn": "Nutrients {cur} / {next}",
+  "@rarityWorthBtn": {
+    "placeholders": {
+      "cur": {
+        "type": "int"
+      },
+      "next": {
+        "type": "int"
+      }
+    }
+  },
+  "rarityFeedTitle": "Feed bugs",
+  "rarityFeedBody": "Feeding bugs of the same species fills nutrients. Lower-rarity bugs fill a little, higher-rarity bugs fill a lot. When nutrients are full, the rarity goes up. Grade nutrients for grade-ups build up at the same time.",
+  "rarityFeedGauge": "Nutrients {cur} / {next} → {name}",
+  "@rarityFeedGauge": {
+    "placeholders": {
+      "cur": {
+        "type": "int"
+      },
+      "next": {
+        "type": "int"
+      },
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "rarityFeedToNext": "To next: {n} → {to}",
+  "@rarityFeedToNext": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      },
+      "to": {
+        "type": "String"
+      }
+    }
+  },
+  "rarityFeedAll": "Feed all: {n} → {to}",
+  "@rarityFeedAll": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      },
+      "to": {
+        "type": "String"
+      }
+    }
+  },
+  "rarityFeedNone": "No same-species bugs to feed",
+  "rarityNeedOnline": "Connect to the internet to raise rarity",
+  "guideFairyFeed": "Feeding fairies of the same kind fills nutrients; when full, the grade goes up. Lower-grade fairies fill a little (Common {common}), higher-grade ones fill a lot (Epic {epic}), and Mythic needs {mythic}. Quality carries over when the grade rises. Companion fairies, leveled-up fairies and higher-grade fairies are never used as material. +{perLevel} stats per level · max level by grade {caps}.",
+  "@guideFairyFeed": {
+    "placeholders": {
+      "common": {
+        "type": "String"
+      },
+      "epic": {
+        "type": "String"
+      },
+      "mythic": {
+        "type": "String"
+      },
+      "perLevel": {
+        "type": "String"
+      },
+      "caps": {
+        "type": "String"
+      }
+    }
+  },
+  "fairyFeedBtn": "Feed",
+  "fairyFeedTitle": "Feed fairies",
+  "fairyFeedBody": "Feeding fairies of the same kind fills nutrients. Lower-grade fairies fill a little, higher-grade ones fill a lot. When nutrients are full the grade goes up, and quality carries over.",
+  "fairyFeedNone": "No fairies of the same kind to feed",
+  "fairyFeedNote": "Companion and leveled-up fairies, and fairies of a higher grade than this one, are never fed.",
+  "fairyFeedUp": "Raised to {grade}!",
+  "@fairyFeedUp": {
+    "placeholders": {
+      "grade": {
+        "type": "String"
+      }
+    }
+  },
+  "fairyFeedStored": "Nutrients stored",
+  "fairyFeedHubHint": "Tap a fairy and use [Feed] to feed fairies of the same kind. Auto feed feeds the most valued fairy of each kind.",
+  "fairyAutoFeed": "Auto feed",
+  "fairyAutoFeedConfirm": "Grade ups: {ups} · fairies used as material: {used}",
+  "@fairyAutoFeedConfirm": {
+    "placeholders": {
+      "ups": {
+        "type": "String"
+      },
+      "used": {
+        "type": "String"
+      }
+    }
+  },
+  "fairyAutoFeedDone": "Grade up ×{ups}",
+  "@fairyAutoFeedDone": {
+    "placeholders": {
+      "ups": {
+        "type": "String"
+      }
+    }
+  },
+  "guideStorageFeed": "Disassemble unwanted bugs for materials, or feed them to a bug of the same species (the nutrients button in bug details). Feeding builds rarity nutrients and grade nutrients together; grade nutrients pay for that bug's grade-ups and passive rerolls. Essence you collected before is spent first for that species. Locked bugs are never used for disassembly or feeding. Equipped, hatching and training bugs are not used either.",
+  "guidePassiveRerollFeed": "Reroll: spend {essence} grade nutrients or {jelly} jelly to reroll the size, then keep the new or current value (leftover essence is used first). The type never changes.",
+  "@guidePassiveRerollFeed": {
+    "placeholders": {
+      "essence": {
+        "type": "String"
+      },
+      "jelly": {
+        "type": "String"
+      }
+    }
+  },
+  "rarityFeedGrade": "Grade nutrients +{n}",
+  "@rarityFeedGrade": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "igGradeUpFunds": "Grade nutrients {have} / {need}",
+  "@igGradeUpFunds": {
+    "placeholders": {
+      "have": {
+        "type": "String"
+      },
+      "need": {
+        "type": "String"
+      }
+    }
+  },
+  "igNeedMoreFunds": "Need {n} more grade nutrients — feed bugs of the same species",
+  "@igNeedMoreFunds": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
+  "igLegacyEssenceFirst": "Your {n} leftover essence is used first",
+  "@igLegacyEssenceFirst": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
+  "passiveRerollFundsHave": "Grade nutrients {have}",
+  "@passiveRerollFundsHave": {
+    "placeholders": {
+      "have": {
+        "type": "String"
+      }
+    }
+  },
+  "rarityFeedNote": "Protected or invested bugs, and bugs rarer than this one, are never fed.",
+  "rarityFeedStored": "Nutrients stored ({cur} / {next})",
+  "@rarityFeedStored": {
+    "placeholders": {
+      "cur": {
+        "type": "int"
+      },
+      "next": {
+        "type": "int"
+      }
+    }
+  },
   "renameForcedTitle": "Please change your nickname",
   "renameForcedBody": "An operator asked you to change your nickname.\nIt is shown to other players, so it must follow the rules.\nThis change is free.",
   "nicknameChangeTitle": "Change nickname",
@@ -1831,7 +2247,13 @@
   "autoTeamDone": "Picked your strongest team",
   "autoTeamAlready": "Already the best team",
   "teamPowerAura": "(aura +{power})",
-  "@teamPowerAura": {"placeholders": {"power": {"type": "String"}}},
+  "@teamPowerAura": {
+    "placeholders": {
+      "power": {
+        "type": "String"
+      }
+    }
+  },
   "teamPower": "Team power {power}",
   "@teamPower": {
     "placeholders": {
@@ -2130,7 +2552,16 @@
     }
   },
   "skillGradeUpPick": "Pick shards to use",
-  "@skillGradeUpHint": {"placeholders": {"grade": {"type": "String"}, "n": {"type": "String"}}},
+  "@skillGradeUpHint": {
+    "placeholders": {
+      "grade": {
+        "type": "String"
+      },
+      "n": {
+        "type": "String"
+      }
+    }
+  },
   "skillGradeUpHint": "Unused shards → {grade} wild ×{n}!",
   "skillGradeUpHintGo": "Upgrade",
   "skillEquip": "Equip",
@@ -2631,17 +3062,59 @@
   "forgeTranscendDone": "Forge transcended! Option max increased",
   "forgeTranscendFailed": "Can’t transcend right now",
   "forgeTranscendTimeNote": "Transcending takes {hours}h (Jelly can finish it now). Each transcend raises forge upgrade gold ×{gold} · time ×{time}, and even low grades cost at least {floorGold} gold · {floorHours}h.",
-  "@forgeTranscendTimeNote": {"placeholders": {"hours": {"type": "String"}, "gold": {"type": "String"}, "time": {"type": "String"}, "floorGold": {"type": "String"}, "floorHours": {"type": "String"}}},
+  "@forgeTranscendTimeNote": {
+    "placeholders": {
+      "hours": {
+        "type": "String"
+      },
+      "gold": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      },
+      "floorGold": {
+        "type": "String"
+      },
+      "floorHours": {
+        "type": "String"
+      }
+    }
+  },
   "forgeTranscendStarted": "Transcend started! Claim it in {hours}h to raise option max",
-  "@forgeTranscendStarted": {"placeholders": {"hours": {"type": "String"}}},
+  "@forgeTranscendStarted": {
+    "placeholders": {
+      "hours": {
+        "type": "String"
+      }
+    }
+  },
   "forgeTranscendInProgress": "Forge Transcend {n} in progress",
-  "@forgeTranscendInProgress": {"placeholders": {"n": {"type": "String"}}},
+  "@forgeTranscendInProgress": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
   "forgeTranscendInProgressBody": "Claim it when done to raise option max to +{total}% total. You can keep forging and upgrading meanwhile.",
-  "@forgeTranscendInProgressBody": {"placeholders": {"total": {"type": "String"}}},
+  "@forgeTranscendInProgressBody": {
+    "placeholders": {
+      "total": {
+        "type": "String"
+      }
+    }
+  },
   "forgeTranscendClaim": "Claim transcend",
   "forgeTranscendRushTitle": "Finish transcend now",
   "forgeTranscendRushConfirm": "Spend {jelly} Jelly to finish the transcend now?",
-  "@forgeTranscendRushConfirm": {"placeholders": {"jelly": {"type": "int"}}},
+  "@forgeTranscendRushConfirm": {
+    "placeholders": {
+      "jelly": {
+        "type": "int"
+      }
+    }
+  },
   "forgeTranscendMaxed": "Forge fully transcended — option max +{pct}%",
   "@forgeTranscendMaxed": {
     "placeholders": {
@@ -2664,7 +3137,16 @@
   },
   "forgeStarCarryTitle": "Stars carry over",
   "forgeStarCarryBody": "Same grade, so the new gear keeps your current gear's ★{stars} stars and {exp} star materials (and any upgrade in progress). Refine counts (cost steps) belong to the options, so the new gear keeps its own.\n\nSwap?",
-  "@forgeStarCarryBody": {"placeholders": {"stars": {"type": "String"}, "exp": {"type": "String"}}},
+  "@forgeStarCarryBody": {
+    "placeholders": {
+      "stars": {
+        "type": "String"
+      },
+      "exp": {
+        "type": "String"
+      }
+    }
+  },
   "starBonus": "Effect +{p}%",
   "@starBonus": {
     "placeholders": {
@@ -2676,7 +3158,9 @@
   "starCarry": "+{n} carried to next star",
   "@starCarry": {
     "placeholders": {
-      "n": {"type": "String"}
+      "n": {
+        "type": "String"
+      }
     }
   },
   "starProgress": "Next star {have}/{need}",
@@ -2853,7 +3337,13 @@
   "giftDoubleCapBody": "With a Pass, every gift stays doubled\nand gets claimed automatically.",
   "exchangeTitle": "Exchange",
   "exchangeHint": "Trade jelly for {hours} hours of hunting at your current power",
-  "@exchangeHint": { "placeholders": { "hours": { "type": "String" } } },
+  "@exchangeHint": {
+    "placeholders": {
+      "hours": {
+        "type": "String"
+      }
+    }
+  },
   "exchangeToGold": "To gold",
   "exchangeToMaterial": "To materials",
   "exchangeCost": "{n} jelly",
@@ -2889,8 +3379,12 @@
   "giftDoubleJellyLine": "Today's first double bonus: {min}–{max} Bug Jelly!",
   "@giftDoubleJellyLine": {
     "placeholders": {
-      "min": { "type": "int" },
-      "max": { "type": "int" }
+      "min": {
+        "type": "int"
+      },
+      "max": {
+        "type": "int"
+      }
     }
   },
   "giftGoPassBtn": "See the Pass",
@@ -3002,15 +3496,39 @@
   },
   "pvpRankRewardTitle": "Duel Season Rank Reward",
   "pvpRankRewardBody": "You finished #{rank} in last season's duels!",
-  "@pvpRankRewardBody": {"placeholders": {"rank": {"type": "int"}}},
+  "@pvpRankRewardBody": {
+    "placeholders": {
+      "rank": {
+        "type": "int"
+      }
+    }
+  },
   "pvpRankN": "#{n}",
-  "@pvpRankN": {"placeholders": {"n": {"type": "int"}}},
+  "@pvpRankN": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
   "pvpRankRewardHint": "Rank rewards (Jelly) {list}",
-  "@pvpRankRewardHint": {"placeholders": {"list": {"type": "String"}}},
+  "@pvpRankRewardHint": {
+    "placeholders": {
+      "list": {
+        "type": "String"
+      }
+    }
+  },
   "duelThrowButton": "Throw!",
   "duelGaugeHint": "Tap anywhere to stop · the closer to green, the stronger your attack this bout (up to +{pct}%)",
   "duelBout": "Bout {n}",
-  "@duelBout": {"placeholders": {"n": {"type": "int"}}},
+  "@duelBout": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
   "duelFinishRingOut": "Ring out!",
   "duelFinishFlip": "Flipped!",
   "duelFinishKnockout": "Knockout!",
@@ -3019,63 +3537,199 @@
   "duelBoutLose": "Bout lost…",
   "duelSkip": "Skip",
   "duelTrophy": "Stars {delta}",
-  "@duelTrophy": {"placeholders": {"delta": {"type": "String"}}},
+  "@duelTrophy": {
+    "placeholders": {
+      "delta": {
+        "type": "String"
+      }
+    }
+  },
   "duelResultOk": "OK",
   "duelNeedThree": "You need 3 bugs for a duel",
   "duelOrderHint": "#1, #2, #3 each fight one bout · this order is also your defense order",
   "abyssName": "Abyss",
   "abyssFloorLabel": "Abyss F{n}",
-  "@abyssFloorLabel": {"placeholders": {"n": {"type": "int"}}},
+  "@abyssFloorLabel": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
   "abyssUnlockedTitle": "The Abyss is open!",
   "abyssUnlockedBody": "Endless floors beyond Extreme. Your upgrades, gear and bugs come with you.\nEvery Monday 09:00 (KST) you start again from F1, and the deepest floor at the Sunday 09:00 close earns ranking Jelly.",
   "abyssEnter": "Enter the Abyss",
   "abyssLater": "Later",
   "abyssLeave": "Leave the Abyss",
   "abyssFloorClear": "F{n} cleared!",
-  "@abyssFloorClear": {"placeholders": {"n": {"type": "int"}}},
+  "@abyssFloorClear": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
   "abyssMilestone": "First time reaching F{n}! Fossils +{fossil}",
-  "@abyssMilestone": {"placeholders": {"n": {"type": "int"}, "fossil": {"type": "int"}}},
+  "@abyssMilestone": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      },
+      "fossil": {
+        "type": "int"
+      }
+    }
+  },
   "abyssBest": "Best F{n}",
-  "@abyssBest": {"placeholders": {"n": {"type": "int"}}},
-  "abyssWeekReset": "A new week — back to Abyss F1!",
+  "@abyssBest": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "abyssWeekReset": "A new week — Abyss starts at F{n}!",
+  "@abyssWeekReset": {"placeholders":{"n":{"type":"int"}}},
   "abyssRankRewardTitle": "Abyss Weekly Rank Reward",
   "abyssRankRewardBody": "Last week you reached Abyss F{floor} and placed #{rank}!",
-  "@abyssRankRewardBody": {"placeholders": {"floor": {"type": "int"}, "rank": {"type": "int"}}},
+  "@abyssRankRewardBody": {
+    "placeholders": {
+      "floor": {
+        "type": "int"
+      },
+      "rank": {
+        "type": "int"
+      }
+    }
+  },
   "boardTitle": "Rankings",
   "boardTabDuel": "Duel League",
   "boardTabAbyss": "Abyss",
   "boardLeagueTitle": "{league} League",
-  "@boardLeagueTitle": {"placeholders": {"league": {"type": "String"}}},
+  "@boardLeagueTitle": {
+    "placeholders": {
+      "league": {
+        "type": "String"
+      }
+    }
+  },
   "boardAbyssTitle": "Abyss Weekly Ranking",
   "boardSeasonEndsIn": "New season in: {time}",
-  "@boardSeasonEndsIn": {"placeholders": {"time": {"type": "String"}}},
+  "@boardSeasonEndsIn": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
   "boardTimeLeftDays": "{d}d {h}h {m}m",
-  "@boardTimeLeftDays": {"placeholders": {"d": {"type": "int"}, "h": {"type": "int"}, "m": {"type": "int"}}},
+  "@boardTimeLeftDays": {
+    "placeholders": {
+      "d": {
+        "type": "int"
+      },
+      "h": {
+        "type": "int"
+      },
+      "m": {
+        "type": "int"
+      }
+    }
+  },
   "boardTimeLeft": "{h}h {m}m",
-  "@boardTimeLeft": {"placeholders": {"h": {"type": "int"}, "m": {"type": "int"}}},
+  "@boardTimeLeft": {
+    "placeholders": {
+      "h": {
+        "type": "int"
+      },
+      "m": {
+        "type": "int"
+      }
+    }
+  },
   "boardZonesHint": "Top {promote} promote · bottom {demote} demote",
-  "@boardZonesHint": {"placeholders": {"promote": {"type": "int"}, "demote": {"type": "int"}}},
+  "@boardZonesHint": {
+    "placeholders": {
+      "promote": {
+        "type": "int"
+      },
+      "demote": {
+        "type": "int"
+      }
+    }
+  },
   "boardEmpty": "No records this week yet",
   "boardMeNone": "Duel this week to appear in the ranking",
   "boardAbyssMeNone": "Clear Abyss F1 this week to appear in the ranking",
   "boardFloorShort": "F{n}",
-  "@boardFloorShort": {"placeholders": {"n": {"type": "int"}}},
+  "@boardFloorShort": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
   "boardRewardsTitle": "{league} League Rank Rewards",
-  "@boardRewardsTitle": {"placeholders": {"league": {"type": "String"}}},
+  "@boardRewardsTitle": {
+    "placeholders": {
+      "league": {
+        "type": "String"
+      }
+    }
+  },
   "boardAbyssRewardsTitle": "Abyss Weekly Rank Rewards",
   "boardOpen": "Rankings",
   "leagueResultTitle": "League Results",
   "leagueResultUp": "Promoted to {league} League!",
-  "@leagueResultUp": {"placeholders": {"league": {"type": "String"}}},
+  "@leagueResultUp": {
+    "placeholders": {
+      "league": {
+        "type": "String"
+      }
+    }
+  },
   "leagueResultDown": "Moved down to {league} League",
-  "@leagueResultDown": {"placeholders": {"league": {"type": "String"}}},
+  "@leagueResultDown": {
+    "placeholders": {
+      "league": {
+        "type": "String"
+      }
+    }
+  },
   "leagueResultStay": "Staying in {league} League",
-  "@leagueResultStay": {"placeholders": {"league": {"type": "String"}}},
+  "@leagueResultStay": {
+    "placeholders": {
+      "league": {
+        "type": "String"
+      }
+    }
+  },
   "leagueResultRank": "Last week: #{rank} of {total}",
-  "@leagueResultRank": {"placeholders": {"rank": {"type": "int"}, "total": {"type": "int"}}},
+  "@leagueResultRank": {
+    "placeholders": {
+      "rank": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
   "leagueResultInactive": "You skipped duels last week, so you moved down one league",
   "leagueZoneHint": "Closes every Sunday 09:00 · in leagues of {min}+ players, top {up}% promote · bottom {down}% demote",
-  "@leagueZoneHint": {"placeholders": {"min": {"type": "int"}, "up": {"type": "int"}, "down": {"type": "int"}}},
+  "@leagueZoneHint": {
+    "placeholders": {
+      "min": {
+        "type": "int"
+      },
+      "up": {
+        "type": "int"
+      },
+      "down": {
+        "type": "int"
+      }
+    }
+  },
   "duelSquadTitle": "Squad",
   "recoveryRoom": "Recovery",
   "trainingCenter": "Training",
@@ -3085,22 +3739,58 @@
   "recoveryEmpty": "No bugs are recovering",
   "opponentPickTitle": "Choose an opponent",
   "opponentPickHint": "Your team power {power} · Win to earn stars, lose nothing",
-  "@opponentPickHint": {"placeholders": {"power": {"type": "String"}}},
+  "@opponentPickHint": {
+    "placeholders": {
+      "power": {
+        "type": "String"
+      }
+    }
+  },
   "opponentWinOnly": "on win",
   "boardSeasonClosesIn": "Season closes: {time}",
-  "@boardSeasonClosesIn": {"placeholders": {"time": {"type": "String"}}},
+  "@boardSeasonClosesIn": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
   "boardMyRankNow": "Now #{rank} — your reward",
-  "@boardMyRankNow": {"placeholders": {"rank": {"type": "int"}}},
+  "@boardMyRankNow": {
+    "placeholders": {
+      "rank": {
+        "type": "int"
+      }
+    }
+  },
   "profileCombatPower": "Power {power}",
-  "@profileCombatPower": {"placeholders": {"power": {"type": "String"}}},
+  "@profileCombatPower": {
+    "placeholders": {
+      "power": {
+        "type": "String"
+      }
+    }
+  },
   "profileNoTeam": "No defense team yet",
   "duelAutoThrowIn": "Auto-throw in {n}s",
-  "@duelAutoThrowIn": {"placeholders": {"n": {"type": "int"}}},
+  "@duelAutoThrowIn": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
   "duelRestrainHit": "Counter!",
   "duelCritHit": "Critical!",
   "duelWeakHit": "Weak spot!",
   "pvpTicketJellyGive": "Refill +{amount}",
-  "@pvpTicketJellyGive": {"placeholders": {"amount": {"type": "int"}}},
+  "@pvpTicketJellyGive": {
+    "placeholders": {
+      "amount": {
+        "type": "int"
+      }
+    }
+  },
   "bugInfoAtk": "Attack",
   "bugInfoDef": "Defense",
   "bugInfoSpd": "Speed",
@@ -3112,7 +3802,13 @@
   "squadDeploy": "Deploy",
   "squadInjured": "A bug is recovering — heal it in Recovery or swap it out",
   "squadOrder": "Fighter {n}",
-  "@squadOrder": {"placeholders": {"n": {"type": "int"}}},
+  "@squadOrder": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
   "duelAttackBtn": "Attack",
   "squadRelease": "Remove",
   "squadSwap": "Swap",
@@ -3123,74 +3819,194 @@
   "trainRecovery": "Recovery",
   "trainingNone": "No bug is training right now",
   "trainingNow": "Training {stat} Lv{level}",
-  "@trainingNow": {"placeholders": {"stat": {"type": "String"}, "level": {"type": "int"}}},
+  "@trainingNow": {
+    "placeholders": {
+      "stat": {
+        "type": "String"
+      },
+      "level": {
+        "type": "int"
+      }
+    }
+  },
   "trainingDone": "Training complete!",
   "trainingPickBug": "Bug to train",
   "trainingCapHint": "Max levels differ by potential, temperament, specialty and bloodline trait",
   "trainingLevel": "{lv} / {cap}",
-  "@trainingLevel": {"placeholders": {"lv": {"type": "int"}, "cap": {"type": "int"}}},
+  "@trainingLevel": {
+    "placeholders": {
+      "lv": {
+        "type": "int"
+      },
+      "cap": {
+        "type": "int"
+      }
+    }
+  },
   "trainingStart": "Train",
   "trainingMaxed": "Max",
   "trainingBusy": "One bug at a time — wait for the current training",
   "trainingNoMaterials": "Not enough materials",
   "trainingReset": "Reset training",
   "trainingResetAsk": "Reset all levels to 0 and get back half the materials ({n} of each)",
-  "@trainingResetAsk": {"placeholders": {"n": {"type": "String"}}},
+  "@trainingResetAsk": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
   "trainingResetDone": "Training reset",
   "squadTraining": "A training bug cannot be deployed",
   "duelMiss": "Miss!",
   "breedingConfirm": "Mate",
   "breedingTimeInfo": "Egg in {t}",
-  "@breedingTimeInfo": {"placeholders": {"t": {"type": "String"}}},
+  "@breedingTimeInfo": {
+    "placeholders": {
+      "t": {
+        "type": "String"
+      }
+    }
+  },
   "incubatorStartConfirm": "Start hatching",
   "incubatorTimeInfo": "Hatches in {t}",
-  "@incubatorTimeInfo": {"placeholders": {"t": {"type": "String"}}},
+  "@incubatorTimeInfo": {
+    "placeholders": {
+      "t": {
+        "type": "String"
+      }
+    }
+  },
   "bugInfoSex": "Sex",
   "bugInfoElement": "Element",
   "leagueInfoTitle": "{league} League",
-  "@leagueInfoTitle": {"placeholders": {"league": {"type": "String"}}},
+  "@leagueInfoTitle": {
+    "placeholders": {
+      "league": {
+        "type": "String"
+      }
+    }
+  },
   "leagueInfoRank": "Weekly rank rewards (closes Sun 09:00)",
   "leagueInfoSeason": "Season-end reward",
   "leagueInfoAll": "Rewards by league",
   "leagueInfoCurrent": "Now",
   "leagueInfoAllHint": "Jelly = 1st place in that league (with {full}+ players) · Gold = season-end reward",
-  "@leagueInfoAllHint": {"placeholders": {"full": {"type": "int"}}},
+  "@leagueInfoAllHint": {
+    "placeholders": {
+      "full": {
+        "type": "int"
+      }
+    }
+  },
   "boardPromoteLine": "▲ Promotion zone above",
   "boardDemoteLine": "▼ Demotion zone below",
   "squadAutoFilled": "Squad filled automatically. Check it and tap Start again",
   "battleSeasonClosedShort": "Season over",
   "leagueMyNow": "Now #{rank} of {total}",
-  "@leagueMyNow": {"placeholders": {"rank": {"type": "int"}, "total": {"type": "int"}}},
+  "@leagueMyNow": {
+    "placeholders": {
+      "rank": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
   "leagueMyPromote": "▲ Promotion zone — {league} League next week",
-  "@leagueMyPromote": {"placeholders": {"league": {"type": "String"}}},
+  "@leagueMyPromote": {
+    "placeholders": {
+      "league": {
+        "type": "String"
+      }
+    }
+  },
   "leagueMyStay": "Safe — same league next week",
   "leagueMyDemote": "▼ Demotion zone — {league} League next week",
-  "@leagueMyDemote": {"placeholders": {"league": {"type": "String"}}},
+  "@leagueMyDemote": {
+    "placeholders": {
+      "league": {
+        "type": "String"
+      }
+    }
+  },
   "leagueMyIfEnds": "Reward if the season ended now",
   "boardBossPct": "Boss {n}%",
-  "@boardBossPct": {"placeholders": {"n": {"type": "int"}}},
+  "@boardBossPct": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
   "boardAbyssHint": "Same floor? Higher max damage on the next floor boss (Boss %) ranks higher",
   "rankProgressAbyss": "{tier} · Abyss F{floor}",
-  "@rankProgressAbyss": {"placeholders": {"tier": {"type": "String"}, "floor": {"type": "int"}}},
+  "@rankProgressAbyss": {
+    "placeholders": {
+      "tier": {
+        "type": "String"
+      },
+      "floor": {
+        "type": "int"
+      }
+    }
+  },
   "duelLaunchBonus": "Great throw! Attack +{pct}% this bout",
-  "@duelLaunchBonus": {"placeholders": {"pct": {"type": "int"}}},
-  "@duelGaugeHint": {"placeholders": {"pct": {"type": "int"}}},
+  "@duelLaunchBonus": {
+    "placeholders": {
+      "pct": {
+        "type": "int"
+      }
+    }
+  },
+  "@duelGaugeHint": {
+    "placeholders": {
+      "pct": {
+        "type": "int"
+      }
+    }
+  },
   "eventWaveHeader": "Wave {n}",
   "eventStopHp": "Out of HP — the run ends here.",
   "eventDevPreview": "Developer preview — no server record, rewards, tickets or injuries",
   "eventDevTry": "Try the contest (dev)",
-  "@eventWaveHeader": {"placeholders": {"n": {"type": "int"}}},
-  "@eventNormalizeBody": {"placeholders": {"pct": {"type": "int"}}},
+  "@eventWaveHeader": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "@eventNormalizeBody": {
+    "placeholders": {
+      "pct": {
+        "type": "int"
+      }
+    }
+  },
   "eventEntryLabel": "Your entry",
   "eventEntryEmpty": "Pick your best-raised bug below to put it on stage",
   "eventBuffNow": "Active boosts",
   "eventCardMaxed": "MAX",
   "eventBuffNone": "No boosts yet",
   "eventBuffRevive": "Revive {n}",
-  "@eventBuffRevive": {"placeholders": {"n": {"type": "int"}}},
+  "@eventBuffRevive": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
   "eventFallRetry": "HP -{pct}% · retry the same wave",
   "eventReviveRetry": "Revived! Retry the same wave",
-  "@eventFallRetry": {"placeholders": {"pct": {"type": "int"}}},
+  "@eventFallRetry": {
+    "placeholders": {
+      "pct": {
+        "type": "int"
+      }
+    }
+  },
   "cardAgile": "Nimble",
   "cardAgileDesc": "Evade +8%p — chance to dodge a clash entirely",
   "cardVital": "Vital Strike",
@@ -3214,14 +4030,41 @@
   "eventQuit": "Retreat",
   "eventQuitTitle": "Stop here?",
   "eventQuitBody": "Your record is locked in at {n} waves cleared.\nHP now {hp}% — injury lasts only {injury}% of the maximum.\n(The more HP left, the shorter the rest)",
-  "@eventQuitBody": {"placeholders": {"n": {"type": "int"}, "hp": {"type": "int"}, "injury": {"type": "int"}}},
+  "@eventQuitBody": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      },
+      "hp": {
+        "type": "int"
+      },
+      "injury": {
+        "type": "int"
+      }
+    }
+  },
   "charTabFairy": "Fairies",
   "fairyCompanion": "Companion",
   "fairyNoCompanion": "No companion yet — pick one below",
   "fairyBoxTitle": "Fairies {n}/{max}",
-  "@fairyBoxTitle": {"placeholders": {"n": {"type": "String"}, "max": {"type": "String"}}},
+  "@fairyBoxTitle": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      },
+      "max": {
+        "type": "String"
+      }
+    }
+  },
   "fairyEggCount": "{n} eggs",
-  "@fairyEggCount": {"placeholders": {"n": {"type": "String"}}},
+  "@fairyEggCount": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
   "fairyEmptyBox": "No fairies yet. Draw a fairy egg and hatch it in the nest!",
   "fairyNest": "Fairy Nest",
   "fairyNestEmpty": "The nest is empty — place an egg",
@@ -3230,45 +4073,117 @@
   "fairyNestCollect": "Collect",
   "fairyNestReady": "Hatched!",
   "fairyNestLeft": "{t} left",
-  "@fairyNestLeft": {"placeholders": {"t": {"type": "String"}}},
+  "@fairyNestLeft": {
+    "placeholders": {
+      "t": {
+        "type": "String"
+      }
+    }
+  },
   "fairyNestKindHint": "The kind is random among {n}",
   "fairyStone": "Attribute Stone",
   "fairyStoneNone": "No stone",
   "fairyStoneHint": "With a stone, that bonus stat appears {p}% of the time",
-  "@fairyStoneHint": {"placeholders": {"p": {"type": "String"}}},
+  "@fairyStoneHint": {
+    "placeholders": {
+      "p": {
+        "type": "String"
+      }
+    }
+  },
   "fairyAccel": "Accelerator",
   "fairyAccelMinutes": "-{t}",
-  "@fairyAccelMinutes": {"placeholders": {"t": {"type": "String"}}},
+  "@fairyAccelMinutes": {
+    "placeholders": {
+      "t": {
+        "type": "String"
+      }
+    }
+  },
   "fairyUse": "Use",
   "fairyBuy": "Buy",
   "fairyOwned": "Owned {n}",
-  "@fairyOwned": {"placeholders": {"n": {"type": "String"}}},
+  "@fairyOwned": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
   "fairyDex": "Fairy Codex",
   "fairyDexGrades": "Grades {n}/{max}",
-  "@fairyDexGrades": {"placeholders": {"n": {"type": "String"}, "max": {"type": "String"}}},
+  "@fairyDexGrades": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      },
+      "max": {
+        "type": "String"
+      }
+    }
+  },
   "fairyDexSubs": "Bonus stats {n}/{max}",
-  "@fairyDexSubs": {"placeholders": {"n": {"type": "String"}, "max": {"type": "String"}}},
+  "@fairyDexSubs": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      },
+      "max": {
+        "type": "String"
+      }
+    }
+  },
   "fairyGacha": "Fairy Egg Draw",
   "fairyGachaOne": "x1",
   "fairyGachaTen": "x10",
   "fairyGachaPity": "Legendary+ guaranteed within {n}",
-  "@fairyGachaPity": {"placeholders": {"n": {"type": "String"}}},
+  "@fairyGachaPity": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
   "fairyGachaOdds": "Odds",
   "fairyGachaOddsNote": "The draw sets only the egg grade. Type, bonus stat and quality are rolled when it hatches. Mythic comes only from merging.",
   "fairyGachaGot": "Got {n} eggs",
-  "@fairyGachaGot": {"placeholders": {"n": {"type": "String"}}},
+  "@fairyGachaGot": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
   "fairyDust": "Fairy Dust",
   "fairyLevel": "Lv.{n}",
-  "@fairyLevel": {"placeholders": {"n": {"type": "String"}}},
+  "@fairyLevel": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
   "fairyLevelUp": "Level up",
   "fairyMaxLevel": "Max level",
   "fairyQuality": "Quality {p}%",
-  "@fairyQuality": {"placeholders": {"p": {"type": "String"}}},
+  "@fairyQuality": {
+    "placeholders": {
+      "p": {
+        "type": "String"
+      }
+    }
+  },
   "fairyStatMain": "Base",
   "fairyStatSub": "Bonus",
   "fairySkill": "Skill",
   "fairyCooldown": "{s}s cooldown",
-  "@fairyCooldown": {"placeholders": {"s": {"type": "String"}}},
+  "@fairyCooldown": {
+    "placeholders": {
+      "s": {
+        "type": "String"
+      }
+    }
+  },
   "fairyGoCompanion": "Make companion",
   "fairyIsCompanion": "Companion",
   "fairyMerge": "Merge",
@@ -3285,17 +4200,59 @@
   "fairyRerollTake": "Use new",
   "fairyRerollCap": "No rerolls left today. Try again tomorrow.",
   "fairyRerollNetwork": "Needs a server connection. Please try again shortly.",
-  "@fairyReroll": {"placeholders": {"left": {"type": "String"}}},
-  "@offlineBugsBlocked": {"placeholders": {"count": {"type": "int"}}},
+  "@fairyReroll": {
+    "placeholders": {
+      "left": {
+        "type": "String"
+      }
+    }
+  },
+  "@offlineBugsBlocked": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "fairyMergeHint": "{n} of the same type & grade → 1 of the next grade. Base and bonus stats are rolled fresh for the new grade. If all materials share the same bonus stat, it carries over.",
-  "@fairyMergeHint": {"placeholders": {"n": {"type": "String"}}},
-  "@fairyMergeEpicNote": {"placeholders": {"n": {"type": "String"}}},
+  "@fairyMergeHint": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
+  "@fairyMergeEpicNote": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
   "fairyMergePick": "Materials {n}/{max}",
-  "@fairyMergePick": {"placeholders": {"n": {"type": "String"}, "max": {"type": "String"}}},
+  "@fairyMergePick": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      },
+      "max": {
+        "type": "String"
+      }
+    }
+  },
   "fairyMergeNoMat": "Not enough fairies of the same type & grade",
   "fairyAutoMerge": "Auto merge",
   "fairyAutoMergeConfirm": "{used} fairies become {made}. Companion and leveled fairies are skipped; lowest quality goes first. Results are rolled fresh.",
-  "@fairyAutoMergeConfirm": {"placeholders": {"used": {"type": "String"}, "made": {"type": "String"}}},
+  "@fairyAutoMergeConfirm": {
+    "placeholders": {
+      "used": {
+        "type": "String"
+      },
+      "made": {
+        "type": "String"
+      }
+    }
+  },
   "fairyAutoMergeNone": "Nothing to auto merge",
   "fairyRelease": "Release",
   "fairyNestBtn": "Nest",
@@ -3304,7 +4261,13 @@
   "fairyMergeBtn": "Merge",
   "fairyReleaseBtn": "Release",
   "fairyReleaseConfirm": "Releasing gives {n} fairy dust.\nThis cannot be undone.",
-  "@fairyReleaseConfirm": {"placeholders": {"n": {"type": "String"}}},
+  "@fairyReleaseConfirm": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
   "fairyNew": "New fairy!",
   "fairyErrJelly": "Not enough jelly",
   "fairyErrDust": "Not enough fairy dust",
@@ -3322,23 +4285,86 @@
   "fairyStatBossDamage": "Boss damage",
   "fairyStatPetShare": "Bug damage",
   "fairySkillBurst": "Deals {s}s worth of damage at once",
-  "@fairySkillBurst": {"placeholders": {"s": {"type": "String"}}},
+  "@fairySkillBurst": {
+    "placeholders": {
+      "s": {
+        "type": "String"
+      }
+    }
+  },
   "fairySkillHeal": "Heals {p}% max HP when below 60%",
-  "@fairySkillHeal": {"placeholders": {"p": {"type": "String"}}},
+  "@fairySkillHeal": {
+    "placeholders": {
+      "p": {
+        "type": "String"
+      }
+    }
+  },
   "fairySkillGuard": "For {d}s, -{p}% damage taken",
-  "@fairySkillGuard": {"placeholders": {"d": {"type": "String"}, "p": {"type": "String"}}},
+  "@fairySkillGuard": {
+    "placeholders": {
+      "d": {
+        "type": "String"
+      },
+      "p": {
+        "type": "String"
+      }
+    }
+  },
   "fairySkillHaste": "For {d}s, +{p}% attack speed",
-  "@fairySkillHaste": {"placeholders": {"d": {"type": "String"}, "p": {"type": "String"}}},
+  "@fairySkillHaste": {
+    "placeholders": {
+      "d": {
+        "type": "String"
+      },
+      "p": {
+        "type": "String"
+      }
+    }
+  },
   "fairySkillCrits": "All hits are critical for {s}s",
-  "@fairySkillCrits": {"placeholders": {"s": {"type": "String"}}},
+  "@fairySkillCrits": {
+    "placeholders": {
+      "s": {
+        "type": "String"
+      }
+    }
+  },
   "fairySkillBossBurst": "Deals {s}s worth of damage to bosses",
-  "@fairySkillBossBurst": {"placeholders": {"s": {"type": "String"}}},
+  "@fairySkillBossBurst": {
+    "placeholders": {
+      "s": {
+        "type": "String"
+      }
+    }
+  },
   "fairySkillPet": "For {d}s, +{p}% bug damage",
-  "@fairySkillPet": {"placeholders": {"d": {"type": "String"}, "p": {"type": "String"}}},
+  "@fairySkillPet": {
+    "placeholders": {
+      "d": {
+        "type": "String"
+      },
+      "p": {
+        "type": "String"
+      }
+    }
+  },
   "fairySkillStand": "Once, survive a fatal hit with {p}% HP",
-  "@fairySkillStand": {"placeholders": {"p": {"type": "String"}}},
+  "@fairySkillStand": {
+    "placeholders": {
+      "p": {
+        "type": "String"
+      }
+    }
+  },
   "fairyEggPop": "Fairy egg · {grade}",
-  "@fairyEggPop": {"placeholders": {"grade": {"type": "String"}}},
+  "@fairyEggPop": {
+    "placeholders": {
+      "grade": {
+        "type": "String"
+      }
+    }
+  },
   "guildTitle": "Guild",
   "guildIntro": "Join a guild to take on missions, the guild boss and weekly guild wars together — plus check-ins, the guild shop and guild buffs.",
   "guildUnavailable": "Couldn't load guild info. Please try again in a moment.",
@@ -3347,7 +4373,16 @@
   "guildEmptyList": "No guilds found. Why not create one?",
   "guildCreate": "Create guild",
   "guildNameHint": "Guild name ({min}–{max} chars)",
-  "@guildNameHint": {"placeholders": {"min": {"type": "int"}, "max": {"type": "int"}}},
+  "@guildNameHint": {
+    "placeholders": {
+      "min": {
+        "type": "int"
+      },
+      "max": {
+        "type": "int"
+      }
+    }
+  },
   "guildJoinModeOpen": "Open — anyone can join instantly",
   "guildJoinModeApproval": "Approval — leaders review requests",
   "guildJoinModeOpenShort": "Open",
@@ -3357,23 +4392,62 @@
   "guildCancelRequest": "Cancel request",
   "guildFull": "Full",
   "guildMembersCount": "{n}/{max} members",
-  "@guildMembersCount": {"placeholders": {"n": {"type": "int"}, "max": {"type": "int"}}},
+  "@guildMembersCount": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      },
+      "max": {
+        "type": "int"
+      }
+    }
+  },
   "guildAvgPower": "Avg. power {v}",
-  "@guildAvgPower": {"placeholders": {"v": {"type": "String"}}},
+  "@guildAvgPower": {
+    "placeholders": {
+      "v": {
+        "type": "String"
+      }
+    }
+  },
   "guildCooldown": "You can join another guild in {time}",
-  "@guildCooldown": {"placeholders": {"time": {"type": "String"}}},
+  "@guildCooldown": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
   "guildTabMembers": "Members",
   "guildTabChat": "Chat",
   "guildTabRequests": "Req. {n}",
-  "@guildTabRequests": {"placeholders": {"n": {"type": "int"}}},
+  "@guildTabRequests": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
   "guildRoleLeader": "Leader",
   "guildRoleDeputy": "Deputy",
   "guildRoleMember": "Member",
   "guildLastSeenNow": "Online recently",
   "guildLastSeenHours": "{n}h ago",
-  "@guildLastSeenHours": {"placeholders": {"n": {"type": "int"}}},
+  "@guildLastSeenHours": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
   "guildLastSeenDays": "{n}d ago",
-  "@guildLastSeenDays": {"placeholders": {"n": {"type": "int"}}},
+  "@guildLastSeenDays": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
   "guildNoticeEmpty": "No guild introduction yet",
   "guildNoticeHint": "Introduce your guild",
   "guildEditNotice": "Edit introduction",
@@ -3381,17 +4455,35 @@
   "guildSave": "Save",
   "guildLeave": "Leave guild",
   "guildLeaveConfirm": "After leaving, you can't join another guild for {hours} hours. Leave?",
-  "@guildLeaveConfirm": {"placeholders": {"hours": {"type": "int"}}},
+  "@guildLeaveConfirm": {
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      }
+    }
+  },
   "guildLeaveLastConfirm": "You're the last member — the guild will be disbanded. Leave?",
   "guildLeaderLeaveNote": "Leadership passes to a deputy (or the top contributor).",
   "guildKick": "Remove from guild",
   "guildKickConfirm": "Remove {name} from the guild?",
-  "@guildKickConfirm": {"placeholders": {"name": {"type": "String"}}},
+  "@guildKickConfirm": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "guildMakeDeputy": "Make deputy",
   "guildRemoveDeputy": "Remove deputy",
   "guildTransfer": "Transfer leadership",
   "guildTransferConfirm": "Make {name} the guild leader?",
-  "@guildTransferConfirm": {"placeholders": {"name": {"type": "String"}}},
+  "@guildTransferConfirm": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "guildAccept": "Accept",
   "guildReject": "Decline",
   "guildNoRequests": "No join requests",
@@ -3409,9 +4501,21 @@
   "guildErrNoticeInvalid": "That introduction can't be used",
   "guildErrGeneric": "Something went wrong. Please try again",
   "guildCreateWithCost": "Create guild · {cost} jelly",
-  "@guildCreateWithCost": {"placeholders": {"cost": {"type": "int"}}},
+  "@guildCreateWithCost": {
+    "placeholders": {
+      "cost": {
+        "type": "int"
+      }
+    }
+  },
   "guildCreateNeedJelly": "You need {cost} jelly to create a guild",
-  "@guildCreateNeedJelly": {"placeholders": {"cost": {"type": "int"}}},
+  "@guildCreateNeedJelly": {
+    "placeholders": {
+      "cost": {
+        "type": "int"
+      }
+    }
+  },
   "guildErrJelly": "Not enough jelly",
   "guildTabMissions": "Missions",
   "guildMissionForest": "Forest survey",
@@ -3431,20 +4535,71 @@
   "guildMissionSoloHint": "You can clear this one alone — it succeeds instantly.",
   "guildMissionWaitHint": "Choose how long to wait. Guildmates who help add their power — if the total beats the requirement when time runs out, you succeed. If 3 helpers join, it succeeds instantly! Longer waits give bigger rewards.",
   "guildMissionWaitOption": "Wait {min} min · reward ×{mult}",
-  "@guildMissionWaitOption": {"placeholders": {"min": {"type": "int"}, "mult": {"type": "String"}}},
+  "@guildMissionWaitOption": {
+    "placeholders": {
+      "min": {
+        "type": "int"
+      },
+      "mult": {
+        "type": "String"
+      }
+    }
+  },
   "guildMissionClaimTitle": "Mission rewards",
   "guildMissionCoins": "Guild coins +{n}",
-  "@guildMissionCoins": {"placeholders": {"n": {"type": "int"}}},
+  "@guildMissionCoins": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
   "guildMissionEgg": "Fairy egg ×{n}!",
-  "@guildMissionEgg": {"placeholders": {"n": {"type": "int"}}},
+  "@guildMissionEgg": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
   "guildMissionStartsLeft": "Missions {n}/{max}",
-  "@guildMissionStartsLeft": {"placeholders": {"n": {"type": "int"}, "max": {"type": "int"}}},
+  "@guildMissionStartsLeft": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      },
+      "max": {
+        "type": "int"
+      }
+    }
+  },
   "guildMissionHelpLeft": "Help rewards {n}/{max}",
-  "@guildMissionHelpLeft": {"placeholders": {"n": {"type": "int"}, "max": {"type": "int"}}},
+  "@guildMissionHelpLeft": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      },
+      "max": {
+        "type": "int"
+      }
+    }
+  },
   "guildMissionReset": "resets in {time}",
-  "@guildMissionReset": {"placeholders": {"time": {"type": "String"}}},
+  "@guildMissionReset": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
   "guildMissionClaimable": "{n} mission rewards ready",
-  "@guildMissionClaimable": {"placeholders": {"n": {"type": "int"}}},
+  "@guildMissionClaimable": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
   "guildMissionClaim": "Claim",
   "guildMissionActive": "Help requests",
   "guildMissionNoActive": "No missions in progress right now",
@@ -3452,26 +4607,80 @@
   "guildMissionRecent": "Today's results",
   "guildMissionMine": "My mission",
   "guildMissionOwner": "{name}'s mission",
-  "@guildMissionOwner": {"placeholders": {"name": {"type": "String"}}},
+  "@guildMissionOwner": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "guildMissionProgress": "{p}% · helpers {n}/{max}",
-  "@guildMissionProgress": {"placeholders": {"p": {"type": "int"}, "n": {"type": "int"}, "max": {"type": "int"}}},
+  "@guildMissionProgress": {
+    "placeholders": {
+      "p": {
+        "type": "int"
+      },
+      "n": {
+        "type": "int"
+      },
+      "max": {
+        "type": "int"
+      }
+    }
+  },
   "guildMissionHelp": "Help",
   "guildMissionHelpedTag": "Helped",
   "guildMissionSlotSolo": "Power ×{mult} · clear it solo",
-  "@guildMissionSlotSolo": {"placeholders": {"mult": {"type": "String"}}},
+  "@guildMissionSlotSolo": {
+    "placeholders": {
+      "mult": {
+        "type": "String"
+      }
+    }
+  },
   "guildMissionSlotNeed": "Power ×{mult} · needs help",
-  "@guildMissionSlotNeed": {"placeholders": {"mult": {"type": "String"}}},
+  "@guildMissionSlotNeed": {
+    "placeholders": {
+      "mult": {
+        "type": "String"
+      }
+    }
+  },
   "guildMissionStart": "Start",
   "guildMissionSuccess": "Success",
   "guildMissionPartial": "{p}%",
-  "@guildMissionPartial": {"placeholders": {"p": {"type": "int"}}},
+  "@guildMissionPartial": {
+    "placeholders": {
+      "p": {
+        "type": "int"
+      }
+    }
+  },
   "guildMissionChatMine": "You asked your guild for help",
   "guildMissionChatAsk": "{name} needs help with a mission!",
-  "@guildMissionChatAsk": {"placeholders": {"name": {"type": "String"}}},
+  "@guildMissionChatAsk": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "guildLevel": "Lv {n}",
-  "@guildLevel": {"placeholders": {"n": {"type": "int"}}},
+  "@guildLevel": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
   "guildCoins": "{n} guild coins",
-  "@guildCoins": {"placeholders": {"n": {"type": "int"}}},
+  "@guildCoins": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
   "guildDonate": "Check in",
   "guildDonateDoneShort": "Checked",
   "guildDonateOk": "Checked in! Guild coins and guild EXP added",
@@ -3485,10 +4694,25 @@
   "guildSkillXp": "EXP",
   "guildSkillMission": "Mission rewards",
   "guildSkillHeader": "Skill points left: {n}",
-  "@guildSkillHeader": {"placeholders": {"n": {"type": "int"}}},
+  "@guildSkillHeader": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
   "guildSkillNote": "Buffs apply to every guildmate while hunting (offline gold too). They don't apply to duels or contests. Leaving the guild removes them. Guild level +1 = 1 point.",
   "guildSkillValue": "+{now}% (max +{max}%)",
-  "@guildSkillValue": {"placeholders": {"now": {"type": "String"}, "max": {"type": "String"}}},
+  "@guildSkillValue": {
+    "placeholders": {
+      "now": {
+        "type": "String"
+      },
+      "max": {
+        "type": "String"
+      }
+    }
+  },
   "guildSkillNoPoints": "No skill points left",
   "guildSkillMax": "Already maxed",
   "guildSkillForbidden": "Only the leader can do this",
@@ -3496,46 +4720,157 @@
   "guildSkillResetBody": "Reset all guild skills and refund every point?",
   "guildShopNote": "Earn coins from missions, helping, check-ins and the guild boss.",
   "guildShopMaterials": "Materials ({h}h of hunting)",
-  "@guildShopMaterials": {"placeholders": {"h": {"type": "String"}}},
+  "@guildShopMaterials": {
+    "placeholders": {
+      "h": {
+        "type": "String"
+      }
+    }
+  },
   "guildShopFossil": "Fossil ×{n}",
-  "@guildShopFossil": {"placeholders": {"n": {"type": "int"}}},
+  "@guildShopFossil": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
   "guildShopFairyDust": "Fairy dust ×{n}",
-  "@guildShopFairyDust": {"placeholders": {"n": {"type": "int"}}},
+  "@guildShopFairyDust": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
   "guildShopFairyEgg": "Fairy egg ×{n}",
-  "@guildShopFairyEgg": {"placeholders": {"n": {"type": "int"}}},
+  "@guildShopFairyEgg": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
   "guildShopSkillShard": "{grade} wild shard ×{n}",
-  "@guildShopSkillShard": {"placeholders": {"grade": {"type": "String"}, "n": {"type": "int"}}},
+  "@guildShopSkillShard": {
+    "placeholders": {
+      "grade": {
+        "type": "String"
+      },
+      "n": {
+        "type": "int"
+      }
+    }
+  },
   "guildShopLimitDay": "Today {n}/{max}",
-  "@guildShopLimitDay": {"placeholders": {"n": {"type": "int"}, "max": {"type": "int"}}},
+  "@guildShopLimitDay": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      },
+      "max": {
+        "type": "int"
+      }
+    }
+  },
   "guildShopLimitWeek": "This week {n}/{max}",
-  "@guildShopLimitWeek": {"placeholders": {"n": {"type": "int"}, "max": {"type": "int"}}},
+  "@guildShopLimitWeek": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      },
+      "max": {
+        "type": "int"
+      }
+    }
+  },
   "guildShopBought": "Bought: {item}",
-  "@guildShopBought": {"placeholders": {"item": {"type": "String"}}},
+  "@guildShopBought": {
+    "placeholders": {
+      "item": {
+        "type": "String"
+      }
+    }
+  },
   "guildShopSoldOut": "Purchase limit reached",
   "guildShopSoldOutShort": "Sold out",
   "guildShopNoCoins": "Not enough guild coins",
   "guildTabBoss": "Boss",
   "guildBossTitle": "Guild boss · Stage {n}",
-  "@guildBossTitle": {"placeholders": {"n": {"type": "int"}}},
+  "@guildBossTitle": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
   "guildBossAttack": "Attack ({n} left today)",
-  "@guildBossAttack": {"placeholders": {"n": {"type": "int"}}},
+  "@guildBossAttack": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
   "guildBossNote": "Damage comes from your duel defense team (fairies, skills and gear don't count). HP is shared by the whole guild and carries over all week.",
   "guildBossNoTeam": "Register a duel defense team to attack the boss.",
   "guildBossNoAttacks": "No attacks left today",
   "guildBossHit": "{d} damage",
-  "@guildBossHit": {"placeholders": {"d": {"type": "String"}}},
+  "@guildBossHit": {
+    "placeholders": {
+      "d": {
+        "type": "String"
+      }
+    }
+  },
   "guildBossKilled": "Boss defeated! Next stage",
   "guildBossMine": "My damage this week: {d}",
-  "@guildBossMine": {"placeholders": {"d": {"type": "String"}}},
+  "@guildBossMine": {
+    "placeholders": {
+      "d": {
+        "type": "String"
+      }
+    }
+  },
   "guildBossRank": "Guild rank this week: #{n}",
-  "@guildBossRank": {"placeholders": {"n": {"type": "int"}}},
+  "@guildBossRank": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
   "guildBossRankNone": "Not ranked yet — attack to enter the ranking",
   "guildBossTopRow": "Stage {s} · {p}%",
-  "@guildBossTopRow": {"placeholders": {"s": {"type": "int"}, "p": {"type": "int"}}},
+  "@guildBossTopRow": {
+    "placeholders": {
+      "s": {
+        "type": "int"
+      },
+      "p": {
+        "type": "int"
+      }
+    }
+  },
   "guildBossLastWeek": "Last week #{rank} — {jelly} jelly",
-  "@guildBossLastWeek": {"placeholders": {"rank": {"type": "int"}, "jelly": {"type": "int"}}},
+  "@guildBossLastWeek": {
+    "placeholders": {
+      "rank": {
+        "type": "int"
+      },
+      "jelly": {
+        "type": "int"
+      }
+    }
+  },
   "guildBossClaimed": "Received {n} jelly!",
-  "@guildBossClaimed": {"placeholders": {"n": {"type": "int"}}},
+  "@guildBossClaimed": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
   "guildTabWar": "War",
   "guildWarBreed": "Breeding",
   "guildWarForge": "Forging",
@@ -3552,47 +4887,167 @@
   "guildWarBossHint": "Attack the guild boss.",
   "guildWarClashHint": "Nothing to do today! Members are paired 1:1 by duel defense team power and fight automatically. Results come in when you open this tab.",
   "guildWarTier": "{tier} tier · {gr} GR",
-  "@guildWarTier": {"placeholders": {"tier": {"type": "String"}, "gr": {"type": "int"}}},
+  "@guildWarTier": {
+    "placeholders": {
+      "tier": {
+        "type": "String"
+      },
+      "gr": {
+        "type": "int"
+      }
+    }
+  },
   "guildWarClosed": "Guild wars aren't open yet.",
   "guildWarOpensOn": "Guild wars start the week of {date}.",
-  "@guildWarOpensOn": {"placeholders": {"date": {"type": "String"}}},
+  "@guildWarOpensOn": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
   "guildWarNeedMembers": "A guild needs at least {n} members to enter this week's war.",
-  "@guildWarNeedMembers": {"placeholders": {"n": {"type": "int"}}},
+  "@guildWarNeedMembers": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
   "guildWarVs": "vs {name}",
-  "@guildWarVs": {"placeholders": {"name": {"type": "String"}}},
+  "@guildWarVs": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "guildWarVsVirtual": "vs Wild Guild (tier average)",
   "guildWarVirtualName": "Wild",
   "guildWarDayOf": "Day {d} · {theme}",
-  "@guildWarDayOf": {"placeholders": {"d": {"type": "int"}, "theme": {"type": "String"}}},
+  "@guildWarDayOf": {
+    "placeholders": {
+      "d": {
+        "type": "int"
+      },
+      "theme": {
+        "type": "String"
+      }
+    }
+  },
   "guildWarMyToday": "My points today {n}/{cap}",
-  "@guildWarMyToday": {"placeholders": {"n": {"type": "int"}, "cap": {"type": "int"}}},
+  "@guildWarMyToday": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      },
+      "cap": {
+        "type": "int"
+      }
+    }
+  },
   "guildWarWin": "Victory",
   "guildWarLose": "Defeat",
   "guildWarDraw": "Draw",
   "guildWarPoints": "Points {a} : {b}",
-  "@guildWarPoints": {"placeholders": {"a": {"type": "int"}, "b": {"type": "int"}}},
+  "@guildWarPoints": {
+    "placeholders": {
+      "a": {
+        "type": "int"
+      },
+      "b": {
+        "type": "int"
+      }
+    }
+  },
   "guildWarClashResult": "Day 7 duels {a} : {b}",
-  "@guildWarClashResult": {"placeholders": {"a": {"type": "int"}, "b": {"type": "int"}}},
+  "@guildWarClashResult": {
+    "placeholders": {
+      "a": {
+        "type": "int"
+      },
+      "b": {
+        "type": "int"
+      }
+    }
+  },
   "guildWarReward": "{result} reward — {coins} coins · {jelly} jelly",
-  "@guildWarReward": {"placeholders": {"result": {"type": "String"}, "coins": {"type": "int"}, "jelly": {"type": "int"}}},
+  "@guildWarReward": {
+    "placeholders": {
+      "result": {
+        "type": "String"
+      },
+      "coins": {
+        "type": "int"
+      },
+      "jelly": {
+        "type": "int"
+      }
+    }
+  },
   "guildWarClaimed": "Received {coins} coins · {jelly} jelly!",
-  "@guildWarClaimed": {"placeholders": {"coins": {"type": "int"}, "jelly": {"type": "int"}}},
+  "@guildWarClaimed": {
+    "placeholders": {
+      "coins": {
+        "type": "int"
+      },
+      "jelly": {
+        "type": "int"
+      }
+    }
+  },
   "duelPickDeployed": "In slot {n}",
-  "@duelPickDeployed": {"placeholders": {"n": {"type": "int"}}},
+  "@duelPickDeployed": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
   "fairyDexHelp": "The Fairy Codex records every fairy you have ever obtained. Each of the 8 fairies has two rows to fill:\n• Grade dots — a dot lights up the first time you get that fairy at that grade.\n• Attribute stones — a stone lights up the first time you get that fairy with that bonus stat.\nA fairy is recorded when it hatches from an egg in the nest or is made by merging, and records stay even if you release the fairy. Fill cells to earn rewards below (fairy dust, accelerators, fossils). It does not give stats.",
   "fairyDexLegendGrades": "Grade dots (lit = obtained at that grade)",
   "fairyDexLegendSubs": "Attribute stones (bright = obtained with that bonus stat)",
   "fairyDexRewards": "Codex rewards · {n}/{max} collected",
-  "@fairyDexRewards": {"placeholders": {"n": {"type": "int"}, "max": {"type": "int"}}},
+  "@fairyDexRewards": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      },
+      "max": {
+        "type": "int"
+      }
+    }
+  },
   "fairyDexClaimed": "Codex reward received!",
   "fairyNestPickEgg": "Pick an egg to place first",
-  "@elementWheelRestrain": {"placeholders": {"mult": {"type": "String"}}},
+  "@elementWheelRestrain": {
+    "placeholders": {
+      "mult": {
+        "type": "String"
+      }
+    }
+  },
   "guideTitle": "Guidebook",
   "guideIntro": "Every bug is different even within a species. Tap a topic to see what each term means.",
   "guideElementTitle": "Elements (Wood·Fire·Earth·Metal·Water)",
-  "@guideElementBody": {"placeholders": {"mult": {"type": "String"}}},
+  "@guideElementBody": {
+    "placeholders": {
+      "mult": {
+        "type": "String"
+      }
+    }
+  },
   "guideElementBody": "Each bug has one element. In duels, when a bug clashes with an element it restrains, it deals {mult}x damage. The red arrows show who beats whom. Arenas have an element too: bugs matching it gain HP/ATK/DEF and bugs the arena beats lose some (duels: changes every bout; contest: every wave).",
-  "@guideElementLine": {"placeholders": {"a": {"type": "String"}, "b": {"type": "String"}}},
+  "@guideElementLine": {
+    "placeholders": {
+      "a": {
+        "type": "String"
+      },
+      "b": {
+        "type": "String"
+      }
+    }
+  },
   "guideElementLine": "{a} beats {b}",
   "guideSpecialtyTitle": "Specialty (fighting style)",
   "guideSpecialtyBody": "Each species has a specialty that decides how it fights in duels.",
@@ -3606,142 +5061,496 @@
   "guideTempCunning": "Circles to the side to hit weak spots.",
   "guideTempSteadfast": "Hard to push — a tank.",
   "guideTempFickle": "Mixes all styles.",
-  "@guideTrainCapMods": {"placeholders": {"mods": {"type": "String"}}},
+  "@guideTrainCapMods": {
+    "placeholders": {
+      "mods": {
+        "type": "String"
+      }
+    }
+  },
   "guideTrainCapMods": "Training slot caps: {mods}",
   "guideSizeTitle": "Size (weight)",
-  "@guideSizeBody": {"placeholders": {"min": {"type": "String"}, "max": {"type": "String"}}},
+  "@guideSizeBody": {
+    "placeholders": {
+      "min": {
+        "type": "String"
+      },
+      "max": {
+        "type": "String"
+      }
+    }
+  },
   "guideSizeBody": "Size is rolled within the species' range. Bigger bugs give pet stats ×{min}~×{max}, and in duels they are heavier — harder to push and less likely to fall out of the ring (duel stats don't depend on size).",
   "guidePotentialTitle": "Potential (1–5 stars)",
-  "@guidePotentialBody": {"placeholders": {"perStar": {"type": "int"}, "fodder": {"type": "int"}}},
+  "@guidePotentialBody": {
+    "placeholders": {
+      "perStar": {
+        "type": "int"
+      },
+      "fodder": {
+        "type": "int"
+      }
+    }
+  },
   "guidePotentialBody": "More stars mean more training points ({perStar} per star). Merge {fodder} bugs of the same species to gain a star.",
   "guideTraitTitle": "Bloodline traits (breeding only)",
   "guideTraitBody": "Only bugs born from breeding can have a trait — wild bugs never do. Traits work both as a pet and in duels.",
-  "@guideTraitEffect": {"placeholders": {"atk": {"type": "String"}, "hp": {"type": "String"}}},
+  "@guideTraitEffect": {
+    "placeholders": {
+      "atk": {
+        "type": "String"
+      },
+      "hp": {
+        "type": "String"
+      }
+    }
+  },
   "guideTraitEffect": "Attack +{atk} · HP +{hp}",
   "guideBreedTitle": "Breeding & inheritance",
-  "@guideBreedBody": {"placeholders": {"el": {"type": "String"}, "tm": {"type": "String"}, "tr": {"type": "String"}}},
+  "@guideBreedBody": {
+    "placeholders": {
+      "el": {
+        "type": "String"
+      },
+      "tm": {
+        "type": "String"
+      },
+      "tr": {
+        "type": "String"
+      }
+    }
+  },
   "guideBreedBody": "Pair a male and female adult of the same species to get an egg. The child inherits the parents' element ({el}) and temperament ({tm}) with high chance, and a parent's trait ({tr}). If both parents share the same element, temperament or trait, the child is guaranteed to get it — so you can build your own line.",
   "guideVariantTitle": "Variant bugs",
-  "@guideVariantBody": {"placeholders": {"wild": {"type": "String"}, "breed": {"type": "String"}, "parent": {"type": "String"}, "gacha": {"type": "String"}, "pet": {"type": "String"}, "duel": {"type": "String"}}},
+  "@guideVariantBody": {
+    "placeholders": {
+      "wild": {
+        "type": "String"
+      },
+      "breed": {
+        "type": "String"
+      },
+      "parent": {
+        "type": "String"
+      },
+      "gacha": {
+        "type": "String"
+      },
+      "pet": {
+        "type": "String"
+      },
+      "duel": {
+        "type": "String"
+      }
+    }
+  },
   "guideVariantBody": "Very rarely a bug with different colors (rainbow / albino) appears. Chance: wild {wild} · breeding {breed} · variant parent {parent} · egg draw {gacha}. As a pet its stats are +{pet}, in duels +{duel}.",
   "guideLifeTitle": "Life stages",
   "guideLifeBody": "Egg → Larva → Pupa → Adult. Eggs hatch into larvae only in the incubator. Larvae grow into adults over time. Only adults can be trained, bred and sent to duels. Mantises, grasshoppers and the giant water bug have no pupa — they grow by molting (Egg → Nymph → Molting → Adult).",
   "guideDuelTitle": "Duels",
-  "@guideDuelBody": {"placeholders": {"sec": {"type": "int"}, "weak": {"type": "String"}}},
+  "@guideDuelBody": {
+    "placeholders": {
+      "sec": {
+        "type": "int"
+      },
+      "weak": {
+        "type": "String"
+      }
+    }
+  },
   "guideDuelBody": "A bout is a {sec}-second 1:1 physical fight in a round arena. Win by ring-out, flipping, or knockout; when time runs out, remaining HP % decides. A match is 3 bugs, winner stays on. Hitting the side or back deals ×{weak} damage, and critical hits and evasion also apply.",
   "guideTrainTitle": "Training ground",
-  "@guideTrainBody": {"placeholders": {"perStar": {"type": "String"}, "levels": {"type": "String"}, "bt": {"type": "String"}}},
+  "@guideTrainBody": {
+    "placeholders": {
+      "perStar": {
+        "type": "String"
+      },
+      "levels": {
+        "type": "String"
+      },
+      "bt": {
+        "type": "String"
+      }
+    }
+  },
   "guideTrainBody": "Every bug earns training points — {perStar} per potential star · 1 every {levels} train levels · {bt} per breakthrough tier. Spend them on the slots below. Each slot has a cap, and the caps add up to far more than your points, so you can't fill everything — what you pick is your strategy. Slot caps differ by temperament, specialty and bloodline trait.",
-  "@bugInfoSizeDetail": {"placeholders": {"mm": {"type": "String"}, "min": {"type": "String"}, "max": {"type": "String"}, "mult": {"type": "String"}}},
+  "@bugInfoSizeDetail": {
+    "placeholders": {
+      "mm": {
+        "type": "String"
+      },
+      "min": {
+        "type": "String"
+      },
+      "max": {
+        "type": "String"
+      },
+      "mult": {
+        "type": "String"
+      }
+    }
+  },
   "bugInfoSizeDetail": "{mm}mm (range {min}–{max}) · stats ×{mult}",
   "eventHudShort": "King\nTrials",
-  "@fairyStoneName": {"placeholders": {"stat": {"type": "String"}}},
+  "@fairyStoneName": {
+    "placeholders": {
+      "stat": {
+        "type": "String"
+      }
+    }
+  },
   "fairyStoneName": "{stat} stone",
-  "@fairyStoneEffect": {"placeholders": {"stat": {"type": "String"}, "p": {"type": "String"}}},
+  "@fairyStoneEffect": {
+    "placeholders": {
+      "stat": {
+        "type": "String"
+      },
+      "p": {
+        "type": "String"
+      }
+    }
+  },
   "fairyStoneEffect": "The hatched fairy's bonus stat becomes {stat} with {p}% chance",
   "fairyRerollStoneEffect": "The rerolled bonus stat becomes {stat} with {p}% chance",
-  "@fairyRerollStoneEffect": {"placeholders": {"stat": {"type": "String"}, "p": {"type": "String"}}},
+  "@fairyRerollStoneEffect": {
+    "placeholders": {
+      "stat": {
+        "type": "String"
+      },
+      "p": {
+        "type": "String"
+      }
+    }
+  },
   "fairyStoneBuyTitle": "Buy attribute stone",
   "fairyStoneBuyAction": "Buy",
   "fairyEquippedTag": "Equipped",
   "fairyMergeEquipped": "Your companion fairy can't be merged",
   "fairyAutoMergeDone": "Merge results",
-  "@exchangeGetDust": {"placeholders": {"amount": {"type": "String"}}},
+  "@exchangeGetDust": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
   "exchangeToDust": "Fairy dust",
   "exchangeHintDust": "Trade jelly for fairy dust (1 jelly = 1 dust)",
   "exchangeGetDust": "Get {amount} fairy dust",
-  "@fairyStatRange": {"placeholders": {"grade": {"type": "String"}, "lo": {"type": "String"}, "hi": {"type": "String"}}},
+  "@fairyStatRange": {
+    "placeholders": {
+      "grade": {
+        "type": "String"
+      },
+      "lo": {
+        "type": "String"
+      },
+      "hi": {
+        "type": "String"
+      }
+    }
+  },
   "fairyStatRange": "({grade} range {lo}~{hi})",
   "fairyStopCompanion": "Stop companion",
   "fairyHelpTitle": "Help",
   "fairyHelpGradeHead": "Base stat range by grade (Lv.1)",
-  "@fairyHelpGradeLine": {"placeholders": {"grade": {"type": "String"}, "lo": {"type": "String"}, "hi": {"type": "String"}, "max": {"type": "String"}}},
-  "fairyHelpGradeLine": "{grade}: {lo} ~ {hi} \u00b7 max Lv.{max}",
-  "@fairyHelpLevel": {"placeholders": {"p": {"type": "String"}}},
+  "@fairyHelpGradeLine": {
+    "placeholders": {
+      "grade": {
+        "type": "String"
+      },
+      "lo": {
+        "type": "String"
+      },
+      "hi": {
+        "type": "String"
+      },
+      "max": {
+        "type": "String"
+      }
+    }
+  },
+  "fairyHelpGradeLine": "{grade}: {lo} ~ {hi} · max Lv.{max}",
+  "@fairyHelpLevel": {
+    "placeholders": {
+      "p": {
+        "type": "String"
+      }
+    }
+  },
   "fairyHelpLevel": "Each level adds +{p} of the value (Lv.1 basis).",
   "fairyHelpSubHead": "Bonus stat (one per fairy)",
-  "@fairyHelpSub": {"placeholders": {"p": {"type": "String"}}},
-  "fairyHelpSub": "Rolled at hatching from the list below \u2014 {p} of the base range \u00d7 the stat's weight. An attribute stone raises the chance of the one you want.",
-  "@fairyHelpSubLine": {"placeholders": {"stat": {"type": "String"}, "grade": {"type": "String"}, "lo": {"type": "String"}, "hi": {"type": "String"}}},
+  "@fairyHelpSub": {
+    "placeholders": {
+      "p": {
+        "type": "String"
+      }
+    }
+  },
+  "fairyHelpSub": "Rolled at hatching from the list below — {p} of the base range × the stat's weight. An attribute stone raises the chance of the one you want.",
+  "@fairyHelpSubLine": {
+    "placeholders": {
+      "stat": {
+        "type": "String"
+      },
+      "grade": {
+        "type": "String"
+      },
+      "lo": {
+        "type": "String"
+      },
+      "hi": {
+        "type": "String"
+      }
+    }
+  },
   "fairyHelpSubLine": "{stat}: {grade} {lo} ~ {hi}",
   "fairyHelpMergeHead": "Merge",
-  "@fairyHelpMerge": {"placeholders": {"n": {"type": "String"}}},
-  "fairyHelpMerge": "{n} fairies of the same kind and grade \u2192 1 of the next grade. Base and bonus stats are rolled again, so you can aim for a better one.",
-  "@fairyNestKindHint": {"placeholders": {"n": {"type": "String"}}},
-  "@fairyGachaOverflowWarn": {"placeholders": {"free": {"type": "String"}, "lost": {"type": "String"}}},
-  "fairyGachaOverflowWarn": "Your fairy box has {free} free slots \u2014 {lost} eggs will turn into fairy dust.",
-  "@fairyOverflowToast": {"placeholders": {"n": {"type": "String"}, "dust": {"type": "String"}}},
-  "fairyOverflowToast": "Box full \u2014 {n} eggs became {dust} fairy dust",
-  "@fairyOverflowPop": {"placeholders": {"dust": {"type": "String"}}},
-  "fairyOverflowPop": "Box full \u00b7 Fairy dust +{dust}",
-  "@fairyMergeInvestedConfirm": {"placeholders": {"n": {"type": "String"}, "dust": {"type": "String"}}},
+  "@fairyHelpMerge": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
+  "fairyHelpMerge": "{n} fairies of the same kind and grade → 1 of the next grade. Base and bonus stats are rolled again, so you can aim for a better one.",
+  "@fairyNestKindHint": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
+  "@fairyGachaOverflowWarn": {
+    "placeholders": {
+      "free": {
+        "type": "String"
+      },
+      "lost": {
+        "type": "String"
+      }
+    }
+  },
+  "fairyGachaOverflowWarn": "Your fairy box has {free} free slots — {lost} eggs will turn into fairy dust.",
+  "@fairyOverflowToast": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      },
+      "dust": {
+        "type": "String"
+      }
+    }
+  },
+  "fairyOverflowToast": "Box full — {n} eggs became {dust} fairy dust",
+  "@fairyOverflowPop": {
+    "placeholders": {
+      "dust": {
+        "type": "String"
+      }
+    }
+  },
+  "fairyOverflowPop": "Box full · Fairy dust +{dust}",
+  "@fairyMergeInvestedConfirm": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      },
+      "dust": {
+        "type": "String"
+      }
+    }
+  },
   "fairyMergeInvestedConfirm": "{n} leveled-up fairies will be used. You get back {dust} fairy dust (part of what you spent). Merge?",
-  "@fairyMergeRefund": {"placeholders": {"dust": {"type": "String"}}},
+  "@fairyMergeRefund": {
+    "placeholders": {
+      "dust": {
+        "type": "String"
+      }
+    }
+  },
   "fairyMergeRefund": "{dust} fairy dust returned",
   "fairyReleaseHint": "Pick fairies and eggs to release. They turn into fairy dust.\n(Cannot be undone)",
-  "@fairyReleasePicked": {"placeholders": {"n": {"type": "String"}}},
+  "@fairyReleasePicked": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
   "fairyReleasePicked": "{n} picked",
-  "@fairyReleaseAllOf": {"placeholders": {"grade": {"type": "String"}, "n": {"type": "String"}}},
+  "@fairyReleaseAllOf": {
+    "placeholders": {
+      "grade": {
+        "type": "String"
+      },
+      "n": {
+        "type": "String"
+      }
+    }
+  },
   "fairyReleaseAllOf": "All {grade} ({n})",
   "fairyReleaseEquipped": "Your companion fairy cannot be released",
-  "@fairyReleaseBulkConfirm": {"placeholders": {"n": {"type": "String"}, "dust": {"type": "String"}}},
+  "@fairyReleaseBulkConfirm": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      },
+      "dust": {
+        "type": "String"
+      }
+    }
+  },
   "fairyReleaseBulkConfirm": "Release {n} for {dust} fairy dust?\nThis cannot be undone.",
-  "@fairyReleaseValuableNote": {"placeholders": {"n": {"type": "String"}}},
+  "@fairyReleaseValuableNote": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
   "fairyReleaseValuableNote": "Includes {n} leveled or Legendary+ fairies.",
-  "@fairyReleaseDone": {"placeholders": {"dust": {"type": "String"}}},
+  "@fairyReleaseDone": {
+    "placeholders": {
+      "dust": {
+        "type": "String"
+      }
+    }
+  },
   "fairyReleaseDone": "Fairy dust +{dust}",
   "fairyAutoReleaseTitle": "Auto-release eggs",
   "fairyAutoReleaseOff": "Off",
-  "@fairyAutoReleaseUpTo": {"placeholders": {"grade": {"type": "String"}}},
+  "@fairyAutoReleaseUpTo": {
+    "placeholders": {
+      "grade": {
+        "type": "String"
+      }
+    }
+  },
   "fairyAutoReleaseUpTo": "{grade} & below",
   "fairyAutoReleaseHelp": "New eggs at or below this grade turn into fairy dust instead of entering the box. Eggs bought in the guild shop are kept.",
-  "@fairyAutoReleasePop": {"placeholders": {"dust": {"type": "String"}}},
+  "@fairyAutoReleasePop": {
+    "placeholders": {
+      "dust": {
+        "type": "String"
+      }
+    }
+  },
   "fairyAutoReleasePop": "Egg auto-released · Fairy dust +{dust}",
-  "@fairyAutoReleaseToast": {"placeholders": {"n": {"type": "String"}, "dust": {"type": "String"}}},
+  "@fairyAutoReleaseToast": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      },
+      "dust": {
+        "type": "String"
+      }
+    }
+  },
   "fairyAutoReleaseToast": "Auto-released {n} eggs for {dust} fairy dust",
-  "@exchangeDustLeft": {"placeholders": {"n": {"type": "String"}}},
+  "@exchangeDustLeft": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
   "exchangeDustLeft": "{n} left today",
   "exchangeDustCapReached": "Today's limit reached",
   "bugLock": "Lock",
   "bugLocked": "Locked",
   "bugUnlock": "Unlock",
-  "bugLockedToast": "Locked \u2014 it won't be used for merging or disassembly",
+  "bugLockedToast": "Locked — it won't be used for merging or disassembly",
   "bugUnlockedToast": "Unlocked",
   "disassembleLocked": "Locked bugs can't be disassembled. Unlock it first.",
-  "@trainingSumShort": {"placeholders": {"n": {"type": "int"}}},
+  "@trainingSumShort": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
   "trainingSumShort": "Train Lv.{n}",
   "reviewAskTitle": "Enjoying Bug Champ?",
   "reviewAskBody": "If you have a moment, a store review would really help a solo developer.\nThank you for playing!",
   "reviewAskLater": "Later",
   "trainingNoneShort": "Untrained",
   "guildComingSoonTitle": "Coming soon",
-  "guildComingSoonBody": "Guilds \u2014 missions, guild boss, shop and weekly guild wars \u2014 are coming in an upcoming update. Stay tuned!",
+  "guildComingSoonBody": "Guilds — missions, guild boss, shop and weekly guild wars — are coming in an upcoming update. Stay tuned!",
   "notifChannelName": "Reward alerts",
   "notifChannelDesc": "Lunch/dinner rewards and full offline-reward alerts",
   "eggOddsTitle": "Bug egg draw odds",
   "eggOddsGradeHead": "Grade (each species in the grade is equally likely)",
   "eggOddsPotentialHead": "Potential",
-  "@eggOddsVariant": {"placeholders": {"p": {"type": "String"}}},
+  "@eggOddsVariant": {
+    "placeholders": {
+      "p": {
+        "type": "String"
+      }
+    }
+  },
   "eggOddsVariant": "Variant (rainbow/albino): {p}%",
-  "@eggOddsPity": {"placeholders": {"n": {"type": "String"}, "grade": {"type": "String"}}},
+  "@eggOddsPity": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      },
+      "grade": {
+        "type": "String"
+      }
+    }
+  },
   "eggOddsPity": "Within {n} draws: {grade} grade or higher guaranteed",
   "eggOddsNote": "Odds are per draw. The pity counter resets only when its grade appears.",
-  "@eggOddsGradeLine": {"placeholders": {"grade": {"type": "String"}, "p": {"type": "String"}, "each": {"type": "String"}}},
-  "eggOddsGradeLine": "{grade} {p}% \u00b7 each species {each}%",
+  "@eggOddsGradeLine": {
+    "placeholders": {
+      "grade": {
+        "type": "String"
+      },
+      "p": {
+        "type": "String"
+      },
+      "each": {
+        "type": "String"
+      }
+    }
+  },
+  "eggOddsGradeLine": "{grade} {p}% · each species {each}%",
   "variantRainbow": "Rainbow",
   "variantAlbino": "Albino",
   "jellyShortTitle": "Not enough jelly",
   "jellyShortBody": "Get jelly in the shop and continue right away.",
   "jellyShortGoShop": "Go to shop",
-  "@pvpRefillLimit": {"placeholders": {"n": {"type": "int"}}},
+  "@pvpRefillLimit": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
   "pvpRefillLimit": "You can refill with jelly up to {n} times a day",
   "pvpTicketRefillTitle": "Refill tickets",
-  "@pvpTicketRefillBody": {"placeholders": {"n": {"type": "int"}, "left": {"type": "int"}}},
+  "@pvpTicketRefillBody": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      },
+      "left": {
+        "type": "int"
+      }
+    }
+  },
   "pvpTicketRefillBody": "Get {n} tickets with jelly. ({left} left today)",
   "starterOfferTitle": "Starter package",
-  "starterOfferBody": "Only once per account \u2014 the best value in the shop!",
+  "starterOfferBody": "Only once per account — the best value in the shop!",
   "starterOfferGo": "See it",
-  "@mailGrantTitle": {"placeholders": {"name": {"type": "String"}}},
+  "@mailGrantTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "mailGrantTitle": "[From the team] {name}",
   "mailGrantBody": "A reward from the team. Tap Claim to receive it.",
   "mailReplyTitle": "[Reply from the team]",
@@ -3749,13 +5558,46 @@
   "jellyActCharge": "Buy",
   "jellyActExchange": "Exchange",
   "jellyActReroll": "Reroll",
-  "@eventJellyTicketConfirm": {"placeholders": {"jelly": {"type": "int"}, "n": {"type": "int"}, "used": {"type": "int"}, "max": {"type": "int"}}},
+  "@eventJellyTicketConfirm": {
+    "placeholders": {
+      "jelly": {
+        "type": "int"
+      },
+      "n": {
+        "type": "int"
+      },
+      "used": {
+        "type": "int"
+      },
+      "max": {
+        "type": "int"
+      }
+    }
+  },
   "eventJellyTicketConfirm": "Spend {jelly} Jelly for +{n} entry tickets?\n(Used today: {used}/{max})",
   "storageExpandTitle": "Expand storage",
-  "@storageExpandConfirm": {"placeholders": {"jelly": {"type": "int"}, "n": {"type": "int"}}},
+  "@storageExpandConfirm": {
+    "placeholders": {
+      "jelly": {
+        "type": "int"
+      },
+      "n": {
+        "type": "int"
+      }
+    }
+  },
   "storageExpandConfirm": "Spend {jelly} Jelly to add {n} storage slots?",
   "fairyBoxExpandTitle": "Expand fairy box",
-  "@fairyBoxExpandConfirm": {"placeholders": {"jelly": {"type": "int"}, "n": {"type": "int"}}},
+  "@fairyBoxExpandConfirm": {
+    "placeholders": {
+      "jelly": {
+        "type": "int"
+      },
+      "n": {
+        "type": "int"
+      }
+    }
+  },
   "fairyBoxExpandConfirm": "Spend {jelly} Jelly to add {n} fairy box slots?",
   "fairyBoxExpanded": "Fairy box expanded!",
   "fairyBoxExpandSlots": "+{n} slots",
@@ -3768,36 +5610,138 @@
   },
   "breedingExpandTitle": "Expand breeding slots",
   "incubatorExpandTitle": "Expand incubator",
-  "@slotExpandConfirm": {"placeholders": {"jelly": {"type": "int"}}},
+  "@slotExpandConfirm": {
+    "placeholders": {
+      "jelly": {
+        "type": "int"
+      }
+    }
+  },
   "slotExpandConfirm": "Spend {jelly} Jelly to add 1 slot?",
   "breedingInstantTitle": "Finish breeding now",
-  "@breedingInstantConfirm": {"placeholders": {"jelly": {"type": "int"}}},
+  "@breedingInstantConfirm": {
+    "placeholders": {
+      "jelly": {
+        "type": "int"
+      }
+    }
+  },
   "breedingInstantConfirm": "Spend {jelly} Jelly to get the egg right now?",
-  "@incubatorInstantConfirm": {"placeholders": {"jelly": {"type": "int"}}},
+  "@incubatorInstantConfirm": {
+    "placeholders": {
+      "jelly": {
+        "type": "int"
+      }
+    }
+  },
   "incubatorInstantConfirm": "Spend {jelly} Jelly to hatch it right now?",
   "breakthroughInstantTitle": "Finish breakthrough now",
-  "@breakthroughInstantConfirm": {"placeholders": {"jelly": {"type": "int"}}},
+  "@breakthroughInstantConfirm": {
+    "placeholders": {
+      "jelly": {
+        "type": "int"
+      }
+    }
+  },
   "breakthroughInstantConfirm": "Spend {jelly} Jelly to finish the breakthrough now?",
   "evolveAccelTitle": "Speed up evolution",
-  "@evolveAccelConfirm": {"placeholders": {"jelly": {"type": "int"}, "next": {"type": "String"}}},
+  "@evolveAccelConfirm": {
+    "placeholders": {
+      "jelly": {
+        "type": "int"
+      },
+      "next": {
+        "type": "String"
+      }
+    }
+  },
   "evolveAccelConfirm": "Spend {jelly} Jelly to evolve to the next stage ({next}) now?",
   "forgeExpandTitle": "Expand anvil",
-  "@forgeExpandConfirm": {"placeholders": {"jelly": {"type": "int"}, "n": {"type": "int"}}},
+  "@forgeExpandConfirm": {
+    "placeholders": {
+      "jelly": {
+        "type": "int"
+      },
+      "n": {
+        "type": "int"
+      }
+    }
+  },
   "forgeExpandConfirm": "Spend {jelly} Jelly to add {n} anvil slots?",
-  "@forgeRerollConfirm": {"placeholders": {"jelly": {"type": "int"}, "option": {"type": "String"}}},
+  "@forgeRerollConfirm": {
+    "placeholders": {
+      "jelly": {
+        "type": "int"
+      },
+      "option": {
+        "type": "String"
+      }
+    }
+  },
   "forgeRerollConfirm": "Spend {jelly} Jelly to reroll '{option}'?\nGrade and slot stay the same.",
   "forgeUpRushTitle": "Finish forge upgrade now",
-  "@forgeUpRushConfirm": {"placeholders": {"jelly": {"type": "int"}, "grade": {"type": "String"}}},
+  "@forgeUpRushConfirm": {
+    "placeholders": {
+      "jelly": {
+        "type": "int"
+      },
+      "grade": {
+        "type": "String"
+      }
+    }
+  },
   "forgeUpRushConfirm": "Spend {jelly} Jelly to finish the {grade} upgrade now?",
-  "@exchangeConfirmGold": {"placeholders": {"jelly": {"type": "int"}, "amount": {"type": "String"}}},
+  "@exchangeConfirmGold": {
+    "placeholders": {
+      "jelly": {
+        "type": "int"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
   "exchangeConfirmGold": "Spend {jelly} Jelly to get {amount} gold?",
-  "@exchangeConfirmMaterial": {"placeholders": {"jelly": {"type": "int"}, "amount": {"type": "String"}}},
+  "@exchangeConfirmMaterial": {
+    "placeholders": {
+      "jelly": {
+        "type": "int"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
   "exchangeConfirmMaterial": "Spend {jelly} Jelly to get {amount} of each of the 3 materials?",
-  "@exchangeConfirmDust": {"placeholders": {"jelly": {"type": "int"}, "amount": {"type": "String"}}},
+  "@exchangeConfirmDust": {
+    "placeholders": {
+      "jelly": {
+        "type": "int"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
   "exchangeConfirmDust": "Spend {jelly} Jelly to get {amount} fairy dust?",
-  "@zoneFellBack": {"placeholders": {"tier": {"type": "String"}, "zone": {"type": "String"}}},
+  "@zoneFellBack": {
+    "placeholders": {
+      "tier": {
+        "type": "String"
+      },
+      "zone": {
+        "type": "String"
+      }
+    }
+  },
   "zoneFellBack": "You fell back to {tier} · {zone}. Defeat the boss again to climb back",
-  "@abyssFellBack": {"placeholders": {"floor": {"type": "int"}}},
+  "@abyssFellBack": {
+    "placeholders": {
+      "floor": {
+        "type": "int"
+      }
+    }
+  },
   "abyssFellBack": "You fell back to Abyss F{floor}. Defeat the floor boss to climb back",
   "abyssFellOut": "You were pushed out of the Abyss. Defeat the Extreme final boss again to re-enter",
   "zoneReclaim": "Reclaim it",
@@ -3825,9 +5769,27 @@
   "guildRankElite": "Elite",
   "guildRankElder": "Elder",
   "guildMyRank": "My rank {rank} · Contribution {points}",
-  "@guildMyRank": {"placeholders": {"rank": {"type": "String"}, "points": {"type": "String"}}},
+  "@guildMyRank": {
+    "placeholders": {
+      "rank": {
+        "type": "String"
+      },
+      "points": {
+        "type": "String"
+      }
+    }
+  },
   "guildRankNext": "To {rank}: {left} left",
-  "@guildRankNext": {"placeholders": {"rank": {"type": "String"}, "left": {"type": "String"}}},
+  "@guildRankNext": {
+    "placeholders": {
+      "rank": {
+        "type": "String"
+      },
+      "left": {
+        "type": "String"
+      }
+    }
+  },
   "guildRankMax": "Top rank reached",
   "guildPermsTitle": "Role permissions",
   "guildPermAccept": "Accept/decline requests",
@@ -3836,29 +5798,83 @@
   "guildPermSkills": "Assign/reset guild skills",
   "guildPermRoles": "Appoint/transfer roles",
   "guildPermDeputyNote": "Deputies can accept requests only if the leader allows it (now: {state}).",
-  "@guildPermDeputyNote": {"placeholders": {"state": {"type": "String"}}},
+  "@guildPermDeputyNote": {
+    "placeholders": {
+      "state": {
+        "type": "String"
+      }
+    }
+  },
   "guildPermRanksNote": "Member ranks rise automatically with the coins you earn in this guild (contribution). They are for display only, with no perks or permissions. Leaving the guild resets your contribution.",
   "guildRecruitingTitle": "Recruiting guilds",
   "guildSearchResultTitle": "Search results",
   "guildRecruitingEmpty": "No guilds are recruiting right now — why not create your own?",
   "guildAttendTitle": "Attendance card",
   "guildAttendNote": "Each day you check in fills one box (missed days don't reset it). After all {cycle} boxes it starts over from Day 1. Changing guilds starts a new card.",
-  "@guildAttendNote": {"placeholders": {"cycle": {"type": "int"}}},
+  "@guildAttendNote": {
+    "placeholders": {
+      "cycle": {
+        "type": "int"
+      }
+    }
+  },
   "guildAttendDay": "Day {day}",
-  "@guildAttendDay": {"placeholders": {"day": {"type": "int"}}},
+  "@guildAttendDay": {
+    "placeholders": {
+      "day": {
+        "type": "int"
+      }
+    }
+  },
   "guildAttendProgress": "{n} / {cycle}",
-  "@guildAttendProgress": {"placeholders": {"n": {"type": "int"}, "cycle": {"type": "int"}}},
+  "@guildAttendProgress": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      },
+      "cycle": {
+        "type": "int"
+      }
+    }
+  },
   "guildAttendDaily": "Every day: {coins} coins · {exp} guild EXP",
-  "@guildAttendDaily": {"placeholders": {"coins": {"type": "int"}, "exp": {"type": "int"}}},
+  "@guildAttendDaily": {
+    "placeholders": {
+      "coins": {
+        "type": "int"
+      },
+      "exp": {
+        "type": "int"
+      }
+    }
+  },
   "guildAttendBigNote": "Big reward every 7th day (coins · fossils · fairy dust)",
   "guildAttendButton": "Check in today",
   "guildAttendDoneToday": "Checked in today — see you tomorrow",
   "guildAttendGot": "Day {day} checked in!",
-  "@guildAttendGot": {"placeholders": {"day": {"type": "int"}}},
+  "@guildAttendGot": {
+    "placeholders": {
+      "day": {
+        "type": "int"
+      }
+    }
+  },
   "guildMemberContribution": "Contribution {n}",
-  "@guildMemberContribution": {"placeholders": {"n": {"type": "String"}}},
+  "@guildMemberContribution": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
   "guildMemberLevel": "Character Lv {lv}",
-  "@guildMemberLevel": {"placeholders": {"lv": {"type": "int"}}},
+  "@guildMemberLevel": {
+    "placeholders": {
+      "lv": {
+        "type": "int"
+      }
+    }
+  },
   "guildMemberPets": "Equipped bugs",
   "guildMemberTeam": "Duel defense team",
   "guildMemberEquip": "Equipment",
@@ -3871,15 +5887,48 @@
   "guildMissionTeamTitle": "Members on this mission",
   "guildMissionRewardSuccess": "Success reward",
   "guildMissionExpShort": "Guild EXP {n}",
-  "@guildMissionExpShort": {"placeholders": {"n": {"type": "int"}}},
+  "@guildMissionExpShort": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
   "guildMissionEggChance": "Fairy egg {pct}%",
-  "@guildMissionEggChance": {"placeholders": {"pct": {"type": "String"}}},
+  "@guildMissionEggChance": {
+    "placeholders": {
+      "pct": {
+        "type": "String"
+      }
+    }
+  },
   "guildMissionFailRule": "If it fails: reward × progress × {pct}%",
-  "@guildMissionFailRule": {"placeholders": {"pct": {"type": "int"}}},
+  "@guildMissionFailRule": {
+    "placeholders": {
+      "pct": {
+        "type": "int"
+      }
+    }
+  },
   "guildMissionHelperRule": "Helpers: {pct}% of materials/fossils (by their own zone) + {coins} coins",
-  "@guildMissionHelperRule": {"placeholders": {"pct": {"type": "int"}, "coins": {"type": "int"}}},
+  "@guildMissionHelperRule": {
+    "placeholders": {
+      "pct": {
+        "type": "int"
+      },
+      "coins": {
+        "type": "int"
+      }
+    }
+  },
   "guildMissionWaitPick": "Wait {min} min",
-  "@guildMissionWaitPick": {"placeholders": {"min": {"type": "int"}}},
+  "@guildMissionWaitPick": {
+    "placeholders": {
+      "min": {
+        "type": "int"
+      }
+    }
+  },
   "chatTabAll": "All",
   "chatTabGuild": "Guild",
   "trainSlotHp": "HP",
@@ -3889,69 +5938,228 @@
   "trainSlotGrit": "Grit",
   "trainSlotCommand": "Command",
   "trainCommandEffect": "Whole team {stat} {per} per point · this bug's aura {total}",
-  "@trainCommandEffect": {"placeholders": {"stat": {"type": "String"}, "per": {"type": "String"}, "total": {"type": "String"}}},
+  "@trainCommandEffect": {
+    "placeholders": {
+      "stat": {
+        "type": "String"
+      },
+      "per": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
   "trainCommandNoRole": "This species has no team role — no aura",
   "duelRoleAttack": "Attacker",
   "duelRoleDefense": "Defender",
   "duelRoleHp": "Vitality",
   "duelRoleChip": "{role} {pct}",
-  "@duelRoleChip": {"placeholders": {"role": {"type": "String"}, "pct": {"type": "String"}}},
+  "@duelRoleChip": {
+    "placeholders": {
+      "role": {
+        "type": "String"
+      },
+      "pct": {
+        "type": "String"
+      }
+    }
+  },
   "duelTeamAura": "Team aura: {list}",
-  "@duelTeamAura": {"placeholders": {"list": {"type": "String"}}},
+  "@duelTeamAura": {
+    "placeholders": {
+      "list": {
+        "type": "String"
+      }
+    }
+  },
   "duelCommanderBadge": "Commander",
   "duelTeamAuraHelpCommander": "Each bug's Command grows the aura of its own role (all three count). The flag marks the bug with the most Command.",
   "duelTeamAuraTitle": "Team aura",
   "duelTeamAuraNone": "Team aura: none",
   "duelTeamAuraHelp": "Each bug you field boosts the whole team.",
   "duelTeamAuraHelpCap": "Up to +{cap} per stat\nThe Command slot in Training makes it bigger.",
-  "@duelTeamAuraHelpCap": {"placeholders": {"cap": {"type": "String"}}},
+  "@duelTeamAuraHelpCap": {
+    "placeholders": {
+      "cap": {
+        "type": "String"
+      }
+    }
+  },
   "duelTeamAuraHelpRole": "Team {stat} ↑",
-  "@duelTeamAuraHelpRole": {"placeholders": {"stat": {"type": "String"}}},
+  "@duelTeamAuraHelpRole": {
+    "placeholders": {
+      "stat": {
+        "type": "String"
+      }
+    }
+  },
   "trainWeight": "Weight",
   "trainPtShort": "Trained {n}",
-  "@trainPtShort": {"placeholders": {"n": {"type": "String"}}},
+  "@trainPtShort": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
   "trainPtUsed": "Points {used} / {budget}",
-  "@trainPtUsed": {"placeholders": {"used": {"type": "String"}, "budget": {"type": "String"}}},
+  "@trainPtUsed": {
+    "placeholders": {
+      "used": {
+        "type": "String"
+      },
+      "budget": {
+        "type": "String"
+      }
+    }
+  },
   "trainPtBonus": "Bonus +{n}",
-  "@trainPtBonus": {"placeholders": {"n": {"type": "String"}}},
+  "@trainPtBonus": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
   "trainPtLeft": "{n} points left",
-  "@trainPtLeft": {"placeholders": {"n": {"type": "String"}}},
+  "@trainPtLeft": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
   "trainPtFree": "{n} paid points unspent — they apply instantly for free",
-  "@trainPtFree": {"placeholders": {"n": {"type": "String"}}},
+  "@trainPtFree": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
   "trainPtNext": "Next point",
   "trainPtHowTitle": "How to earn more points",
   "trainPtHowLevel": "Reach Lv.{lv} → +1 (every {k} levels)",
-  "@trainPtHowLevel": {"placeholders": {"lv": {"type": "String"}, "k": {"type": "String"}}},
+  "@trainPtHowLevel": {
+    "placeholders": {
+      "lv": {
+        "type": "String"
+      },
+      "k": {
+        "type": "String"
+      }
+    }
+  },
   "trainPtHowLevelCap": "Reach Lv.{lv} → +1 (level cap — breakthrough first)",
-  "@trainPtHowLevelCap": {"placeholders": {"lv": {"type": "String"}}},
+  "@trainPtHowLevelCap": {
+    "placeholders": {
+      "lv": {
+        "type": "String"
+      }
+    }
+  },
   "trainPtHowBreak": "Breakthrough {n} → +{pts}",
-  "@trainPtHowBreak": {"placeholders": {"n": {"type": "String"}, "pts": {"type": "String"}}},
+  "@trainPtHowBreak": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      },
+      "pts": {
+        "type": "String"
+      }
+    }
+  },
   "trainPtHowPotential": "Potential +1★ → +{pts} (synthesis · breeding)",
-  "@trainPtHowPotential": {"placeholders": {"pts": {"type": "String"}}},
+  "@trainPtHowPotential": {
+    "placeholders": {
+      "pts": {
+        "type": "String"
+      }
+    }
+  },
   "igTrainPtHowGrade": "Grade up one step → +{pts} (grade up)",
-  "@igTrainPtHowGrade": {"placeholders": {"pts": {"type": "String"}}},
+  "@igTrainPtHowGrade": {
+    "placeholders": {
+      "pts": {
+        "type": "String"
+      }
+    }
+  },
   "trainPtNoPoints": "No points left — raise level, breakthrough or potential",
   "trainPtMaxed": "This slot is maxed",
   "trainPtRespecBusy": "Can't add points while a respec is pending",
   "trainPtJobNow": "Training {slot} +{n}",
-  "@trainPtJobNow": {"placeholders": {"slot": {"type": "String"}, "n": {"type": "String"}}},
+  "@trainPtJobNow": {
+    "placeholders": {
+      "slot": {
+        "type": "String"
+      },
+      "n": {
+        "type": "String"
+      }
+    }
+  },
   "trainPtEffect": "{per} per point · now {now}",
-  "@trainPtEffect": {"placeholders": {"per": {"type": "String"}, "now": {"type": "String"}}},
+  "@trainPtEffect": {
+    "placeholders": {
+      "per": {
+        "type": "String"
+      },
+      "now": {
+        "type": "String"
+      }
+    }
+  },
   "trainPtPer": "{per}/pt",
-  "@trainPtPer": {"placeholders": {"per": {"type": "String"}}},
+  "@trainPtPer": {
+    "placeholders": {
+      "per": {
+        "type": "String"
+      }
+    }
+  },
   "trainMassPer": "weight {w} · speed {s}",
-  "@trainMassPer": {"placeholders": {"w": {"type": "String"}, "s": {"type": "String"}}},
+  "@trainMassPer": {
+    "placeholders": {
+      "w": {
+        "type": "String"
+      },
+      "s": {
+        "type": "String"
+      }
+    }
+  },
   "trainPushPer": "push force {p}",
-  "@trainPushPer": {"placeholders": {"p": {"type": "String"}}},
+  "@trainPushPer": {
+    "placeholders": {
+      "p": {
+        "type": "String"
+      }
+    }
+  },
   "trainPresetTitle": "Suggested builds",
   "trainPresetBalanced": "Balanced",
   "trainPresetTank": "Tank",
   "trainPresetHeavy": "Heavyweight",
   "trainPresetHint": "Builds that tested strong · ★ suggested for this specialty",
   "trainPresetNext": "Next suggested slot: {slot}",
-  "@trainPresetNext": {"placeholders": {"slot": {"type": "String"}}},
+  "@trainPresetNext": {
+    "placeholders": {
+      "slot": {
+        "type": "String"
+      }
+    }
+  },
   "trainPresetFill": "Fill {n} spare points as suggested",
-  "@trainPresetFill": {"placeholders": {"n": {"type": "String"}}},
+  "@trainPresetFill": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
   "trainPresetRespec": "Respec to this build",
   "trainPresetFilled": "Filled with the suggested build",
   "trainPresetApplied": "Suggested build loaded — tap Apply to confirm",
@@ -3959,30 +6167,96 @@
   "guideTrainPushNote": "Push power — how hard your bug shoves on contact. It strengthens Strike flips and shoves, Grip bite-and-push, and Toss throws. Unlike Weight class it does not add weight (staying power). Points in the old Speed slot became Push power as-is.",
   "guideTrainPresetBody": "The Training Center's suggested builds are allocations that tested strong (Balanced · Tank · Heavyweight, ★ = suggested for that bug's specialty). Load one at once when respeccing; when adding new points it shows the next suggested slot.",
   "trainTechFlip": "Strike: flip chance {v}",
-  "@trainTechFlip": {"placeholders": {"v": {"type": "String"}}},
+  "@trainTechFlip": {
+    "placeholders": {
+      "v": {
+        "type": "String"
+      }
+    }
+  },
   "trainTechBite": "Grip: bite force {v}",
-  "@trainTechBite": {"placeholders": {"v": {"type": "String"}}},
+  "@trainTechBite": {
+    "placeholders": {
+      "v": {
+        "type": "String"
+      }
+    }
+  },
   "trainTechCooldown": "Toss: cooldown {v}",
-  "@trainTechCooldown": {"placeholders": {"v": {"type": "String"}}},
+  "@trainTechCooldown": {
+    "placeholders": {
+      "v": {
+        "type": "String"
+      }
+    }
+  },
   "trainGritDesc": "Tap counter — mash in a crisis to hold on. Threshold {th} (lower is easier) · {uses}× per bout · wake HP {hp}",
-  "@trainGritDesc": {"placeholders": {"th": {"type": "String"}, "uses": {"type": "String"}, "hp": {"type": "String"}}},
+  "@trainGritDesc": {
+    "placeholders": {
+      "th": {
+        "type": "String"
+      },
+      "uses": {
+        "type": "String"
+      },
+      "hp": {
+        "type": "String"
+      }
+    }
+  },
   "trainGritBonusUse": "+1 use per bout from {n} points",
-  "@trainGritBonusUse": {"placeholders": {"n": {"type": "String"}}},
+  "@trainGritBonusUse": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
   "trainBusyNote": "Bugs training or waiting on a respec can't enter duels or the contest",
   "trainRespec": "Respec",
   "trainRespecHint": "Redistribute your {n} paid points — no materials needed",
-  "@trainRespecHint": {"placeholders": {"n": {"type": "String"}}},
+  "@trainRespecHint": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
   "trainRespecEditTitle": "New build — {n} points left",
-  "@trainRespecEditTitle": {"placeholders": {"n": {"type": "String"}}},
+  "@trainRespecEditTitle": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
   "trainRespecApply": "Apply",
   "trainRespecAskWait": "Switch to the new build. It takes {time}, and this bug can't battle meanwhile. No materials needed.",
-  "@trainRespecAskWait": {"placeholders": {"time": {"type": "String"}}},
+  "@trainRespecAskWait": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
   "trainRespecAskFree": "Switch to the new build. Your first respec is free with no wait.",
   "trainRespecFreeBadge": "First one free · no wait",
   "trainRespecWaitInfo": "Wait {time}",
-  "@trainRespecWaitInfo": {"placeholders": {"time": {"type": "String"}}},
+  "@trainRespecWaitInfo": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
   "trainRespecWaiting": "Respec pending · {time}",
-  "@trainRespecWaiting": {"placeholders": {"time": {"type": "String"}}},
+  "@trainRespecWaiting": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
   "trainRespecCancel": "Cancel wait",
   "trainRespecCancelAsk": "Cancelling keeps your current build",
   "trainRespecSame": "Nothing changed",
@@ -3996,7 +6270,13 @@
   "duelStoneElement": "Element stone",
   "duelStoneTemperament": "Temperament stone",
   "duelStoneOwned": "×{n}",
-  "@duelStoneOwned": {"placeholders": {"n": {"type": "String"}}},
+  "@duelStoneOwned": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
   "duelStoneChangeElement": "Change element",
   "duelStoneChangeTemperament": "Change temperament",
   "duelStoneWhere": "Found from: elites (element {elite}%, while idle only with Gatherer's Touch on) · repeat boss kills (element {bossEl}% · temperament {bossTm}%) · first clear of every {every} abyss floors (element {abEl} · temperament {abTm}) · Gatherer's Touch doubles the chance · or jelly {jEl}/{jTm}",
@@ -4055,17 +6335,62 @@
   "duelStonePickElement": "Pick a new element",
   "duelStonePickTemperament": "Pick a new temperament",
   "duelStoneAsk": "Change {from} → {to}? Uses 1 {stone}.",
-  "@duelStoneAsk": {"placeholders": {"from": {"type": "String"}, "to": {"type": "String"}, "stone": {"type": "String"}}},
+  "@duelStoneAsk": {
+    "placeholders": {
+      "from": {
+        "type": "String"
+      },
+      "to": {
+        "type": "String"
+      },
+      "stone": {
+        "type": "String"
+      }
+    }
+  },
   "duelStoneBuyTitle": "Buy {stone}",
-  "@duelStoneBuyTitle": {"placeholders": {"stone": {"type": "String"}}},
+  "@duelStoneBuyTitle": {
+    "placeholders": {
+      "stone": {
+        "type": "String"
+      }
+    }
+  },
   "duelStoneBuyBody": "You have no {stone}. Buy one for {n} jelly?",
-  "@duelStoneBuyBody": {"placeholders": {"stone": {"type": "String"}, "n": {"type": "String"}}},
+  "@duelStoneBuyBody": {
+    "placeholders": {
+      "stone": {
+        "type": "String"
+      },
+      "n": {
+        "type": "String"
+      }
+    }
+  },
   "duelStoneBuyAction": "Buy",
   "duelStoneDone": "Changed!",
   "duelStonePop": "{stone} +{n}",
-  "@duelStonePop": {"placeholders": {"stone": {"type": "String"}, "n": {"type": "String"}}},
+  "@duelStonePop": {
+    "placeholders": {
+      "stone": {
+        "type": "String"
+      },
+      "n": {
+        "type": "String"
+      }
+    }
+  },
   "trainPtSummaryLine": "Training points {used} / {budget}",
-  "@trainPtSummaryLine": {"placeholders": {"used": {"type": "String"}, "budget": {"type": "String"}}},
+  "@trainPtSummaryLine": {
+    "placeholders": {
+      "used": {
+        "type": "String"
+      },
+      "budget": {
+        "type": "String"
+      }
+    }
+  },
   "trainGoCenter": "Train at the center",
   "duelClutchHold": "Hold on!",
   "duelClutchWake": "Get up!",
@@ -4075,7 +6400,16 @@
   "duelClutchTapToStart": "Tap to start!",
   "duelClutchSuccessMark": "Success",
   "duelClutchChance": "Chance {k}/{n}",
-  "@duelClutchChance": {"placeholders": {"k": {"type": "int"}, "n": {"type": "int"}}},
+  "@duelClutchChance": {
+    "placeholders": {
+      "k": {
+        "type": "int"
+      },
+      "n": {
+        "type": "int"
+      }
+    }
+  },
   "duelClutchSaved": "Held on!",
   "duelClutchWoke": "Back up!",
   "duelClutchFailed": "Failed…",
@@ -4104,17 +6438,65 @@
       }
     }
   },
-  "@duelClutchLeft": {"placeholders": {"n": {"type": "int"}}},
+  "@duelClutchLeft": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
   "guideTrainSlotsTitle": "Slots (per point · base cap)",
   "guideTrainSlotLine": "{slot} — {effect} · cap {cap}",
-  "@guideTrainSlotLine": {"placeholders": {"slot": {"type": "String"}, "effect": {"type": "String"}, "cap": {"type": "String"}}},
+  "@guideTrainSlotLine": {
+    "placeholders": {
+      "slot": {
+        "type": "String"
+      },
+      "effect": {
+        "type": "String"
+      },
+      "cap": {
+        "type": "String"
+      }
+    }
+  },
   "guideTrainGritEffect": "tap counter threshold −{th} · wake HP +{hp}",
-  "@guideTrainGritEffect": {"placeholders": {"th": {"type": "String"}, "hp": {"type": "String"}}},
+  "@guideTrainGritEffect": {
+    "placeholders": {
+      "th": {
+        "type": "String"
+      },
+      "hp": {
+        "type": "String"
+      }
+    }
+  },
   "guideTrainCostBody": "Materials (chitin, mineral, sap) and training time are paid only the first time you spend a point, rising a little each time. Jelly can skip the wait; a bug in training can't enter duels or the contest.",
   "guideTrainRespecBody": "Respec — redistribute your paid points. No materials are needed, but you wait {base} min + {per} min per point (up to {max} h) and the bug can't fight meanwhile. Jelly can skip the wait.",
-  "@guideTrainRespecBody": {"placeholders": {"base": {"type": "String"}, "per": {"type": "String"}, "max": {"type": "String"}}},
+  "@guideTrainRespecBody": {
+    "placeholders": {
+      "base": {
+        "type": "String"
+      },
+      "per": {
+        "type": "String"
+      },
+      "max": {
+        "type": "String"
+      }
+    }
+  },
   "guideTrainStoneBody": "Duel stones — an Element stone sets a bug's element and a Temperament stone its temperament to the value you choose (bloodline trait stays; the new value is inherited by offspring). Get them from elites, bosses and the Abyss, or buy with jelly (Element {el} · Temper {tm}).",
-  "@guideTrainStoneBody": {"placeholders": {"el": {"type": "String"}, "tm": {"type": "String"}}},
+  "@guideTrainStoneBody": {
+    "placeholders": {
+      "el": {
+        "type": "String"
+      },
+      "tm": {
+        "type": "String"
+      }
+    }
+  },
   "guideDuelPower": "Combat power reflects real win chances — not just attack, HP and defense but also evasion, crit, recovery, push, weight, technique and grit. Twice the power wins about 67% of the time.",
   "guideGearTitle": "Gear — refining & stars",
   "guideGearPolishBody": "Refining: reroll one option line. The new value is always higher (if the type changes you may keep the old one). Costs {fossil} fossils per grade step or {jelly} jelly; picking a type costs ×{mult}. Each refine on the same line costs ×{floor} more (stops rising at the {floorMax}th). Lines already at max can't be refined.",
@@ -4192,24 +6574,72 @@
   "guideTrainLegacyNote": "Old part upgrades and training were converted into training points. Every bug now earns points by the same rules (potential, level, breakthrough); bugs above that were adjusted and got one free reset.",
   "guideClutchTitle": "Tap counter (grit)",
   "guideClutchBody": "When your bug is about to lose (pushed out of the ring · flipped · HP hits 0), the bout pauses and a gauge appears. Mash the screen for {sec}s — if your score reaches the threshold {th}, you survive: holding on costs {cost} of max HP and pulls you back inside, waking up gets you back on your feet with {hp} HP. {uses}× per bout (+1 from {bonus} Grit). More points in Grit make each tap stronger, lower the threshold and raise wake HP. Opponent bugs counter automatically.",
-  "@guideClutchBody": {"placeholders": {"sec": {"type": "String"}, "th": {"type": "String"}, "cost": {"type": "String"}, "hp": {"type": "String"}, "uses": {"type": "String"}, "bonus": {"type": "String"}}},
+  "@guideClutchBody": {
+    "placeholders": {
+      "sec": {
+        "type": "String"
+      },
+      "th": {
+        "type": "String"
+      },
+      "cost": {
+        "type": "String"
+      },
+      "hp": {
+        "type": "String"
+      },
+      "uses": {
+        "type": "String"
+      },
+      "bonus": {
+        "type": "String"
+      }
+    }
+  },
   "upgradeBuyMax": "MAX",
   "skillGachaConfirm": "Skill draw ×{times} — this spends {jelly} jelly.",
-  "@skillGachaConfirm": {"placeholders": {"times": {"type": "String"}, "jelly": {"type": "String"}}},
+  "@skillGachaConfirm": {
+    "placeholders": {
+      "times": {
+        "type": "String"
+      },
+      "jelly": {
+        "type": "String"
+      }
+    }
+  },
   "skillSweepConfirm": "Today's free sweeps are used up. Sweep for {jelly} jelly?",
-  "@skillSweepConfirm": {"placeholders": {"jelly": {"type": "String"}}},
+  "@skillSweepConfirm": {
+    "placeholders": {
+      "jelly": {
+        "type": "String"
+      }
+    }
+  },
   "bugGradeLabel": "Grade",
   "bugRarityLabel": "Rarity",
   "bugGradeHelp": "This bug's own grade (Common to Legendary). Raise it with essence of the same species. Higher grades mean stronger duel stats and pet bonuses.",
   "bugRarityHelp": "How rare this bug is. It is rolled for each bug, so the same species can be anything from Common to Legendary. Rarer bugs take longer to hatch and pair, but give stronger pet effects, bigger passives, better duel stats and more essence.\n\nRarity is shown as a gem (◆) color and bug grade as a name tag — same names, different things.",
   "igSpeciesRarity": "Rarity {grade}",
-  "@igSpeciesRarity": {"placeholders": {"grade": {"type": "String"}}},
+  "@igSpeciesRarity": {
+    "placeholders": {
+      "grade": {
+        "type": "String"
+      }
+    }
+  },
   "eggPickRarity": "Rarity",
   "igGradeLabel": "Grade",
   "igDexMaxGrade": "Best grade",
   "igQualityTitle": "Stat quality",
   "igQualityAvg": "Avg {pct}%",
-  "@igQualityAvg": {"placeholders": {"pct": {"type": "String"}}},
+  "@igQualityAvg": {
+    "placeholders": {
+      "pct": {
+        "type": "String"
+      }
+    }
+  },
   "igQualityHint": "Set from the egg · each grade-up rerolls every stat and keeps the better value",
   "igStatHp": "HP",
   "igStatAtk": "ATK",
@@ -4224,23 +6654,80 @@
   "igToEssenceEgg": "Hatch the egg first to turn it into essence",
   "igToEssencePinned": "Equipped, hatching, training or locked bugs can't be converted",
   "igToEssenceConfirm": "You get {n} {name} essence. This bug will be gone.",
-  "@igToEssenceConfirm": {"placeholders": {"n": {"type": "String"}, "name": {"type": "String"}}},
+  "@igToEssenceConfirm": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      },
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "igToEssencePotionWarn": "Stats raised with potions will be lost",
   "igEssenceGot": "{name} essence +{n}",
-  "@igEssenceGot": {"placeholders": {"name": {"type": "String"}, "n": {"type": "String"}}},
+  "@igEssenceGot": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "n": {
+        "type": "String"
+      }
+    }
+  },
   "igGradeUp": "Grade up",
   "igGradeUpDesc": "{name} essence {have} / {need}",
-  "@igGradeUpDesc": {"placeholders": {"name": {"type": "String"}, "have": {"type": "String"}, "need": {"type": "String"}}},
+  "@igGradeUpDesc": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "have": {
+        "type": "String"
+      },
+      "need": {
+        "type": "String"
+      }
+    }
+  },
   "igGradeUpMax": "Already at the top grade",
   "igGradeUpEgg": "Hatch the egg first to grade it up",
   "igPotionUse": "Growth potions {n} (own {have})",
-  "@igPotionUse": {"placeholders": {"n": {"type": "String"}, "have": {"type": "String"}}},
+  "@igPotionUse": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      },
+      "have": {
+        "type": "String"
+      }
+    }
+  },
   "igPotionHint": "Each potion adds +{step} to every stat after the grade up (up to 100). Potion gains stay all the way to Legendary.",
-  "@igPotionHint": {"placeholders": {"step": {"type": "String"}}},
+  "@igPotionHint": {
+    "placeholders": {
+      "step": {
+        "type": "String"
+      }
+    }
+  },
   "igGradeUpDone": "Now {grade}!",
-  "@igGradeUpDone": {"placeholders": {"grade": {"type": "String"}}},
+  "@igGradeUpDone": {
+    "placeholders": {
+      "grade": {
+        "type": "String"
+      }
+    }
+  },
   "igGradeUpImproved": "{n} stats improved",
-  "@igGradeUpImproved": {"placeholders": {"n": {"type": "String"}}},
+  "@igGradeUpImproved": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
   "igNoEssence": "Not enough essence",
   "igGradeFailed": "Can't do that right now — please try again shortly",
   "igVaultTitle": "Essence vault",
@@ -4248,81 +6735,297 @@
   "igVaultEmpty": "No essence yet. Turn bugs into essence to collect it.",
   "igVaultHint": "Essence grades up bugs of the same species",
   "igPotionOwned": "Growth potions: {n}",
-  "@igPotionOwned": {"placeholders": {"n": {"type": "String"}}},
+  "@igPotionOwned": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
   "igBulkEssence": "To essence",
   "igBulkDone": "Turned {n} bugs into essence",
-  "@igBulkDone": {"placeholders": {"n": {"type": "String"}}},
+  "@igBulkDone": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
   "igBulkSkipped": "Skipped {eggs} eggs · {pinned} protected",
-  "@igBulkSkipped": {"placeholders": {"eggs": {"type": "String"}, "pinned": {"type": "String"}}},
+  "@igBulkSkipped": {
+    "placeholders": {
+      "eggs": {
+        "type": "String"
+      },
+      "pinned": {
+        "type": "String"
+      }
+    }
+  },
   "igBulkNone": "No bugs to convert",
   "igPotionShopTitle": "Growth potion",
   "igPotionBuy": "Buy {n}",
-  "@igPotionBuy": {"placeholders": {"n": {"type": "String"}}},
+  "@igPotionBuy": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
   "igPotionBuyConfirm": "{n} growth potions — this spends {jelly} jelly.",
-  "@igPotionBuyConfirm": {"placeholders": {"n": {"type": "String"}, "jelly": {"type": "String"}}},
+  "@igPotionBuyConfirm": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      },
+      "jelly": {
+        "type": "String"
+      }
+    }
+  },
   "igPotionBought": "Growth potion +{n}",
-  "@igPotionBought": {"placeholders": {"n": {"type": "String"}}},
+  "@igPotionBought": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
   "igPotionDailyLimit": "Today's purchase limit reached — buy again tomorrow",
   "gachaPityLeftGrade": "Within {n} draws: {grade} grade or better guaranteed",
-  "@gachaPityLeftGrade": {"placeholders": {"n": {"type": "int"}, "grade": {"type": "String"}}},
+  "@gachaPityLeftGrade": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      },
+      "grade": {
+        "type": "String"
+      }
+    }
+  },
   "gachaDescGrade": "{grade} grade or better guaranteed · Uncommon+ rarity · 10× variant chance",
-  "@gachaDescGrade": {"placeholders": {"grade": {"type": "String"}}},
+  "@gachaDescGrade": {
+    "placeholders": {
+      "grade": {
+        "type": "String"
+      }
+    }
+  },
   "eggOddsIndividualHead": "Individual grade",
   "eggOddsSpeciesHead": "Rarity (every species is equally likely)",
   "igFilterTitle": "Choose rarity to keep",
   "igFilterSnack": "Bugs below {grade} rarity are released for materials",
-  "@igFilterSnack": {"placeholders": {"grade": {"type": "String"}}},
+  "@igFilterSnack": {
+    "placeholders": {
+      "grade": {
+        "type": "String"
+      }
+    }
+  },
   "igAutoFilterRarity": "Target rarity",
   "igAutoFilterGrade": "Individual grade {grade} or lower",
-  "@igAutoFilterGrade": {"placeholders": {"grade": {"type": "String"}}},
+  "@igAutoFilterGrade": {
+    "placeholders": {
+      "grade": {
+        "type": "String"
+      }
+    }
+  },
   "igBulkConfirm": "Turn {n} bugs into essence. They will be gone.",
-  "@igBulkConfirm": {"placeholders": {"n": {"type": "String"}}},
+  "@igBulkConfirm": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
   "igBulkConfirmTotal": "Essence gained: {n}",
-  "@igBulkConfirmTotal": {"placeholders": {"n": {"type": "String"}}},
+  "@igBulkConfirmTotal": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
   "igBulkPotionWarn": "Includes {n} potion-raised bugs — their raised stats will be lost",
-  "@igBulkPotionWarn": {"placeholders": {"n": {"type": "String"}}},
+  "@igBulkPotionWarn": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
   "igBulkDoneGain": "Turned {n} bugs into essence · +{e} essence",
-  "@igBulkDoneGain": {"placeholders": {"n": {"type": "String"}, "e": {"type": "String"}}},
+  "@igBulkDoneGain": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      },
+      "e": {
+        "type": "String"
+      }
+    }
+  },
   "igPotionShopDescBase": "Add them when grading up: +3 to every stat per potion.",
   "igPotionLeftToday": "{n} more available today",
-  "@igPotionLeftToday": {"placeholders": {"n": {"type": "String"}}},
+  "@igPotionLeftToday": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
   "boardFewPartial": "This league has {n} players this week — at {full}, promotion and full rewards open",
-  "@boardFewPartial": {"placeholders": {"n": {"type": "int"}, "full": {"type": "int"}}},
+  "@boardFewPartial": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      },
+      "full": {
+        "type": "int"
+      }
+    }
+  },
   "boardFewNoReward": "This league has {n} players this week — with fewer than {min}, there are no rank rewards",
-  "@boardFewNoReward": {"placeholders": {"n": {"type": "int"}, "min": {"type": "int"}}},
+  "@boardFewNoReward": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      },
+      "min": {
+        "type": "int"
+      }
+    }
+  },
   "boardFewMerge": "This league has {n} players this week — with fewer than {min}, there are no rank rewards and it merges into the league below at settlement",
-  "@boardFewMerge": {"placeholders": {"n": {"type": "int"}, "min": {"type": "int"}}},
+  "@boardFewMerge": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      },
+      "min": {
+        "type": "int"
+      }
+    }
+  },
   "leagueRewardsNone": "No rank rewards are available with the current number of players",
   "leagueMyMerge": "▼ Too few players — merging into {league} League at settlement",
-  "@leagueMyMerge": {"placeholders": {"league": {"type": "String"}}},
+  "@leagueMyMerge": {
+    "placeholders": {
+      "league": {
+        "type": "String"
+      }
+    }
+  },
   "guideDuelLeague": "Each week you compete with your own league for stars (earned by winning, never lost). If {min}+ players battled that week, the top {up}% promote and the bottom {down}% demote; with fewer than {min}, nobody promotes. Rank jelly starts at {reward}+ players and goes to the top half of players, reduced in proportion until there are {full}. Leagues with fewer than {reward} players merge into the league below at settlement, and skipping a week drops you one league.",
-  "@guideDuelLeague": {"placeholders": {"min": {"type": "int"}, "up": {"type": "int"}, "down": {"type": "int"}, "reward": {"type": "int"}, "full": {"type": "int"}}},
+  "@guideDuelLeague": {
+    "placeholders": {
+      "min": {
+        "type": "int"
+      },
+      "up": {
+        "type": "int"
+      },
+      "down": {
+        "type": "int"
+      },
+      "reward": {
+        "type": "int"
+      },
+      "full": {
+        "type": "int"
+      }
+    }
+  },
   "igEssenceWarnTitle": "This bug is precious — converting loses:",
   "igEssenceWarnVariant": "Variant colors (very rare)",
   "igEssenceWarnLevel": "Training Lv{level}",
-  "@igEssenceWarnLevel": {"placeholders": {"level": {"type": "String"}}},
+  "@igEssenceWarnLevel": {
+    "placeholders": {
+      "level": {
+        "type": "String"
+      }
+    }
+  },
   "igEssenceWarnBreak": "Breakthrough tier {tier}",
-  "@igEssenceWarnBreak": {"placeholders": {"tier": {"type": "String"}}},
+  "@igEssenceWarnBreak": {
+    "placeholders": {
+      "tier": {
+        "type": "String"
+      }
+    }
+  },
   "igEssenceWarnEnhance": "Part upgrades",
   "igEssenceVariantAgain": "Really convert the variant {name} into essence?\nVariants can't be recovered.",
-  "@igEssenceVariantAgain": {"placeholders": {"name": {"type": "String"}}},
+  "@igEssenceVariantAgain": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "igNeedMoreEssence": "{n} more essence needed",
-  "@igNeedMoreEssence": {"placeholders": {"n": {"type": "String"}}},
+  "@igNeedMoreEssence": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
   "igRarityBadge": "Rarity {grade}",
-  "@igRarityBadge": {"placeholders": {"grade": {"type": "String"}}},
+  "@igRarityBadge": {
+    "placeholders": {
+      "grade": {
+        "type": "String"
+      }
+    }
+  },
   "disassembleEssenceHint": "Convert to {name} essence instead (×{n}) — used to raise the grade of the same species.",
-  "@disassembleEssenceHint": {"placeholders": {"name": {"type": "String"}, "n": {"type": "String"}}},
+  "@disassembleEssenceHint": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "n": {
+        "type": "String"
+      }
+    }
+  },
   "forgeTranscendNotRunning": "No transcendence in progress — already claimed",
   "forgeTranscendNotReady": "Transcendence isn't finished yet",
   "guidePotentialTitleGrade": "Individual grade (Common–Legendary)",
   "guidePotentialBodyGrade": "Higher grades mean better stats and more training points ({perGrade} per grade). Convert bugs of the same species into essence, then use Raise grade to climb one step at a time. Each raise rerolls stat quality and keeps the better value.",
-  "@guidePotentialBodyGrade": {"placeholders": {"perGrade": {"type": "int"}}},
+  "@guidePotentialBodyGrade": {
+    "placeholders": {
+      "perGrade": {
+        "type": "int"
+      }
+    }
+  },
   "guideTrainBodyGrade": "Every bug earns training points — {perGrade} per individual grade · 1 every {levels} train levels · {bt} per breakthrough tier. Spend them on the slots below. Each slot has a cap, and the caps add up to far more than your points, so you can't fill everything — what you pick is your strategy. Slot caps differ by temperament, specialty and bloodline trait.",
-  "@guideTrainBodyGrade": {"placeholders": {"perGrade": {"type": "String"}, "levels": {"type": "String"}, "bt": {"type": "String"}}},
+  "@guideTrainBodyGrade": {
+    "placeholders": {
+      "perGrade": {
+        "type": "String"
+      },
+      "levels": {
+        "type": "String"
+      },
+      "bt": {
+        "type": "String"
+      }
+    }
+  },
   "guideTrainLegacyNoteGrade": "Old part upgrades and training were converted into training points. Every bug now earns points by the same rules (grade, level, breakthrough); bugs above that were adjusted and got one free reset.",
   "eventFlyerRule1Grade": "Your bug fights **as raised** — grade, stat quality, train levels, breakthroughs and training points all count (same stats as Duels)",
   "eventNormalizeBodyGrade": "Fights with the same stats as Duels — grade, stat quality, train levels, breakthroughs, training points and traits all count. Losing by ring-out or flip costs {pct}% HP and you retry the same wave. When HP runs out, the run ends.",
-  "@eventNormalizeBodyGrade": {"placeholders": {"pct": {"type": "int"}}},
+  "@eventNormalizeBodyGrade": {
+    "placeholders": {
+      "pct": {
+        "type": "int"
+      }
+    }
+  },
   "bugLockedToastGrade": "Locked — it won't be converted to essence or disassembled",
   "trainPtNoPointsGrade": "No points left — raise level, breakthrough or grade",
   "guildWarBreedHintGrade": "Finish breeding, collect hatched eggs and raise grades. Jelly-rushed completions don't count.",
@@ -4338,19 +7041,58 @@
   "hiddenStatValue": "??",
   "eggStatsHidden": "Revealed when it hatches",
   "eggSizeHidden": "??mm (range {min}–{max})",
-  "@eggSizeHidden": {"placeholders": {"min": {"type": "String"}, "max": {"type": "String"}}},
+  "@eggSizeHidden": {
+    "placeholders": {
+      "min": {
+        "type": "String"
+      },
+      "max": {
+        "type": "String"
+      }
+    }
+  },
   "eggToIncubator": "Put in incubator · {time}",
-  "@eggToIncubator": {"placeholders": {"time": {"type": "String"}}},
+  "@eggToIncubator": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
   "eggIncubatorFullExpand": "Incubator full · +1 slot ({n} jelly)",
-  "@eggIncubatorFullExpand": {"placeholders": {"n": {"type": "String"}}},
+  "@eggIncubatorFullExpand": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
   "eggIncubatorFullWait": "Incubator full · next egg done in {time}",
-  "@eggIncubatorFullWait": {"placeholders": {"time": {"type": "String"}}},
+  "@eggIncubatorFullWait": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
   "rarityFilterButton": "Rarity filter",
   "rarityFilterAll": "All bugs",
   "rarityFilterAtLeast": "{grade}+ rarity",
-  "@rarityFilterAtLeast": {"placeholders": {"grade": {"type": "String"}}},
+  "@rarityFilterAtLeast": {
+    "placeholders": {
+      "grade": {
+        "type": "String"
+      }
+    }
+  },
   "rarityFilterOnly": "{grade} bugs only",
-  "@rarityFilterOnly": {"placeholders": {"grade": {"type": "String"}}},
+  "@rarityFilterOnly": {
+    "placeholders": {
+      "grade": {
+        "type": "String"
+      }
+    }
+  },
   "rarityFilterHint": "Filters by each bug's rarity — not by its grade. Bugs you already own are not affected.",
   "storageViewButton": "View",
   "storageViewTitle": "Filter storage view",
@@ -4362,11 +7104,26 @@
   "storageViewStageOther": "Larvae & pupae",
   "storageViewGrade": "Individual grade",
   "storageViewGradeAtLeast": "{grade}+",
-  "@storageViewGradeAtLeast": {"placeholders": {"grade": {"type": "String"}}},
+  "@storageViewGradeAtLeast": {
+    "placeholders": {
+      "grade": {
+        "type": "String"
+      }
+    }
+  },
   "storageViewSpecies": "Species",
   "storageViewReset": "Reset",
   "storageViewCount": "{shown}/{total} bugs",
-  "@storageViewCount": {"placeholders": {"shown": {"type": "String"}, "total": {"type": "String"}}},
+  "@storageViewCount": {
+    "placeholders": {
+      "shown": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
   "storageViewEmpty": "No bugs match.\nTry changing the view filter.",
   "passiveCardTitle": "Pet passive",
   "passiveCardHint": "Grows with this bug's grade and rarity.",
@@ -4374,11 +7131,32 @@
   "passiveReroll": "Reroll passive",
   "passiveRerollDesc": "Rerolls the passive stat value. Which stat it boosts stays the same.\nThe cost is used whether you keep the new value or not.",
   "passiveRerollCurrent": "Current: {value}",
-  "@passiveRerollCurrent": {"placeholders": {"value": {"type": "String"}}},
+  "@passiveRerollCurrent": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
   "passiveRerollEssence": "Essence {n}",
-  "@passiveRerollEssence": {"placeholders": {"n": {"type": "String"}}},
+  "@passiveRerollEssence": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
   "passiveRerollEssenceHave": "{name} essence owned: {have}",
-  "@passiveRerollEssenceHave": {"placeholders": {"name": {"type": "String"}, "have": {"type": "String"}}},
+  "@passiveRerollEssenceHave": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "have": {
+        "type": "String"
+      }
+    }
+  },
   "passiveRerollJellyConfirm": "Reroll the passive stat value with jelly?\nThe jelly is used even if you keep the current value.",
   "passiveRerollJellyAction": "Reroll",
   "passiveRerollPickTitle": "Pick a value",
@@ -4391,21 +7169,72 @@
   "passiveRerollEgg": "Hatch it first to reroll",
   "dexPassiveV2": "Pet passives differ per bug (they grow with the bug's grade and rarity)",
   "dexPassiveLegacy": "Bugs from before the update: {kind}",
-  "@dexPassiveLegacy": {"placeholders": {"kind": {"type": "String"}}},
+  "@dexPassiveLegacy": {
+    "placeholders": {
+      "kind": {
+        "type": "String"
+      }
+    }
+  },
   "storageViewPassive": "Passive type",
   "storageViewRole": "Duel role",
   "duelTeamAuraMaxed": " (max)",
   "igGradeUpPassive": "Pet passive {kind} {from} → {to}",
-  "@igGradeUpPassive": {"placeholders": {"kind": {"type": "String"}, "from": {"type": "String"}, "to": {"type": "String"}}},
+  "@igGradeUpPassive": {
+    "placeholders": {
+      "kind": {
+        "type": "String"
+      },
+      "from": {
+        "type": "String"
+      },
+      "to": {
+        "type": "String"
+      }
+    }
+  },
   "guidePassiveTitle": "Pet passive",
   "guidePassiveBody": "Only bugs equipped as pets raise one hunting stat (the same type from several pets adds up). The type differs per bug.\nSize = individual grade ({grade}) × rarity ({rarity}) × innate strength ({roll}–100%). It grows as you grade up; the exact value shows after hatching.",
-  "@guidePassiveBody": {"placeholders": {"grade": {"type": "String"}, "rarity": {"type": "String"}, "roll": {"type": "String"}}},
+  "@guidePassiveBody": {
+    "placeholders": {
+      "grade": {
+        "type": "String"
+      },
+      "rarity": {
+        "type": "String"
+      },
+      "roll": {
+        "type": "String"
+      }
+    }
+  },
   "guidePassiveReroll": "Reroll: spend {essence} essence of that species or {jelly} jelly to reroll the size, then keep the new or current value. The type never changes.",
-  "@guidePassiveReroll": {"placeholders": {"essence": {"type": "String"}, "jelly": {"type": "String"}}},
+  "@guidePassiveReroll": {
+    "placeholders": {
+      "essence": {
+        "type": "String"
+      },
+      "jelly": {
+        "type": "String"
+      }
+    }
+  },
   "guideAuraTitle": "Team roles & Command",
   "guideAuraBody": "Each species has a duel role (Attacker, Defender, Vitality). Every bug in a 3-bug duel (league, defense team, guild war) boosts its role stat for the whole team (not in contests).",
   "guideAuraSize": "Per bug = grade base {base} + {perPoint} per point in the 'Command' training slot. The team total caps at {cap} per stat — stacking one role hits the cap, so mix roles.",
-  "@guideAuraSize": {"placeholders": {"base": {"type": "String"}, "perPoint": {"type": "String"}, "cap": {"type": "String"}}},
+  "@guideAuraSize": {
+    "placeholders": {
+      "base": {
+        "type": "String"
+      },
+      "perPoint": {
+        "type": "String"
+      },
+      "cap": {
+        "type": "String"
+      }
+    }
+  },
   "whatsNew21Grade": "Wild and bred eggs are all Common now. Grade them up with essence (cost lowered to 4/4/5/6)",
   "whatsNew21Passive": "Pet passives now grow with grade and rarity — most older bugs dropped, so each gets 5 free rerolls",
   "whatsNew21Egg": "Eggs can't be pets (equipped eggs were swapped for other bugs) · egg stats are revealed on hatching",
@@ -4417,11 +7246,29 @@
   "whatsNew21Stats": "Gold, XP and crit damage bonuses now multiply instead of add, so they hit harder · gear and fairy crit damage now shows 1/10 the number (same or stronger effect) · home power now includes skills, fairies, dex, evasion and regen",
   "whatsNew21Badge": "Contest badges are now gold, silver, bronze, finalist and participant",
   "passiveRerollFree": "Free reroll ({n} left)",
-  "@passiveRerollFree": {"placeholders": {"n": {"type": "String"}}},
+  "@passiveRerollFree": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
   "passiveRerollFreeHint": "Bugs from before 1.0.21 get {n} free passive-size rerolls.",
-  "@passiveRerollFreeHint": {"placeholders": {"n": {"type": "String"}}},
+  "@passiveRerollFreeHint": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
   "passiveRerollTitleBug": "{name} · Reroll passive",
-  "@passiveRerollTitleBug": {"placeholders": {"name": {"type": "String"}}},
+  "@passiveRerollTitleBug": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "eggUnequipAutoToast": "Eggs were removed from your pets and the slots were refilled",
   "respecGift1021Toast": "1.0.21 gift — every bug gets one free respec (no wait)",
   "dexBestRarity": "Best rarity",
@@ -4432,26 +7279,101 @@
   "rarityUpDone": "Rarity raised to {grade}!",
   "rarityUpMax": "Already the highest rarity",
   "rarityUpGo": "Raise",
-  "@rarityUpBtn": {"placeholders": {"have": {"type": "int"}, "need": {"type": "int"}}},
-  "@rarityUpConfirm": {"placeholders": {"n": {"type": "int"}, "grade": {"type": "String"}, "next": {"type": "String"}}},
-  "@rarityUpNeed": {"placeholders": {"need": {"type": "int"}, "grade": {"type": "String"}, "have": {"type": "int"}}},
-  "@rarityUpDone": {"placeholders": {"grade": {"type": "String"}}},
+  "@rarityUpBtn": {
+    "placeholders": {
+      "have": {
+        "type": "int"
+      },
+      "need": {
+        "type": "int"
+      }
+    }
+  },
+  "@rarityUpConfirm": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      },
+      "grade": {
+        "type": "String"
+      },
+      "next": {
+        "type": "String"
+      }
+    }
+  },
+  "@rarityUpNeed": {
+    "placeholders": {
+      "need": {
+        "type": "int"
+      },
+      "grade": {
+        "type": "String"
+      },
+      "have": {
+        "type": "int"
+      }
+    }
+  },
+  "@rarityUpDone": {
+    "placeholders": {
+      "grade": {
+        "type": "String"
+      }
+    }
+  },
   "arenaName": "{arena} arena",
-  "@arenaName": {"placeholders": {"arena": {"type": "String"}}},
+  "@arenaName": {
+    "placeholders": {
+      "arena": {
+        "type": "String"
+      }
+    }
+  },
   "arenaBugUp": "{el} bugs +{pct}%",
-  "@arenaBugUp": {"placeholders": {"el": {"type": "String"}, "pct": {"type": "String"}}},
+  "@arenaBugUp": {
+    "placeholders": {
+      "el": {
+        "type": "String"
+      },
+      "pct": {
+        "type": "String"
+      }
+    }
+  },
   "arenaBugDown": "{el} bugs −{pct}%",
-  "@arenaBugDown": {"placeholders": {"el": {"type": "String"}, "pct": {"type": "String"}}},
+  "@arenaBugDown": {
+    "placeholders": {
+      "el": {
+        "type": "String"
+      },
+      "pct": {
+        "type": "String"
+      }
+    }
+  },
   "arenaStatsNote": "(HP/ATK/DEF)",
   "arenaPerBoutHint": "First bout's arena — it changes every bout",
   "igLegacyRoll": "Missed stat rolls",
   "igLegacyRollDesc": "Rolls this bug missed because its grade rose under the old rules — {n} free rolls left (only better values stay)",
   "igLegacyRollGo": "Roll",
-  "@igLegacyRollDesc": {"placeholders": {"n": {"type": "int"}}},
+  "@igLegacyRollDesc": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
   "polishMaxed": "This line is already at max",
   "rarityUpFodderHead": "Material bugs",
   "polishJellyConfirm": "Refine this line for {jelly} jelly? The new value is always higher.",
-  "@polishJellyConfirm": {"placeholders": {"jelly": {"type": "int"}}},
+  "@polishJellyConfirm": {
+    "placeholders": {
+      "jelly": {
+        "type": "int"
+      }
+    }
+  },
   "polishApplied": "The option got better!",
   "polishChanged": "The gear changed meanwhile, so the new value wasn't applied (the cost was already paid)",
   "igNoPotion": "Not enough growth potions",
@@ -4459,19 +7381,55 @@
   "passiveRerollNoFree": "No free rerolls left",
   "passiveRerollPending": "Pick the previous reroll result first",
   "passiveRerollRange": "Same kind · size rerolls between {min} and {max}",
-  "@passiveRerollRange": {"placeholders": {"min": {"type": "String"}, "max": {"type": "String"}}},
+  "@passiveRerollRange": {
+    "placeholders": {
+      "min": {
+        "type": "String"
+      },
+      "max": {
+        "type": "String"
+      }
+    }
+  },
   "passiveRerollMaxNow": "Max at current grade & rarity: {max}",
   "igLegacyRollAllPotions": "\"Roll all {n}\" uses {total} potions in total",
-  "@igLegacyRollAllPotions": {"placeholders": {"n": {"type": "int"}, "total": {"type": "String"}}},
-  "@passiveRerollMaxNow": {"placeholders": {"max": {"type": "String"}}},
+  "@igLegacyRollAllPotions": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "@passiveRerollMaxNow": {
+    "placeholders": {
+      "max": {
+        "type": "String"
+      }
+    }
+  },
   "duelOfferExpired": "The opponents changed — tap Start Battle again",
   "duelTeamInvalid": "Pick your team again (adults only, 3 bugs)",
   "trainAlreadyDone": "Already finished",
   "trainMaxAction": "Max",
   "trainMaxSnack": "Trained +{n} levels!",
-  "@trainMaxSnack": {"placeholders": {"n": {"type": "int"}}},
+  "@trainMaxSnack": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
   "igLegacyRollAll": "All {n}",
-  "@igLegacyRollAll": {"placeholders": {"n": {"type": "int"}}},
+  "@igLegacyRollAll": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
   "breedingExpandedSnack": "Pairing slot added",
   "maxShort": "MAX",
   "whatsNew22Rarity": "Rarity is now rolled per bug — the same species can be Common to Legendary. Your existing bugs got a new rarity and passive type too",
@@ -4483,7 +7441,13 @@
   "whatsNew22Power": "Duel species multipliers were rebalanced evenly, so most power numbers go up (win odds math is unchanged)",
   "igLegacyRollDone": "Stat quality improved",
   "igLegacyPotionHint": "Each potion adds +{n} to every stat after the roll (up to 100) — values never go down",
-  "@igLegacyPotionHint": {"placeholders": {"n": {"type": "String"}}},
+  "@igLegacyPotionHint": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
   "fairyErrBoxMax": "The fairy box is already at its maximum size",
   "fairyErrNestBusy": "There's already an egg in the nest",
   "fairyErrNoEgg": "You have no fairy eggs",
@@ -4515,11 +7479,29 @@
   "gachaDrawMany": "Draw {count} · {n} jelly",
   "gachaDrawManyTitle": "Draw {count}",
   "gachaDrawManyConfirm": "Spend {n} jelly to draw {count} eggs at once?\nRates and pity are the same as drawing one at a time.",
-  "@gachaDrawManyConfirm": {"placeholders": {"n": {"type": "String"}, "count": {"type": "String"}}},
+  "@gachaDrawManyConfirm": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      },
+      "count": {
+        "type": "String"
+      }
+    }
+  },
   "gachaStorageNeed": "You need {count} free storage slots (you have {free})",
   "rarityAutoTitle": "Auto rarity up",
   "rarityAutoBody": "Gathers bugs of the same species and rarity to raise rarity.\nRarity ups: {ups} · bugs used as material: {fodder}",
-  "@rarityAutoBody": {"placeholders": {"ups": {"type": "String"}, "fodder": {"type": "String"}}},
+  "@rarityAutoBody": {
+    "placeholders": {
+      "ups": {
+        "type": "String"
+      },
+      "fodder": {
+        "type": "String"
+      }
+    }
+  },
   "rarityAutoSafe": "Trained, locked, equipped, graded-up and gacha bugs are never used as material. Your most valued bugs go up first.",
   "rarityAutoRun": "Raise now",
   "rarityAutoShowList": "Show eligible bugs",
@@ -4543,7 +7525,7 @@
       }
     }
   },
-  "guideRarityEffect": "Higher rarity means a bigger hunting contribution as a pet ({hunt}) and higher HP/ATK/DEF in duels and contests (Legendary {duel}). It is also worth more essence, and takes longer to hatch and breed.",
+  "guideRarityEffect": "Higher rarity means a bigger hunting contribution as a pet ({hunt}) and higher HP/ATK/DEF in duels and contests (Legendary {duel}). As feeding material it also adds more grade nutrients, and it takes longer to hatch and breed.",
   "@guideRarityEffect": {
     "placeholders": {
       "hunt": {
@@ -4563,6 +7545,20 @@
     }
   },
   "guidePotionCost": "Same-species essence needed to grade up: {costs} (from Common→Uncommon onward). Add up to {max} growth potions per grade up — each adds +{bonus} points to the new stat quality roll (max 100).",
+  "guidePotionCostFeed": "Grade nutrients needed to grade up: {costs} (from Common→Uncommon onward; leftover essence is used first). Add up to {max} growth potions per grade up — each adds +{bonus} points to the new stat quality roll (max 100).",
+  "@guidePotionCostFeed": {
+    "placeholders": {
+      "costs": {
+        "type": "String"
+      },
+      "max": {
+        "type": "String"
+      },
+      "bonus": {
+        "type": "String"
+      }
+    }
+  },
   "@guidePotionCost": {
     "placeholders": {
       "costs": {
@@ -4865,18 +7861,57 @@
   "researchSamples": "Research Samples",
   "researchSlotEmpty": "Empty",
   "researchSlotOpensAt": "Opens at {tier}",
-  "@researchSlotOpensAt": {"placeholders": {"tier": {"type": "String"}}},
+  "@researchSlotOpensAt": {
+    "placeholders": {
+      "tier": {
+        "type": "String"
+      }
+    }
+  },
   "researchSlotBuy": "Unlock",
   "researchSlotBuyTitle": "Unlock research slot",
   "researchSlotBuyBody": "Permanently unlock one more research slot with jelly.",
   "researchSlotsTitle": "Research slots {n}/{max}",
-  "@researchSlotsTitle": {"placeholders": {"n": {"type": "String"}, "max": {"type": "String"}}},
+  "@researchSlotsTitle": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      },
+      "max": {
+        "type": "String"
+      }
+    }
+  },
   "researchSlotItem": "{name} Lv{lv}",
-  "@researchSlotItem": {"placeholders": {"name": {"type": "String"}, "lv": {"type": "String"}}},
+  "@researchSlotItem": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "lv": {
+        "type": "String"
+      }
+    }
+  },
   "researchTimeCut": "Research time −{pct}%",
-  "@researchTimeCut": {"placeholders": {"pct": {"type": "String"}}},
+  "@researchTimeCut": {
+    "placeholders": {
+      "pct": {
+        "type": "String"
+      }
+    }
+  },
   "researchLevel": "Lv {lv}/{max}",
-  "@researchLevel": {"placeholders": {"lv": {"type": "String"}, "max": {"type": "String"}}},
+  "@researchLevel": {
+    "placeholders": {
+      "lv": {
+        "type": "String"
+      },
+      "max": {
+        "type": "String"
+      }
+    }
+  },
   "researchMaxed": "Max level",
   "researchStart": "Research",
   "researchClaim": "Complete",
@@ -4884,13 +7919,46 @@
   "researchRunning": "In progress",
   "researchInstantTitle": "Finish research now",
   "researchInstantBody": "Finish {name} Lv{lv} now?",
-  "@researchInstantBody": {"placeholders": {"name": {"type": "String"}, "lv": {"type": "String"}}},
+  "@researchInstantBody": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "lv": {
+        "type": "String"
+      }
+    }
+  },
   "researchLockedReq": "Requires {name} Lv{lv}",
-  "@researchLockedReq": {"placeholders": {"name": {"type": "String"}, "lv": {"type": "String"}}},
+  "@researchLockedReq": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "lv": {
+        "type": "String"
+      }
+    }
+  },
   "researchDoneToast": "{name} Lv{lv} research complete!",
-  "@researchDoneToast": {"placeholders": {"name": {"type": "String"}, "lv": {"type": "String"}}},
+  "@researchDoneToast": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "lv": {
+        "type": "String"
+      }
+    }
+  },
   "researchCostMaterials": "Materials {n} each",
-  "@researchCostMaterials": {"placeholders": {"n": {"type": "String"}}},
+  "@researchCostMaterials": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
   "researchHowToGet": "Research Samples drop from elites and bosses. Gold and material costs are based on the highest hunting zone you have reached.",
   "researchUnitPp": "pp",
   "researchErrMaxLevel": "Already at max level",
@@ -4907,9 +7975,24 @@
   "researchPassHintGo": "Shop",
   "passExpireTitle": "Your pass is ending soon",
   "passExpireBody": "{names} — {days} days left. You can extend it in the Shop",
-  "@passExpireBody": {"placeholders": {"names": {"type": "String"}, "days": {"type": "String"}}},
+  "@passExpireBody": {
+    "placeholders": {
+      "names": {
+        "type": "String"
+      },
+      "days": {
+        "type": "String"
+      }
+    }
+  },
   "passExpireToday": "{names} — ends today. You can extend it in the Shop",
-  "@passExpireToday": {"placeholders": {"names": {"type": "String"}}},
+  "@passExpireToday": {
+    "placeholders": {
+      "names": {
+        "type": "String"
+      }
+    }
+  },
   "passExpireGo": "Go to Shop",
   "notifPassTitle": "Your pass is ending soon",
   "notifPassBody": "Extend it in the Shop to keep your benefits",
@@ -4936,16 +8019,488 @@
   "researchFxHuntCritDmg": "Hunt crit damage",
   "researchFxHuntRegen": "Hunt HP regen",
   "researchFxHuntEvade": "Hunt evasion",
-  "researchFxHuntExp": "EXP gain",
+  "researchFxHuntExp": "EXP gain (idle too)",
   "researchFxSkillCooldown": "Skill cooldown",
   "researchFxForgeTime": "Forge upgrade & transcend time",
   "researchFxStarTime": "Star upgrade time",
   "researchFxPolishCost": "Refine cost",
   "researchFxTraitChance": "New bloodline trait chance",
-  "researchFxPotionChance": "Growth potion drop chance",
+  "researchFxPotionChance": "Growth potion drop rate · daily cap +1 per 10 levels",
   "researchFxSalvageMat": "Salvage & release materials",
   "researchFxExchangeGain": "Exchange yield",
   "researchFxGiftGold": "Gift & daily reward gold, materials",
   "researchFxDuelCrit": "Duel crit chance",
-  "researchFxDuelGrit": "Clutch tap threshold"
+  "researchFxDuelGrit": "Easier tap counter (threshold)",
+  "researchFxKillHeal": "Kill heal",
+  "researchFxPetShare": "Equipped pet bonus (atk·HP)",
+  "abyssSporesGot": "Abyss spores +{n}",
+  "@abyssSporesGot": {"placeholders":{"n":{"type":"String"}}},
+  "researchTabAbyss": "Abyss",
+  "abyssSpores": "Abyss spores",
+  "abyssLabInfo": "Abyss spores drop from floor bosses you clear for the first time each week, plus a bonus each time you first reach a 10th floor. Abyss research only works inside the Abyss.",
+  "abyssLabLocked": "Defeat the Extreme final boss to open the Abyss and research here.",
+  "abyssLabSlotTitle": "Abyss research slot",
+  "abyssLabSlotEmpty": "Empty — pick a research below",
+  "abyssLabNoSpores": "Not enough abyss spores",
+  "researchFxAbyssShortcut": "Weekly start floor (share of last week's best, in 10s)",
+  "researchFxAbyssFastFloor": "Kills needed for an Abyss boss",
+  "researchFxMutationTame": "Weekly mutation drawbacks",
+  "researchFxCrystalBonus": "Abyss crystal gain",
+  "researchFxSporeBonus": "Abyss spore gain",
+  "researchFxAbyssIdleGold": "Abyss idle gold",
+  "upgradeRecommend": "Top pick",
+  "upgradeFxHits": "Kill in {from} → {to} hits",
+  "upgradeFxBoss": "Boss ~{from} → {to}",
+  "upgradeFxBite": "Hit taken {from}% → {to}% HP",
+  "upgradeFxGold": "Gold income +{from}% → +{to}%",
+  "upgradeFxXp": "XP +{from}% → +{to}%",
+  "upgradeFxBugs": "Bug finds +{from}% → +{to}%",
+  "upgradeFxMats": "Materials +{from}% → +{to}%",
+  "upgradeFxSec": "{n}s",
+  "upgradeFxMin": "{n}m",
+  "upgradeAwakenNext": "Awaken Lv.{level}",
+  "upgradeAwakenToast": "Awakened! {name} +{n} bonus levels",
+  "upgradeLuckyToast": "Great success! +{n} bonus level",
+  "upgradeAwakenInfo": "Awaken: reaching Lv.{levels} grants bonus levels.",
+  "bossLostRecommend": "Try upgrading: {name}",
+  "@upgradeFxHits": {
+    "placeholders": {
+      "from": {
+        "type": "String"
+      },
+      "to": {
+        "type": "String"
+      }
+    }
+  },
+  "@upgradeFxBoss": {
+    "placeholders": {
+      "from": {
+        "type": "String"
+      },
+      "to": {
+        "type": "String"
+      }
+    }
+  },
+  "@upgradeFxBite": {
+    "placeholders": {
+      "from": {
+        "type": "String"
+      },
+      "to": {
+        "type": "String"
+      }
+    }
+  },
+  "@upgradeFxGold": {
+    "placeholders": {
+      "from": {
+        "type": "String"
+      },
+      "to": {
+        "type": "String"
+      }
+    }
+  },
+  "@upgradeFxXp": {
+    "placeholders": {
+      "from": {
+        "type": "String"
+      },
+      "to": {
+        "type": "String"
+      }
+    }
+  },
+  "@upgradeFxBugs": {
+    "placeholders": {
+      "from": {
+        "type": "String"
+      },
+      "to": {
+        "type": "String"
+      }
+    }
+  },
+  "@upgradeFxMats": {
+    "placeholders": {
+      "from": {
+        "type": "String"
+      },
+      "to": {
+        "type": "String"
+      }
+    }
+  },
+  "@upgradeFxSec": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
+  "@upgradeFxMin": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
+  "@upgradeAwakenNext": {
+    "placeholders": {
+      "level": {
+        "type": "String"
+      }
+    }
+  },
+  "@upgradeAwakenToast": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "n": {
+        "type": "String"
+      }
+    }
+  },
+  "@upgradeLuckyToast": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
+  "@upgradeAwakenInfo": {
+    "placeholders": {
+      "levels": {
+        "type": "String"
+      }
+    }
+  },
+  "@bossLostRecommend": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "upgradeCapBreak": "Break Limit",
+  "upgradeCapNeed": "Not enough Abyss Crystals ({have}/{need}) — earned every 10 Abyss floors",
+  "@upgradeCapNeed": {
+    "placeholders": {
+      "have": {
+        "type": "String"
+      },
+      "need": {
+        "type": "String"
+      }
+    }
+  },
+  "upgradeCapOpened": "{name} cap +{n} levels!",
+  "@upgradeCapOpened": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "n": {
+        "type": "String"
+      }
+    }
+  },
+  "abyssCrystalsGot": "Abyss Crystals +{n}",
+  "@abyssCrystalsGot": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
+  "abyssMutationTitle": "This week in the Abyss: {name}",
+  "@abyssMutationTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "abyssImprintTitle": "Abyss Imprint",
+  "abyssImprintBody": "Spend crystals from every 10 Abyss floors on permanent stats. Maxed upgrades can also break their limit with crystals.",
+  "abyssCrystalsHave": "💠{n} owned",
+  "@abyssCrystalsHave": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
+  "abyssImprintLevel": "Lv.{level} (+{pct}%)",
+  "@abyssImprintLevel": {
+    "placeholders": {
+      "level": {
+        "type": "String"
+      },
+      "pct": {
+        "type": "String"
+      }
+    }
+  },
+  "weekendEventBar": "🎉 {name} · {desc} · {left} left",
+  "@weekendEventBar": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "desc": {
+        "type": "String"
+      },
+      "left": {
+        "type": "String"
+      }
+    }
+  },
+  "weekendHours": "{n}h",
+  "@weekendHours": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
+  "achievementsTitle": "Achievements · Titles",
+  "achievementsBody": "Tap a completed achievement to wear its title. Others see it on your profile.",
+  "achievementsWearing": "Wearing",
+  "sizeRankButton": "Size ranking",
+  "sizeRankTitle": "{name} size ranking",
+  "@sizeRankTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "sizeRankEmpty": "No records yet. Catch the biggest one and take first place!",
+  "sizeRankOffline": "Could not load the ranking. Check your connection.",
+  "sizeRankMine": "You: #{rank} · {size}mm",
+  "@sizeRankMine": {
+    "placeholders": {
+      "rank": {
+        "type": "String"
+      },
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "practiceDuel": "Practice duel",
+  "practiceOffline": "Practice duels need a server connection.",
+  "practiceCooldown": "Please wait a moment before the next practice duel.",
+  "practiceFailed": "Couldn't load this player's defense team.",
+  "kotkTitle": "King of Kings",
+  "kotkRulesTitle": "Hard mode rules",
+  "kotkEntryTitle": "My entry",
+  "leaderboardLoadFail": "Could not load the rankings. Please try again in a moment.",
+  "kotkMinNote": "Jelly, badge and crown are given only in weeks with {n}+ entrants (fewer: materials only).",
+  "@kotkMinNote": {"placeholders":{"n":{"type":"String"}}},
+  "kotkPendingNote": "Results are confirmed Monday 09:00 (KST) — specimens and rewards apply then.",
+  "kotkMinResult": "Fewer than {n} entered this week, so only materials were given.",
+  "@kotkMinResult": {"placeholders":{"n":{"type":"String"}}},
+  "notifKotkTitle": "King of Kings closes soon",
+  "notifKotkBody": "You haven't entered this week's King of Kings. Entries close tomorrow 09:00 (KST).",
+  "weeklyTitle": "Last week",
+  "weeklySubtitle": "A new week has begun!",
+  "weeklyLevels": "Upgraded {n} levels",
+  "@weeklyLevels": {"placeholders":{"n":{"type":"String"}}},
+  "weeklyLucky": "{n} lucky upgrades",
+  "@weeklyLucky": {"placeholders":{"n":{"type":"String"}}},
+  "weeklyAwaken": "{n} awakenings",
+  "@weeklyAwaken": {"placeholders":{"n":{"type":"String"}}},
+  "weeklyAbyss": "Abyss best: floor {n}",
+  "@weeklyAbyss": {"placeholders":{"n":{"type":"String"}}},
+  "kotkRewardNone": "No reward",
+  "kotkWithdrawn": "Entry withdrawn",
+  "kotkSpecimenOpen": "Open specimen box",
+  "kotkHallIn": "You made the Hall of Fame!",
+  "kotkPetWarn": "This bug is equipped as a pet — if it loses, it is removed from your pets too.",
+  "beginnerHatchTag": "Newcomer bonus: {left} left · max {min} min",
+  "@beginnerHatchTag": {"placeholders":{"left":{"type":"String"},"min":{"type":"String"}}},
+  "badgeKotk": "King of Kings R{round}",
+  "@badgeKotk": {"placeholders":{"round":{"type":"String"}}},
+  "kotkRound": "Round {n}",
+  "@kotkRound": {"placeholders":{"n":{"type":"String"}}},
+  "kotkPreparing": "Coming soon",
+  "kotkPreparingBody": "The first King of Kings opens for entries on {m1}/{d1} (Mon) 09:00 (KST), and results come out on {m2}/{d2} (Sun) 09:00 (KST).",
+  "@kotkPreparingBody": {"placeholders":{"m1":{"type":"String"},"d1":{"type":"String"},"m2":{"type":"String"},"d2":{"type":"String"}}},
+  "kotkRewardsTitle": "Rewards",
+  "kotkRewardJelly": "Jelly {n}",
+  "@kotkRewardJelly": {"placeholders":{"n":{"type":"String"}}},
+  "kotkRewardPotion": "Growth potion {n}",
+  "@kotkRewardPotion": {"placeholders":{"n":{"type":"String"}}},
+  "kotkRewardFossil": "Fossil {n}",
+  "@kotkRewardFossil": {"placeholders":{"n":{"type":"String"}}},
+  "kotkRewardElement": "Element stone {n}",
+  "@kotkRewardElement": {"placeholders":{"n":{"type":"String"}}},
+  "kotkRewardTemper": "Temperament stone {n}",
+  "@kotkRewardTemper": {"placeholders":{"n":{"type":"String"}}},
+  "kotkRewardChamp": "Golden crown on the winning bug · profile badge",
+  "kotkResultTitle": "King of Kings result",
+  "kotkResultNone": "Your bug did not make the top-32 bracket. It is unchanged.",
+  "kotkResultRetired": "The defeated bug became a specimen and went to the Specimen Case.",
+  "kotkResultChamp": "Your winning bug now wears a golden crown!",
+  "kotkPreparingErr": "Not open yet. You can enter from the first round.",
+  "kotkChampMark": "King of Kings",
+  "kotkRules": "Enter one bug per week. When entries close Sunday 09:00 (KST), the top 32 by power fight a tournament (each match: first to 2 wins).\nEvery bug except the champion (runner-up included) becomes a specimen: it can never duel, enter events, be a pet, breed or be fed again — losers are spent (it takes no storage slot). Bugs that miss the bracket are unchanged.\nResults appear Sunday 09:00 (KST) and are confirmed after review on Monday 09:00 (specimens and rewards).\nThe top 16 enter the Hall of Fame.",
+  "kotkOpen": "Entries open · close Sunday 09:00 (KST)",
+  "kotkClosedNow": "This week's entries are closed",
+  "kotkCount": "{n} entered · top {max} by power make the bracket",
+  "@kotkCount": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      },
+      "max": {
+        "type": "String"
+      }
+    }
+  },
+  "kotkMine": "Your entry: {name}",
+  "@kotkMine": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "kotkEnter": "Enter",
+  "kotkChange": "Change bug",
+  "kotkWithdraw": "Withdraw",
+  "kotkPickTitle": "Choose your bug",
+  "kotkConfirmTitle": "Enter for real?",
+  "kotkConfirmBody": "Entering with: {name}\nUnless it wins the whole tournament (runner-up included), it becomes a specimen and can never duel, enter events, be a pet, breed or be fed again. This cannot be undone.\nIf it does not make the top-32 bracket, nothing happens.",
+  "@kotkConfirmBody": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "kotkConfirmGo": "Enter",
+  "kotkEntered": "Entered the King of Kings!",
+  "kotkFailed": "Couldn't enter. Please try again later.",
+  "kotkNoAdult": "You have no adult bug that can enter.",
+  "kotkRetiredBug": "Specimens can no longer be used.",
+  "kotkThisWeek": "This week's results",
+  "kotkLastWeek": "Last week's results",
+  "kotkBracket": "View bracket",
+  "kotkBye": "Bye",
+  "kotkMyPlace": "Your result: {place}",
+  "@kotkMyPlace": {
+    "placeholders": {
+      "place": {
+        "type": "String"
+      }
+    }
+  },
+  "kotkPlace1": "Champion",
+  "kotkPlace2": "Runner-up",
+  "kotkPlaceN": "Top {n}",
+  "@kotkPlaceN": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
+  "kotkFinal": "Final",
+  "kotkHall": "Hall of Fame (top 16)",
+  "kotkHallEmpty": "No specimens on display yet.",
+  "kotkOffline": "Couldn't load the King of Kings. Check your connection.",
+  "kotkResultToast": "King of Kings result: {place}",
+  "@kotkResultToast": {
+    "placeholders": {
+      "place": {
+        "type": "String"
+      }
+    }
+  },
+  "specimenBoxTitle": "Specimen Case",
+  "specimenBoxBody": "Bugs that lost in the King of Kings rest here as specimens. They take no storage slot and can no longer be used.",
+  "specimenBoxEmpty": "No specimens yet.",
+  "firstFreeInstant": "First one free",
+  "growHowTitle": "How to get stronger",
+  "growHowBody": "This boss is hard to beat right now (about {time}). These help a lot:",
+  "@growHowBody": {"placeholders": {"time": {"type": "String"}}},
+  "growHowBuff": "Turn on buffs — big gold & attack boost",
+  "growHowMail": "Mailbox — claim gifts & daily rewards",
+  "growHowUpgrade": "Recommended upgrade: {stat}",
+  "@growHowUpgrade": {"placeholders": {"stat": {"type": "String"}}},
+  "growHowFight": "Fight anyway",
+  "giftArrivedToast": "🎁 A surprise gift arrived! Claim it in the mailbox within 3 hours",
+  "giftExpiringToast": "🎁 Your surprise gift expires in {min} min — claim it in the mailbox",
+  "@giftExpiringToast": {"placeholders": {"min": {"type": "int"}}},
+  "tipPetTitle": "Equip a pet",
+  "tipPetBody": "Equip bugs from your storage as pets — they fight with you and raise your attack and HP. Hatch eggs in the incubator.",
+  "tipGearTitle": "Craft equipment",
+  "tipGearBody": "Use fossils from hunting to forge gear in the Equipment tab — it permanently boosts attack and HP.",
+  "tipGo": "Go now",
+  "tourUpgrades": "Upgrade your stats with gold here. Buy the \"Top pick\" row first to grow fastest. Hold to buy repeatedly.",
+  "tourStage": "Your current zone. Defeat 100 monsters to challenge the boss — beat it to open the next zone.",
+  "tourBuffs": "Buffs. Turn them on for a big gold and attack boost — they are free, so keep them on.",
+  "tourMail": "Mailbox. Lunch and dinner daily rewards and surprise gifts arrive here. Gifts expire after 3 hours.",
+  "tourMission": "Missions. Tap to claim the reward when complete.",
+  "tourStorage": "Storage — your caught bugs gather here. Hatch eggs and equip bugs as pets to fight alongside you.",
+  "tourBattle": "Duel — battle other players with three bugs you raised.",
+  "tourShop": "Shop — jelly, packs and bug egg draws.",
+  "tourSwitch": "Tap to switch to the Equipment, Skills, Fairy and Research tabs.",
+  "tourNext": "Next",
+  "tourDone": "Start",
+  "tourSkip": "Skip",
+  "missionGuideHunt": "Your character hunts on its own. Tap the screen to hunt faster.",
+  "missionGuideUpgrade": "Buy upgrades here to fill it. Start with the \"Recommended\" row.",
+  "missionGuideForge": "Tap the anvil to forge gear with 1 fossil. Each forge counts.",
+  "missionGuideBoss": "Defeat 100 monsters to challenge the boss here.",
+  "upgradeFxSurvive": "Survive {from} monster hits → {to}",
+  "@upgradeFxSurvive": {"description": "체력·맷집 강화 효과 — 일반 몬스터 한 대를 몇 번 맞아도 버티나(늘어나는 숫자로)", "placeholders": {"from": {"type": "String"}, "to": {"type": "String"}}},
+  "tabTourEquipScene": "A little catching game — your character chases wild bugs. Tap when the chance comes to catch one.",
+  "tabTourEquipStats": "Your current stats including gear. They change right away when you swap gear.",
+  "tabTourEquipGrid": "Gear slots. Tap a slot to see and swap the equipped item.",
+  "tabTourEquipAnvil": "Tap the anvil to forge an item with 1 fossil. New items stack above — tap to equip or sell.",
+  "tabTourEquipGrade": "Raise the workshop grade to forge higher-grade gear. Costs gold and time.",
+  "tabTourEquipFilter": "Filter — during auto forge, keep only the stats/grades you want and auto-sell the rest.",
+  "tabTourEquipRush": "Rush — spend jelly to forge faster for a while.",
+  "tabTourEquipAuto": "Auto — forges by itself while you have fossils.",
+  "tabTourStorageDex": "Collection — every bug type you have caught. Collect types for rewards.",
+  "tabTourStorageMats": "Your materials — used for upgrades, training and breakthroughs.",
+  "tabTourStorageCap": "Storage slots. When full, new bugs stop coming in — clean up or expand with jelly.",
+  "tabTourStoragePets": "Equipped pets. Bugs equipped as pets hunt with you and raise attack and HP.",
+  "tabTourStorageTools": "Cleanup tools — \"Rarity filter\" turns low bugs into materials on arrival, \"Auto dismantle\" cleans up at once.",
+  "tabTourStorageGrid": "Your bugs. Tap one to equip as a pet, feed same-species bugs (raise rarity) or dismantle.",
+  "tabTourStorageBreed": "Breeding — pair an adult male and female of the same species for an egg. It inherits traits.",
+  "tabTourStorageHatch": "Incubator — put eggs in to hatch. Tap to collect when done.",
+  "tabTourBattleTicket": "Duel tickets — 1 per match. They refill over time, with a few free refills a day.",
+  "tabTourBattleSquad": "Your 3-bug squad. Put adults here — they fight in order, matches 1·2·3.",
+  "tabTourBattleStart": "Start — pick an opponent in your league and duel. Wins give points.",
+  "tabTourBattleRecovery": "Recovery room — injured bugs rest here (jelly heals instantly).",
+  "tabTourBattleTraining": "Training — spend training points (earned as bugs grow) on attack, defense, HP and more.",
+  "tabTourBattleBoard": "League board — resets every Monday. Top 20% move up, bottom 20% move down.",
+  "tabTourShopTop": "Featured products. Your first purchase of each jelly pack gives double.",
+  "tabTourShopGacha": "Egg draw — spend jelly on bug eggs. Better grades than the wild, with a pity counter.",
+  "tabTourShopExchange": "Exchange — trade jelly for gold or materials.",
+  "tabTourSkillGacha": "Skill draw — get skill shards. One free draw a day.",
+  "tabTourSkillSweep": "Sweep — instantly get shards from bosses you have beaten. 3 free a day.",
+  "tabTourSkillGrade": "Grade up — turn 10 spare shards into 1 wild shard of the next grade.",
+  "tabTourSkillShards": "Your skill shards — used to unlock and level skills.",
+  "tabTourSkillSlots": "Equip slots — 2 at first, more as you reach new difficulties.",
+  "tabTourSkillList": "Skill list — tap to unlock, level up and equip. Equipped skills fire automatically while hunting.",
+  "tabTourFairyCompanion": "Your companion fairy. Its effect applies while hunting.",
+  "tabTourFairyNest": "Nest — put fairy eggs in to hatch.",
+  "tabTourFairyGacha": "Fairy egg draw — spend jelly on fairy eggs.",
+  "tabTourFairyDex": "Fairy collection — types you have collected and rewards.",
+  "tabTourFairyFeed": "Feed — feed same-type fairies to raise the grade.",
+  "tabTourFairyRelease": "Dismantle — turn unneeded fairies into fairy dust, used to level fairies.",
+  "tabTourResearchCurrency": "Research costs. Research samples come from bosses and elites.",
+  "tabTourResearchSlots": "Research slots. Started research finishes over time — tap to collect.",
+  "tabTourResearchTabs": "Research branches — hunting, growth, duel, gear, economy. Tap to switch.",
+  "tabTourResearchTree": "Research list — tap a card to start or level a research. Research is permanent.",
+  "tabTourResearchAbyss": "Abyss — research that opens after clearing Extreme, paid with abyss spores."
 }

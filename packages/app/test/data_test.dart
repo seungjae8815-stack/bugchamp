@@ -278,6 +278,21 @@ void main() {
     test('마지막 마일스톤은 도감 완성(전 종)이다', () {
       expect(cfg.discoverMilestones.last.count, speciesCount);
       expect(cfg.conquerMilestones.last.count, speciesCount);
+      expect(cfg.variantMilestones.last.count, speciesCount);
+    });
+
+    test('도감 젤리는 축마다 전부 채웠을 때만 10(2026-11-12 사장님 확정)', () {
+      for (final list in [
+        cfg.discoverMilestones,
+        cfg.conquerMilestones,
+        cfg.bossMilestones,
+        cfg.variantMilestones,
+      ]) {
+        expect(list.last.jelly, 10, reason: list.last.id);
+        for (final m in list.take(list.length - 1)) {
+          expect(m.jelly, 0, reason: m.id);
+        }
+      }
     });
 
     test('마일스톤 보상이 뒤로 갈수록 커진다', () {
@@ -493,9 +508,20 @@ void main() {
       expect(ids, contains(d.requires?.id ?? d.id), reason: d.id);
     }
     expect(
-      {for (final d in cfg.defs) d.effect}.length,
-      ResearchEffect.values.length,
+      {for (final d in cfg.defs) d.effect},
+      // 재생·분해 기술은 옛 키 호환용, 심연 6종은 abyssLab 전용 — 일반 목록 밖.
+      ResearchEffect.values.toSet().difference({
+        ResearchEffect.huntRegen,
+        ResearchEffect.salvageMat,
+        ResearchEffect.abyssShortcut,
+        ResearchEffect.abyssFastFloor,
+        ResearchEffect.mutationTame,
+        ResearchEffect.crystalBonus,
+        ResearchEffect.sporeBonus,
+        ResearchEffect.abyssIdleGold,
+      }),
     );
+    expect(cfg.abyssLab.defs, hasLength(6));
   });
 
   group('장비·공방·스킬 (신규)', () {

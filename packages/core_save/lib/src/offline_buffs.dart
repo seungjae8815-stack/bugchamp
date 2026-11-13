@@ -230,7 +230,10 @@ OfflineGain expectedOfflineGain(
     bugs = room;
   }
   if (grade != null) {
-    potions = math.min(potions, potionDropRoom(save, grade, now).toDouble());
+    potions = math.min(
+      potions,
+      potionDropRoom(save, grade, now, research).toDouble(),
+    );
   }
   return OfflineGain(
     gold: (plan.gold * goldMult).round(),
@@ -355,7 +358,13 @@ IdleRareDrops rollIdleRareDrops(
   }
   var potions = 0;
   if (grade != null && potionRolls > 0) {
-    final po = grantDropPotions(out, grade, potionRolls, now);
+    final po = grantDropPotions(
+      out,
+      grade,
+      potionRolls,
+      now,
+      research: research,
+    );
     out = po.save;
     potions = po.got;
   }

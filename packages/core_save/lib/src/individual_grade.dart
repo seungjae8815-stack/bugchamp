@@ -86,6 +86,31 @@ GradeOp convertToEssence(
 /// 곤충 [bugId] 를 한 등급 올린다 — 그 종 정수 [IndividualGradeConfig.upgradeCost] 개 + 물약 [potions] 개.
 /// 롤은 칸마다 다시 굴려 큰 쪽(내려가지 않는다), 물약 1개마다 새 롤 +[IndividualGradeConfig.potionRollBonus]점.
 /// 합성 단계(`synthUps`)도 1 올린다 — 분해 젤리는 태생 등급(`bornPotential`)으로만 준다(무한 젤리 차단).
+/// [b] 가 [cost] 만큼의 정수 비용을 낼 수 있으면 낸 뒤의 (종 정수 통, 이 곤충의 등급 양분) — 못 내면 null.
+/// 정수를 먹이기에 흡수(2026-11-09 사장님 확정): **옛 정수(그 종 통)를 먼저**, 모자라면 곤충의 등급 양분(`gw`)에서 낸다.
+/// 새 정수는 생기지 않는다(정수로 바꾸기 버튼이 없어졌다) — 남은 옛 정수는 그대로 1:1 로 쓴다.
+({Map<String, int> essence, int gradeWorth})? payGradeCost(
+  SaveGame s,
+  IndividualBug b,
+  int cost,
+) {
+  final legacy = s.essence[b.speciesId] ?? 0;
+  if (legacy + b.gradeWorth < cost) return null;
+  final fromLegacy = legacy < cost ? legacy : cost;
+  final bag = Map<String, int>.from(s.essence);
+  final left = legacy - fromLegacy;
+  if (left > 0) {
+    bag[b.speciesId] = left;
+  } else {
+    bag.remove(b.speciesId);
+  }
+  return (essence: bag, gradeWorth: b.gradeWorth - (cost - fromLegacy));
+}
+
+/// [b] 가 정수 비용에 쓸 수 있는 양 — 옛 정수(그 종 통) + 등급 양분. 화면의 "보유" 표시와 [payGradeCost] 가 같은 값을 본다.
+int gradeFundsOf(SaveGame s, IndividualBug b) =>
+    (s.essence[b.speciesId] ?? 0) + b.gradeWorth;
+
 GradeOp gradeUp(
   SaveGame s,
   String bugId,
@@ -104,8 +129,8 @@ GradeOp gradeUp(
   }
   if (potions > s.growthPotions) return const GradeOp.fail('no_potion');
   final cost = cfg.upgradeCost(b.potential);
-  final have = s.essence[b.speciesId] ?? 0;
-  if (have < cost) return const GradeOp.fail('no_essence');
+  final pay = payGradeCost(s, b, cost);
+  if (pay == null) return const GradeOp.fail('no_essence');
   final before = b.statRolls;
   final after = cfg.rollUp(before, rng, potions);
   // 업데이트 전 곤충은 처음 올릴 때 옛 합성 단계를 따로 적는다 — 옛 단계(3마리분)와 새 단계(들인 정수)의
@@ -115,19 +140,13 @@ GradeOp gradeUp(
     synthUps: b.synthUps + 1,
     rolls: after,
     legacySynthUps: !b.newGen && b.legacySynthUps == null ? b.synthUps : null,
+    gradeWorth: pay.gradeWorth,
   );
-  final bag = Map<String, int>.from(s.essence);
-  final left = have - cost;
-  if (left > 0) {
-    bag[b.speciesId] = left;
-  } else {
-    bag.remove(b.speciesId);
-  }
   final bugs = [...s.bugs]..[i] = up;
   return GradeOp.ok(
     s.copyWith(
       bugs: bugs,
-      essence: bag,
+      essence: pay.essence,
       growthPotions: s.growthPotions - potions,
     ),
     extra: {'before': before, 'after': after, 'cost': cost},
@@ -272,7 +291,7 @@ enum PotionSource { elite, boss, abyssMilestone, mission }
   final capped =
       src == PotionSource.elite || (src == PotionSource.boss && !firstKill);
   if (capped && got > 0 && now != null && cfg.potionDropDaily > 0) {
-    return grantDropPotions(s, cfg, got, now);
+    return grantDropPotions(s, cfg, got, now, research: research);
   }
   return (save: grantPotions(s, got), got: got);
 }
@@ -282,22 +301,35 @@ enum PotionSource { elite, boss, abyssMilestone, mission }
 double potionDropChance(double base, ResearchEffects research) =>
     researchScaledChance(base, research, ResearchEffect.potionChance);
 
-/// 확률 드롭 물약 [count]개를 **서버 날짜(UTC) 하루 `potionDropDaily` 개** 한도 안에서 넣는다
+/// 확률 드롭 물약의 하루 한도 = `potionDropDaily` + 약초학 보너스(2026-11-12 사장님 확정 — 약초학 효과 10%(=10레벨)마다
+/// +1, 최대 +3). 확률만 올리던 시절 많이 사냥하는 유저는 한도에 먼저 닿아 약초학이 0 이었다. 앱·방치·서버 공용.
+int potionDropDailyFor(
+  IndividualGradeConfig cfg, [
+  ResearchEffects research = ResearchEffects.none,
+]) {
+  if (cfg.potionDropDaily <= 0) return cfg.potionDropDaily;
+  final v = research.of(ResearchEffect.potionChance);
+  return cfg.potionDropDaily + math.min(3, (v * 10 + 1e-9).floor());
+}
+
+/// 확률 드롭 물약 [count]개를 **서버 날짜(UTC) 하루 [potionDropDailyFor] 개** 한도 안에서 넣는다
 /// (정예·보스 재처치·방치 정예 공용 — 서버 업로드 검사 `psR` 과 같은 한도). 받은 수를 돌려준다.
 ({SaveGame save, int got}) grantDropPotions(
   SaveGame s,
   IndividualGradeConfig cfg,
   int count,
-  DateTime now,
-) {
+  DateTime now, {
+  ResearchEffects research = ResearchEffects.none,
+}) {
   if (count <= 0) return (save: s, got: 0);
   if (cfg.potionDropDaily <= 0) {
     return (save: grantPotions(s, count), got: count);
   }
+  final cap = potionDropDailyFor(cfg, research);
   final today = dailyDateKey(now.toUtc());
   final used = potionDropsOn(s, today);
-  if (used >= cfg.potionDropDaily) return (save: s, got: 0);
-  final got = math.min(count, cfg.potionDropDaily - used);
+  if (used >= cap) return (save: s, got: 0);
+  final got = math.min(count, cap - used);
   s = s.copyWith(
     dailyClaims: {
       ...s.dailyClaims,
@@ -308,11 +340,16 @@ double potionDropChance(double base, ResearchEffects research) =>
 }
 
 /// 오늘(서버 날짜 UTC) 확률 드롭으로 더 받을 수 있는 물약 수. 한도가 없으면 큰 수.
-int potionDropRoom(SaveGame s, IndividualGradeConfig cfg, DateTime now) {
+int potionDropRoom(
+  SaveGame s,
+  IndividualGradeConfig cfg,
+  DateTime now, [
+  ResearchEffects research = ResearchEffects.none,
+]) {
   if (!cfg.enabled) return 0;
   if (cfg.potionDropDaily <= 0) return 1 << 20;
   final used = potionDropsOn(s, dailyDateKey(now.toUtc()));
-  return math.max(0, cfg.potionDropDaily - used);
+  return math.max(0, potionDropDailyFor(cfg, research) - used);
 }
 
 /// 기기의 하루 확률 물약 드롭 기록 키(`dailyClaims`) — 값은 `yyyy-MM-dd:NN`(두 자리라 문자열 비교가 곧 순서다.
@@ -388,12 +425,16 @@ GradeOp rollPassiveReroll(
         ..[MaterialKind.jelly] = jelly - cfg.rerollJelly,
     );
   } else {
-    final have = s.essence[bug.speciesId] ?? 0;
-    if (cfg.rerollEssence <= 0 || have < cfg.rerollEssence) {
-      return const GradeOp.fail('no_essence');
-    }
+    final pay = cfg.rerollEssence <= 0
+        ? null
+        : payGradeCost(s, bug, cfg.rerollEssence);
+    if (pay == null) return const GradeOp.fail('no_essence');
     next = s.copyWith(
-      essence: {...s.essence, bug.speciesId: have - cfg.rerollEssence},
+      essence: pay.essence,
+      bugs: [
+        for (final b in s.bugs)
+          b.id == bugId ? b.copyWith(gradeWorth: pay.gradeWorth) : b,
+      ],
     );
   }
   final roll = rng.nextInt(101);

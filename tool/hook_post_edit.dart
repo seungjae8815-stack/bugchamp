@@ -54,7 +54,8 @@ void main() {
 
     if (n.endsWith('.dart')) {
       try {
-        Process.runSync('dart', ['format', path], runInShell: true);
+        // 훅을 돌리는 그 dart — PATH 에 dart 가 없는 셸(Git Bash 없는 Windows)에서도 포맷되게.
+        Process.runSync(Platform.resolvedExecutable, ['format', path]);
       } catch (_) {
         // 포맷 실패는 조용히 넘긴다 — 훅이 작업을 세우면 안 된다.
       }

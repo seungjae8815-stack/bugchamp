@@ -68,13 +68,16 @@ Future<void> showHatchReveal(
     final canEssence =
         previewRolls == null &&
         individualGradeOn(data) &&
+        !essenceAbsorbed(
+          data,
+        ) && // 정수 흡수(2026-11-09) 뒤엔 정수로 바꾸지 않는다 — 같은 종에 먹인다
         !save.pinnedBugIds.contains(bug.id);
     final nav = Navigator.of(context, rootNavigator: true);
     // 'next' 다음 · 'skip' 모두 건너뛰기 · 'essence' 정수로 바꾸기 · null 닫음
     final act = await showGameDialog<String>(
       context,
       title: l.hatchRevealTitle,
-      icon: Icons.egg_alt_rounded,
+      iconWidget: dialogIcon('egg', fallback: Icons.egg_alt_rounded),
       content: _RevealBody(
         bug: bug,
         species: sp,

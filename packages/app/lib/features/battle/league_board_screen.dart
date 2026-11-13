@@ -13,6 +13,7 @@ import 'duel_bug_build.dart';
 import '../../domain/chat_service.dart';
 import '../../domain/game_server.dart';
 import '../../domain/providers.dart';
+import '../../ui/achievement_title.dart';
 import '../../domain/save_controller.dart';
 import '../../l10n/app_localizations.dart';
 import '../../ui/art.dart';
@@ -118,9 +119,13 @@ class LeagueBoardView extends ConsumerStatefulWidget {
     this.headerHeight = 84,
     this.showHeader = true,
     this.myTeam,
+    this.onPractice,
   });
 
   final bool abyss;
+
+  /// 상대 프로필의 "연습 결투"(2026-11-10, 친구 결투) — 결투 탭만 넘긴다(상대 id, 프로필 그림).
+  final void Function(String userId, String? avatar)? onPractice;
 
   /// 내 줄 아래에 붙는 것(결투 탭의 전투 시작 버튼).
   final Widget? footer;
@@ -1267,6 +1272,29 @@ class LeagueBoardViewState extends ConsumerState<LeagueBoardView> {
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
+          // 칭호(2026-11-10) — 상대 세이브에서(서버가 달성한 것만 남긴다).
+          FutureBuilder<ServerResult>(
+            future: profile,
+            builder: (context, snap) {
+              final name = achievementTitleName(
+                ref.read(gameDataProvider).value?.runConfig,
+                snap.data?.data?['title'] as String?,
+                Localizations.localeOf(context).languageCode,
+              );
+              if (name == null) return const SizedBox.shrink();
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 6),
+                child: Text(
+                  '「$name」',
+                  style: const TextStyle(
+                    color: Color(0xFFFFD977),
+                    fontWeight: FontWeight.w800,
+                    fontSize: 13,
+                  ),
+                ),
+              );
+            },
+          ),
           if (power > 0)
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -1349,7 +1377,17 @@ class LeagueBoardViewState extends ConsumerState<LeagueBoardView> {
           ),
         ],
       ),
-      actions: [gameDialogButton(l.duelResultOk, popOnTap(context))],
+      actions: [
+        // 연습 결투(2026-11-10, 친구 결투) — 결투 탭에서 연 순위표만 · 내 줄은 빼고.
+        if (widget.onPractice != null &&
+            !widget.abyss &&
+            id != ref.read(chatMyUserIdProvider))
+          gameDialogButton(l.practiceDuel, () {
+            Navigator.of(context).pop();
+            widget.onPractice!(id, r['avatar'] as String?);
+          }, primary: false),
+        gameDialogButton(l.duelResultOk, popOnTap(context)),
+      ],
     );
   }
 

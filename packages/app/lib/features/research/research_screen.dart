@@ -20,6 +20,7 @@ import '../../ui/format.dart';
 import '../../ui/jelly_confirm.dart';
 import '../../ui/tier_label.dart';
 import '../../ui/toast.dart';
+import '../../ui/tour.dart';
 
 /// 연구소 탭(설계 `docs/superpowers/specs/2026-10-22-research-lab-design.md` §3 · §11 기술 트리).
 ///
@@ -48,13 +49,20 @@ class _ResearchScreenState extends ConsumerState<ResearchScreen> {
   Timer? _tick;
   ResearchBranch _branch = ResearchBranch.hunt;
 
+  /// 심연 탭(2026-11-12) — 분야 트리 대신 심연 연구 목록을 보인다.
+  bool _abyssView = false;
+
   @override
   void initState() {
     super.initState();
     // 남은 시간을 1초마다 다시 그린다. 끝난 연구는 자동으로 받지 않는다 — 칸의 "연구 완료" 버튼(2026-10-26).
     _tick = Timer.periodic(const Duration(seconds: 1), (_) {
       final s = ref.read(saveControllerProvider).value;
-      if (!mounted || s == null || s.researchSlots.isEmpty) return;
+      if (!mounted ||
+          s == null ||
+          (s.researchSlots.isEmpty && s.abyssLabSlot == null)) {
+        return;
+      }
       // 다른 탭에 있는 동안(IndexedStack 이 살려 둔다)은 다시 그리지 않는다.
       if (ref.read(tabIndexProvider) == kResearchTabIndex) setState(() {});
     });
@@ -152,6 +160,21 @@ class _ResearchScreenState extends ConsumerState<ResearchScreen> {
       for (final def in cfg.defs)
         def.id: _statusOf(data, save, cfg, def, now, stats),
     };
+    if (_abyssView) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Expanded(
+            child: SingleChildScrollView(
+              key: const Key('researchTree_abyss'),
+              child: _abyssLab(l, locale, save, cfg, now),
+            ),
+          ),
+          const SizedBox(height: 6),
+          _tabs(l, cfg, status, save),
+        ],
+      );
+    }
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -162,17 +185,20 @@ class _ResearchScreenState extends ConsumerState<ResearchScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                _currencies(l, save, cfg),
+                tourMark('research.currency', _currencies(l, save, cfg)),
                 const SizedBox(height: 6),
-                _slots(l, locale, save, cfg, now),
+                tourMark('research.slots', _slots(l, locale, save, cfg, now)),
                 const SizedBox(height: 6),
-                _tree(l, locale, save, cfg, status, now),
+                tourMark(
+                  'research.tree',
+                  _tree(l, locale, save, cfg, status, now),
+                ),
               ],
             ),
           ),
         ),
         const SizedBox(height: 6),
-        _tabs(l, cfg, status),
+        _tabs(l, cfg, status, save),
       ],
     );
   }
@@ -729,6 +755,7 @@ class _ResearchScreenState extends ConsumerState<ResearchScreen> {
     AppLocalizations l,
     ResearchConfig cfg,
     Map<String, _Status> status,
+    SaveGame save,
   ) => Container(
     padding: const EdgeInsets.all(4),
     decoration: BoxDecoration(
@@ -740,11 +767,18 @@ class _ResearchScreenState extends ConsumerState<ResearchScreen> {
       borderRadius: BorderRadius.circular(10),
       border: Border.all(color: const Color(0x22FFFFFF)),
     ),
-    child: Row(
-      children: [
-        for (final b in ResearchBranch.values)
-          Expanded(child: _tab(l, cfg, status, b)),
-      ],
+    child: tourMark(
+      'research.tabs',
+      Row(
+        children: [
+          for (final b in ResearchBranch.values)
+            Expanded(child: _tab(l, cfg, status, b)),
+          if (cfg.abyssLab.enabled)
+            Expanded(
+              child: tourMark('research.abyss', _abyssTab(l, cfg, save)),
+            ),
+        ],
+      ),
     ),
   );
 
@@ -754,7 +788,7 @@ class _ResearchScreenState extends ConsumerState<ResearchScreen> {
     Map<String, _Status> status,
     ResearchBranch b,
   ) {
-    final active = b == _branch;
+    final active = !_abyssView && b == _branch;
     ResearchDef? root;
     for (final d in cfg.defs) {
       if (d.branch == b && d.requires == null) {
@@ -768,7 +802,10 @@ class _ResearchScreenState extends ConsumerState<ResearchScreen> {
     return InkWell(
       key: Key('researchTab_${b.key}'),
       borderRadius: BorderRadius.circular(8),
-      onTap: () => setState(() => _branch = b),
+      onTap: () => setState(() {
+        _branch = b;
+        _abyssView = false;
+      }),
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 2),
         decoration: BoxDecoration(
@@ -805,6 +842,364 @@ class _ResearchScreenState extends ConsumerState<ResearchScreen> {
             if (ready) const Positioned(top: -2, right: 2, child: _Dot()),
           ],
         ),
+      ),
+    );
+  }
+
+  // ── 심연 탭(2026-11-12) — 포자로만 하는 연구 · 전용 1칸 · 젤리 즉시 완료 없음 ──
+
+  static const _abyssColor = Color(0xFFB39DDB);
+
+  Widget _sporeIcon(double size) => gameIcon(
+    'abyss_spore',
+    size: size,
+    fallback: Icons.grain_rounded,
+    color: _abyssColor,
+  );
+
+  Widget _abyssTab(AppLocalizations l, ResearchConfig cfg, SaveGame save) {
+    final active = _abyssView;
+    final now = ref.read(clockProvider).now().toUtc();
+    final slot = save.abyssLabSlot;
+    // 빨간 점: 끝난 연구가 있거나, 칸이 비었고 시작할 수 있는 연구가 있을 때.
+    final ready =
+        save.abyssUnlocked &&
+        (slot != null
+            ? !now.isBefore(slot.endsAt)
+            : cfg.abyssLab.defs.any(
+                (d) => startAbyssLab(save, cfg, d.id, now).error == null,
+              ));
+    return InkWell(
+      key: const Key('researchTab_abyss'),
+      borderRadius: BorderRadius.circular(8),
+      onTap: () => setState(() => _abyssView = true),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 2),
+        decoration: BoxDecoration(
+          color: active ? const Color(0x2EB39DDB) : null,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: active ? _abyssColor : Colors.transparent,
+            width: 1.5,
+          ),
+        ),
+        child: Stack(
+          clipBehavior: Clip.none,
+          children: [
+            Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Center(
+                  child: gameIcon(
+                    'research_abyss',
+                    size: 22,
+                    fallback: Icons.blur_on_rounded,
+                    color: _abyssColor,
+                    dim: !active,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    l.researchTabAbyss,
+                    maxLines: 1,
+                    style: TextStyle(
+                      color: active ? _abyssColor : Colors.white70,
+                      fontSize: 10.5,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            if (ready) const Positioned(top: -2, right: 2, child: _Dot()),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _abyssLab(
+    AppLocalizations l,
+    String locale,
+    SaveGame save,
+    ResearchConfig cfg,
+    DateTime now,
+  ) {
+    final lab = cfg.abyssLab;
+    final slot = save.abyssLabSlot;
+    final slotDef = slot == null ? null : lab.byId(slot.id);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        // 포자 보유 + 얻는 법.
+        Container(
+          padding: const EdgeInsets.fromLTRB(10, 6, 10, 8),
+          decoration: _box(border: const Color(0x55B39DDB)),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                children: [
+                  _sporeIcon(18),
+                  const SizedBox(width: 4),
+                  Text(
+                    l.abyssSpores,
+                    style: const TextStyle(
+                      color: _abyssColor,
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  const Spacer(),
+                  Text(
+                    '${formatCompact(save.abyssSpores)} / ${formatCompact(lab.sporeCap)}',
+                    key: const Key('abyssSporeCount'),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 4),
+              Text(
+                save.abyssUnlocked ? l.abyssLabInfo : l.abyssLabLocked,
+                style: const TextStyle(color: Colors.white70, fontSize: 11.5),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 6),
+        // 전용 1칸.
+        Container(
+          padding: const EdgeInsets.fromLTRB(8, 6, 8, 8),
+          decoration: _box(),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                l.abyssLabSlotTitle,
+                style: const TextStyle(
+                  color: _abyssColor,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              const SizedBox(height: 5),
+              _slotFrame(
+                key: const Key('abyssLabSlot'),
+                border: slot == null
+                    ? null
+                    : !now.isBefore(slot.endsAt)
+                    ? kHoney
+                    : const Color(0xAAB39DDB),
+                child: slot == null
+                    ? Center(
+                        child: Text(
+                          l.abyssLabSlotEmpty,
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            color: Colors.white54,
+                            fontSize: 11.5,
+                          ),
+                        ),
+                      )
+                    : _abyssRunning(l, locale, cfg, slot, slotDef, now),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 6),
+        for (final d in lab.defs) ...[
+          _abyssRow(l, locale, save, cfg, d, now),
+          const SizedBox(height: 5),
+        ],
+      ],
+    );
+  }
+
+  Widget _abyssRunning(
+    AppLocalizations l,
+    String locale,
+    ResearchConfig cfg,
+    ResearchSlot slot,
+    ResearchDef? def,
+    DateTime now,
+  ) {
+    final left = slot.endsAt.difference(now);
+    final ready = !now.isBefore(slot.endsAt);
+    final total = def == null ? Duration.zero : cfg.timeAt(def, slot.level);
+    final progress = total.inSeconds <= 0
+        ? 1.0
+        : (1 - left.inSeconds / total.inSeconds).clamp(0.0, 1.0);
+    return Row(
+      children: [
+        _researchIcon(def, 22),
+        const SizedBox(width: 6),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                l.researchSlotItem(
+                  def == null ? slot.id : _name(def, locale),
+                  '${slot.level}',
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              if (!ready) ...[
+                const SizedBox(height: 3),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(3),
+                  child: LinearProgressIndicator(
+                    value: progress,
+                    minHeight: 5,
+                    backgroundColor: const Color(0x33FFFFFF),
+                    color: _abyssColor,
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+        const SizedBox(width: 6),
+        ready
+            ? _smallButton(
+                key: const Key('abyssLabClaim'),
+                onPressed: () => _ctrl.claimAbyssLabNow(),
+                child: Text(l.researchClaim),
+              )
+            : Text(
+                formatShortDuration(left),
+                style: const TextStyle(color: Colors.white70, fontSize: 11.5),
+              ),
+      ],
+    );
+  }
+
+  Widget _abyssRow(
+    AppLocalizations l,
+    String locale,
+    SaveGame save,
+    ResearchConfig cfg,
+    ResearchDef d,
+    DateTime now,
+  ) {
+    final lv = save.abyssLabLevels[d.id] ?? 0;
+    final maxed = lv >= d.maxLevel;
+    final cur = cfg.effectAt(d, lv);
+    final next = maxed ? cur : cfg.effectAt(d, lv + 1);
+    final cost = maxed ? 0 : cfg.costAt(d, lv + 1).samples;
+    final running = save.abyssLabSlot?.id == d.id;
+    return Container(
+      key: Key('abyssLabRow_${d.id}'),
+      padding: const EdgeInsets.fromLTRB(8, 6, 8, 6),
+      decoration: _box(),
+      child: Row(
+        children: [
+          _researchIcon(d, 30, dim: !save.abyssUnlocked),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  children: [
+                    Flexible(
+                      child: Text(
+                        _name(d, locale),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      l.researchLevel('$lv', '${d.maxLevel}'),
+                      style: const TextStyle(
+                        color: _abyssColor,
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  '${_fxLabel(l, d.effect)} ${_fxValue(l, d.effect, cur)}'
+                  '${maxed ? '' : ' → ${_fxValue(l, d.effect, next)}'}',
+                  style: const TextStyle(color: Colors.white70, fontSize: 11),
+                ),
+                if (!maxed) ...[
+                  const SizedBox(height: 2),
+                  Row(
+                    children: [
+                      _sporeIcon(13),
+                      const SizedBox(width: 2),
+                      Text(
+                        formatCompact(cost),
+                        style: TextStyle(
+                          color: save.abyssSpores >= cost
+                              ? Colors.white
+                              : const Color(0xFFEF9A9A),
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      const Icon(
+                        Icons.schedule_rounded,
+                        size: 12,
+                        color: Colors.white54,
+                      ),
+                      const SizedBox(width: 2),
+                      Text(
+                        formatShortDuration(cfg.timeAt(d, lv + 1)),
+                        style: const TextStyle(
+                          color: Colors.white54,
+                          fontSize: 11,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ],
+            ),
+          ),
+          const SizedBox(width: 6),
+          if (maxed)
+            Text(
+              l.researchMaxed,
+              style: const TextStyle(color: kHoney, fontSize: 11),
+            )
+          else
+            _smallButton(
+              key: Key('abyssLabStart_${d.id}'),
+              onPressed: running || !save.abyssUnlocked
+                  ? null
+                  : () async {
+                      final e = await _ctrl.startAbyssLabNow(d.id);
+                      if (e != null && mounted) {
+                        showCenterToast(context, _errText(l, e));
+                      }
+                    },
+              child: Text(running ? l.researchRunning : l.researchStart),
+            ),
+        ],
       ),
     );
   }
@@ -1188,8 +1583,13 @@ class _ResearchScreenState extends ConsumerState<ResearchScreen> {
     child: compact ? FittedBox(fit: BoxFit.scaleDown, child: child) : child,
   );
 
-  Widget _sampleIcon(double size) =>
-      Icon(Icons.science_rounded, size: size, color: const Color(0xFF80DEEA));
+  // 그림 `ui/icon/research_sample.webp`(docs/art_prompts_abyss_lab.md), 없으면 플라스크 아이콘.
+  Widget _sampleIcon(double size) => gameIcon(
+    'research_sample',
+    size: size,
+    fallback: Icons.science_rounded,
+    color: const Color(0xFF80DEEA),
+  );
 
   /// 연구 아이콘 — research.json `image`, 없으면 효과별 Material 아이콘(§6 폴백).
   Widget _researchIcon(ResearchDef? def, double size, {bool dim = false}) =>
@@ -1283,6 +1683,9 @@ String _errText(AppLocalizations l, String code) => switch (code) {
   'not_enough_jelly' => l.notEnoughJelly,
   'max_slots' => l.researchErrMaxSlots,
   'stale_price' => l.researchErrStale,
+  'no_spores' => l.abyssLabNoSpores,
+  'slot_busy' => l.researchErrSlotsFull,
+  'abyss_locked' => l.abyssLabLocked,
   _ => l.researchErrGeneric,
 };
 
@@ -1308,7 +1711,9 @@ String _fxValue(AppLocalizations l, ResearchEffect e, double v) {
   final minus =
       e.isTimeCut ||
       e == ResearchEffect.skillCooldown ||
-      e == ResearchEffect.duelGrit;
+      e == ResearchEffect.duelGrit ||
+      e == ResearchEffect.abyssFastFloor ||
+      e == ResearchEffect.mutationTame;
   final pp =
       e == ResearchEffect.huntEvade ||
       e == ResearchEffect.duelCrit ||
@@ -1357,6 +1762,14 @@ String _fxLabel(AppLocalizations l, ResearchEffect e) => switch (e) {
   ResearchEffect.giftGold => l.researchFxGiftGold,
   ResearchEffect.duelCrit => l.researchFxDuelCrit,
   ResearchEffect.duelGrit => l.researchFxDuelGrit,
+  ResearchEffect.killHeal => l.researchFxKillHeal,
+  ResearchEffect.petShare => l.researchFxPetShare,
+  ResearchEffect.abyssShortcut => l.researchFxAbyssShortcut,
+  ResearchEffect.abyssFastFloor => l.researchFxAbyssFastFloor,
+  ResearchEffect.mutationTame => l.researchFxMutationTame,
+  ResearchEffect.crystalBonus => l.researchFxCrystalBonus,
+  ResearchEffect.sporeBonus => l.researchFxSporeBonus,
+  ResearchEffect.abyssIdleGold => l.researchFxAbyssIdleGold,
 };
 
 IconData _fxIcon(ResearchEffect e) => switch (e) {
@@ -1389,4 +1802,12 @@ IconData _fxIcon(ResearchEffect e) => switch (e) {
   ResearchEffect.giftGold => Icons.card_giftcard_rounded,
   ResearchEffect.duelCrit => Icons.gps_fixed_rounded,
   ResearchEffect.duelGrit => Icons.touch_app_rounded,
+  ResearchEffect.killHeal => Icons.restaurant_rounded,
+  ResearchEffect.petShare => Icons.pets_rounded,
+  ResearchEffect.abyssShortcut => Icons.fast_forward_rounded,
+  ResearchEffect.abyssFastFloor => Icons.keyboard_double_arrow_down_rounded,
+  ResearchEffect.mutationTame => Icons.pest_control_rounded,
+  ResearchEffect.crystalBonus => Icons.diamond_rounded,
+  ResearchEffect.sporeBonus => Icons.grain_rounded,
+  ResearchEffect.abyssIdleGold => Icons.nights_stay_rounded,
 };

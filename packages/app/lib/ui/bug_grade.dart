@@ -14,6 +14,11 @@ import 'labels.dart';
 bool individualGradeOn(GameData data) =>
     data.petConfig?.individualGrade.enabled ?? false;
 
+/// 정수를 먹이기에 흡수했나(2026-11-09 사장님 확정 — 양분 게이지가 켜지고 개체 등급도 켜짐). 켜지면 "정수로 바꾸기"가 없고
+/// 등급 올리기·패시브 재굴림은 옛 정수 → 그 곤충의 등급 양분 순서로 낸다(core_save `payGradeCost`).
+bool essenceAbsorbed(GameData data) =>
+    individualGradeOn(data) && (data.petConfig?.bugRarity.worthOn ?? false);
+
 /// 곤충 희귀도(1.0.22, `pets.json → bugRarity`) — 곤충마다. 꺼져 있으면 종 희귀도(예전 그대로).
 /// 곤충 한 마리의 희귀도를 보여 주는 자리는 모두 이 함수를 쓴다(앱·서버 계산과 같은 `PetConfig.rarityOf`).
 Grade bugRarityOf(GameData data, IndividualBug bug, Species sp) =>

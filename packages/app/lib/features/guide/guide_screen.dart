@@ -218,7 +218,9 @@ class GuideScreen extends ConsumerWidget {
           // 등급 올리기 정수 비용 · 성장물약(2026-10-19 — 공략집에 물약이 없었다). 숫자는 pets.json individualGrade.
           if (gradeOn && pet != null) ...[
             _p(
-              l.guidePotionCost(
+              (pet.bugRarity.worthOn
+                  ? l.guidePotionCostFeed
+                  : l.guidePotionCost)(
                 [
                   for (var g = 1; g < 5; g++)
                     '${pet.individualGrade.upgradeCost(g)}',
@@ -261,7 +263,16 @@ class GuideScreen extends ConsumerWidget {
                 _signed(pet.bugRarity.duelMult.last - 1),
               ),
             ),
-            if (pet.bugRarity.upFodder > 0)
+            // 양분 게이지(2026-11-09)면 새 설명 — 숫자는 pets.json `worth` 그대로.
+            if (pet.bugRarity.worthOn)
+              _p(
+                l.guideRarityFeed(
+                  '${pet.bugRarity.feedOfRarity(Grade.common)}',
+                  '${pet.bugRarity.feedOfRarity(Grade.epic)}',
+                  '${pet.bugRarity.worthOfRarity(Grade.legendary)}',
+                ),
+              )
+            else if (pet.bugRarity.upFodder > 0)
               _p(l.guideRarityUp('${pet.bugRarity.upFodder}')),
           ],
         ),
@@ -279,10 +290,16 @@ class GuideScreen extends ConsumerWidget {
               ),
             ),
             _p(
-              l.guidePassiveReroll(
-                '${pet.passiveV2.rerollEssence}',
-                '${pet.passiveV2.rerollJelly}',
-              ),
+              // 정수 흡수(2026-11-09) 뒤엔 등급 양분으로 낸다(옛 정수 먼저).
+              pet.individualGrade.enabled && pet.bugRarity.worthOn
+                  ? l.guidePassiveRerollFeed(
+                      '${pet.passiveV2.rerollEssence}',
+                      '${pet.passiveV2.rerollJelly}',
+                    )
+                  : l.guidePassiveReroll(
+                      '${pet.passiveV2.rerollEssence}',
+                      '${pet.passiveV2.rerollJelly}',
+                    ),
             ),
             if (pet.passiveV2.legacyFreeRerolls > 0)
               _p(l.passiveRerollFreeHint('${pet.passiveV2.legacyFreeRerolls}')),
@@ -659,7 +676,11 @@ class GuideScreen extends ConsumerWidget {
                 '${pet.storageSlotsMax}',
               ),
             ),
-            _p(l.guideStorageEssence),
+            _p(
+              pet.individualGrade.enabled && pet.bugRarity.worthOn
+                  ? l.guideStorageFeed
+                  : l.guideStorageEssence,
+            ),
           ],
         ),
       if (fairy != null)
@@ -685,15 +706,28 @@ class GuideScreen extends ConsumerWidget {
               ),
             ),
             _p(
-              l.guideFairyMerge(
-                '${fairy.mergeCount}',
-                '${fairy.mergeCountOf(FairyGrade.epic)}',
-                _pct(fairy.levelStatPerLevel),
-                [
-                  for (final g in FairyGrade.values) '${fairy.maxLevelOf(g)}',
-                ].join('/'),
-                _pct(fairy.mergeDustRefund),
-              ),
+              // 먹이기(2026-11-09)가 켜졌으면 새 설명 — 숫자는 fairies.json `feed`·`gaugeAt`.
+              fairy.gaugeOn
+                  ? l.guideFairyFeed(
+                      '${fairy.feedOf(FairyGrade.common)}',
+                      '${fairy.feedOf(FairyGrade.epic)}',
+                      '${fairy.gaugeAtOf(FairyGrade.mythic)}',
+                      _pct(fairy.levelStatPerLevel),
+                      [
+                        for (final g in FairyGrade.values)
+                          '${fairy.maxLevelOf(g)}',
+                      ].join('/'),
+                    )
+                  : l.guideFairyMerge(
+                      '${fairy.mergeCount}',
+                      '${fairy.mergeCountOf(FairyGrade.epic)}',
+                      _pct(fairy.levelStatPerLevel),
+                      [
+                        for (final g in FairyGrade.values)
+                          '${fairy.maxLevelOf(g)}',
+                      ].join('/'),
+                      _pct(fairy.mergeDustRefund),
+                    ),
             ),
             _p(
               l.guideFairyBox(

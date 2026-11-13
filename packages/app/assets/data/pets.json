@@ -72,6 +72,8 @@
   8000
  ],
  "breakthroughJellyPerMinute": 0.93,
+ "_beginnerHatchComment": "신규 부화 단축(2026-11-12 사장님 확정) — 계정의 처음 count 번 부화는 최대 maxSec 초. 부화기가 1칸뿐이라 첫 알이 희귀(90분)·영웅(5시간)이면 시작하자마자 멈췄다(곤충마다 희귀도라 첫 알의 약 절반이 20분 이상). 처음 써 보는 즉시 부화·산란·돌파 1회 무료는 core_save first_free.dart. 젤리 수입이 아니라 수도꼭지가 아니다.",
+ "beginnerHatch": { "count": 5, "maxSec": 300 },
  "incubatorSlotsInitial": 1,
  "incubatorSlotsMax": 5,
  "incubatorExpandJelly": 200,
@@ -236,7 +238,11 @@
     "gachaWeights": [0, 25, 30, 28, 17],
     "huntMult": [0.90, 1.00, 1.15, 1.35, 1.60],
     "_duelMultComment": "전설 대 일반 65%(2026-10-16 사장님 확정) — duel_build_sim --rarity-fit --rm=4000: ×1.152, 희귀도 사이 곱으로 4등분(한 칸 위 55% · 영웅 대 일반 62%). gradeScale·대회 speciesScale 은 같은 날 종끼리 평평하게(--team-fit --flat · --event-fit --flat --event-mean=18.5) 다시 맞췄다.",
-    "duelMult": [1.000, 1.036, 1.074, 1.112, 1.152]
+    "duelMult": [1.000, 1.036, 1.074, 1.112, 1.152],
+    "_worthComment": "곤충 양분 게이지(2026-11-09 사장님 확정 — 전설까지 양분 약 1,000, 낮은 희귀도일수록 적게 채운다). 일반 → 전설 곤충 하나의 가치 · 같은 종 곤충을 먹이면 그 가치만큼 차고 총 가치가 다음 희귀도 값에 닿으면 오른다(목표보다 높은 희귀도는 재료가 안 된다). 4배씩 = 옛 규칙(4마리 → 한 단계)과 총량이 같다 — 버려지던 곤충이 쓰이는 만큼만 빨라진다. 지우면 옛 3마리 규칙(upFodder). ⚠️ 앱 번들과 서버가 같아야 한다(업로드 검사 takeRarityWorth).",
+    "worth": [4, 16, 64, 256, 1024],
+    "_feedComment": "먹이면 채우는 양(일반 → 전설, 2026-11-09 사장님 확정 2배씩 — 영웅이 나오면 전설이 쉬워진다). 문턱(worth, 4배씩)보다 완만해 영웅 하나 = 전설의 3%. 같은 종을 야생 확률로 먹이면 전설까지 약 100마리(4배씩이면 38마리). ⚠️ 문턱보다 크면 안 된다(서버 검사가 총량 보존에 기댄다).",
+    "feed": [4, 8, 16, 32, 64]
   },
   "individualGrade": {
     "enabled": true,

@@ -1,7 +1,5 @@
 import 'dart:async';
-import 'dart:io' show Platform;
 
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -163,36 +161,10 @@ class _TitleScreenState extends ConsumerState<TitleScreen> {
     if (ok) await _enterGame();
   }
 
-  /// "게스트로 시작하기" — 바로 들여보내지 않고 **한 번 더 권유**한다.
-  /// 계정 연동율이 낮아(설치 대비 한 자릿수) 여기서 한 번 잡아주는 게 크다.
-  Future<void> _guestTapped() async {
-    final l = AppLocalizations.of(context);
-    final auth = ref.read(authServiceProvider);
-    final signIn = await showGameDialog<bool>(
-      context,
-      title: l.guestNudgeTitle,
-      icon: Icons.cloud_off_rounded,
-      content: Text(
-        l.guestNudgeBody,
-        style: const TextStyle(
-          color: Color(0xD9FFFFFF),
-          fontSize: 13.5,
-          height: 1.45,
-        ),
-      ),
-      actions: [
-        gameDialogButton(l.guestNudgeContinue, popOnTap(context, false)),
-        if (auth.available)
-          gameDialogButton(l.guestNudgeSignIn, popOnTap(context, true)),
-      ],
-    );
-    if (!mounted) return;
-    if (signIn == true) {
-      await _signIn(apple: auth.appleAvailable && !kIsWeb && Platform.isIOS);
-      return;
-    }
-    await _enterGame();
-  }
+  /// "게스트로 시작하기" — 바로 들여보낸다(2026-11-09 사장님 확정).
+  /// 예전엔 여기서 로그인을 한 번 더 권했으나, 설치한 사람의 약 15% 가 닉네임 전에 빠졌다.
+  /// 로그인 권유는 홈의 로그인 유도 배너가 계속 맡는다(잃을 진행이 생긴 뒤라 더 설득력 있다).
+  Future<void> _guestTapped() => _enterGame();
 
   /// 서버 세이브 채택 → 닉네임 → 게임 진입.
   Future<void> _enterGame() async {

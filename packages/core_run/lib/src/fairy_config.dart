@@ -147,6 +147,8 @@ class FairyConfig {
     this.levelDustGrowth = 1.15,
     this.mergeCount = 3,
     this.mergeCountByGrade = const {},
+    this.gaugeAt = const [],
+    this.feed = const [],
     this.mergeDustRefund = 0.7,
     this.hatchSec = const {},
     this.boxCap = 30,
@@ -206,6 +208,38 @@ class FairyConfig {
 
   /// [from] 등급 요정을 합성할 때 드는 마릿수.
   int mergeCountOf(FairyGrade from) => mergeCountByGrade[from] ?? mergeCount;
+
+  /// 요정 양분 **문턱**(일반 → 신화, 2026-11-09 사장님 확정 — 곤충과 같은 먹이기). 요정의 양분 = 이 등급 문턱 + 모은 양분
+  /// (`Fairy.gauge`). 다음 등급 문턱에 닿으면 그 등급이 된다. 합성 마릿수(3·3·4·3)와 총량이 같게 4·12·36·144·432.
+  /// 비어 있으면 끔(옛 3마리 합성만).
+  final List<int> gaugeAt;
+
+  /// 먹이면 채우는 양(일반 → 신화) — 곤충처럼 **2배씩**(4·8·16·32). 일반만 먹이면 지금 합성과 같은 수(신화까지 108마리)이고
+  /// 높은 등급 재료는 덜 쳐 준다. ⚠️ 문턱보다 크면 안 된다(서버 검사가 총량 보존에 기댄다).
+  final List<int> feed;
+
+  /// 요정 먹이기가 켜졌나.
+  bool get gaugeOn => gaugeAt.length >= FairyGrade.values.length;
+
+  /// [g] 등급 문턱(꺼져 있으면 0).
+  int gaugeAtOf(FairyGrade g) => gaugeOn ? gaugeAt[g.index] : 0;
+
+  /// [g] 등급 요정 하나를 먹이면 채우는 양(그 요정이 모은 양분은 따로 더한다).
+  int feedOf(FairyGrade g) {
+    if (!gaugeOn) return 0;
+    if (feed.length < FairyGrade.values.length) return gaugeAt[g.index];
+    return feed[g.index];
+  }
+
+  /// 양분 [w] 가 닿는 가장 높은 등급.
+  FairyGrade gradeForGauge(int w) {
+    var r = FairyGrade.values.first;
+    if (!gaugeOn) return r;
+    for (final g in FairyGrade.values) {
+      if (w >= gaugeAt[g.index]) r = g;
+    }
+    return r;
+  }
 
   /// 합성·분해 때 재료 요정에 쓴 레벨업 가루를 돌려주는 비율(투자를 잃지 않게).
   final double mergeDustRefund;
@@ -426,6 +460,12 @@ class FairyConfig {
     levelDustGrowth: (json['levelDustGrowth'] as num?)?.toDouble() ?? 1.15,
     mergeCount: (json['mergeCount'] as num?)?.toInt() ?? 3,
     mergeCountByGrade: _byGrade(json['mergeCountByGrade'], (v) => v.toInt()),
+    gaugeAt: json['gaugeAt'] is List
+        ? [for (final x in json['gaugeAt'] as List) (x as num).toInt()]
+        : const [],
+    feed: json['feed'] is List
+        ? [for (final x in json['feed'] as List) (x as num).toInt()]
+        : const [],
     mergeDustRefund: (json['mergeDustRefund'] as num?)?.toDouble() ?? 0.7,
     hatchSec: _byGrade(json['hatchSec'], (v) => v.toInt()),
     boxCap: (json['boxCap'] as num?)?.toInt() ?? 30,

@@ -91,7 +91,14 @@ DuelBug duelBugFor(
   final sp = data.species(bug.speciesId);
   final t = _trainOf(bug, data, save);
   // 연구소 결투 분야(설계 §9) — 서버 `_buildDuelTeam` 과 같은 자리(등급 보정 뒤 · 오라 앞)에서 곱한다.
-  final fx = data.researchFx(save.researchLevels);
+  // 끝났지만 아직 안 받은 연구도 센다(2026-11-12 점검) — 서버 `duelResearchLevels` 가 그렇게 판정해서, 받기 전엔
+  // 화면 전투력·후보 색이 실제 판보다 약하게 보였다.
+  final rc = data.researchConfig;
+  final fx = data.researchFx(
+    rc == null
+        ? save.researchLevels
+        : claimResearch(save, rc, DateTime.now().toUtc()).researchLevels,
+  );
   return DuelBug.fromBattleBug(
         battleBugFor(bug, data, save, locale),
         speciesId: bug.speciesId,

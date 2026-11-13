@@ -148,6 +148,7 @@ class IapProduct {
     this.sort = 0,
     this.bonusPct = 0,
     this.discountPct = 0,
+    this.firstBonusJelly = 0,
     this.skinId,
     this.grant = const IapGrant(),
     this.image,
@@ -193,6 +194,11 @@ class IapProduct {
   /// ⚠️ 실제 가격에서 계산한 사실만 적는다(`iap_products_test` 가 묶음 합과 대조).
   final int discountPct;
 
+  /// 이 상품을 **계정에서 처음** 살 때 더 주는 젤리(2026-11-09 사장님 확정 — 젤리 팩 첫 구매 2배). 0 이면 없음.
+  /// 기록은 서버 소유 `boughtOnce` 에 상품 id 로 남긴다([applyIapGrant]) — 구버전 앱·세이브 편집으로 다시 못 받는다.
+  /// 결제로만 받는 1회분이라 젤리 수도꼭지 규칙(무한 통로 금지)과 무관하다.
+  final int firstBonusJelly;
+
   /// 스킨 상품이면 적용 스킨 id.
   final String? skinId;
 
@@ -213,6 +219,7 @@ class IapProduct {
     hidden: json['hidden'] == true,
     bonusPct: (json['bonusPct'] as num?)?.toInt() ?? 0,
     discountPct: (json['discountPct'] as num?)?.toInt() ?? 0,
+    firstBonusJelly: (json['firstBonusJelly'] as num?)?.toInt() ?? 0,
     skinId: json['skinId'] as String?,
     image: json['image'] as String?,
     iosId: json['iosId'] as String?,

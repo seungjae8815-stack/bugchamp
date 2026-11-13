@@ -210,6 +210,20 @@ String _duelArenaRowId(String userId) {
   return '${hex[0] == 'a' ? 'b' : 'a'}${hex.substring(1)}';
 }
 
+/// 유저마다 하나인 "마지막 연습 결투 시각" 줄의 id(2026-11-10) — 경기장 줄(a/b)과 겹치지 않게 첫 글자를 c/d 로.
+String _practiceRowId(String userId) {
+  final hex = userId.replaceAll('-', '').toLowerCase();
+  if (hex.length != 32) return _newSessionId();
+  return '${hex[0] == 'c' ? 'd' : 'c'}${hex.substring(1)}';
+}
+
+/// 연습 결투 사이 최소 간격 — 서버 계산을 계속 돌리지 못하게.
+const _kPracticeGap = Duration(seconds: 20);
+
+/// 낡은 기기 업로드 거절(`stale_save` + 저장본)을 아는 앱의 세이브 기능 수준(1.0.28 = 30, 2026-11-12).
+/// 그보다 낮은 앱에는 `session_taken` 으로 답한다 — 그 앱이 아는 유일한 "이 기기 세이브는 낡았다" 응답이다.
+const _kStaleSaveFeat = 30;
+
 String _newSessionId() {
   final r = Random.secure();
   return List<int>.generate(
@@ -266,6 +280,191 @@ Response _json(Map<String, dynamic> body, {int status = 200}) => Response(
 );
 
 /// 라우터 구성.
+// ── 왕중왕전(2026-11-10) 공용 도우미 ─────────────────────────────────
+// shortcut: 결과 캐시는 인스턴스 메모리(최근 12주) — 인스턴스가 늘거나 재시작하면 다시 계산한다(같은 seed·같은 참가 기록이라 같은 결과).
+final _kotkCache =
+    <String, ({KotkResult result, List<Map<String, dynamic>> rows})>{};
+
+/// 캐시를 넣은 시각 — [_kKotkCacheTtl] 이 지나면 저장된 결과를 다시 읽는다(운영이 실격 처리하면 다른 인스턴스도 따라오게).
+final _kotkCacheAt = <String, DateTime>{};
+const _kKotkCacheTtl = Duration(minutes: 10);
+
+/// 결과가 **확정**됐나 — 접수가 닫힌 뒤 24시간(다음 주 월 09시)이 지났으면(2026-11-12 사장님 확정: 조작한 곤충이
+/// 정직한 곤충을 표본으로 만드는 일을 운영이 먼저 확인한다). 그동안 대진은 보이지만 표본·보상은 반영하지 않는다.
+/// 개발자 서버의 `KOTK_FORCE_CLOSED=1` 은 바로 확정한다.
+bool _kotkConfirmed(String week, DateTime t, BattleConfig battle) =>
+    Platform.environment['KOTK_FORCE_CLOSED'] == '1' ||
+    week != abyssWeekId(t, battle);
+
+int _kotkSeed(String week) {
+  var h = 17;
+  for (final c in week.codeUnits) {
+    h = (h * 31 + c) & 0x7fffffff;
+  }
+  return h;
+}
+
+/// 그 주 접수가 닫혔나 — 지난주이거나, 이번 주 결투 시즌 정산 기간(일 09시~)이면.
+bool _kotkClosed(String week, DateTime t, BattleConfig battle) =>
+    week != abyssWeekId(t, battle) || _kotkEntryClosed(t, battle);
+
+/// 이번 주 접수가 닫혔나 — 결투 시즌 정산 기간(일 09시~)이면.
+/// 개발자 서버만 `KOTK_FORCE_CLOSED=1` 로 지금 닫을 수 있다(일요일을 기다리지 않고 결과·표본을 확인하려고).
+/// ⚠️ 운영 서버에는 넣지 않는다 — 넣으면 그 주 접수가 바로 닫히고 결과가 확정된다.
+bool _kotkEntryClosed(DateTime t, BattleConfig battle) =>
+    Platform.environment['KOTK_FORCE_CLOSED'] == '1' || seasonClosed(t, battle);
+
+/// 그 주가 아직 **준비 중**인가(제1회 전, battle.json → kotk.firstWeek, 2026-11-12 사장님 확정).
+/// 개발자 서버만 `KOTK_IGNORE_START=1` 로 지금 열 수 있다(첫 회차 전에 확인하려고). ⚠️ 운영 서버에는 넣지 않는다.
+bool _kotkPreparing(String week, BattleConfig battle) =>
+    Platform.environment['KOTK_IGNORE_START'] != '1' &&
+    battle.kotk.roundOf(week) == null;
+
+/// 접수가 닫힌 주의 대진·결과(참가 기록 스냅샷으로 다시 계산). 아직 접수 중이면 null.
+Future<({KotkResult result, List<Map<String, dynamic>> rows})?> _kotkResultOf(
+  StateStore store,
+  GameActions actions,
+  String week,
+  DateTime t,
+) async {
+  if (!_kotkClosed(week, t, actions.config.battle)) return null;
+  final hit = _kotkCache[week];
+  final hitAt = _kotkCacheAt[week];
+  if (hit != null && hitAt != null && t.difference(hitAt) < _kKotkCacheTtl) {
+    return hit;
+  }
+  final rows = await store.kotkEntries(week);
+  final entrants = [
+    for (final r in rows)
+      KotkEntrant(
+        userId: '${r['user_id']}',
+        bug: DuelBug.fromJson(Map<String, dynamic>.from(r['bug'] as Map)),
+        power: (r['power'] as num?)?.toDouble() ?? 0,
+      ),
+  ];
+  // 확정 결과를 먼저 읽는다(2026-11-12 점검) — 다시 계산만 하던 시절엔 결과가 나온 뒤 결투 수치·엔진을 고쳐
+  // 배포하면 새 인스턴스가 다른 대진을 내 우승자가 둘이 되거나 이미 표본이 된 사람과 어긋났다.
+  // 표가 없으면(SQL 전) 예전처럼 계산만 한다.
+  KotkResult? res;
+  var canStore = true;
+  try {
+    res = _kotkFromJson(await store.kotkResult(week), entrants);
+  } on StateStoreException catch (e) {
+    canStore = false;
+    stderr.writeln('[kotk] 확정 결과 읽기 실패(다시 계산): $e');
+  }
+  if (res == null) {
+    res = runKotk(
+      seed: _kotkSeed(week),
+      entrants: entrants,
+      params: actions.duelParams,
+    );
+    if (canStore && entrants.isNotEmpty) {
+      try {
+        await store.saveKotkResult(week, _kotkToJson(res));
+        // 다른 인스턴스가 먼저 적었으면 그쪽이 진짜다.
+        res = _kotkFromJson(await store.kotkResult(week), entrants) ?? res;
+      } on StateStoreException catch (e) {
+        stderr.writeln('[kotk] 확정 결과 저장 실패: $e');
+      }
+    }
+  }
+  if (_kotkCache.length >= 12) {
+    _kotkCacheAt.remove(_kotkCache.keys.first);
+    _kotkCache.remove(_kotkCache.keys.first);
+  }
+  _kotkCacheAt[week] = t;
+  return _kotkCache[week] = (result: res!, rows: rows);
+}
+
+/// 저장할 결과 — 참가자는 user id 순서만(곤충 스냅샷은 `kotk_entries` 에 있다).
+Map<String, dynamic> _kotkToJson(KotkResult r) => {
+  'order': [for (final e in r.entrants) e.userId],
+  'rounds': [
+    for (final rd in r.rounds) [for (final m in rd) m.toJson()],
+  ],
+  'placement': r.placement,
+};
+
+/// 저장해 둔 결과를 참가 기록과 맞춰 되살린다. 없거나 참가 기록과 안 맞으면 null(다시 계산).
+KotkResult? _kotkFromJson(Map<String, dynamic>? j, List<KotkEntrant> entrants) {
+  if (j == null) return null;
+  final byUser = {for (final e in entrants) e.userId: e};
+  final order = [for (final x in (j['order'] as List? ?? const [])) '$x'];
+  if (order.any((u) => !byUser.containsKey(u))) return null;
+  return KotkResult(
+    entrants: [for (final u in order) byUser[u]!],
+    rounds: [
+      for (final rd in (j['rounds'] as List? ?? const []))
+        [
+          for (final m in rd as List)
+            KotkMatch.fromJson(Map<String, dynamic>.from(m as Map)),
+        ],
+    ],
+    placement: {
+      for (final e in (j['placement'] as Map? ?? const {}).entries)
+        '${e.key}': (e.value as num).toInt(),
+    },
+  );
+}
+
+/// 참가한 주의 결과가 나왔으면 세이브에 반영한다(진 곤충은 표본). 반영할 것이 없으면 null.
+Future<({SaveGame save, int? placement, int entrants})?> _kotkSettle(
+  StateStore store,
+  GameActions actions,
+  SaveGame save,
+  String userId,
+) async {
+  final week = save.kotkEntryWeek;
+  final t = actions.now().toUtc();
+  if (week == null || !_kotkConfirmed(week, t, actions.config.battle)) {
+    return null;
+  }
+  // 준비 중인 주(제1회 전)의 참가는 정산하지 않고 풀어 준다(2026-11-12 보안 점검) — 개발자 서버 스위치
+  // `KOTK_IGNORE_START` 로 같은 DB 에 들어간 참가를 운영 서버가 제1회로 정산해 뱃지·젤리를 주던 길.
+  if (_kotkPreparing(week, actions.config.battle)) {
+    final out = actions.kotkApply(save, week, null);
+    return out == null ? null : (save: out, placement: null, entrants: 0);
+  }
+  final res = await _kotkResultOf(store, actions, week, t);
+  if (res == null) return null;
+  final place = res.result.placement[userId];
+  // 참가가 적은 주는 젤리·뱃지 없음(2026-11-12 사장님 확정 — 혼자·부계정으로 매주 우승 젤리를 받던 길).
+  final prize = res.rows.length >= actions.config.battle.kotk.minEntrants;
+  final out = actions.kotkApply(save, week, place, prize: prize);
+  if (out == null) return null;
+  // 우승 — 대표 뱃지를 profiles 에(순위표·채팅). 실패해도 보상은 그대로.
+  if (place == 1 && prize) {
+    await _writeBadge(store, userId, bestEventBadge(out.eventBadges));
+  }
+  return (save: out, placement: place, entrants: res.rows.length);
+}
+
+/// 대진표 응답 — 참가자(시드 순)와 라운드별 경기. 유저 id 는 싣지 않고 내 줄에만 `me`.
+Map<String, dynamic> _kotkJson(
+  ({KotkResult result, List<Map<String, dynamic>> rows}) r,
+  String me,
+) {
+  final byUser = {for (final x in r.rows) '${x['user_id']}': x};
+  return {
+    'entrants': [
+      for (final e in r.result.entrants)
+        {
+          'nickname': byUser[e.userId]?['nickname'] ?? '',
+          'avatar': ?byUser[e.userId]?['avatar'],
+          'species': byUser[e.userId]?['species_id'],
+          'name': e.bug.name,
+          'power': e.power,
+          'place': ?r.result.placement[e.userId],
+          if (e.userId == me) 'me': true,
+        },
+    ],
+    'rounds': [
+      for (final rd in r.result.rounds) [for (final m in rd) m.toJson()],
+    ],
+  };
+}
+
 Handler buildHandler({
   required ServerConfig config,
   required StateStore store,
@@ -657,8 +856,32 @@ Handler buildHandler({
             return _json({'error': 'session_taken'}, status: 409);
           }
         }
+        // 낡은 기기의 세이브(2026-11-12) — 저장 횟수가 저장본보다 낮으면 그 뒤에 다른 기기가 더 저장한 것을 모른다.
+        // 받지 않고 저장본을 돌려준다. 아는 앱(feat ≥ [_kStaleSaveFeat])은 그걸 채택하고, 구버전은 "다른 기기에서
+        // 접속 중"을 띄운다(껐다 켜면 최신 세이브를 받는다 — 받아 주던 시절엔 낡은 세이브가 서버를 덮었다).
+        final staleRev = GameActions.staleUploadRev(stored, incoming);
+        if (staleRev != null) {
+          final feat = incoming['feat'];
+          final featN = feat is num ? feat.toInt() : 0;
+          final note =
+              '낡은 기기 업로드 거절 · rev $staleRev < 저장본 ${stored.saveRev} · feat $featN';
+          stderr.writeln('[save/stale] ${user.id} $note');
+          ops.recordClamp(user.id, const ['stale'], {'stale': note});
+          return featN >= _kStaleSaveFeat
+              ? _json({
+                  'error': 'stale_save',
+                  'save': stored.toJson(),
+                }, status: 409)
+              : _json({'error': 'session_taken'}, status: 409);
+        }
         var r = actions.mergeSave(stored, migrateToCurrent(incoming));
         if (!r.isOk) return _json({'error': r.error}, status: r.status);
+        // 기록 보강(2026-11-12) — 받아 준 업로드가 저장본보다 크게 뒤로 갔으면 남긴다(누가 덮었는지 찾을 수 있게).
+        final regress = GameActions.regressionNote(stored, r.save!);
+        if (regress != null) {
+          stderr.writeln('[save/regress] ${user.id} $regress');
+          ops.recordClamp(user.id, const ['regress'], {'regress': regress});
+        }
         r = ActionResult.ok(
           GameActions.adoptSession(r.save!, session),
           extra: r.extra,
@@ -815,6 +1038,38 @@ Handler buildHandler({
           }
         }
 
+        // 왕중왕전 결과(2026-11-10) — 참가한 주의 결과가 나왔으면 반영(진 곤충은 표본). 실패하면 다음 업로드에서 다시.
+        try {
+          final settled = await _kotkSettle(store, actions, r.save!, user.id);
+          if (settled != null) {
+            r = ActionResult.ok(
+              settled.save,
+              extra: {
+                ...r.extra,
+                'kotk': settled.placement ?? 0,
+                'kotkN': settled.entrants,
+              },
+            );
+          }
+        } on StateStoreException catch (e) {
+          stderr.writeln('[save] 왕중왕전 결과 반영 실패 ${user.id}: $e');
+        }
+
+        // 종별 최대 크기 순위(2026-11-10) — 도감 최고 크기가 오른 종만(서버가 종 범위로 자른 값).
+        // shortcut: 기록이 실패하면 다음 업로드에서 다시 쓰지 않는다(저장본이 이미 새 크기) — 더 큰 개체를 잡으면 다시 적힌다.
+        final sizes = actions.speciesSizeGains(stored, r.save!);
+        if (sizes.isNotEmpty) {
+          try {
+            await store.submitSpeciesSizes(
+              userId: user.id,
+              nickname: r.save!.nickname,
+              sizes: sizes,
+            );
+          } catch (e) {
+            stderr.writeln('[save] 크기 기록 실패 ${user.id}: $e');
+          }
+        }
+
         await store.save(user.id, r.save!.toJson());
         // ⚠️ 세이브 전체를 되돌려주지 않는다. 이 엔드포인트는 주기 업로드라
         // 호출이 잦은데, 응답까지 세이브 통째면 왕복마다 세이브 크기 × 2 의
@@ -831,7 +1086,8 @@ Handler buildHandler({
             r.extra['eventBadges'] == true ||
             r.extra['pvpRankReward'] != null ||
             r.extra['pvpLeagueResult'] != null ||
-            r.extra['abyssRankReward'] != null;
+            r.extra['abyssRankReward'] != null ||
+            r.extra['kotk'] != null;
         return _json({
           'ok': true,
           ...r.extra,
@@ -2201,6 +2457,8 @@ Handler buildHandler({
         List<String> ownedSkins,
         // 상대의 프로필 그림(2026-10-10) — 세이브로 만든 상대만(고르지 않았으면 null = 기본).
         String? avatar,
+        // 상대 칭호(2026-11-10, 업적 id) — 세이브로 만든 상대만.
+        String? title,
       })?
     >
     duelFoe(
@@ -2242,6 +2500,7 @@ Handler buildHandler({
             rewardMult: 1.0,
             ownedSkins: publicSkinsOf(opp, cfg.iap),
             avatar: opp.avatar,
+            title: opp.title,
           );
         }
         if (rows == null || rows.length < actions.duelParams.bestOf) {
@@ -2262,6 +2521,7 @@ Handler buildHandler({
           rewardMult: 1.0,
           ownedSkins: const <String>[],
           avatar: null,
+          title: null,
         );
       }
       final wild = actions.buildWildDuelTeam(
@@ -2281,12 +2541,201 @@ Handler buildHandler({
         rewardMult: wild.tier.rewardMult,
         ownedSkins: const <String>[],
         avatar: null,
+        title: null,
       );
     }
 
     /// 상대 후보 5명(2026-09-29 사장님 확정) — 같은 리그 순위에서 내 위 3명·아래 2명,
     /// 모자라면 야생. **점수는 여기서 정해 제안(세션)에 적는다** — 앱이 보내게 두면 누구나 5점이다.
     /// 시작은 이 제안의 한 칸으로만 할 수 있다(`/duel/start` 의 offerId·pick).
+    // ── 왕중왕전(2026-11-10 사장님 확정) ───────────────────────────────
+    // 주마다 곤충 1마리로 참가 → 일요일 09시(결투 시즌 마감)에 접수가 닫히면 대진·결과는 참가 기록의 스냅샷으로
+    // 서버가 **늘 같은 결과로** 다시 계산한다(core_battle `runKotk` — cron 없음, 결과 표 없음).
+    // 진 곤충은 표본(`rtB`, 서버 소유)이 되어 결투·대회에 다시 못 나간다. 명예의 전당 = 16강 이상.
+    authed.get('/kotk', (Request req) async {
+      final user = userOf(req);
+      final t = actions.now().toUtc();
+      final week = abyssWeekId(t, cfg.battle);
+      final preparing = _kotkPreparing(week, cfg.battle);
+      final open = !preparing && !_kotkEntryClosed(t, cfg.battle);
+      try {
+        final rows = await store.kotkEntries(week);
+        final mine = rows
+            .where((r) => '${r['user_id']}' == user.id)
+            .firstOrNull;
+        final current = open
+            ? null
+            : await _kotkResultOf(store, actions, week, t);
+        final prev = await _kotkResultOf(
+          store,
+          actions,
+          abyssWeekId(t.subtract(const Duration(days: 7)), cfg.battle),
+          t,
+        );
+        // 명예의 전당 — 최근 8주(접수가 닫힌 주만)의 16강 이상(우승 포함).
+        final hall = <Map<String, dynamic>>[];
+        for (var k = open ? 1 : 0; k <= 8; k++) {
+          final w = abyssWeekId(t.subtract(Duration(days: 7 * k)), cfg.battle);
+          final r = await _kotkResultOf(store, actions, w, t);
+          if (r == null || r.result.rounds.isEmpty) continue;
+          final byUser = {for (final x in r.rows) '${x['user_id']}': x};
+          for (final e in r.result.entrants) {
+            final place = r.result.placement[e.userId];
+            if (place == null || place > 16) continue;
+            hall.add({
+              'week': w,
+              'round': ?cfg.battle.kotk.roundOf(w),
+              'place': place,
+              'nickname': byUser[e.userId]?['nickname'] ?? '',
+              'avatar': ?byUser[e.userId]?['avatar'],
+              'species': byUser[e.userId]?['species_id'],
+              'name': e.bug.name,
+              'power': e.power,
+              if (e.userId == user.id) 'me': true,
+            });
+          }
+        }
+        return _json({
+          'week': week,
+          'open': open,
+          if (preparing) 'preparing': true,
+          // 접수는 닫혔지만 아직 확정 전(24시간 운영 확인) — 대진은 보이고 표본·보상은 월 09시에.
+          if (!open && !preparing && !_kotkConfirmed(week, t, cfg.battle))
+            'pending': true,
+          'minEntrants': cfg.battle.kotk.minEntrants,
+          'round': ?cfg.battle.kotk.roundOf(week),
+          'firstWeek': cfg.battle.kotk.firstWeek,
+          'count': rows.length,
+          'maxSize': 32,
+          if (mine != null)
+            'mine': {'bugId': mine['bug_id'], 'species': mine['species_id']},
+          'current': ?(current == null ? null : _kotkJson(current, user.id)),
+          'previous': ?(prev == null ? null : _kotkJson(prev, user.id)),
+          'hall': hall,
+        });
+      } on StateStoreException catch (e) {
+        stderr.writeln('[kotk] $e');
+        return _json({'error': 'unavailable'}, status: 503);
+      }
+    });
+
+    // 왕중왕전 참가(같은 주에 다시 내면 곤충을 바꾼다). 접수는 결투 시즌 마감(일 09시)까지.
+    authed.post('/kotk/enter', (Request req) async {
+      final user = userOf(req);
+      final Map<String, dynamic> body;
+      try {
+        body = jsonDecode(await req.readAsString()) as Map<String, dynamic>;
+      } catch (_) {
+        return _json({'error': 'bad_request'}, status: 400);
+      }
+      final bugId = body['bugId']?.toString() ?? '';
+      final t = actions.now().toUtc();
+      if (bugId.isEmpty) return _json({'error': 'bad_request'}, status: 400);
+      if (_kotkPreparing(abyssWeekId(t, cfg.battle), cfg.battle)) {
+        return _json({'error': 'kotk_preparing'}, status: 409);
+      }
+      if (_kotkEntryClosed(t, cfg.battle)) {
+        return _json({'error': 'kotk_closed'}, status: 409);
+      }
+      try {
+        var save = await loadSave(user.id);
+        if (save == null) return _json({'error': 'no_save'}, status: 409);
+        // 지난주 결과가 아직 안 들어갔으면 먼저 넣는다(참가 기록을 덮기 전에).
+        final settled = await _kotkSettle(store, actions, save, user.id);
+        if (settled != null) save = settled.save;
+        final built = actions.validateDuelTeam(
+          save,
+          [bugId],
+          speciesById: species,
+          petConfig: cfg.pet,
+          enhance: cfg.enhance,
+          allowInjured: true,
+          teamSize: 1,
+        );
+        if (built.error != null) {
+          _noteForged(ops, user.id, built.error);
+          return _json({'error': built.error}, status: 400);
+        }
+        final b = built.team.first;
+        final week = abyssWeekId(t, cfg.battle);
+        await store.upsertKotkEntry({
+          'week_id': week,
+          'user_id': user.id,
+          'nickname': save.nickname,
+          'avatar': save.avatar,
+          'bug_id': bugId,
+          'species_id': b.speciesId,
+          'bug': b.toJson(),
+          'power': _duelPower(b, actions),
+        });
+        final next = save.copyWith(kotkEntryWeek: week, kotkEntryBug: bugId);
+        await store.save(user.id, next.toJson());
+        return _json({'ok': true, 'ktP': week, 'ktE': bugId});
+      } on StateStoreException catch (e) {
+        stderr.writeln('[kotk/enter] ${user.id}: $e');
+        return _json({'error': 'store_unavailable'}, status: 503);
+      }
+    });
+
+    // 왕중왕전 참가 취소 — 접수 중에만.
+    authed.post('/kotk/withdraw', (Request req) async {
+      final user = userOf(req);
+      final t = actions.now().toUtc();
+      if (_kotkEntryClosed(t, cfg.battle)) {
+        return _json({'error': 'kotk_closed'}, status: 409);
+      }
+      try {
+        final save = await loadSave(user.id);
+        if (save == null) return _json({'error': 'no_save'}, status: 409);
+        final week = abyssWeekId(t, cfg.battle);
+        if (save.kotkEntryWeek != week) {
+          return _json({'error': 'not_entered'}, status: 409);
+        }
+        await store.deleteKotkEntry(week, user.id);
+        await store.save(user.id, save.copyWith(clearKotkEntry: true).toJson());
+        return _json({'ok': true});
+      } on StateStoreException catch (e) {
+        stderr.writeln('[kotk/withdraw] ${user.id}: $e');
+        return _json({'error': 'store_unavailable'}, status: 503);
+      }
+    });
+
+    // 종별 최대 크기 순위(2026-11-10) — 상위 30 + 내 순위. 앱에 RPC 권한을 열지 않고 서버가 대신 읽는다.
+    authed.post('/dex/size-rank', (Request req) async {
+      final user = userOf(req);
+      final Map<String, dynamic> body;
+      try {
+        body = jsonDecode(await req.readAsString()) as Map<String, dynamic>;
+      } catch (_) {
+        return _json({'error': 'bad_request'}, status: 400);
+      }
+      final species = body['species']?.toString() ?? '';
+      if (!cfg.speciesById.containsKey(species)) {
+        return _json({'error': 'bad_request'}, status: 400);
+      }
+      try {
+        final top = await store.speciesSizeTop(species, 30);
+        final me = await store.speciesSizeRankOf(species, user.id);
+        return _json({
+          'top': [
+            for (final r in top)
+              {
+                'rank': r['rank'],
+                'nickname': r['nickname'],
+                'size': r['size_mm'],
+                'avatar': ?r['avatar'],
+                'me': '${r['user_id']}' == user.id,
+              },
+          ],
+          if (me != null)
+            'me': {'rank': me.rank, 'size': me.size, 'total': me.total},
+        });
+      } on StateStoreException catch (e) {
+        stderr.writeln('[size-rank] $e');
+        return _json({'error': 'unavailable'}, status: 503);
+      }
+    });
+
     authed.post('/duel/offer', (Request req) async {
       final user = userOf(req);
       final Map<String, dynamic> body;
@@ -2408,6 +2857,8 @@ Handler buildHandler({
             if (real && foe.ownedSkins.isNotEmpty) 'skins': foe.ownedSkins,
             // 상대 프로필 그림(2026-10-10) — 상대 세이브에서(SQL 의 profiles.avatar 를 기다리지 않는다). 기본이면 생략.
             'avatar': ?(real ? foe.avatar : null),
+            // 칭호(2026-11-10) — 업적 id. 앱이 이름으로 바꿔 그린다.
+            'title': ?(real ? foe.title : null),
             // 결투 화면에는 **결투 팀 전투력**만(2026-10-01 — 순위표 값이 홈 전투력으로 떨어져 1.84M 로 보였다).
             // 방금 서버가 만든 상대 팀으로 잰 값이라 늘 정확하다.
             'power': teamPower,
@@ -2515,6 +2966,8 @@ Handler buildHandler({
           if (skins.isNotEmpty) 'skins': skins,
           // 프로필 그림(2026-10-10) — 상대 세이브에서. 고르지 않았으면 생략(앱이 기본으로 그린다).
           'avatar': ?opp?.avatar,
+          // 칭호(2026-11-10) — 업적 id(달성한 것만 — 업로드 때 서버가 지운다).
+          'title': ?opp?.title,
           'league': ?(opp == null
               ? null
               : cfg.battle.leagueAt(pvpLeagueOf(opp, cfg.battle)).id),
@@ -2554,7 +3007,8 @@ Handler buildHandler({
         return _json({'error': r.result.error}, status: r.result.status);
       }
       await store.saveSession(sessionId, uid, r.session!.toJson());
-      if (r.result.extra['done'] != true) {
+      // 연습 결투는 끝나도 세이브·점수·길드전이 없다.
+      if (r.result.extra['done'] != true || r.session!.practice) {
         // 판 사이엔 세이브가 안 바뀐다 — 싣지 않는다(이그레스).
         return _json(r.result.extra);
       }
@@ -2571,6 +3025,93 @@ Handler buildHandler({
       }
       return _json({...r.result.extra, 'save': scored.toJson()});
     }
+
+    /// 연습 결투 시작(2026-11-10, 친구 결투) — 순위표·프로필에서 고른 [opponentId] 의 방어팀과 붙는다.
+    /// 티켓·점수·부상·보상이 없고(세션 `practice`), 판 진행은 `/duel/throw`·`/duel/clutch` 그대로.
+    /// 계속 돌려 서버 계산을 쓰지 못하게 사람마다 [_kPracticeGap] 간격을 둔다.
+    authed.post('/duel/practice', (Request req) async {
+      final user = userOf(req);
+      final Map<String, dynamic> body;
+      try {
+        body = jsonDecode(await req.readAsString()) as Map<String, dynamic>;
+      } catch (_) {
+        return _json({'error': 'bad_request'}, status: 400);
+      }
+      final team = [
+        for (final id in (body['teamBugIds'] as List? ?? const [])) '$id',
+      ];
+      final opponentId = body['opponentId']?.toString() ?? '';
+      if (team.isEmpty || opponentId.isEmpty || opponentId == user.id) {
+        return _json({'error': 'bad_request'}, status: 400);
+      }
+      final t0 = actions.now().toUtc();
+      try {
+        final gapRow = await store.loadSession(_practiceRowId(user.id));
+        final last = DateTime.tryParse('${gapRow?['data']?['at']}')?.toUtc();
+        if (last != null && t0.difference(last) < _kPracticeGap) {
+          return _json({'error': 'practice_cooldown'}, status: 429);
+        }
+        final save = await loadSave(user.id);
+        if (save == null) return _json({'error': 'no_save'}, status: 409);
+        final built = actions.validateDuelTeam(
+          save,
+          team,
+          speciesById: species,
+          petConfig: cfg.pet,
+          enhance: cfg.enhance,
+          allowInjured: true,
+        );
+        if (built.error != null) {
+          _noteForged(ops, user.id, built.error);
+          return _json({'error': built.error}, status: 400);
+        }
+        final locale = body['locale']?.toString() ?? 'ko';
+        final foe = await duelFoe(save, opponentId, '', locale);
+        if (foe == null) return _json({'error': 'no_foe'}, status: 404);
+        final sessionId = _newSessionId();
+        final session = DuelSession(
+          id: sessionId,
+          userId: user.id,
+          seed: _secureSeed(),
+          myTeamBugIds: team,
+          foe: foe.foe,
+          foeSpecies: foe.foeSpecies,
+          foeSkins: foe.foeSkins,
+          rewardMult: 0,
+          winners: const [],
+          launches: const [],
+          finished: false,
+          trophiesAtStart: save.pvpTrophies,
+          trophyPrepaid: 0,
+          winPoints: 0,
+          researchLevels: actions.duelResearchLevels(save),
+          arenaPerBout: body['arenaPerBout'] == true,
+          practice: true,
+        );
+        await store.saveSession(sessionId, user.id, session.toJson());
+        await store.saveSession(_practiceRowId(user.id), user.id, {
+          'kind': 'duelPractice',
+          'at': t0.toIso8601String(),
+        });
+        return _json({
+          'sessionId': sessionId,
+          'bestOf': actions.duelParams.bestOf,
+          'practice': true,
+          if (foe.ownedSkins.isNotEmpty) 'skins': foe.ownedSkins,
+          'foe': [
+            for (var i = 0; i < foe.foe.length; i++)
+              _duelFoeJson(
+                foe.foe[i],
+                skin: foe.foeSkins[i],
+                variant: i < foe.foeVariants.length ? foe.foeVariants[i] : null,
+              ),
+          ],
+        });
+      } on StateStoreException catch (e) {
+        stderr.writeln('[duel/practice] ${user.id}: $e');
+        return _json({'error': 'store_unavailable'}, status: 503);
+      }
+    });
 
     /// 결투 시작 — 편성 검증 · 티켓 · 트로피/부상 선차감 · 세션(시드는 주지 않는다).
     authed.post('/duel/start', (Request req) async {
@@ -2897,11 +3438,13 @@ Handler buildHandler({
       }
 
       // 1) 영수증부터 검증 — 통과 못 하면 세이브를 건드리지 않는다.
-      final verdict = await verifier.verify(
+      final outcome = await verifier.verify(
         productId: productId,
         purchaseToken: token,
         userJwt: _jwtOf(req),
+        transactionId: body['transactionId']?.toString(),
       );
+      final verdict = outcome.verdict;
       if (verdict == VerifyVerdict.invalid) {
         return _json({'error': 'invalid_receipt'}, status: 402);
       }
@@ -2913,11 +3456,12 @@ Handler buildHandler({
       try {
         final save = await loadSave(user.id);
         if (save == null) return _json({'error': 'no_save'}, status: 409);
-        // 영수증 토큰 자체를 지급 식별자로 쓴다 — 재요청해도 멱등.
+        // 지급 식별자 = 거래 고유 키(iOS `ios:<transaction_id>`, 2026-11-09) · 없으면 영수증 토큰
+        // (안드로이드는 토큰이 곧 거래 고유값). 같은 거래를 다시 내도 멱등.
         final r = actions.grantPurchase(
           save,
           productId: productId,
-          purchaseId: token,
+          purchaseId: outcome.purchaseKey ?? token,
         );
         if (!r.isOk) return _json({'error': r.error}, status: r.status);
         await store.save(user.id, r.save!.toJson());
@@ -3378,6 +3922,78 @@ Handler buildHandler({
         return _json(await store.adminData());
       } on StateStoreException catch (e) {
         stderr.writeln('[admin/data] $e');
+        return _json({'error': 'store_unavailable'}, status: 503);
+      }
+    });
+
+    // 왕중왕전 확인(2026-11-12 사장님 확정) — 접수가 닫힌 뒤 24시간(월 09시 확정 전)에 상위 참가 곤충을 보고,
+    // 조작으로 보이는 참가는 실격시킨다(참가 기록·확정 결과를 지우면 대진을 다시 계산한다).
+    public.get('/admin/kotk', (Request req) async {
+      if (!adminOk(req)) return _json({'error': 'unauthorized'}, status: 401);
+      final t = actions.now().toUtc();
+      final weeks = [
+        abyssWeekId(t, cfg.battle),
+        abyssWeekId(t.subtract(const Duration(days: 7)), cfg.battle),
+      ];
+      try {
+        final out = <Map<String, dynamic>>[];
+        for (final w in weeks) {
+          final rows = await store.kotkEntries(w);
+          final res = await _kotkResultOf(store, actions, w, t);
+          final place = res?.result.placement ?? const <String, int>{};
+          final sorted = [...rows]
+            ..sort(
+              (a, b) => ((b['power'] as num?) ?? 0).compareTo(
+                (a['power'] as num?) ?? 0,
+              ),
+            );
+          out.add({
+            'week': w,
+            'round': ?cfg.battle.kotk.roundOf(w),
+            'count': rows.length,
+            'closed': res != null,
+            'confirmed': _kotkConfirmed(w, t, cfg.battle),
+            'entries': [
+              for (final r in sorted.take(32))
+                {
+                  'userId': r['user_id'],
+                  'nickname': r['nickname'],
+                  'species': r['species_id'],
+                  'power': r['power'],
+                  'place': ?place['${r['user_id']}'],
+                  'bug': r['bug'],
+                },
+            ],
+          });
+        }
+        return _json({'weeks': out});
+      } on StateStoreException catch (e) {
+        stderr.writeln('[admin/kotk] $e');
+        return _json({'error': 'store_unavailable'}, status: 503);
+      }
+    });
+
+    public.post('/admin/kotk/disqualify', (Request req) async {
+      final (b, err) = await adminBody(req);
+      if (err != null) return err;
+      final week = clean(b!['week'], 20);
+      final uid = clean(b['userId'], 64);
+      if (week == null || uid == null) {
+        return _json({'error': 'bad_request'}, status: 400);
+      }
+      // 확정된 주는 바꾸지 않는다 — 이미 표본·보상이 반영된 사람과 어긋난다.
+      if (_kotkConfirmed(week, actions.now().toUtc(), cfg.battle)) {
+        return _json({'error': 'already_confirmed'}, status: 409);
+      }
+      try {
+        await store.deleteKotkEntry(week, uid);
+        await store.deleteKotkResult(week);
+        _kotkCache.remove(week);
+        _kotkCacheAt.remove(week);
+        stderr.writeln('[admin/kotk] 실격 $week $uid');
+        return _json({'ok': true});
+      } on StateStoreException catch (e) {
+        stderr.writeln('[admin/kotk/disqualify] $e');
         return _json({'error': 'store_unavailable'}, status: 503);
       }
     });

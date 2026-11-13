@@ -116,11 +116,11 @@ void main() {
     expect(s.breeding.length, 1);
 
     final slotId = s.breeding.first.id;
-    // 남은 600초 → ceil(600/60 × 0.5) = 5 젤리
+    // 즉시 산란은 첫 1회 무료(2026-11-12, `first_free.dart`) — 젤리가 그대로다.
     expect(await ctrl.collectBreeding(slotId, viaJelly: true), isTrue);
     s = c.read(saveControllerProvider).requireValue;
     expect(s.breeding, isEmpty);
-    expect(s.materialCount(MaterialKind.jelly), 5); // 10 − 5
+    expect(s.materialCount(MaterialKind.jelly), 10);
     // 새 개체 = 알, 같은 종
     final egg = s.bugs.firstWhere((b) => b.id != 'mom' && b.id != 'dad');
     expect(egg.stage, LifeStage.egg);

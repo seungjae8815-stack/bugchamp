@@ -21,6 +21,7 @@ class DexConfig {
     this.discoverMilestones = const [],
     this.conquerMilestones = const [],
     this.bossMilestones = const [],
+    this.variantMilestones = const [],
     this.attackPerConquer = 0,
     this.hpPerConquer = 0,
     this.rewardPerDiscover = 0,
@@ -46,6 +47,9 @@ class DexConfig {
   /// 티도 안 난다. 영구 능력치도 붙이지 않는다(90일 표를 흔들지 않게).
   final List<DexMilestone> bossMilestones;
 
+  /// 이색 수집 마일스톤(2026-11-12 사장님 확정 — 이색을 모두 모으면 젤리 10). 이색을 얻어 본 종 수(`SaveGame.dexVariants`).
+  final List<DexMilestone> variantMilestones;
+
   /// 정복 1종당 공격 배율 가산(0.01 = +1%).
   final double attackPerConquer;
 
@@ -63,6 +67,7 @@ class DexConfig {
     int conquered,
     Set<String> claimed, {
     int bosses = 0,
+    int variants = 0,
   }) => [
     for (final m in discoverMilestones)
       if (discovered >= m.count && !claimed.contains(m.id)) m,
@@ -70,6 +75,8 @@ class DexConfig {
       if (conquered >= m.count && !claimed.contains(m.id)) m,
     for (final m in bossMilestones)
       if (bosses >= m.count && !claimed.contains(m.id)) m,
+    for (final m in variantMilestones)
+      if (variants >= m.count && !claimed.contains(m.id)) m,
   ];
 
   /// 도감 진행도로 얻는 영구 스탯 보너스. 정복 수에 비례한다.
@@ -104,6 +111,7 @@ class DexConfig {
     discoverMilestones: _milestones(json['discoverMilestones'], 'dex_d'),
     conquerMilestones: _milestones(json['conquerMilestones'], 'dex_c'),
     bossMilestones: _milestones(json['bossMilestones'], 'dex_b'),
+    variantMilestones: _milestones(json['variantMilestones'], 'dex_v'),
     attackPerConquer: (json['attackPerConquer'] as num?)?.toDouble() ?? 0,
     hpPerConquer: (json['hpPerConquer'] as num?)?.toDouble() ?? 0,
     rewardPerDiscover: (json['rewardPerDiscover'] as num?)?.toDouble() ?? 0,

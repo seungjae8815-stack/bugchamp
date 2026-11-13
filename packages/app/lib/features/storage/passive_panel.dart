@@ -1,5 +1,6 @@
 import 'package:core_models/core_models.dart';
 import 'package:core_run/core_run.dart';
+import 'package:core_save/core_save.dart' show gradeFundsOf;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -154,7 +155,11 @@ Future<void> _openPassiveReroll(
   // 크기만 최대치의 80~100% 안에서 움직여서 바뀐 게 안 보였다. 규칙은 그대로, 범위를 보여 준다(사장님 확정).
   final lo = passiveOf(bug.copyWith(passiveRoll: 0), sp, petCfg);
   final hi = passiveOf(bug.copyWith(passiveRoll: 100), sp, petCfg);
-  final have = save.essence[bug.speciesId] ?? 0;
+  // 정수 흡수(2026-11-09) — 옛 정수 + 이 곤충의 등급 양분(core_save `gradeFundsOf`, 등급 올리기와 같은 지불 순서).
+  final absorbed = petCfg.individualGrade.enabled && petCfg.bugRarity.worthOn;
+  final have = absorbed
+      ? gradeFundsOf(save, bug)
+      : save.essence[bug.speciesId] ?? 0;
   final essenceOk = cfg.rerollEssence > 0 && have >= cfg.rerollEssence;
   // 업데이트 전 곤충의 무료 재굴림(2026-10-14 사장님 확정 — 곤충마다 5번).
   final freeLeft = cfg.freeRerollsLeft(bug);
@@ -211,7 +216,9 @@ Future<void> _openPassiveReroll(
         ],
         Text(
           cfg.rerollEssence > have
-              ? '${l.passiveRerollEssenceHave(name, '$have')} · ${l.igNeedMoreEssence('${cfg.rerollEssence - have}')}'
+              ? '${absorbed ? l.passiveRerollFundsHave('$have') : l.passiveRerollEssenceHave(name, '$have')} · ${absorbed ? l.igNeedMoreFunds('${cfg.rerollEssence - have}') : l.igNeedMoreEssence('${cfg.rerollEssence - have}')}'
+              : absorbed
+              ? l.passiveRerollFundsHave('$have')
               : l.passiveRerollEssenceHave(name, '$have'),
           textAlign: TextAlign.center,
           style: TextStyle(
@@ -269,7 +276,9 @@ Future<void> _openPassiveReroll(
       'no_jelly' => l.notEnoughJelly,
       'no_essence' =>
         cfg.rerollEssence > have
-            ? l.igNeedMoreEssence('${cfg.rerollEssence - have}')
+            ? (absorbed
+                  ? l.igNeedMoreFunds('${cfg.rerollEssence - have}')
+                  : l.igNeedMoreEssence('${cfg.rerollEssence - have}'))
             : l.passiveRerollNoEssence,
       'egg' => l.passiveRerollEgg,
       'no_free' => l.passiveRerollNoFree,

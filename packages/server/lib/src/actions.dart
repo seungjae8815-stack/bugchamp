@@ -133,6 +133,14 @@ class GameActions {
   /// 트로피·시즌기록(랭킹), IAP 지급물(결제)·부화기 슬롯(IAP). 업로드 때
   /// 클라 값을 무시하고 서버 저장본 값으로 덮는다.
   static const _serverOwnedKeys = {
+    // 왕중왕전(2026-11-10) — 표본·최고 성적·반영한 주·참가 중인 주와 곤충. 앱이 지우면 표본이 다시 결투에 나간다.
+    'rtB',
+    'ktC',
+    'rtI',
+    'ktB',
+    'ktW',
+    'ktP',
+    'ktE',
     'pvpTrophies',
     'seasonPeakTrophies',
     'redeemedPurchases',
@@ -304,6 +312,19 @@ class GameActions {
     26: ['pRr'],
     // 연구소(2026-10-22) — 레벨·진행 칸·표본·산 칸. 모르는 앱(1.0.22 이하)이 올리면 저장본을 지킨다.
     28: ['rsL', 'rsS', 'rsC', 'rsB'],
+    // 심연 결정·그 주 최고 층·강화 상한 돌파(1.0.28, 2026-11-10) — 모르는 앱이 올리면 저장본을 지킨다.
+    30: [
+      'abC',
+      'abWt',
+      'upCap',
+      'abI',
+      'ttl',
+      'ffu',
+      'bgH',
+      'abSp',
+      'abRL',
+      'abRS',
+    ],
   };
 
   /// feat 20(1.0.18)에 생긴 **장비 옵션 키** — 그보다 낮은 앱은 모르고 빼고 올린다.
@@ -990,6 +1011,7 @@ class GameActions {
       (dex.discoverMilestones, client.dexDiscovered),
       (dex.conquerMilestones, client.dexConqueredWith(dex.conquerLevel)),
       (dex.bossMilestones, bosses),
+      (dex.variantMilestones, client.dexVariants),
     ]) {
       for (final m in list) {
         if (claimed.contains(m.id) &&
@@ -1373,20 +1395,59 @@ class GameActions {
     final seen = <String>{};
     var changed = false;
     final fairies = <Fairy>[];
+    // 요정 먹이기(2026-11-09) — 종류마다 이번 업로드에서 사라진 요정의 채우는 양(저장본 기준). 기존 요정의 등급·양분 상승은
+    // 여기서만 꺼내 쓴다(곤충 양분 게이지와 같은 `takeRarityWorth`). 종류·부가·개체값은 먹이기로 바뀌지 않는다.
+    final nowF = {for (final x in f.fairies) x.id};
+    final pool = <String, List<({String id, int worth})>>{};
+    if (cfg.gaugeOn) {
+      for (final o in before.fairies) {
+        if (nowF.contains(o.id)) continue;
+        pool.putIfAbsent(o.kind, () => []).add((
+          id: o.id,
+          worth: fairyFeedValue(o, cfg),
+        ));
+      }
+    }
+    int total(Fairy x) => cfg.gaugeAtOf(x.grade) + x.gauge;
     for (final x in f.fairies) {
       if (!seen.add(x.id)) {
         changed = true;
         continue;
       }
       final o = oldF[x.id];
-      if (o == null ||
-          (o.kind == x.kind &&
-              o.grade == x.grade &&
-              o.sub == x.sub &&
-              o.baseRoll == x.baseRoll &&
-              o.subRoll == x.subRoll)) {
+      if (o == null) {
+        // 새 요정(합성·부화)의 양분은 0 — 먹이기는 이미 있던 요정에만 일어난다.
+        if (x.gauge > 0) {
+          changed = true;
+          fairies.add(x.copyWith(gauge: 0));
+        } else {
+          fairies.add(x);
+        }
+        continue;
+      }
+      final sameId =
+          o.kind == x.kind &&
+          o.sub == x.sub &&
+          o.baseRoll == x.baseRoll &&
+          o.subRoll == x.subRoll;
+      if (sameId && o.grade == x.grade && o.gauge == x.gauge) {
         fairies.add(x);
         continue;
+      }
+      if (sameId && cfg.gaugeOn) {
+        final was = total(o);
+        final now = total(x);
+        // 양분 총량은 정당하게 줄 수 없다 — 줄었으면(구버전 앱이 `gg` 를 떨굼) 등급·양분은 저장본, 레벨만 클라이언트.
+        // 올랐으면 사라진 같은 종류 요정의 채우는 양만큼만 인정한다.
+        if (now > was &&
+            takeRarityWorth(speciesId: x.kind, gain: now - was, pool: pool)) {
+          fairies.add(x);
+          continue;
+        }
+        if (now == was && x.grade.index >= o.grade.index) {
+          fairies.add(x);
+          continue;
+        }
       }
       changed = true;
       fairies.add(
@@ -1498,6 +1559,31 @@ class GameActions {
   ///     랭킹·결제 상태를 위조하지 못하게.
   ///  2. 골드가 **말도 안 되게** 뛰면(1→10억) 상식 상한으로 자른다.
   /// PvP 전투·결제의 실제 지급은 별도 서버 액션이 확정한다.
+  /// 왕중왕전 표본·참가 곤충은 업로드로 지울 수 없다(2026-11-12 보안 점검) — 사라졌으면 저장본 곤충을 되돌린다.
+  /// 안 그러면 먹이·방생 재료로 가치가 옮겨 가 "소모"되지 않고, 참가 곤충을 마감 전에 먹여 벌칙을 피할 수 있었다
+  /// (재료 막기는 앱 `pinnedBugIds` 뿐이었다). 아래 모든 검사가 이 곤충을 "사라진 곤충"으로 보지 않게 맨 앞에서 한다.
+  static Map<String, dynamic> _restoreKotkLocked(
+    SaveGame stored,
+    Map<String, dynamic> j,
+  ) {
+    final locked = stored.kotkLockedBugIds;
+    if (locked.isEmpty) return j;
+    final list = (j['bugs'] as List?) ?? const [];
+    final have = {
+      for (final b in list)
+        if (b is Map) '${b['id']}',
+    };
+    final missing = [
+      for (final b in stored.bugs)
+        if (locked.contains(b.id) && !have.contains(b.id)) b.toJson(),
+    ];
+    if (missing.isEmpty) return j;
+    return {
+      ...j,
+      'bugs': [...list, ...missing],
+    };
+  }
+
   ActionResult mergeSave(SaveGame stored, Map<String, dynamic> incomingJson) {
     // 암컷 크기 마이그레이션(2026-10-24 §12 암수) — 저장본이 아직 안 옮겨졌으면 **먼저** 한 번 옮긴다
     // (구버전 되돌리기·도감 병합이 모두 암컷 범위 mm 를 전제한다. 멱등).
@@ -1505,8 +1591,11 @@ class GameActions {
     // 구버전 앱(1.0.13 이하)은 1.0.14 필드를 모른다 — 키 없이 올리면 기본값이 저장본을 덮어
     // 훈련소 기록·이번 주 심연 층이 사라졌다. 그 필드만 저장본 값으로 채워 넣고 진행한다.
     // 연구 칸은 결투에 실린다 — 꼴이 틀린 값(숫자 아닌 레벨 등)은 먼저 걸러 봉투·파싱이 깨지지 않게.
-    final clientJson = _sanitizeResearchJson(
-      _keepFieldsOldAppDoesNotKnow(stored, incomingJson, _speciesLookup),
+    final clientJson = _restoreKotkLocked(
+      stored,
+      _sanitizeResearchJson(
+        _keepFieldsOldAppDoesNotKnow(stored, incomingJson, _speciesLookup),
+      ),
     );
     final t = now().toUtc();
     var elapsed = t.difference(stored.lastSeen);
@@ -1619,6 +1708,19 @@ class GameActions {
         merged.remove('avatar');
       }
     }
+    // 첫 1회 무료·신규 부화 횟수(2026-11-12)는 **줄지 않는다** — 지워 올려 무료 즉시 완료·짧은 부화를 다시 받지 못하게.
+    final ffu = {
+      ...stored.firstFreeUsed,
+      // 아는 기능 키만 — 줄지 않는 필드라 조작 업로드의 임의 문자열이 세이브를 영구히 키우지 못하게(2026-11-12 점검).
+      for (final x in (merged['ffu'] as List? ?? const []))
+        if (kFirstFreeKeys.contains('$x')) '$x',
+    };
+    if (ffu.isNotEmpty) merged['ffu'] = ffu.toList();
+    final bgH = max(
+      stored.beginnerHatches,
+      (merged['bgH'] as num?)?.toInt() ?? 0,
+    );
+    if (bgH > 0) merged['bgH'] = bgH;
     // 저장 횟수(`rev`)는 **줄지 않는다** — 이 필드를 모르는 구버전 앱은 키 없이 올린다. 줄면 다른 기기가
     // 앱을 켤 때 동점 판정(`_localIsAhead`)이 서버의 새 세이브를 옛 것으로 본다.
     final clientRev = (merged['rev'] as num?)?.toInt() ?? 0;
@@ -1807,6 +1909,15 @@ class GameActions {
     merged['abyssFloor'] = abyss.floor;
     merged['abyssBest'] = abyss.best;
     merged['abyssBossBest'] = abyss.bossBest;
+    _enforceCapBreak(
+      stored,
+      merged,
+      abyss.week,
+      abyss.floor,
+      clampReasons,
+      best: abyss.best,
+      t: t,
+    );
     if (abyss.week != null) merged['abyssWeek'] = abyss.week;
     if (abyss.floorAt != null) {
       merged['abyssFloorAt'] = abyss.floorAt!.toIso8601String();
@@ -1815,11 +1926,29 @@ class GameActions {
     }
     if (abyss.clamped) clampReasons.add('abyss');
 
-    final SaveGame parsed;
+    SaveGame parsed;
     try {
       parsed = SaveGame.fromJson(merged);
     } catch (_) {
       return const ActionResult.fail('bad_save');
+    }
+    // 칭호(2026-11-10) — 달성하지 않은 업적의 칭호는 뗀다(달성 여부는 세이브에서 바로 계산 — core_save achievementDone).
+    if (!titleValid(
+      parsed,
+      config.run,
+      conquerLevel: config.dex?.conquerLevel ?? 1,
+    )) {
+      parsed = parsed.copyWith(clearTitle: true);
+      merged.remove('ttl');
+    }
+    // 왕중왕전 표본(2026-11-10 사장님 확정)은 펫으로도 못 단다 — 구버전·조작 앱이 달아 올려도 뗀다.
+    if (parsed.equippedBugIds.any(parsed.retiredBugs.contains)) {
+      final eq = [
+        for (final id in parsed.equippedBugIds)
+          if (!parsed.retiredBugs.contains(id)) id,
+      ];
+      parsed = parsed.copyWith(equippedBugIds: eq);
+      merged['equippedBugIds'] = eq;
     }
 
     // 닉네임 변경 요구는 **새 이름이 실제로 올라오면** 내린다.
@@ -1887,7 +2016,12 @@ class GameActions {
         capped = capped.copyWith(researchDropSlackAt: slackAt);
     }
     {
-      final gr = _enforceGrade(stored, capped, t);
+      final gr = _enforceGrade(
+        stored,
+        capped,
+        t,
+        clientFeat: (incomingJson['feat'] as num?)?.toInt() ?? 0,
+      );
       if (gr.clamped) {
         clampReasons.add('grade');
         if (gr.detail.isNotEmpty) clampDetail['grade'] = gr.detail;
@@ -1980,8 +2114,10 @@ class GameActions {
   ({SaveGame save, bool clamped, String detail}) _enforceGrade(
     SaveGame stored,
     SaveGame client,
-    DateTime t,
-  ) {
+    DateTime t, {
+    // 올린 앱의 세이브 기능 단계 — 양분 게이지(30)를 모르는 앱은 희귀도를 옛 3마리 규칙으로 검사한다.
+    int clientFeat = kSaveFeatureLevel,
+  }) {
     // 새 곤충의 희귀도 칸 `ry`(1.0.22 희귀 천장) — 업로드당 2개 + 지난 업로드 뒤 10분마다 1개(천장은 400마리마다 —
     // 8시간 방치 최대 약 30번 = 16분에 1번).
     final sinceLast = t.difference(stored.lastSeen).inSeconds;
@@ -1996,6 +2132,7 @@ class GameActions {
         rarity: config.pet.bugRarity,
         newRarityAllowance: ryAllowance,
         fodderUsed: fodderUsed,
+        oldRarityRule: clientFeat < kRarityFeedFeat,
         // 줄어든 젤리 ÷ 뽑기 가격 + 여유 [kGachaSlackPerUpload] — 같은 업로드 구간에 젤리를 벌면(선물 2배·미션)
         // 순감소가 줄어 10회 뽑기의 마지막 알 표식이 벗겨졌다(2026-10-17 출시 전 점검). 정상 앱은 뽑기가 아니면
         // `gc` 를 붙이지 않으므로 여유(패스 20·선물·미션 젤리가 겹쳐도 60 까지)는 조작 앱에만 의미가 있다(id 를 골라 만드는 조작은 원래 못 막는다).
@@ -2027,11 +2164,15 @@ class GameActions {
     }
     final byId = {for (final sp in config.speciesList) sp.id: sp};
     final now = {for (final b in out.bugs) b.id};
+    // 정수를 먹이기에 흡수(2026-11-09) — 아는 앱(feat ≥ 30)은 먹인 재료가 희귀도 양분과 **등급 양분을 함께** 채운다(의도).
+    // 그래서 희귀도 재료도 정수 허용치에 넣되, 그 허용치를 **정수 증가 + 등급 양분 증가**가 함께 나눠 쓴다(한 재료가 정수와
+    // 등급 양분 양쪽에서 두 번 쓰이지 않게). 모르는 앱은 예전대로 희귀도 재료를 빼고 정수만 본다.
+    final absorbed = clientFeat >= kRarityFeedFeat;
     final allow = <String, int>{};
     for (final b in stored.bugs) {
       if (now.contains(b.id)) continue;
-      // 희귀도 올리기 재료로 쓴 곤충은 정수로 또 받지 못한다(1.0.22).
-      if (fodderUsed.contains(b.id)) continue;
+      // 희귀도 올리기 재료로 쓴 곤충은 정수로 또 받지 못한다(1.0.22) — 옛 앱만.
+      if (!absorbed && fodderUsed.contains(b.id)) continue;
       final sp = byId[b.speciesId];
       if (sp == null) continue;
       final asSeen = b.stage == LifeStage.egg
@@ -2047,6 +2188,46 @@ class GameActions {
     final spent = diff > 0 ? diff : 0;
     var unseen = spent * kUnseenEssencePerJelly;
     var changed = false;
+    if (absorbed) {
+      // 종마다 등급 양분 증가분을 허용치에서 먼저 뺀다. 모자라면 그 종 곤충의 등급 양분 증가를 저장본으로 되돌린다.
+      final oldById = {for (final b in stored.bugs) b.id: b};
+      final gain = <String, int>{};
+      for (final b in out.bugs) {
+        final o = oldById[b.id];
+        if (o == null) continue; // 새 곤충의 gw 는 guardGradeBugFields 가 지웠다
+        final d = b.gradeWorth - o.gradeWorth;
+        if (d > 0) gain[b.speciesId] = (gain[b.speciesId] ?? 0) + d;
+      }
+      final revert = <String>{};
+      for (final e in gain.entries) {
+        final room = allow[e.key] ?? 0;
+        if (e.value <= room) {
+          allow[e.key] = room - e.value;
+          continue;
+        }
+        final extra = min(unseen, e.value - room);
+        if (e.value <= room + extra) {
+          unseen -= extra;
+          allow[e.key] = 0;
+          continue;
+        }
+        revert.add(e.key);
+        notes.add('등급 양분 ${e.key} +${e.value} / 허용 ${room + unseen}');
+      }
+      if (revert.isNotEmpty) {
+        out = out.copyWith(
+          bugs: [
+            for (final b in out.bugs)
+              if (revert.contains(b.speciesId) &&
+                  oldById[b.id] != null &&
+                  b.gradeWorth > oldById[b.id]!.gradeWorth)
+                b.copyWith(gradeWorth: oldById[b.id]!.gradeWorth)
+              else
+                b,
+          ],
+        );
+      }
+    }
     final bag = Map<String, int>.from(out.essence);
     for (final e in out.essence.entries) {
       final cap = (stored.essence[e.key] ?? 0) + (allow[e.key] ?? 0);
@@ -2069,7 +2250,9 @@ class GameActions {
     final dropsUsed = sameDay ? stored.potionSrvDrops : 0;
     final byJelly = cfg.potionJelly <= 0 ? 0 : spent ~/ cfg.potionJelly;
     final buyLeft = max(0, min(byJelly, cfg.potionDailyBuy - boughtUsed));
-    final dropLeft = max(0, cfg.potionDropDaily - dropsUsed);
+    // 하루 한도는 약초학 보너스까지(2026-11-12) — 저장본 연구 레벨로(이번 업로드에서 올린 레벨은 다음 업로드부터).
+    final dropCap = potionDropDailyFor(cfg, _researchFx(stored.researchLevels));
+    final dropLeft = max(0, dropCap - dropsUsed);
     final slots = {for (final x in bossDexSlots(config.run)) x.id};
     final newBosses = out.bossDex
         .where((id) => slots.contains(id) && !stored.bossDex.contains(id))
@@ -2094,7 +2277,16 @@ class GameActions {
     final usedBuy = min(took, buyLeft);
     final usedDrop = took - usedBuy;
     if (gain > cap) {
-      out = out.copyWith(growthPotions: stored.growthPotions + cap);
+      // 오늘 드롭 몫을 다 썼다 — 앱 하루 기록도 한도로 맞춰 더 주지 않게(2026-11-03: 다른 근거 없는 물약이 서버 몫을
+      // 먼저 채우자 앱은 몇 개 남았다고 보고 계속 줘서 매시간 "생겼다 사라짐"이 됐다).
+      final full = '$today:${dropCap.toString().padLeft(2, '0')}';
+      final appDrop = out.dailyClaims[kPotionDropKey];
+      out = out.copyWith(
+        growthPotions: stored.growthPotions + cap,
+        dailyClaims: appDrop != null && appDrop.compareTo(full) >= 0
+            ? null
+            : {...out.dailyClaims, kPotionDropKey: full},
+      );
       notes.add(
         '물약 +$gain / 허용 $cap (보스 ${newBosses * cfg.potionBossFirst} · 미션 $mission · '
         '구매 $buyLeft · 드롭 $dropLeft, 오늘 드롭 인정 $dropsUsed)',
@@ -2159,6 +2351,9 @@ class GameActions {
   // 새 결제 알(id `iap-`)의 뽑기 출신 표식 — 업로드당 넉넉히(스킨 덤 알은 한 번에 1개).
   static const kNewIapEggsPerUpload = 4;
 
+  /// 양분 게이지(2026-11-09)를 아는 세이브 기능 단계 — 이보다 낮은 앱의 업로드는 희귀도를 옛 3마리 규칙으로 검사한다.
+  static const kRarityFeedFeat = 30;
+
   /// 새 곤충 뽑기 표식 `gc` 허용치의 업로드당 여유([_enforceGrade]).
   static const kGachaSlackPerUpload = 2;
 
@@ -2169,6 +2364,9 @@ class GameActions {
     int newRarityAllowance = kNewRarityPerUpload,
     // 희귀도 올리기 재료로 인정한 곤충 id 를 넣어 준다(호출자가 정수 허용치에서 뺀다).
     Set<String>? fodderUsed,
+    // 양분 게이지를 모르는 앱(feat < [kRarityFeedFeat], 1.0.27)의 업로드 — 희귀도를 옛 3마리 규칙으로 검사하고
+    // 게이지(`rw`)는 저장본 그대로 둔다. 채우는 양(2배씩)이 옛 규칙(4배씩)보다 작아 양분 검사로는 옛 올리기가 막힌다.
+    bool oldRarityRule = false,
     // 새 id 에 붙일 수 있는 뽑기 출신 표식 수(결제 알 `iap-` 제외) — null 이면 검사하지 않는다.
     int? newGachaAllowance,
   }) {
@@ -2185,6 +2383,18 @@ class GameActions {
           if (!nowIds.contains(b.id))
             (id: b.id, speciesId: b.speciesId, rarity: rarity.ownRarityOf(b)),
     ];
+    // 양분 게이지(2026-11-09) — 종마다 사라진 곤충의 가치(저장본 기준). [takeRarityWorth] 가 꺼내 쓴다.
+    final worthPool = <String, List<({String id, int worth})>>{};
+    final useWorth = rarity.worthOn && !oldRarityRule;
+    if (useWorth) {
+      for (final b in stored.bugs) {
+        if (nowIds.contains(b.id)) continue;
+        worthPool.putIfAbsent(b.speciesId, () => []).add((
+          id: b.id,
+          worth: bugFeedValue(b, rarity),
+        ));
+      }
+    }
     var gachaLeft = newGachaAllowance;
     var iapLeft = kNewIapEggsPerUpload;
     final bugs = <IndividualBug>[];
@@ -2219,6 +2429,15 @@ class GameActions {
         // 새 곤충의 희귀도 칸 `ry`(1.0.22) — 정해서 주는 곳은 희귀 천장뿐이고 값은 id 로 정해진다
         // ([BugRarityConfig.pityRarityOf]). 그 id 로 나올 수 없는 값·뽑기 출신·허용치를 넘는 것은 지운다(= id 롤).
         // 안 막으면 `ry: legendary` 한 줄로 전설을 무한히 만든다(세이브 검토 2026-10-16).
+        // 새 곤충의 양분 게이지 `rw`(2026-11-09)는 0 — 먹이기는 이미 있던 곤충에만 일어난다.
+        if (b.rarityWorth > 0 || b.gradeWorth > 0) {
+          changed = true;
+          b = IndividualBug.fromJson(
+            b.toJson()
+              ..remove('rw')
+              ..remove('gw'),
+          );
+        }
         final ry = b.rarity;
         if (ry != null) {
           final ok =
@@ -2247,7 +2466,27 @@ class GameActions {
       // 곤충 희귀도 칸 `ry`(1.0.22)도 저장본 그대로 — 옛 곤충에 전설을 적어 넣지 못하게, 구버전 앱이 모르고 떨궈도 되돌린다.
       // 단, **희귀도 올리기**로 오른 것은 이번 업로드에서 사라진 같은 종·같은 희귀도 재료가 있으면 인정한다.
       var ry = o.rarity;
-      if (rarity.enabled && b.rarity != null) {
+      var rw = o.rarityWorth;
+      // 등급 양분 `gw`(2026-11-09 정수 흡수) — 모르는 앱(feat < 30)은 저장본 그대로. 아는 앱의 증가는 정수 허용치와 함께
+      // [_enforceGrade] 가 종마다 묶는다(줄어드는 건 등급 올리기·재굴림에 쓴 것).
+      final gw = oldRarityRule ? o.gradeWorth : b.gradeWorth;
+      if (useWorth) {
+        // 양분 게이지(2026-11-09) — 총 가치(희귀도 가치 + 게이지)는 정당하게 **줄 수 없다**. 줄었으면(구버전 앱이 `rw` 를
+        // 모르고 떨굼) 저장본 그대로, 올랐으면 이번 업로드에서 사라진 같은 종 곤충 가치만큼만 인정한다. 같으면 클라이언트 값.
+        final was = bugRarityWorth(o, rarity);
+        final now = bugRarityWorth(b, rarity);
+        if (now == was ||
+            (now > was &&
+                takeRarityWorth(
+                  speciesId: b.speciesId,
+                  gain: now - was,
+                  pool: worthPool,
+                  used: fodderUsed,
+                ))) {
+          ry = b.rarity;
+          rw = b.rarityWorth;
+        }
+      } else if (rarity.enabled && b.rarity != null) {
         final was = rarity.ownRarityOf(o);
         if (b.rarity!.index > was.index &&
             rarityUpAllowed(
@@ -2295,6 +2534,8 @@ class GameActions {
           pfu == b.passiveFreeUsed &&
           ls == b.legacySynthUps &&
           ry == b.rarity &&
+          rw == b.rarityWorth &&
+          gw == b.gradeWorth &&
           lru == b.legacyRollUps &&
           !staleRolls) {
         bugs.add(b);
@@ -2309,6 +2550,8 @@ class GameActions {
         ..remove('pfu')
         ..remove('ls')
         ..remove('ry')
+        ..remove('rw')
+        ..remove('gw')
         ..remove('lru')
         ..remove('rl');
       bugs.add(
@@ -2322,6 +2565,8 @@ class GameActions {
           if (pfu > 0) 'pfu': pfu,
           if (ls != null) 'ls': ls,
           if (ry != null) 'ry': ry.key,
+          if (rw > 0) 'rw': rw,
+          if (gw > 0) 'gw': gw,
           if (lru > 0) 'lru': lru,
         }),
       );
@@ -2900,6 +3145,14 @@ class GameActions {
       }
     }
     final open = cfg.slotsFor(tier, bought, abyss: abyss);
+    // 뒤처진 기기(다른 기기·옛 로컬)가 올리면 레벨은 저장본으로 지켜도 그 기기의 진행 칸은 무효라 빠지고,
+    // 저장본에서 돌던 칸(값을 치른 연구)까지 사라졌다(2026-11-03 강군 님 herbalism 8). 빈 칸이 있으면 되살린다.
+    for (final r in stored.researchSlots) {
+      if (slots.length >= open) break;
+      if (r.level != (levels[r.id] ?? 0) + 1) continue;
+      if (slots.any((x) => x.id == r.id)) continue;
+      slots.add(r);
+    }
 
     // 3. 시간.
     // 시계 어긋남은 한 단계에 두 번 실릴 수 있다(시작 때 새 칸 + 끝날 때 저장본 칸) — 양쪽에 반씩만 봐준다.
@@ -3575,6 +3828,44 @@ class GameActions {
       stored.activeSession.isNotEmpty &&
       stored.activeSession != session;
 
+  /// 낡은 기기의 업로드인가(2026-11-12) — 저장 횟수(`rev`)가 저장본보다 **낮으면** 그 횟수, 아니면 null.
+  ///
+  /// 저장본의 횟수는 받은 업로드 중 가장 큰 값이다. 이 계정의 최신 진행을 가진 기기는 늘 그 이상이고
+  /// (앱은 서버 세이브를 받을 때·켤 때 횟수를 이어받는다), 낮으면 그 뒤 다른 기기가 더 저장한 것을 모르는 세이브다.
+  /// 받아 주면 골드·연구·정수가 뒤로 돌아가고, 다음에 진짜 기기가 올릴 때 "갑자기 늘었다"로 잘린다
+  /// (2026-11-11 사브리더 님 — 보통·연구 없음 세이브가 덮은 3분 뒤 골드 +48조가 잘렸다).
+  /// `rev` 를 안 보내는 구버전(1.0.20 이하) 업로드는 보지 않는다.
+  static int? staleUploadRev(SaveGame stored, Map<String, dynamic> incoming) {
+    final rev = incoming['rev'];
+    if (rev is! num) return null;
+    return rev.toInt() < stored.saveRev ? rev.toInt() : null;
+  }
+
+  /// 받아 준 업로드가 저장본보다 **뒤로 간 것**(2026-11-12 기록 보강) — 연구 레벨 합 · 같은 최고 난이도에서
+  /// 캐릭터 레벨 · 강화 레벨 합 · 골드(9할 넘게). 정상 플레이로는 거의 안 줄어드는 값들이라, 줄면 누가 덮었는지
+  /// 로그로 남긴다(잘림 기록은 늘어난 값만 본다). 없으면 null.
+  static String? regressionNote(SaveGame stored, SaveGame next) {
+    int sum(Iterable<int> xs) => xs.fold(0, (a, b) => a + b);
+    final parts = <String>[];
+    final rs = sum(stored.researchLevels.values);
+    final rn = sum(next.researchLevels.values);
+    if (rn < rs) parts.add('연구 합 $rs→$rn');
+    // 처음 가는 난이도에 들어서면 레벨·강화가 일부러 초기화된다 — 그때는 최고 난이도가 오른다.
+    if (next.topTier == stored.topTier) {
+      if (next.level < stored.level) {
+        parts.add('레벨 ${stored.level}→${next.level}');
+      }
+      final us = sum(stored.upgradeLevels.values);
+      final un = sum(next.upgradeLevels.values);
+      if (un < us) parts.add('강화 합 $us→$un');
+    }
+    if (stored.gold > 1000000 && next.gold < stored.gold ~/ 10) {
+      parts.add('골드 ${stored.gold}→${next.gold}');
+    }
+    if (parts.isEmpty) return null;
+    return '${parts.join(' · ')} · rev ${stored.saveRev}→${next.saveRev}';
+  }
+
   /// 비어 있는 표식을 이 업로드의 표식으로 채운다(첫 업로드가 곧 접속).
   static SaveGame adoptSession(SaveGame save, Object? session) =>
       save.activeSession.isEmpty && validSession(session)
@@ -3893,6 +4184,10 @@ class GameActions {
     if (bugIds.toSet().length != bugIds.length) {
       return (team: const [], error: 'duplicate_bug');
     }
+    // 왕중왕전 표본(2026-11-10)은 결투·대회·왕중왕전에 다시 나가지 못한다.
+    if (bugIds.any(save.retiredBugs.contains)) {
+      return (team: const [], error: 'bug_retired');
+    }
     final v = validateTeam(
       save,
       bugIds,
@@ -4012,8 +4307,41 @@ class GameActions {
     required PetConfig petConfig,
     EnhanceConfig? enhance,
   }) {
-    final ids = opponent.pvpDefenseIds;
+    var ids = opponent.pvpDefenseIds;
     if (ids.length != duelParams.bestOf) return null;
+    // 왕중왕전 표본이 방어팀에 남아 있으면(2026-11-12 점검 — 진 곤충은 보통 가장 센 곤충이라 출정 칸에 있다)
+    // 그 자리를 남은 성충 중 전투력 높은 곤충으로 채운다. 표본은 `bug_retired` 로 검증이 실패해 옛 `defenders` 행
+    // (표본의 옛 능력치)으로 떨어지거나 후보에서 빠졌다.
+    if (ids.any(opponent.retiredBugs.contains)) {
+      final keep = [
+        for (final id in ids)
+          if (!opponent.retiredBugs.contains(id)) id,
+      ];
+      final scored = <({String id, double power})>[];
+      for (final b in opponent.bugs) {
+        if (keep.contains(b.id) || opponent.retiredBugs.contains(b.id)) {
+          continue;
+        }
+        final one = validateDuelTeam(
+          opponent,
+          [b.id],
+          speciesById: speciesById,
+          petConfig: petConfig,
+          enhance: enhance,
+          allowInjured: true,
+          teamSize: 1,
+        );
+        if (one.error == null) {
+          scored.add((id: b.id, power: one.team.first.powerIn(duelParams)));
+        }
+      }
+      scored.sort((a, b) => b.power.compareTo(a.power));
+      ids = [
+        ...keep,
+        for (final s in scored.take(duelParams.bestOf - keep.length)) s.id,
+      ];
+      if (ids.length != duelParams.bestOf) return null;
+    }
     final v = validateDuelTeam(
       opponent,
       ids,
@@ -4376,6 +4704,13 @@ class GameActions {
       return (result: ActionResult.ok(save, extra: extra), session: next);
 
     next = next.copyWith(finished: true);
+    // 연습 결투(2026-11-10) — 결과만 알린다(트로피·부상·보상·점수 없음).
+    if (session.practice) {
+      return (
+        result: ActionResult.ok(save, extra: {...extra, 'practice': true}),
+        session: next,
+      );
+    }
     final applied = applyDuelOutcome(
       save,
       won: next.winsA > next.winsB,
@@ -4448,9 +4783,11 @@ class GameActions {
       // 캠페인 끝을 넘겨 전진시키지 않는다 — 회차 전환은 유저가 직접 누른다.
       finalStage: config.roadmap?.finalStage,
     );
+    // 심연 휴식(심연 연구, 2026-11-12) — 앱 `_applyOffline` 과 같은 함수.
+    final abyssRest = abyssIdleGoldMult(save, config.research);
     final goldGain = passOn
-        ? (prog.gold * config.iap.passIdleGoldMult).round()
-        : prog.gold;
+        ? (prog.gold * config.iap.passIdleGoldMult * abyssRest).round()
+        : (prog.gold * abyssRest).round();
 
     var xp = save.xp + prog.xp;
     var level = save.level;
@@ -5647,9 +5984,12 @@ class GameActions {
     final week = clientWeek == current || clientWeek == stored.abyssWeek
         ? clientWeek
         : (stored.abyssWeek ?? (unlocked ? current : null));
+    // 새 주는 1층부터 — 심연 지름길(심연 연구)이면 지난주 최고 층의 일부부터(저장본 기록·레벨로, 앱과 같은 함수).
     final base = week != null && week == stored.abyssWeek
         ? stored.abyssFloor
-        : 1;
+        : (week == null
+              ? 1
+              : abyssWeekStartFloor(stored, week, config.research));
     final perFloor = cfg.minSecondsPerFloor <= 0 ? 1.0 : cfg.minSecondsPerFloor;
     // 시간 예산은 서버가 기억하는 기준 시각(`abyssFloorAt`)부터 잰다 — 층을 인정할 때마다
     // 층 수 × perFloor 만큼만 앞으로 민다(남은 몫은 다음 업로드로 이월). 업로드마다 경과를
@@ -5697,6 +6037,290 @@ class GameActions {
       floorAt: week == null ? null : floorAt,
     );
   }
+
+  /// 심연 결정·강화 상한 돌파(2026-11-10) — 기기 권위라 업로드마다 자른다([_enforceAbyss] 가 인정한 층으로).
+  /// 그 주 최고 층(`abWt`)은 인정한 층 − 1 까지 · 결정(`abC`)은 새로 넘은 10층 배수 몫만 늘고 ·
+  /// 돌파 단계(`upCap`)는 줄지 않으며 저장본 결정 + 새로 번 몫 안에서만 오른다(넘으면 저장본 단계로).
+  void _enforceCapBreak(
+    SaveGame stored,
+    Map<String, dynamic> merged,
+    String? week,
+    int floor,
+    List<String> reasons, {
+    int best = 0,
+    DateTime? t,
+  }) {
+    final cfg = config.run.abyss;
+    final sameWeek = week != null && week == stored.abyssWeek;
+    final prevTop = sameWeek ? stored.abyssWeekTop : 0;
+    final clientTop = (merged['abWt'] as num?)?.toInt() ?? 0;
+    final top = week == null ? 0 : max(prevTop, min(clientTop, floor - 1));
+    // 심연 연구(2026-11-12) — 결정 정제·포자 감각은 **저장본 레벨**로(같은 업로드에서 올린 레벨은 다음 업로드부터).
+    final labFx = abyssLabFx(stored, config.research);
+    final crystalBonus = labFx.of(ResearchEffect.crystalBonus);
+    // 새 주의 지름길로 건너뛴 층 — 결정은 준다(앱 applyAbyssWeek 와 같다) · 포자는 직접 오른 층만.
+    final start = week != null && !sameWeek
+        ? abyssWeekStartFloor(stored, week, config.research)
+        : 1;
+    var earned = 0;
+    for (var f = prevTop + 1; f <= top; f++) {
+      earned += abyssCrystalsFor(cfg, f, crystalBonus);
+    }
+    _enforceAbyssLab(
+      stored,
+      merged,
+      reasons,
+      sporeFrom: max(prevTop, start - 1) + 1,
+      top: top,
+      best: best,
+      t: t ?? now().toUtc(),
+    );
+    final pool = stored.abyssCrystals + earned;
+    final clientCaps = (merged['upCap'] as Map?) ?? const {};
+    var caps = <String, int>{};
+    var spent = 0;
+    for (final k in UpgradeKind.values) {
+      final have = stored.upgradeCapUps[k] ?? 0;
+      var want = (clientCaps[k.key] as num?)?.toInt() ?? 0;
+      if (!cfg.capBreakable(k)) want = have;
+      want = min(max(want, have), max(have, cfg.capCosts.length));
+      for (var st = have; st < want && st < cfg.capCosts.length; st++) {
+        spent += cfg.capCosts[st];
+      }
+      if (want > 0) caps[k.key] = want;
+    }
+    // 심연 각인 — 레벨은 줄지 않고, 오른 레벨의 비용도 같은 결정에서 낸다.
+    final clientImp = (merged['abI'] as Map?) ?? const {};
+    var imp = <String, int>{};
+    for (final k in cfg.imprint.keys) {
+      final have = stored.abyssImprint[k] ?? 0;
+      final want = max(have, (clientImp[k] as num?)?.toInt() ?? 0);
+      for (var lv = have; lv < want; lv++) {
+        spent += cfg.imprintCost(lv);
+      }
+      if (want > 0) imp[k] = want;
+    }
+    var bad = false;
+    if (spent > pool) {
+      caps = {for (final e in stored.upgradeCapUps.entries) e.key.key: e.value};
+      imp = Map<String, int>.from(stored.abyssImprint);
+      spent = 0;
+      bad = true;
+    }
+    final clientCrystals = (merged['abC'] as num?)?.toInt() ?? 0;
+    final allowed = pool - spent;
+    if (clientCrystals > allowed) bad = true;
+    if (bad) reasons.add('abyssCrystal');
+    merged['abWt'] = top;
+    merged['abC'] = clientCrystals.clamp(0, allowed);
+    merged['upCap'] = caps;
+    merged['abI'] = imp;
+  }
+
+  /// 심연 포자·심연 연구(2026-11-12) — 기기 권위라 업로드마다 자른다.
+  /// 포자 = 저장본 + 새로 깬 층([sporeFrom]..[top], 주 상한까지) × 층당 + 새로 넘은 10층 배수(역대 최고 [best]) × 마일스톤
+  /// − 이번에 시작한 연구 비용, 보유 상한까지. 레벨은 저장본 칸이 끝났을 때(시계 여유 포함)만 +1, 줄지 않음.
+  /// 새 칸은 비어 있을 때만 · 다음 레벨만 · 끝 시각이 지난 업로드 + 연구 시간보다 이르면 무효(저장본 칸으로).
+  void _enforceAbyssLab(
+    SaveGame stored,
+    Map<String, dynamic> merged,
+    List<String> reasons, {
+    required int sporeFrom,
+    required int top,
+    required int best,
+    required DateTime t,
+  }) {
+    final rc = config.research;
+    final lab = rc?.abyssLab;
+    if (rc == null || lab == null || !lab.enabled) return;
+    final fx = abyssLabFx(stored, rc);
+    var gain = 0;
+    for (var f = sporeFrom; f <= top; f++) {
+      gain += lab.sporesForFloor(
+        f,
+        sporeBonus: fx.of(ResearchEffect.sporeBonus),
+      );
+    }
+    final every = config.run.abyss.milestoneEvery;
+    if (every > 0 && lab.sporesMilestone > 0) {
+      for (
+        var m = (stored.abyssBest ~/ every + 1) * every;
+        m <= best;
+        m += every
+      ) {
+        gain += lab.sporesMilestone;
+      }
+    }
+    var bad = false;
+    final skew = Duration(seconds: rc.clockSkewSeconds);
+    // 레벨 — 저장본 칸이 끝났으면 그 레벨까지만.
+    final levels = Map<String, int>.from(stored.abyssLabLevels);
+    var slot = stored.abyssLabSlot;
+    final clientLv = (merged['abRL'] as Map?) ?? const {};
+    if (slot != null &&
+        !slot.endsAt.isAfter(t.add(skew)) &&
+        ((clientLv[slot.id] as num?)?.toInt() ?? 0) >= slot.level) {
+      levels[slot.id] = slot.level;
+      slot = null;
+    }
+    for (final e in clientLv.entries) {
+      final v = (e.value as num?)?.toInt() ?? 0;
+      if (v > (levels['${e.key}'] ?? 0)) bad = true;
+    }
+    // 새 칸.
+    var cost = 0;
+    final rawSlot = merged['abRS'];
+    ResearchSlot? clientSlot;
+    try {
+      clientSlot = rawSlot is Map
+          ? ResearchSlot.fromJson(Map<String, dynamic>.from(rawSlot))
+          : null;
+    } catch (_) {
+      clientSlot = null;
+    }
+    final same =
+        clientSlot != null &&
+        slot != null &&
+        clientSlot.id == slot.id &&
+        clientSlot.level == slot.level &&
+        clientSlot.endsAt == slot.endsAt;
+    if (clientSlot != null && !same) {
+      final def = lab.byId(clientSlot.id);
+      final lv = (levels[clientSlot.id] ?? 0) + 1;
+      final earliest = stored.lastSeen.add(
+        def == null ? Duration.zero : rc.timeAt(def, lv),
+      );
+      if (slot == null &&
+          def != null &&
+          stored.abyssUnlocked &&
+          clientSlot.level == lv &&
+          lv <= def.maxLevel &&
+          !clientSlot.endsAt.isBefore(earliest.subtract(skew))) {
+        cost = rc.costAt(def, lv).samples;
+        slot = clientSlot;
+      } else {
+        bad = true;
+      }
+    } else if (clientSlot == null && slot != null) {
+      // 끝나지 않은 칸을 지워 올렸다 — 저장본 칸을 지킨다.
+    }
+    var pool = stored.abyssSpores + gain - cost;
+    if (pool < 0) {
+      // 비용을 못 치른다 — 새 칸을 무효로(새 칸은 빈 칸일 때만 받았으니 빈 칸으로 돌린다).
+      bad = true;
+      slot = null;
+      pool += cost;
+    }
+    final clientSpores = (merged['abSp'] as num?)?.toInt() ?? 0;
+    final allowed = max(0, lab.sporeCap > 0 ? min(pool, lab.sporeCap) : pool);
+    if (clientSpores > allowed) bad = true;
+    if (bad) reasons.add('abyssLab');
+    merged['abSp'] = clientSpores.clamp(0, max(0, allowed));
+    merged['abRL'] = levels;
+    if (slot == null) {
+      merged.remove('abRS');
+    } else {
+      merged['abRS'] = slot.toJson();
+    }
+  }
+
+  /// 왕중왕전 결과를 세이브에 반영한다(2026-11-10) — 참가한 주([SaveGame.kotkEntryWeek])가 [week] 이고 결과가 나왔을 때.
+  /// [placement] = 이 유저의 순위(대진에 못 올랐으면 null — 표본이 되지 않는다). 진 곤충은 **표본**이 된다.
+  /// 반영할 것이 없으면 null.
+  SaveGame? kotkApply(
+    SaveGame save,
+    String week,
+    int? placement, {
+    // 참가가 [KotkConfig.minEntrants] 명 이상인 주 — 아니면 젤리·뱃지·왕관 없이 재료만(2026-11-12 사장님 확정).
+    bool prize = true,
+  }) {
+    if (save.kotkEntryWeek != week) return null;
+    final bug = save.kotkEntryBug;
+    // 저장 횟수를 올린다(2026-11-12 세이브 호환 점검) — 서버가 보상을 넣은 저장본이 앞서가야 한다. 안 그러면 응답을
+    // 채택하지 않는 경로(서버 행동 직전 업로드·/kotk/enter 안의 정산)에서 앱의 다음 업로드가 보상 없는 젤리·재료로
+    // 덮었다("소비"로 보인다). 이제 그 업로드는 `stale_save` 로 막히고 앱이 저장본을 채택한다(`_adoptIfStale`).
+    var out = save.copyWith(
+      clearKotkEntry: true,
+      kotkDoneWeek: week,
+      saveRev: save.saveRev + 1,
+    );
+    // 성적 보상(2026-11-12 사장님 확정, battle.json → kotk.rewards) — 서버가 저장본에 바로 넣는다(앱은 응답 `kotk` 로 채택).
+    final rw = placement == null
+        ? null
+        : config.battle.kotk.rewardFor(placement);
+    if (rw != null) {
+      final mats = Map<MaterialKind, int>.from(out.materials);
+      void add(MaterialKind k, int n) {
+        if (n > 0) mats[k] = (mats[k] ?? 0) + n;
+      }
+
+      if (prize) add(MaterialKind.jelly, rw.jelly);
+      add(MaterialKind.fossil, rw.fossil);
+      final stones = Map<DuelStone, int>.from(out.duelStones);
+      if (rw.elementStones > 0) {
+        stones[DuelStone.element] =
+            (stones[DuelStone.element] ?? 0) + rw.elementStones;
+      }
+      if (rw.temperamentStones > 0) {
+        stones[DuelStone.temperament] =
+            (stones[DuelStone.temperament] ?? 0) + rw.temperamentStones;
+      }
+      out = out.copyWith(
+        materials: mats,
+        duelStones: stones,
+        growthPotions: out.growthPotions + rw.potions,
+      );
+    }
+    // 우승 — 그 곤충에 황금 왕관(ktC) · 대표 뱃지 `kotk:회차`.
+    if (placement == 1 && bug != null && prize) {
+      final round = config.battle.kotk.roundOf(week) ?? 1;
+      out = out.copyWith(
+        kotkChampBugs: {...out.kotkChampBugs, bug},
+        eventBadges: {...out.eventBadges, 'kotk:$round'},
+      );
+    }
+    if (placement != null) {
+      final best = save.kotkBest <= 0
+          ? placement
+          : min(save.kotkBest, placement);
+      final retire = placement > 1 && bug != null;
+      out = out.copyWith(
+        kotkBest: best,
+        retiredBugs: retire ? {...save.retiredBugs, bug} : null,
+        // 표본함 카드의 "제N회 M강"(2026-11-12).
+        specimenRecords: retire
+            ? {
+                ...save.specimenRecords,
+                bug: '${config.battle.kotk.roundOf(week) ?? 0}:$placement',
+              }
+            : null,
+        // 표본은 펫으로도 못 단다 — 달려 있었으면 뗀다.
+        equippedBugIds: retire
+            ? [
+                for (final id in save.equippedBugIds)
+                  if (id != bug) id,
+              ]
+            : null,
+      );
+    }
+    return out;
+  }
+
+  /// 종별 최대 크기 순위(2026-11-10)에 새로 적을 기록 — 도감 최고 크기(수컷 기록 `maxSizeMm`)가 [stored] 보다 오른 종만.
+  /// 크기는 기기 권위라 종 최대 크기 × [_sizeRankSlack] 로 자른다(짝짓기 돌연변이 덤 여유).
+  Map<String, double> speciesSizeGains(SaveGame stored, SaveGame save) {
+    final out = <String, double>{};
+    for (final e in save.dex.entries) {
+      final sp = config.speciesList.where((x) => x.id == e.key).firstOrNull;
+      if (sp == null) continue;
+      final before = stored.dex[e.key]?.maxSizeMm ?? 0;
+      final mm = min(e.value.maxSizeMm, sp.sizeMaxMm * _sizeRankSlack);
+      if (mm > before && mm > 0) out[e.key] = (mm * 10).roundToDouble() / 10;
+    }
+    return out;
+  }
+
+  static const _sizeRankSlack = 1.3;
 
   /// 진행도 랭킹의 심연 값(`profiles.abyss_best`) — **이번 주 지금 깬 층**(2026-10-05 사장님 확정:
   /// 약해져 내려가면 랭킹도 내려간다). 주가 바뀌면 0 부터. 역대 최고(`abyssBest`)는 마일스톤 판정에만 쓴다.

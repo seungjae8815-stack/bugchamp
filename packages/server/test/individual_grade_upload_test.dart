@@ -289,6 +289,106 @@ void main() {
       expect(r.essence['stag_dorcus'] ?? 0, lessThan(3));
     });
 
+    // 곤충 양분 게이지(2026-11-09) — 총 가치는 정당하게 줄 수 없고, 오른 만큼은 사라진 같은 종 곤충 가치로만.
+    test('양분 게이지 — 희귀도가 다른 재료를 섞어 먹인 업로드를 인정한다', () {
+      expect(on.config.pet.bugRarity.worthOn, isTrue);
+      IndividualBug b(String id, Grade r) =>
+          bug(id, pot: 1).copyWith(rarity: r);
+      final s = stored([
+        b('t', Grade.uncommon),
+        b('u1', Grade.uncommon),
+        b('u2', Grade.uncommon),
+        for (var i = 0; i < 12; i++) b('c$i', Grade.common),
+      ]);
+      final fed = rarityFeed(
+        s,
+        't',
+        ['u1', 'u2', for (var i = 0; i < 12; i++) 'c$i'],
+        on.config.pet,
+        {for (final x in on.config.speciesList) x.id: x},
+      );
+      expect(fed.isOk, isTrue);
+      // 2배씩: 16 + 8×2 + 4×12 = 80 → 희귀(64) · 남은 16.
+      final out = on.mergeSave(s, fed.save!.toJson()).save!;
+      expect(out.bugs.single.rarity, Grade.rare);
+      expect(out.bugs.single.rarityWorth, 16);
+    });
+
+    test('양분 게이지 — 구버전 앱(feat 29)의 옛 3마리 올리기는 옛 규칙으로 인정한다', () {
+      // 고급 4마리(목표 + 재료 3) → 희귀. 채우는 양(8×3 = 24)은 문턱 차(48)에 모자라지만 옛 앱은 옛 규칙으로 검사한다.
+      IndividualBug b(String id) =>
+          bug(id, pot: 1).copyWith(rarity: Grade.uncommon);
+      final s = stored([b('t'), b('a'), b('b'), b('c')]);
+      final oldApp = stored([b('t').copyWith(rarity: Grade.rare)]).toJson()
+        ..['feat'] = 29;
+      expect(on.mergeSave(s, oldApp).save!.bugs.single.rarity, Grade.rare);
+      // 같은 업로드를 새 앱(feat 30)이 보냈다면 양분이 모자라 저장본 희귀도.
+      final newApp = stored([b('t').copyWith(rarity: Grade.rare)]).toJson();
+      expect(on.mergeSave(s, newApp).save!.bugs.single.rarity, Grade.uncommon);
+    });
+
+    // 정수를 먹이기에 흡수(2026-11-09) — 등급 양분 gw 는 사라진 같은 종 곤충의 정수 가치 안에서만 오른다.
+    test('등급 양분 — 먹인 업로드는 인정 · 재료 없이 올린 것은 되돌림 · 구버전 앱이 떨궈도 지킨다', () {
+      IndividualBug c(String id) =>
+          bug(id, pot: 1).copyWith(rarity: Grade.common);
+      final s = stored([c('t'), c('a'), c('b'), c('c')]);
+      final fed = rarityFeed(
+        s,
+        't',
+        ['a', 'b', 'c'],
+        on.config.pet,
+        {for (final x in on.config.speciesList) x.id: x},
+      );
+      final gw = fed.save!.bugs.single.gradeWorth;
+      expect(gw, greaterThan(0));
+      expect(
+        on.mergeSave(s, fed.save!.toJson()).save!.bugs.single.gradeWorth,
+        gw,
+      );
+      // 위조: 재료가 그대로인데 등급 양분만 올림.
+      final forged = stored([
+        c('t').copyWith(gradeWorth: 50),
+        c('a'),
+        c('b'),
+        c('c'),
+      ]).toJson();
+      expect(
+        on
+            .mergeSave(s, forged)
+            .save!
+            .bugs
+            .firstWhere((b) => b.id == 't')
+            .gradeWorth,
+        0,
+      );
+      // 구버전 앱(gw 를 모름)이 떨궈 올려도 저장본 값.
+      final s2 = stored([c('t').copyWith(gradeWorth: 9)]);
+      final old = stored([c('t')]).toJson()..['feat'] = 29;
+      expect(on.mergeSave(s2, old).save!.bugs.single.gradeWorth, 9);
+    });
+
+    test('양분 게이지 — 재료 없이 올린 게이지는 되돌리고, 구버전 앱이 떨군 게이지는 지킨다', () {
+      final t = bug('t', pot: 1).copyWith(rarity: Grade.uncommon);
+      // 위조: 재료가 사라지지 않았는데 게이지만 올림.
+      final s = stored([t]);
+      final forged = stored([t.copyWith(rarityWorth: 40)]).toJson();
+      expect(on.mergeSave(s, forged).save!.bugs.single.rarityWorth, 0);
+      // 구버전 앱(rw 를 모름)이 떨궈 올려도 저장본 게이지.
+      final s2 = stored([t.copyWith(rarityWorth: 20)]);
+      final old = stored([t]).toJson();
+      final kept = on.mergeSave(s2, old).save!.bugs.single;
+      expect(kept.rarityWorth, 20);
+      expect(kept.rarity, Grade.uncommon);
+    });
+
+    test('양분 게이지 — 새 곤충에는 게이지를 붙일 수 없다', () {
+      final s = stored(const []);
+      final client = stored([
+        bug('n', pot: 1).copyWith(rarityWorth: 50),
+      ]).toJson();
+      expect(on.mergeSave(s, client).save!.bugs.single.rarityWorth, 0);
+    });
+
     test('희귀도 올리기 — 저장본에 알이던 곤충(마지막 업로드 뒤 부화)도 재료로 센다', () {
       IndividualBug c(String id, {LifeStage stage = LifeStage.adult}) =>
           bug(id, pot: 1, stage: stage).copyWith(rarity: Grade.common);
@@ -585,6 +685,21 @@ void main() {
       expect(out.potionSrvDay, dailyDateKey(t0));
       expect(out.potionSrvBought, 5);
       expect(out.potionSrvDrops, g.potionDropDaily);
+    });
+
+    test('물약을 자르면 앱 하루 드롭 기록도 한도로 — 앱이 더 주지 않게(2026-11-03)', () {
+      final s = stored([]);
+      final today = dailyDateKey(t0);
+      final up = s
+          .copyWith(
+            growthPotions: 18,
+            dailyClaims: {kPotionDropKey: '$today:03'},
+          )
+          .toJson();
+      final out = on.mergeSave(s, up).save!;
+      expect(out.growthPotions, g.potionDropDaily);
+      expect(potionDropsOn(out, today), g.potionDropDaily);
+      expect(potionDropRoom(out, g, t0), 0);
     });
 
     test('업로드마다 여유가 쌓이지 않는다 — 같은 서버 날짜엔 드롭 몫을 다 쓰면 0', () {

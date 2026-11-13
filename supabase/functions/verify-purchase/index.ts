@@ -5,75 +5,24 @@
 // 가짜 영수증으로 상품을 공짜로 받을 수 있다.
 //
 // 요청 (POST, 사용자 JWT 필요):
-//   { "productId": "jelly_m", "purchaseToken": "..." }
+//   { "productId": "jelly_m", "purchaseToken": "...", "transactionId": "..."(iOS·선택) }
 // 응답:
-//   { "ok": true }                        → 지급해도 됨
+//   { "ok": true }                        → 지급해도 됨(안드로이드)
+//   { "ok": true, "purchaseKey": "ios:…" } → iOS·거래 id 로 거래를 찾았을 때 — 서버는 이 키로 중복 지급을 막는다(2026-11-09).
+//                                           iOS 영수증 문자열은 갱신마다 바뀌어 문자열로는 같은 거래를 못 알아본다.
 //   { "ok": false, "reason": "invalid" }  → 가짜/취소/환불 — 지급 금지(재시도 무의미)
 //   { "ok": false, "reason": "owned_by_other" } → 다른 계정이 이미 사용한 영수증
 //   HTTP 5xx                              → 일시적 오류. 앱은 **지급도 완료통보도 하지 말고** 재시도.
 
 import { createClient } from 'jsr:@supabase/supabase-js@2'
 import { kstTodayStartIso, priceOf, sendTelegram, won } from '../_shared/ops.ts'
+import { getPlayAccessToken, PACKAGE_NAME } from '../_shared/google.ts'
 
-const PACKAGE_NAME = 'com.bugchamp.app'
+// 구글 토큰 발급은 공용 모듈(_shared/google.ts) — 환불 조회(daily-report)와 같이 쓴다.
 
 // 서비스 계정 키(JSON 전체)는 Edge Function 시크릿으로만 넣는다. 앱에는 절대 넣지 않는다.
 const SERVICE_ACCOUNT_JSON = Deno.env.get('PLAY_SERVICE_ACCOUNT_JSON') ?? ''
-
-/** base64url 인코딩(패딩 제거) */
-function b64url(data: Uint8Array | string): string {
-  const bytes = typeof data === 'string' ? new TextEncoder().encode(data) : data
-  let bin = ''
-  for (const b of bytes) bin += String.fromCharCode(b)
-  return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
-}
-
-/** PEM(PKCS#8) → CryptoKey */
-async function importKey(pem: string): Promise<CryptoKey> {
-  const body = pem
-    .replace(/-----BEGIN PRIVATE KEY-----/, '')
-    .replace(/-----END PRIVATE KEY-----/, '')
-    .replace(/\s/g, '')
-  const der = Uint8Array.from(atob(body), (c) => c.charCodeAt(0))
-  return crypto.subtle.importKey(
-    'pkcs8',
-    der,
-    { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' },
-    false,
-    ['sign'],
-  )
-}
-
-/** 서비스 계정으로 Play Developer API 액세스 토큰 발급 */
-async function getAccessToken(): Promise<string> {
-  const sa = JSON.parse(SERVICE_ACCOUNT_JSON)
-  const now = Math.floor(Date.now() / 1000)
-  const header = { alg: 'RS256', typ: 'JWT' }
-  const claim = {
-    iss: sa.client_email,
-    scope: 'https://www.googleapis.com/auth/androidpublisher',
-    aud: 'https://oauth2.googleapis.com/token',
-    iat: now,
-    exp: now + 3600,
-  }
-  const unsigned = `${b64url(JSON.stringify(header))}.${b64url(JSON.stringify(claim))}`
-  const key = await importKey(sa.private_key)
-  const sig = new Uint8Array(
-    await crypto.subtle.sign('RSASSA-PKCS1-v1_5', key, new TextEncoder().encode(unsigned)),
-  )
-  const jwt = `${unsigned}.${b64url(sig)}`
-
-  const res = await fetch('https://oauth2.googleapis.com/token', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams({
-      grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
-      assertion: jwt,
-    }),
-  })
-  if (!res.ok) throw new Error(`token exchange failed: ${res.status} ${await res.text()}`)
-  return (await res.json()).access_token as string
-}
+const getAccessToken = () => getPlayAccessToken(SERVICE_ACCOUNT_JSON)
 
 // ── Apple(App Store) 영수증 검증 ──────────────────────────────────
 // App-Specific Shared Secret 으로 verifyReceipt 에 조회한다(StoreKit1 영수증).
@@ -91,10 +40,14 @@ function looksLikeAppleReceipt(token: string): boolean {
 type PurchaseEnv = 'production' | 'test' | 'promo'
 
 type AppleResult =
-  | { ok: true; reuseKey: string; orderId: string | null; env: PurchaseEnv }
+  | { ok: true; reuseKey: string; orderId: string | null; env: PurchaseEnv; keyed: boolean }
   | { ok: false; reason: string }
 
-async function verifyApple(receipt: string, productId: string): Promise<AppleResult> {
+async function verifyApple(
+  receipt: string,
+  productId: string,
+  transactionId: string,
+): Promise<AppleResult> {
   if (!APPLE_SHARED_SECRET) {
     console.error('APPLE_SHARED_SECRET 미설정')
     return { ok: false, reason: 'server_misconfigured' }
@@ -140,7 +93,13 @@ async function verifyApple(receipt: string, productId: string): Promise<AppleRes
   const matches = inApp
     .filter((t) => t.product_id === productId)
     .sort((a, b) => Number(b.purchase_date_ms ?? 0) - Number(a.purchase_date_ms ?? 0))
-  const match = matches[0]
+  // 앱이 거래 id 를 보냈으면 **그 거래**를 고른다(2026-11-09). 가장 최근 것만 고르면 같은 상품을 연달아 사서
+  // 둘 다 완료 전일 때 두 요청이 같은 거래를 집어, 거래 키로 막는 서버가 두 번째 결제를 "이미 지급"으로 닫는다.
+  // 거래 id 가 없거나(구버전 앱) 못 찾으면 예전처럼 가장 최근 것 — 그때는 거래 키를 돌려주지 않는다(keyed=false).
+  const exact = transactionId
+    ? matches.find((t) => String(t.transaction_id ?? '') === transactionId)
+    : undefined
+  const match = exact ?? matches[0]
 
   if (!match) return { ok: false, reason: 'invalid' } // 영수증에 이 상품 없음
   if (match.cancellation_date || match.cancellation_date_ms) {
@@ -155,7 +114,13 @@ async function verifyApple(receipt: string, productId: string): Promise<AppleRes
   const env: PurchaseEnv = String(data.environment ?? '') === 'Sandbox'
     ? 'test'
     : 'production'
-  return { ok: true, reuseKey, orderId: match.original_transaction_id ?? null, env }
+  return {
+    ok: true,
+    reuseKey,
+    orderId: match.original_transaction_id ?? null,
+    env,
+    keyed: exact !== undefined,
+  }
 }
 
 Deno.serve(async (req) => {
@@ -172,11 +137,12 @@ Deno.serve(async (req) => {
   const uid = userData?.user?.id
   if (!uid) return Response.json({ ok: false, reason: 'unauthenticated' }, { status: 401 })
 
-  let productId: string, purchaseToken: string
+  let productId: string, purchaseToken: string, transactionId: string
   try {
     const body = await req.json()
     productId = String(body.productId ?? '')
     purchaseToken = String(body.purchaseToken ?? '')
+    transactionId = String(body.transactionId ?? '') // iOS 거래 id(1.0.28 앱부터, 없으면 빈 값)
     if (!productId || !purchaseToken) throw new Error('missing fields')
   } catch {
     return Response.json({ ok: false, reason: 'bad_request' }, { status: 400 })
@@ -186,11 +152,12 @@ Deno.serve(async (req) => {
   let reuseKey: string
   let orderId: string | null = null
   let env: PurchaseEnv = 'production'
+  let appleKeyed = false // iOS: 앱이 보낸 거래 id 로 거래를 정확히 찾았나
   const platform = looksLikeAppleReceipt(purchaseToken) ? 'iOS' : '안드로이드'
 
   if (looksLikeAppleReceipt(purchaseToken)) {
     // ── iOS(App Store) ──
-    const r = await verifyApple(purchaseToken, productId)
+    const r = await verifyApple(purchaseToken, productId, transactionId)
     if (!r.ok) {
       const httpStatus = r.reason === 'server_misconfigured'
         ? 503
@@ -205,6 +172,7 @@ Deno.serve(async (req) => {
     reuseKey = r.reuseKey
     orderId = r.orderId
     env = r.env
+    appleKeyed = r.keyed
   } else {
     // ── Android(Google Play) ──
     if (!SERVICE_ACCOUNT_JSON) {
@@ -285,7 +253,11 @@ Deno.serve(async (req) => {
     if (!error) await alertPurchase(admin, uid, productId, platform, env, orderId)
   }
 
-  return Response.json({ ok: true })
+  // iOS 는 거래 고유 키를 돌려준다 — 서버(/purchase)가 영수증 문자열 대신 이 키로 지급 기록을 남긴다.
+  // 안드로이드는 영수증 토큰이 곧 고유 키라 보내지 않는다(서버가 토큰을 그대로 쓴다).
+  return Response.json(
+    appleKeyed ? { ok: true, purchaseKey: `ios:${reuseKey}` } : { ok: true },
+  )
 })
 
 // ── 운영 알림(2026-09-15) — 결제는 실시간으로 본다 ──

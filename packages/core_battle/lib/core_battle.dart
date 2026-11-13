@@ -8,5 +8,6 @@ export 'src/duel/duel_bug.dart';
 export 'src/duel/duel_engine.dart';
 export 'src/duel/duel_params.dart';
 export 'src/duel/event_duel.dart';
+export 'src/duel/kotk.dart';
 export 'src/event_wave.dart';
 export 'src/party.dart';

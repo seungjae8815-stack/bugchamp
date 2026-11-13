@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'dart:convert';
 import 'dart:io';
 
@@ -183,14 +184,15 @@ void main() {
   });
 
   test('자동 올리기 — 아끼는 곤충부터 · 올린 곤충이 다시 재료로 이어진다 · 서버 검사도 같은 이음을 센다', () {
-    // 키운 곤충 t + 일반 15마리 → t 고급(3) · 나머지 12마리로 고급 3마리 · t 희귀(고급 3) = 5번, 재료 15.
+    // 키운 곤충 t + 일반 15마리. 양분 게이지(2026-11-09, pets.json worth 4·16·64)면 t 에 바로 먹인다:
+    // 일반 3마리(4+12=16) → 고급 · 나머지 12마리(16+48=64) → 희귀 = 2번, 재료 15(옛 3마리 규칙이면 5번 — 같은 총량).
     final s = save([
       bug('t', level: 5),
       for (var i = 0; i < 15; i++) bug('w$i'),
     ]);
     final r = autoRarityUp(s, pet, byId);
     expect(r.isOk, isTrue);
-    expect(r.extra['ups'], 5);
+    expect(r.extra['ups'], pet.bugRarity.worthOn ? 2 : 5);
     expect(r.extra['fodder'], 15);
     expect(r.save!.bugs.map((b) => b.id), ['t']);
     expect(r.save!.bugs.single.rarity, Grade.rare);
@@ -250,5 +252,177 @@ void main() {
     }
     // a·b·c 는 재료가 둘뿐(t 는 키운 곤충이라 재료가 아니다).
     expect(ready, {'t'});
+  });
+
+  // 곤충 양분 게이지(2026-11-09 사장님 확정) — 희귀도가 달라도 먹이고, 낮을수록 적게 채운다.
+  group('양분 게이지', () {
+    final cfg = pet.bugRarity;
+    int worth(IndividualBug b) => bugRarityWorth(b, cfg);
+
+    test('실데이터 — 켜져 있고 4배씩(옛 4마리 규칙과 총량이 같다)', () {
+      expect(cfg.worthOn, isTrue);
+      for (var g = 1; g < Grade.values.length; g++) {
+        expect(cfg.worth[g], cfg.worth[g - 1] * (cfg.upFodder + 1));
+      }
+    });
+
+    test('희귀도가 다른 재료를 섞어 먹이면 가치 합으로 오르고 남는 몫은 게이지에 남는다', () {
+      // 채우는 양 2배씩(4·8·16·32): 고급 t(문턱 16) + 고급 2(8×2) + 일반 12(4×12) = 80 → 희귀(64) · 남은 16.
+      final s = save([
+        bug('t', r: Grade.uncommon, level: 5),
+        bug('u1', r: Grade.uncommon),
+        bug('u2', r: Grade.uncommon),
+        for (var i = 0; i < 12; i++) bug('c$i'),
+      ]);
+      final r = rarityFeed(
+        s,
+        't',
+        ['u1', 'u2', for (var i = 0; i < 12; i++) 'c$i'],
+        pet,
+        byId,
+      );
+      expect(r.isOk, isTrue);
+      final t = r.save!.bugs.single;
+      expect(t.rarity, Grade.rare);
+      expect(t.rarityWorth, 80 - cfg.worth[Grade.rare.index]);
+      expect(worth(t), 80);
+      expect(t.level, 5); // 키운 것은 그대로
+    });
+
+    test('목표보다 높은 희귀도는 재료가 아니다 · 다른 종도 아니다', () {
+      final s = save([
+        bug('t'),
+        bug('hi', r: Grade.rare),
+        bug('other', species: 'x'),
+        bug('c'),
+      ]);
+      final f = rarityUpFodder(s, s.bugs.first, pet, byId).map((b) => b.id);
+      expect(f, ['c']);
+      expect(rarityFeed(s, 't', ['hi'], pet, byId).error, 'bad_fodder');
+    });
+
+    test('다음 단계까지만 먹일 땐 가치 작은 것부터, 모자라면 아무것도 안 먹인다', () {
+      final s = save([bug('t'), bug('c1'), bug('c2'), bug('c3'), bug('c4')]);
+      final plan = rarityFeedPlan(s, s.bugs.first, pet, byId, toNext: true);
+      expect(plan.length, 3); // 4 + 12 = 16(고급)
+      final short = save([bug('t'), bug('c1'), bug('c2')]);
+      expect(
+        rarityFeedPlan(short, short.bugs.first, pet, byId, toNext: true),
+        isEmpty,
+      );
+    });
+
+    test('높은 희귀도 하나가 지름길이 되지 않는다(2배씩) · 채우는 양은 문턱을 넘지 않는다', () {
+      // 영웅 하나 = 전설 문턱의 약 3%(사장님 확정 — "영웅이 나오면 전설이 쉬워진다").
+      expect(
+        cfg.feedOfRarity(Grade.epic) / cfg.worthOfRarity(Grade.legendary),
+        lessThan(0.05),
+      );
+      // 서버 검사가 총량 보존에 기대는 불변식.
+      for (final g in Grade.values) {
+        expect(cfg.feedOfRarity(g), lessThanOrEqualTo(cfg.worthOfRarity(g)));
+      }
+    });
+
+    test('전설에 닿으면 게이지는 0 · 전설은 더 먹이지 않는다', () {
+      // 영웅 t(문턱 256) + 모은 양분 760 + 영웅 하나(32) = 1,048 → 전설.
+      final s = save([
+        bug('t', r: Grade.epic).copyWith(rarityWorth: 760),
+        bug('e0', r: Grade.epic),
+        bug('c'),
+      ]);
+      final r = rarityFeed(s, 't', ['e0'], pet, byId);
+      final t = r.save!.bugs.firstWhere((b) => b.id == 't');
+      expect(t.rarity, Grade.legendary);
+      expect(t.rarityWorth, 0);
+      // 전설이어도 더 먹일 수 있다(정수 흡수, 2026-11-09) — 희귀도 양분은 0 그대로, 등급 양분만 쌓인다.
+      final more = rarityFeed(r.save!, 't', ['c'], pet, byId);
+      expect(more.isOk, isTrue);
+      final t2 = more.save!.bugs.single;
+      expect(t2.rarity, Grade.legendary);
+      expect(t2.rarityWorth, 0);
+      expect(t2.gradeWorth, greaterThan(t.gradeWorth));
+    });
+
+    test('게이지는 세이브를 오가도 같다 · 0 이면 싣지 않는다', () {
+      final b = bug('t').copyWith(rarityWorth: 12);
+      expect(IndividualBug.fromJson(b.toJson()).rarityWorth, 12);
+      expect(bug('t').toJson().containsKey('rw'), isFalse);
+    });
+
+    test('서버 풀: 같은 종 사라진 가치만큼만 · 넘친 몫은 같은 종 다음 곤충에 · 모자라면 안 건드린다', () {
+      final pool = <String, List<({String id, int worth})>>{
+        'stag_saw': [(id: 'a', worth: 16), (id: 'b', worth: 16)],
+      };
+      final used = <String>{};
+      expect(
+        takeRarityWorth(
+          speciesId: 'stag_saw',
+          gain: 20,
+          pool: pool,
+          used: used,
+        ),
+        isTrue,
+      );
+      expect(used, {'a', 'b'});
+      // 남은 12 로 다음 곤충 12 까지.
+      expect(
+        takeRarityWorth(speciesId: 'stag_saw', gain: 13, pool: pool),
+        isFalse,
+      );
+      expect(
+        takeRarityWorth(speciesId: 'stag_saw', gain: 12, pool: pool),
+        isTrue,
+      );
+      expect(takeRarityWorth(speciesId: 'other', gain: 1, pool: pool), isFalse);
+    });
+  });
+
+  // 정수를 먹이기에 흡수(2026-11-09 사장님 확정) — 먹이면 등급 양분도 차고, 등급 올리기·재굴림은 옛 정수를 먼저 쓴다.
+  group('등급 양분(정수 흡수)', () {
+    final grade = pet.individualGrade;
+
+    test('먹이면 재료의 정수 가치만큼 등급 양분이 쌓인다', () {
+      final s = save([bug('t', level: 5), bug('c1'), bug('c2'), bug('c3')]);
+      final r = rarityFeed(s, 't', ['c1', 'c2', 'c3'], pet, byId);
+      final want = [
+        for (final id in ['c1', 'c2', 'c3'])
+          grade.essenceOf(
+            s.bugs.firstWhere((b) => b.id == id),
+            pet.rarityOf(s.bugs.firstWhere((b) => b.id == id), sp),
+          ),
+      ].fold(0, (a, v) => a + v);
+      expect(want, greaterThan(0));
+      expect(r.save!.bugs.single.gradeWorth, want);
+      expect(r.extra['grade'], want);
+    });
+
+    test('등급 올리기는 옛 정수를 먼저, 모자라면 등급 양분에서 낸다 · 둘 다 모자라면 실패', () {
+      final cost = grade.upgradeCost(1);
+      final t = bug('t').copyWith(gradeWorth: cost);
+      final s = save([t]).copyWith(essence: {sp.id: 1});
+      final r = gradeUp(s, 't', grade, byId, Random(1));
+      expect(r.isOk, isTrue);
+      expect(r.save!.essence.containsKey(sp.id), isFalse); // 옛 정수 1 을 먼저
+      expect(r.save!.bugs.single.gradeWorth, 1); // 나머지 cost - 1 은 등급 양분에서
+      expect(r.save!.bugs.single.potential, 2);
+      final poor = save([bug('t').copyWith(gradeWorth: cost - 1)]);
+      expect(gradeUp(poor, 't', grade, byId, Random(1)).error, 'no_essence');
+    });
+
+    test('패시브 재굴림도 옛 정수 → 등급 양분 순서로 낸다', () {
+      final p2 = pet.passiveV2;
+      if (!p2.enabled || p2.rerollEssence <= 0) return;
+      final s = save([bug('t').copyWith(gradeWorth: p2.rerollEssence)]);
+      final r = rollPassiveReroll(s, p2, 't', Random(1), useJelly: false);
+      expect(r.isOk, isTrue);
+      expect(r.save!.bugs.single.gradeWorth, 0);
+    });
+
+    test('등급 양분은 세이브를 오가도 같다 · 0 이면 싣지 않는다', () {
+      final b = bug('t').copyWith(gradeWorth: 7);
+      expect(IndividualBug.fromJson(b.toJson()).gradeWorth, 7);
+      expect(bug('t').toJson().containsKey('gw'), isFalse);
+    });
   });
 }

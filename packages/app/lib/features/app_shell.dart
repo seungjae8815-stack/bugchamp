@@ -1,3 +1,4 @@
+import '../domain/play_prefs.dart';
 import '../domain/pass_expiry.dart';
 import '../domain/guild_service.dart' show kGuildOpen, guildHasRequestsProvider;
 import 'guild/guild_screen.dart';
@@ -5,7 +6,9 @@ import 'dart:async';
 import 'dart:io' show Platform;
 import 'package:app_tracking_transparency/app_tracking_transparency.dart';
 import 'package:core_models/core_models.dart'
-    show kMaxOfflineAccrual, MaterialKind;
+    show kMaxOfflineAccrual, LifeStage, MaterialKind;
+import 'package:core_run/core_run.dart' show seasonStartAt;
+import 'package:core_save/core_save.dart' show abyssRankFloorOf, abyssWeekId;
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -27,7 +30,10 @@ import '../ui/art.dart';
 import '../ui/labels.dart' show leagueIcon;
 import 'battle/league_board_screen.dart' show leagueName;
 import '../ui/event_badge.dart';
+import '../ui/format.dart' show keepWords, noBreak;
 import '../ui/game_dialog.dart';
+import '../ui/popup_gate.dart';
+import '../ui/tour.dart';
 import '../ui/rank_popup.dart';
 import '../ui/whats_new.dart';
 import 'battle/battle_screen.dart';
@@ -38,6 +44,8 @@ import 'character/skill_tab.dart';
 import 'research/research_screen.dart';
 import 'shop/craft_screen.dart';
 import 'title/title_screen.dart';
+import '../ui/weekly_summary.dart';
+import 'storage/specimen_box.dart';
 import 'storage/storage_screen.dart';
 import '../ui/colors.dart';
 import '../domain/red_dots.dart';
@@ -100,6 +108,8 @@ class _AppShellState extends ConsumerState<AppShell>
       // 시작 팝업 순서: 방치 보상(홈) → 업데이트 내용 → 순위. 업데이트 내용이 **먼저** 자리를
       // 잡아야(같은 프레임, 기다리기 전에) 순위 팝업이 그 뒤로 선다(StartupPopupGate).
       unawaited(showWhatsNewOnStart(context, ref));
+      // 새 주 첫 실행이면 지난주 기록 한 장(2026-11-12).
+      unawaited(showWeeklySummaryOnStart(context, ref));
       unawaited(showRankPopupOnStart(context, ref));
     });
   }
@@ -209,6 +219,28 @@ class _AppShellState extends ConsumerState<AppShell>
       } else {
         unawaited(svc.cancelGift());
       }
+      // 왕중왕전 마감 안내(2026-11-12) — 이번 주가 열린 회차이고 아직 참가하지 않았으면 마감 13시간 전 1회.
+      final battle = ref.read(gameDataProvider).value?.battleConfig;
+      if (notify.enabled && save != null && battle != null) {
+        final now = ref.read(clockProvider).now().toUtc();
+        final week = abyssWeekId(now, battle);
+        // 이번 주 심연 층(주간 요약용) — 기기 기록이라 여기서 본다.
+        unawaited(WeeklyStats.noteAbyss(abyssRankFloorOf(save, week: week)));
+        final close = seasonStartAt(now, battle).add(const Duration(days: 6));
+        if (battle.kotk.roundOf(week) != null && save.kotkEntryWeek != week) {
+          unawaited(
+            svc.scheduleKotk(
+              at: close.subtract(const Duration(hours: 13)),
+              title: l.notifKotkTitle,
+              body: l.notifKotkBody,
+            ),
+          );
+        } else {
+          unawaited(svc.cancelKotk());
+        }
+      } else {
+        unawaited(svc.cancelKotk());
+      }
     } else if (state == AppLifecycleState.resumed) {
       // 복귀 → 오프라인 알림 취소(이미 접속).
       svc.cancelOfflineFull();
@@ -216,6 +248,7 @@ class _AppShellState extends ConsumerState<AppShell>
       unawaited(svc.cancelResearch());
       unawaited(svc.cancelPassExpiry());
       unawaited(svc.cancelGift());
+      unawaited(svc.cancelKotk());
       // 복귀 즉시 서버와 통신을 확인한다. 안 하면 다음 60초 주기까지
       // **백그라운드에서 끊긴 줄 모르고** 놀고, 반대로 백그라운드에서
       // 회복됐는데 "연결 끊김" 배너가 계속 떠 있기도 한다.
@@ -278,6 +311,38 @@ class _AppShellState extends ConsumerState<AppShell>
   /// 띄운 업데이트 안내가 둘째 타이틀 위에 남아 `_showSoftUpdate` 크래시가 났다).
   bool _leaving = false;
 
+  /// 탭 첫 방문 안내(2026-11-12 사장님 확정) — 첫 실행 둘러보기를 본 새 계정만, 탭마다 한 번.
+  /// 탭 화면이 그려진 다음에 짚는다. 다른 창이 떠 있으면 이번엔 건너뛰고 다음 방문 때 다시 본다.
+  bool _tabTourRunning = false;
+  Future<void> _maybeTabTour(int tab) async {
+    final prefs = PlayPrefs.instance;
+    if (tab == 0 || _tabTourRunning || !prefs.loaded || !prefs.tourEligible) {
+      return;
+    }
+    if (prefs.tabToursSeen.contains(tab)) return;
+    _tabTourRunning = true;
+    try {
+      await Future<void>.delayed(const Duration(milliseconds: 450));
+      if (!mounted ||
+          ref.read(tabIndexProvider) != tab ||
+          StartupPopupGate.busy) {
+        return;
+      }
+      final steps = tabTour(AppLocalizations.of(context), tab);
+      if (steps.isEmpty) return;
+      await prefs.markTabTourSeen(tab);
+      if (!mounted) return;
+      StartupPopupGate.hold();
+      try {
+        await showTour(context, steps);
+      } finally {
+        StartupPopupGate.release();
+      }
+    } finally {
+      _tabTourRunning = false;
+    }
+  }
+
   Future<void> _backToTitle() async {
     if (_leaving) return;
     _leaving = true;
@@ -293,7 +358,14 @@ class _AppShellState extends ConsumerState<AppShell>
     if (_notifSetup || !mounted) return;
     _notifSetup = true;
     await NotifyPrefs.instance.load();
-    await NotificationService.instance.requestPermission();
+    // 시스템 권한 창이 떠 있는 동안 편지함 자동 열기·새 곤충 팝업이 겹치지 않게 관문을 잡는다
+    // (2026-11-12 에뮬 점검 — 첫 실행에 권한 창과 편지함이 한꺼번에 떴다).
+    StartupPopupGate.hold();
+    try {
+      await NotificationService.instance.requestPermission();
+    } finally {
+      StartupPopupGate.release();
+    }
     if (!mounted) return;
     await _syncDailyNotifications();
     // load() 가 값을 바꾼 뒤에 붙인다 — 붙이고 읽으면 위 예약이 한 번 더 돈다.
@@ -314,6 +386,7 @@ class _AppShellState extends ConsumerState<AppShell>
     if (!np.enabled || !np.researchDone) unawaited(svc.cancelResearch());
     if (!np.enabled || !np.gift) unawaited(svc.cancelGift());
     if (!np.enabled) unawaited(svc.cancelPassExpiry());
+    if (!np.enabled) unawaited(svc.cancelKotk());
     unawaited(_syncDailyNotifications());
   }
 
@@ -362,6 +435,7 @@ class _AppShellState extends ConsumerState<AppShell>
   Widget build(BuildContext context) {
     final index = ref.watch(tabIndexProvider);
     final saveAsync = ref.watch(saveControllerProvider);
+    ref.listen<int>(tabIndexProvider, (_, next) => _maybeTabTour(next));
 
     // 대회 회차 보상(서버가 지급) → 1회 다이얼로그.
     //
@@ -389,6 +463,15 @@ class _AppShellState extends ConsumerState<AppShell>
       ctrl.consumeLeagueResult();
       WidgetsBinding.instance.addPostFrameCallback(
         (_) => _showLeagueResult(leagueResult),
+      );
+    }
+    final kotkPlace = ctrl.pendingKotkPlace;
+    if (kotkPlace != null) {
+      final kotkBug = ctrl.pendingKotkBug;
+      final kotkN = ctrl.pendingKotkN;
+      ctrl.consumeKotkPlace();
+      WidgetsBinding.instance.addPostFrameCallback(
+        (_) => _showKotkResult(kotkPlace, kotkBug, kotkN),
       );
     }
     final abyssRank = ctrl.pendingAbyssRankReward;
@@ -610,6 +693,137 @@ class _AppShellState extends ConsumerState<AppShell>
     );
   }
 
+  /// 왕중왕전 결과(2026-11-12) — 성적 · 받은 보상(battle.json → kotk.rewards, 서버가 이미 넣었다) · 표본/왕관 안내.
+  Future<void> _showKotkResult(int place, String? bugId, int? entrants) async {
+    if (!mounted) return;
+    final l = AppLocalizations.of(context);
+    // 어느 곤충이었는지(2026-11-12 점검) — 그림·이름. 표본이 됐으면 표본함으로 가는 버튼.
+    final data = ref.read(gameDataProvider).value;
+    final save = ref.read(saveControllerProvider).value;
+    final bug = save?.bugs.where((b) => b.id == bugId).firstOrNull;
+    final sp = bug == null ? null : data?.speciesById[bug.speciesId];
+    final lang = Localizations.localeOf(context).languageCode;
+    final retired =
+        bug != null && (save?.retiredBugs.contains(bug.id) ?? false);
+    // 참가가 적은 주는 젤리·뱃지·왕관 없이 재료만(2026-11-12 사장님 확정 — 서버 `kotkApply(prize:)` 와 같은 판정).
+    final minN = data?.battleConfig?.kotk.minEntrants ?? 0;
+    final prize = entrants == null || entrants >= minN;
+    final rw = place <= 0
+        ? null
+        : ref.read(gameDataProvider).value?.battleConfig?.kotk.rewardFor(place);
+    final title = switch (place) {
+      1 => l.kotkPlace1,
+      2 => l.kotkPlace2,
+      _ => l.kotkPlaceN('$place'),
+    };
+    final extra = [
+      if ((rw?.potions ?? 0) > 0) l.kotkRewardPotion('${rw!.potions}'),
+      if ((rw?.elementStones ?? 0) > 0)
+        l.kotkRewardElement('${rw!.elementStones}'),
+      if ((rw?.temperamentStones ?? 0) > 0)
+        l.kotkRewardTemper('${rw!.temperamentStones}'),
+    ].map(noBreak).join(' · ');
+    const body = TextStyle(color: Colors.white, fontSize: 13, height: 1.4);
+    await showGameDialog<void>(
+      context,
+      title: l.kotkResultTitle,
+      iconWidget: gameImage(
+        'assets/images/ui/kotk_trophy.webp',
+        width: 30,
+        height: 30,
+        fallback: rankImageDlg('trophy'),
+      ),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (place <= 0)
+            Text(
+              keepWords(l.kotkResultNone),
+              textAlign: TextAlign.center,
+              style: body,
+            )
+          else ...[
+            if (bug != null && sp != null) ...[
+              // 우승이면 왕관이 위에서 내려앉는다(2026-11-12).
+              if (place == 1 && prize)
+                TweenAnimationBuilder<double>(
+                  tween: Tween(begin: 0, end: 1),
+                  duration: const Duration(milliseconds: 900),
+                  curve: Curves.bounceOut,
+                  builder: (_, v, child) => Transform.translate(
+                    offset: Offset(0, -40 * (1 - v)),
+                    child: Opacity(opacity: v.clamp(0, 1), child: child),
+                  ),
+                  child: Center(child: rankImageDlg('crown', size: 38)),
+                ),
+              Center(
+                child: bugStageImage(
+                  sp.id,
+                  LifeStage.adult,
+                  size: 72,
+                  sex: bug.sex,
+                  fallback: bugAvatar(sp, size: 60),
+                ),
+              ),
+              Text(
+                sp.name.resolve(lang),
+                textAlign: TextAlign.center,
+                style: body.copyWith(fontWeight: FontWeight.w800),
+              ),
+              const SizedBox(height: 4),
+            ],
+            Text(
+              title,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: Color(0xFFFFD977),
+                fontSize: 20,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+            const SizedBox(height: 10),
+            if (rw != null)
+              gameRewardList(
+                context,
+                materials: {
+                  if (rw.jelly > 0 && prize) MaterialKind.jelly: rw.jelly,
+                  if (rw.fossil > 0) MaterialKind.fossil: rw.fossil,
+                },
+              ),
+            if (extra.isNotEmpty) ...[
+              const SizedBox(height: 6),
+              Text(extra, textAlign: TextAlign.center, style: body),
+            ],
+            const SizedBox(height: 8),
+            if (!prize)
+              Text(
+                keepWords(l.kotkMinResult('$minN')),
+                textAlign: TextAlign.center,
+                style: body.copyWith(color: Colors.white70),
+              ),
+            if (place > 1 || prize)
+              Text(
+                keepWords(place == 1 ? l.kotkResultChamp : l.kotkResultRetired),
+                textAlign: TextAlign.center,
+                style: body.copyWith(color: const Color(0xFFFFE082)),
+              ),
+            if (place <= 16)
+              Text(l.kotkHallIn, textAlign: TextAlign.center, style: body),
+          ],
+        ],
+      ),
+      actions: [
+        if (retired)
+          gameDialogButton(l.kotkSpecimenOpen, () {
+            Navigator.of(context).pop();
+            showSpecimenBox(context);
+          }, primary: false),
+        gameDialogButton(l.eventRewardClaim, popOnTap(context)),
+      ],
+    );
+  }
+
   /// 결투 리그 주간 결산 — 승급·유지·강등과 지난주 순위·젤리.
   Future<void> _showLeagueResult(LeagueResultReport r) async {
     if (!mounted) return;
@@ -740,15 +954,25 @@ class GameNavBar extends ConsumerWidget {
               children: [
                 for (final i in kNavPages[page])
                   Expanded(
-                    child: _NavTab(
-                      image: (color) => _navArt(i, color),
-                      label: _navLabel(l, i),
-                      active: i == index,
-                      dot: dots.contains(i),
-                      onTap: () => tap(i),
+                    child: KeyedSubtree(
+                      // 첫 실행 둘러보기가 짚는 칸(ui/tour.dart).
+                      key: switch (i) {
+                        kStorageTabIndex => TourKeys.navStorage,
+                        kBattleTabIndex => TourKeys.navBattle,
+                        kShopTabIndex => TourKeys.navShop,
+                        _ => null,
+                      },
+                      child: _NavTab(
+                        image: (color) => _navArt(i, color),
+                        label: _navLabel(l, i),
+                        active: i == index,
+                        dot: dots.contains(i),
+                        onTap: () => tap(i),
+                      ),
                     ),
                   ),
                 Expanded(
+                  key: TourKeys.navSwitch,
                   child: _NavTab(
                     key: const Key('navSwitch'),
                     image: (color) =>

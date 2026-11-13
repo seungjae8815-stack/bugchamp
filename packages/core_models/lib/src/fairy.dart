@@ -57,6 +57,7 @@ class Fairy {
     this.baseRoll = 0,
     this.subRoll = 0,
     this.level = 1,
+    this.gauge = 0,
   });
 
   final String id;
@@ -67,17 +68,28 @@ class Fairy {
   final int subRoll;
   final int level;
 
+  /// 양분 게이지(2026-11-09 사장님 확정 — 곤충과 같은 먹이기, JSON `gg`) — 지금 등급 위로 **다음 등급까지 모은 양분**.
+  /// 같은 종류 요정을 먹이면 찬다(core_run `FairyConfig.feed`, 낮은 등급일수록 적다). 0 이면 싣지 않는다.
+  final int gauge;
+
   /// 개체값 두 개의 평균(0~1) — 화면의 "품질" 표시·정렬용.
   double get quality => (baseRoll + subRoll) / (2 * kFairyRollMax);
 
-  Fairy copyWith({int? level}) => Fairy(
+  Fairy copyWith({
+    int? level,
+    FairyGrade? grade,
+    int? baseRoll,
+    int? subRoll,
+    int? gauge,
+  }) => Fairy(
     id: id,
     kind: kind,
-    grade: grade,
+    grade: grade ?? this.grade,
     sub: sub,
-    baseRoll: baseRoll,
-    subRoll: subRoll,
+    baseRoll: baseRoll ?? this.baseRoll,
+    subRoll: subRoll ?? this.subRoll,
     level: level ?? this.level,
+    gauge: gauge ?? this.gauge,
   );
 
   /// 세이브 크기 방어선(§2.1) — 키를 한 글자로 둔다.
@@ -89,6 +101,7 @@ class Fairy {
     'r': baseRoll,
     'u': subRoll,
     'l': level,
+    if (gauge > 0) 'gg': gauge,
   };
 
   /// 모르는 등급·깨진 칸이면 null(건너뛴다 — 던지지 않는다).
@@ -108,6 +121,7 @@ class Fairy {
       baseRoll: _roll(json['r']),
       subRoll: _roll(json['u']),
       level: _int(json['l'], 1).clamp(1, 999),
+      gauge: _int(json['gg'], 0).clamp(0, 1 << 30),
     );
   }
 
@@ -120,11 +134,12 @@ class Fairy {
       other.sub == sub &&
       other.baseRoll == baseRoll &&
       other.subRoll == subRoll &&
-      other.level == level;
+      other.level == level &&
+      other.gauge == gauge;
 
   @override
   int get hashCode =>
-      Object.hash(id, kind, grade, sub, baseRoll, subRoll, level);
+      Object.hash(id, kind, grade, sub, baseRoll, subRoll, level, gauge);
 }
 
 /// 요정 알. **등급은 얻을 때 정해져 있고, 종류·부가 능력치는 둥지에 넣을 때** 정해진다

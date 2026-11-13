@@ -20,6 +20,8 @@ Future<bool> confirmJellySpend(
   // 확인 버튼 글자. 비우면 '즉시'(즉시 완료·회복). 확장·충전·교환처럼 즉시가 어색한 곳만 넘긴다.
   String? actionLabel,
 }) async {
+  // 첫 1회 무료(2026-11-12)처럼 0 젤리면 묻지 않는다.
+  if (jelly <= 0) return true;
   final l = AppLocalizations.of(context);
   // 젤리가 모자라면 확인 창 대신 상점 안내(2026-10-02).
   final have = ProviderScope.containerOf(

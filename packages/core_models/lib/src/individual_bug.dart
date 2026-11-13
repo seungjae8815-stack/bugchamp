@@ -39,6 +39,8 @@ class IndividualBug {
     this.passiveRoll,
     this.passiveFreeUsed = 0,
     this.rarity,
+    this.rarityWorth = 0,
+    this.gradeWorth = 0,
     this.legacyRollUps = 0,
     Element? element,
   }) : _element = element;
@@ -129,6 +131,15 @@ class IndividualBug {
   /// 업데이트 전 곤충도 같은 함수로 새로 굴려진다(사장님 확정 C안). 값은 천장·뽑기처럼 **정해서 줄 때만** 싣는다.
   /// 서버는 저장본에 없던 **새 id** 에만 허용한다([newGen] 과 같은 이유).
   final Grade? rarity;
+
+  /// 곤충 양분 게이지(2026-11-09 사장님 확정, JSON `rw`) — 지금 희귀도 위로 **다음 희귀도까지 모은 양분**.
+  /// 같은 종 곤충을 먹이면 그 곤충의 가치(core_run `BugRarityConfig.worth`, 낮은 희귀도일수록 적다)만큼 찬다.
+  /// 곤충의 총 가치 = 희귀도 가치 + 이 값. 0 이면 싣지 않는다. 새 id 에는 서버가 허용하지 않는다.
+  final int rarityWorth;
+
+  /// 등급 양분(2026-11-09 사장님 확정 — 정수를 먹이기에 흡수, JSON `gw`). 같은 종 곤충을 먹이면 그 곤충의 정수 가치만큼
+  /// 이 곤충에 쌓이고, 등급 올리기·패시브 재굴림이 옛 정수(종 통) 다음으로 여기서 꺼내 쓴다. 0 이면 싣지 않는다.
+  final int gradeWorth;
 
   /// 업데이트 전 곤충의 **놓친 능력치 굴리기**를 몇 번 썼나(JSON `lru`, 2026-10-16 사장님 확정 — 1.0.22).
   /// 옛 규칙으로 등급이 오른 곤충은 등급 올리기의 롤 굴리기를 한 번도 못 받아 평균 50점에 머물렀다(문의).
@@ -502,6 +513,8 @@ class IndividualBug {
     int? passiveRoll,
     int? passiveFreeUsed,
     Grade? rarity,
+    int? rarityWorth,
+    int? gradeWorth,
     int? legacyRollUps,
     Element? element,
   }) => IndividualBug(
@@ -530,6 +543,8 @@ class IndividualBug {
     passiveRoll: passiveRoll ?? this.passiveRoll,
     passiveFreeUsed: passiveFreeUsed ?? this.passiveFreeUsed,
     rarity: rarity ?? this.rarity,
+    rarityWorth: rarityWorth ?? this.rarityWorth,
+    gradeWorth: gradeWorth ?? this.gradeWorth,
     legacyRollUps: legacyRollUps ?? this.legacyRollUps,
     element: element ?? this.element,
   );
@@ -591,6 +606,12 @@ class IndividualBug {
     rarity: json['ry'] is String
         ? Grade.fromKeyOrNull(json['ry'] as String)
         : null,
+    rarityWorth: json['rw'] is num
+        ? ((json['rw'] as num).toInt()).clamp(0, 1 << 30)
+        : 0,
+    gradeWorth: json['gw'] is num
+        ? ((json['gw'] as num).toInt()).clamp(0, 1 << 30)
+        : 0,
     legacyRollUps: json['lru'] is num
         ? ((json['lru'] as num).toInt()).clamp(0, 99)
         : 0,
@@ -631,6 +652,8 @@ class IndividualBug {
     if (passiveFreeUsed > 0) 'pfu': passiveFreeUsed,
     // 정해서 준 희귀도만(대다수는 id 롤) — 세이브 크기(§3).
     if (rarity != null) 'ry': rarity!.key,
+    if (rarityWorth > 0) 'rw': rarityWorth,
+    if (gradeWorth > 0) 'gw': gradeWorth,
     if (legacyRollUps > 0) 'lru': legacyRollUps,
     'element': element.key,
   };

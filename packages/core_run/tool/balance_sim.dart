@@ -241,6 +241,9 @@ double? _abyssDay;
 /// 한 주의 도달 층 = min(전력의 벽, 시간의 벽). 주 사이에는 성장이 이어진다.
 int _abyssWeeks = 0;
 
+/// `--no-cap-break` — 심연 결정·강화 상한 돌파 없이(전후 비교용).
+bool _noCapBreak = false;
+
 /// `--train-pet=X` — 훈련소가 펫 기여에 얹는 몫(곤충 3마리 평균, 예: 0.25 = +25%).
 /// 게임은 펫 기여 × (1 + 훈련 단계 합 × `training.petScale`)이다(core_save `trainPetMult`).
 /// 90일 표는 훈련을 모른다(가정 곡선 밖) — 심연 상위권이 몇 층 더 가는지 보려고 둔다(2026-09-30).
@@ -620,6 +623,12 @@ void main(List<String> args) {
         final reach = math.min(wall, time.floors);
         final toReach = sim.abyssHoursTo(reach);
         final one = sim.abyssHoursTo(reach + 1) - toReach;
+        // 심연 결정(2026-11-10) — 이번 주 깬 층의 10층 배수마다 → 상한 돌파(`--no-cap-break` 면 끔).
+        if (!_noCapBreak) {
+          sim.abyssCrystals += cfg.crystalsBetween(1, reach + 1);
+          sim.buyCapSteps();
+          sim.buyImprints();
+        }
         stdout.writeln(
           '  ${w.toString().padLeft(3)} | ${wall.toString().padLeft(8)} | '
           '${time.floors.toString().padLeft(8)} | ${reach.toString().padLeft(4)} | '
@@ -1429,6 +1438,61 @@ class _Player {
   int careerStage = 1;
   int xp = 0;
   final Map<UpgradeKind, int> levels = {};
+
+  /// 심연 결정으로 연 강화 상한 돌파 단계(2026-11-10) — 게임의 `upgradeSpecOf` 와 같은 규칙.
+  final Map<UpgradeKind, int> capSteps = {};
+  int abyssCrystals = 0;
+
+  /// 심연 각인 레벨(2026-11-10) — 남은 결정으로 가장 싼 것부터.
+  final Map<String, int> imprint = {};
+
+  void buyImprints() {
+    final cfg = config.abyss;
+    if (!cfg.imprintOn) return;
+    while (true) {
+      String? best;
+      int? bestCost;
+      for (final k in cfg.imprint.keys) {
+        final c = cfg.imprintCost(imprint[k] ?? 0);
+        if (c <= abyssCrystals && (bestCost == null || c < bestCost)) {
+          best = k;
+          bestCost = c;
+        }
+      }
+      if (best == null) return;
+      abyssCrystals -= bestCost!;
+      imprint[best] = (imprint[best] ?? 0) + 1;
+    }
+  }
+
+  UpgradeSpec _spec(UpgradeKind k) {
+    final st = capSteps[k] ?? 0;
+    return st <= 0 || !config.abyss.capBreakable(k)
+        ? config.upgrade(k)
+        : config.upgrade(k).withCapBonus(st * config.abyss.capStep);
+  }
+
+  /// 결정으로 상한 돌파를 산다 — 상한에 닿은 줄부터, 싼 단계부터.
+  void buyCapSteps() {
+    while (true) {
+      UpgradeKind? best;
+      int? bestCost;
+      for (final k in config.upgrades.keys) {
+        if (!config.abyss.capBreakable(k)) continue;
+        if (_spec(k).canBuyAt(levels[k] ?? 0)) continue;
+        final c = config.abyss.capStepCost(capSteps[k] ?? 0);
+        if (c == null || c > abyssCrystals) continue;
+        if (bestCost == null || c < bestCost) {
+          best = k;
+          bestCost = c;
+        }
+      }
+      if (best == null) return;
+      abyssCrystals -= bestCost!;
+      capSteps[best] = (capSteps[best] ?? 0) + 1;
+    }
+  }
+
   final Map<MaterialKind, double> materials = {};
 
   /// 지금까지 **번** 재료 누계(남은 양과 비교해 미사용 비율을 본다).
@@ -1521,7 +1585,9 @@ class _Player {
     upgrades: Map.of(levels),
     level: level,
     petAttackMult: petAttackMult,
-    petHpMult: 1 + (_ceilPets.petHpMult - 1) * _petFill,
+    petHpMult:
+        1 +
+        (_ceilPets.petHpMult - 1) * _petFill * researchPetShareMult(_research),
     gear: gear,
     dexConquered: dexConquered,
   );
@@ -1540,7 +1606,11 @@ class _Player {
 
   /// 펫 공격 배율 — 최고치 배율까지 채움만큼.
   double get petAttackMult =>
-      1 + (_ceilPets.petAttackMult - 1) * _petFill * (1 + _trainPet);
+      1 +
+      (_ceilPets.petAttackMult - 1) *
+          _petFill *
+          (1 + _trainPet) *
+          researchPetShareMult(_research);
 
   int get dexConquered =>
       (_ceilingData.speciesCount *
@@ -1721,6 +1791,7 @@ class _Player {
     s = _applySkills(s, activeAvg: activeAvg);
     s = _applyFairy(s, activeAvg: activeAvg);
     s = _applyGuild(s);
+    s = applyAbyssImprint(s, config.abyss, imprint);
     s = applyResearchStats(
       s,
       _research,
@@ -1943,7 +2014,11 @@ class _Player {
     final cfg = _skillConfig;
     final eq = _skillEquip;
     if (cfg == null || eq == null) {
-      return (healMult: 1.0, revive: null, guard: null);
+      return (
+        healMult: researchKillHealMult(_research),
+        revive: null,
+        guard: null,
+      );
     }
     final r = skillRevive(cfg, levels: eq.levels, equipped: eq.equipped);
     ({double duration, double cooldown})? guard;
@@ -1955,11 +2030,9 @@ class _Player {
       if (cd > 0 && dur > 0) guard = (duration: dur, cooldown: cd);
     }
     return (
-      healMult: skillKillHealMult(
-        cfg,
-        levels: eq.levels,
-        equipped: eq.equipped,
-      ),
+      healMult:
+          researchKillHealMult(_research) *
+          skillKillHealMult(cfg, levels: eq.levels, equipped: eq.equipped),
       revive: r == null
           ? null
           : (
@@ -2161,11 +2234,13 @@ class _Player {
           final share = t.weight / w;
           giftEach += share * math.max(t.gold.toDouble(), h.gold);
           // 재료 3종을 각각 정액과 비교한다(지금 JSON 은 셋이 같다).
+          // 재료는 사냥 분치의 일부만(gifts.json `huntMaterialShare` — 앱과 같다).
+          final hm = h.mats * gifts.huntMaterialShare;
           eachMats +=
               share *
-              (math.max(t.chitin.toDouble(), h.mats) +
-                  math.max(t.mineral.toDouble(), h.mats) +
-                  math.max(t.sap.toDouble(), h.mats)) /
+              (math.max(t.chitin.toDouble(), hm) +
+                  math.max(t.mineral.toDouble(), hm) +
+                  math.max(t.sap.toDouble(), hm)) /
               3;
         }
         final avgMult = (gifts.adMultiplierMin + gifts.adMultiplierMax) / 2.0;
@@ -2188,12 +2263,13 @@ class _Player {
         final h = hunt(minutes);
         // "한 번 더 받기" — 무료로 1배 더.
         dailyGold += 2 * math.max(r.gold.toDouble(), h.gold) * giftResearch;
+        final hm = h.mats * daily.huntMaterialShare;
         dailyMats +=
             2 *
             giftResearch *
-            (math.max(r.chitin.toDouble(), h.mats) +
-                math.max(r.mineral.toDouble(), h.mats) +
-                math.max(r.sap.toDouble(), h.mats)) /
+            (math.max(r.chitin.toDouble(), hm) +
+                math.max(r.mineral.toDouble(), hm) +
+                math.max(r.sap.toDouble(), hm)) /
             3;
       }
     }
@@ -3115,6 +3191,8 @@ class _Player {
 
   /// 재료비 — `--mat-cost-growth=` 가 있으면 그 증가율로 계산한다(탐색용).
   double _matCost(UpgradeSpec spec, int lv) {
+    // 게임과 같다 — 초반 레벨은 재료 없이 골드로만(`upgradeMaterialFreeLevels`).
+    if (lv < spec.materialFreeLevels) return 0;
     final g = _matCostGrowth ?? spec.materialCostGrowth;
     return (spec.materialBaseCost * _matBaseMult * math.pow(g, lv))
         .ceilToDouble();
@@ -3128,7 +3206,7 @@ class _Player {
       var goldBlocked = false;
       var matBlocked = false;
       for (final kind in config.upgrades.keys) {
-        final spec = config.upgrade(kind);
+        final spec = _spec(kind);
         final lv = levels[kind] ?? 0;
         // 상한(`maxLevel`)에 닿은 축은 더 안 산다 — 게임과 같은 규칙.
         if (!spec.canBuyAt(lv)) continue;
@@ -3158,14 +3236,15 @@ class _Player {
         }
         return;
       }
-      final spec = config.upgrade(best);
+      final spec = _spec(best);
       final lv = levels[best] ?? 0;
       gold -= bestCost;
       final mk = spec.materialKind;
       if (mk != null) {
         materials[mk] = (materials[mk] ?? 0) - _matCost(spec, lv);
       }
-      levels[best] = lv + 1;
+      // 대성공(2026-11-10) — 게임과 같은 판정. seed 는 고정(기대값만 맞으면 된다).
+      levels[best] = upgradeLevelAfterBuy(config, spec, seed: 0, level: lv);
     }
   }
 }
@@ -3400,6 +3479,10 @@ _Opts _parseArgs(List<String> args) {
     final tp = RegExp(r'^--train-pet=(.+)$').firstMatch(a);
     if (tp != null) {
       _trainPet = double.parse(tp.group(1)!);
+      continue;
+    }
+    if (a == '--no-cap-break') {
+      _noCapBreak = true;
       continue;
     }
     final abw = RegExp(r'^--abyss-weeks=(.+)$').firstMatch(a);
